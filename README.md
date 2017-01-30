@@ -24,7 +24,7 @@ $ nerd work
 waiting for task ...
   received task 't-83dd21e' ... done!
   downloading input 'd-421a11f' ... done! (0KiB new, 120MiB total)
-  working item 't-83dd21e' ... done!
+  running 't-83dd21e' (kubectl create t-83dd21e.yaml) ... done!
   uploading output ... done!  
 <- task 't-83dd21e' succeeded!
 waiting for task ...
