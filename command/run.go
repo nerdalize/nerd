@@ -1,15 +1,22 @@
 package command
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/nerd"
 )
 
 //RunOpts describes command options
-type RunOpts struct{}
+type RunOpts struct {
+	*NerdAPIOpts
+}
 
 //Run command
 type Run struct {
@@ -51,6 +58,42 @@ func RunFactory() func() (cmd cli.Command, err error) {
 func (cmd *Run) DoRun(args []string) (err error) {
 	if len(args) < 2 {
 		return fmt.Errorf("not enough arguments, see --help")
+	}
+
+	loc, err := cmd.opts.URL("/tasks")
+	if err != nil {
+		return fmt.Errorf("failed to create API url from cli options: %+v", err)
+	}
+
+	body := bytes.NewBuffer(nil)
+	enc := json.NewEncoder(body)
+	err = enc.Encode(&nerd.Task{
+		Image:   args[0],
+		Dataset: args[1],
+	})
+	if err != nil {
+		return fmt.Errorf("failed to encode provided task definition: %v", err)
+	}
+
+	req, err := http.NewRequest("POST", loc.String(), body)
+	if err != nil {
+		return fmt.Errorf("failed to create API request: %+v", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("API request '%s %s' failed: %v", req.Method, loc, err)
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("API request '%s %s' returned unexpected status from API: %v", req.Method, loc, resp.Status)
+	}
+
+	//@TODO find a more user friendly way of returning info from the API
+	_, err = io.Copy(os.Stderr, resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to output API response: %v", err)
 	}
 
 	return nil

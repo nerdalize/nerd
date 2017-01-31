@@ -17,10 +17,11 @@ type command struct {
 	runFunc  func(args []string) error
 }
 
-//Will write help text for when a user uses --help, it automatically renders all option groups of the flags.Parser. It will show an extended help message if it is not empty, else it shows the synopsis.
+//Will write help text for when a user uses --help, it automatically renders all option groups of the flags.Parser (augmented with default values). It will show an extended help message if it is not empty, else it shows the synopsis.
 func (c *command) Help() string {
 	buf := bytes.NewBuffer(nil)
 	c.parser.WriteHelp(buf)
+
 	txt := c.help
 	if txt == "" {
 		txt = c.Synopsis()
