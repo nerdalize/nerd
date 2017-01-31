@@ -24,7 +24,7 @@ func RunFactory() func() (cmd cli.Command, err error) {
 	cmd := &Run{
 		command: &command{
 			help:     "",
-			synopsis: "...",
+			synopsis: "create a new compute task for a dataset",
 			parser:   flags.NewNamedParser("nerd upload", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,

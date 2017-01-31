@@ -24,7 +24,7 @@ func WorkFactory() func() (cmd cli.Command, err error) {
 	cmd := &Work{
 		command: &command{
 			help:     "",
-			synopsis: "...",
+			synopsis: "start handling tasks on local compute resources",
 			parser:   flags.NewNamedParser("nerd upload", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,

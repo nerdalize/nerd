@@ -12,10 +12,11 @@ import (
 var (
 	name    = "nerd"
 	version = "build.from.src"
+	commit  = "0000000"
 )
 
 func main() {
-	c := cli.NewCLI(name, version)
+	c := cli.NewCLI(name, fmt.Sprintf("%s (%s)", version, commit))
 	c.Args = os.Args[1:]
 	c.Commands = map[string]cli.CommandFactory{
 		"login":    command.LoginFactory(),

@@ -24,7 +24,7 @@ func DownloadFactory() func() (cmd cli.Command, err error) {
 	cmd := &Download{
 		command: &command{
 			help:     "",
-			synopsis: "...",
+			synopsis: "fetch the output of a task from cloud storage",
 			parser:   flags.NewNamedParser("nerd upload", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
