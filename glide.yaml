@@ -1,8 +1,11 @@
 package: github.com/nerdalize/nerd
 ignore:
-- golang.org/x/sys #only used for solaris support
+ - github.com/go-ini/ini #only used for AWS shared credentials provider
+ - golang.org/x/sys #only used for solaris support
 import:
 - package: github.com/mitchellh/cli                   #command line library
   version: fa17b36f6c61f1ddbbb08c9f6fde94b3c065a09d
 - package: github.com/jessevdk/go-flags               #flexible flag parsing
   version: 4e64e4a4e2552194cf594243e23aa9baf3b4297e
+- package: github.com/aws/aws-sdk-go                  #official AWS Go sdk
+  version: v1.6.18

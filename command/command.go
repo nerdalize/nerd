@@ -23,7 +23,7 @@ func (c *command) Help() string {
 	c.parser.WriteHelp(buf)
 	txt := c.help
 	if txt == "" {
-		c.Synopsis()
+		txt = c.Synopsis()
 	}
 
 	return fmt.Sprintf(`

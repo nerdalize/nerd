@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/jessevdk/go-flags"
@@ -25,7 +26,7 @@ func RunFactory() func() (cmd cli.Command, err error) {
 		command: &command{
 			help:     "",
 			synopsis: "create a new compute task for a dataset",
-			parser:   flags.NewNamedParser("nerd upload", flags.Default),
+			parser:   flags.NewNamedParser("nerd run <image> <dataset>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
 				Writer: os.Stderr,
@@ -48,5 +49,9 @@ func RunFactory() func() (cmd cli.Command, err error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *Run) DoRun(args []string) (err error) {
+	if len(args) < 2 {
+		return fmt.Errorf("not enough arguments, see --help")
+	}
+
 	return nil
 }

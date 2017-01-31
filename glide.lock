@@ -1,8 +1,10 @@
-hash: b67b170961e91c7baae0aa0ec22deb5b0a8dee108c21b0ae2252cd82ed42c488
-updated: 2017-01-31T10:37:00.49602489+01:00
+hash: 2e2450c421b28f5da0e26ba6456079d88b858b787f04707a7f9ba81b61e4bdbe
+updated: 2017-01-31T12:09:29.069152801+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 4239b77079c7b5d1243b7b4736304ce8ddb6f0f2
+- name: github.com/aws/aws-sdk-go
+  version: 3f8f870ec9939e32b3372abf74d24e468bcd285d
 - name: github.com/bgentry/speakeasy
   version: 675b82c74c0ed12283ee81ba8a534c8982c07b85
 - name: github.com/jessevdk/go-flags
