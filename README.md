@@ -1,7 +1,9 @@
-# nerd
-A personal nerd that takes care of running your scientific compute. This project is currently experimental and not functional.
+# Nerdalize Scientific Compute
+Your personal nerd that takes care of running scientific compute on the [Nerdalize cloud](nerdalize.com/cloud/).
 
-## Commands Example
+_NOTE: This project is currently experimental and not functional._
+
+## Command Usage
 
 ```bash
 # log into the scientific compute platform
@@ -25,7 +27,7 @@ $ nerd logs t-83dd21e
 20170122.2111 [INFO] Doing awesome science!
 
 # start working the started item(s)
-$ nerd work 
+$ nerd work
 waiting for task ...
   received task 't-83dd21e' ... done!
   downloading input 'd-421a11f' ... done! (0KiB new, 120MiB total)
