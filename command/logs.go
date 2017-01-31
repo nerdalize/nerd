@@ -25,7 +25,7 @@ func LogsFactory() func() (cmd cli.Command, err error) {
 		command: &command{
 			help:     "",
 			synopsis: "retrieve up-to-date feedback from a task",
-			parser:   flags.NewNamedParser("nerd upload", flags.Default),
+			parser:   flags.NewNamedParser("nerd logs", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
 				Writer: os.Stderr,

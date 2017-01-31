@@ -32,7 +32,7 @@ func WorkFactory() func() (cmd cli.Command, err error) {
 		command: &command{
 			help:     "",
 			synopsis: "start handling tasks on local compute resources",
-			parser:   flags.NewNamedParser("nerd upload", flags.Default),
+			parser:   flags.NewNamedParser("nerd work", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
 				Writer: os.Stderr,
