@@ -53,17 +53,5 @@ func (cmd *Run) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	// t := &nerd.Task{
-	// 	Image:  args[0],
-	// 	Datset: args[1],
-	// }
-	//
-	// loc, err := url.Parse("https://platform.nerdalize.net/v1/task")
-	// if err != nil {
-	// 	return fmt.Errorf("platform endpoint: %v", err)
-	// }
-
-	//Global options is ner
-
 	return nil
 }
