@@ -19,6 +19,11 @@ $ nerd run nlz.io/my-org/my-program:v1.2 d-421a11f
 creating task ... done!
 submitted run as task 't-83dd21e'
 
+# read task output to get feedback
+$ nerd logs t-83dd21e
+20170122.1111 [INFO] Started program
+20170122.2111 [INFO] Doing awesome science!
+
 # start working the started item(s)
 $ nerd work 
 waiting for task ...
