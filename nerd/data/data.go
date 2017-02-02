@@ -14,20 +14,25 @@ import (
 	"github.com/nerdalize/nerd/nerd"
 )
 
+//DirectoryPermissions are the permissions when a new directory is created upon file download.
 const DirectoryPermissions = 0755
 
+//KeyWriter
 type KeyWriter interface {
 	Write(k string) error
 }
 
+//Client holds a reference to an AWS session
 type Client struct {
 	Session *session.Session
 }
 
+//NewClient creates a new data client that is capable of uploading and downloading (multiple) files.
 func NewClient(awsCreds *credentials.Credentials) (*Client, error) {
 	sess, err := session.NewSession(&aws.Config{
 		Credentials: awsCreds,
-		Region:      aws.String("eu-west-1"),
+		//TODO: this should not be hardcoded.
+		Region: aws.String("eu-west-1"),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("could not create AWS sessions: %v", err)
@@ -37,6 +42,7 @@ func NewClient(awsCreds *credentials.Credentials) (*Client, error) {
 	}, nil
 }
 
+//UploadFile uploads a single file.
 func (client *Client) UploadFile(filePath string, dataset string) error {
 	file, err := os.Open(filePath)
 	defer file.Close()
@@ -45,8 +51,8 @@ func (client *Client) UploadFile(filePath string, dataset string) error {
 	}
 	svc := s3.New(client.Session)
 	params := &s3.PutObjectInput{
-		Bucket: aws.String(nerd.GetCurrentUser().AWSBucket),             // Required
-		Key:    aws.String(path.Join(dataset, filepath.Base(filePath))), // Required
+		Bucket: aws.String(nerd.GetCurrentUser().AWSBucket), // Required
+		Key:    aws.String(path.Join(dataset, filePath)),    // Required
 		Body:   file,
 	}
 	_, err = svc.PutObject(params)
@@ -56,16 +62,23 @@ func (client *Client) UploadFile(filePath string, dataset string) error {
 	return nil
 }
 
-func (client *Client) UploadDir(dir string, dataset string) error {
-	err := filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
+//UploadDir uploads every single file in the directory and all its subdirectories.
+func (client *Client) UploadDir(dir string, dataset string, kw KeyWriter, concurrency int) error {
+	var files []string
+	filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
 		if f.Mode().IsRegular() {
-			return client.UploadFile(path, dataset)
+			files = append(files, path)
 		}
 		return nil
 	})
-	return err
+	err := client.UploadFiles(files, dataset, kw, concurrency)
+	if err != nil {
+		return fmt.Errorf("could not upload directory '%v': %v", dir, err)
+	}
+	return nil
 }
 
+//UploadFiles uploads a list of files concurrently.
 func (client *Client) UploadFiles(files []string, dataset string, kw KeyWriter, concurrency int) error {
 
 	type item struct {
@@ -109,6 +122,7 @@ func (client *Client) UploadFiles(files []string, dataset string, kw KeyWriter, 
 	return nil
 }
 
+//DownloadFile downloads a single file.
 func (client *Client) DownloadFile(key string, outDir string) error {
 	base := filepath.Dir(path.Join(outDir, key))
 	err := os.MkdirAll(base, DirectoryPermissions)
@@ -140,6 +154,7 @@ func (client *Client) DownloadFile(key string, outDir string) error {
 	return nil
 }
 
+//ListDataset lists all keys for a given dataset.
 func (client *Client) ListDataset(dataset string) (keys []string, err error) {
 	svc := s3.New(client.Session)
 
@@ -160,6 +175,7 @@ func (client *Client) ListDataset(dataset string) (keys []string, err error) {
 	return
 }
 
+//DownloadFiles concurrently downloads all files in a given dataset.
 func (client *Client) DownloadFiles(dataset string, outDir string, kw KeyWriter, concurrency int) error {
 	keys, err := client.ListDataset(dataset)
 	if err != nil {

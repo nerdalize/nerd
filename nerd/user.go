@@ -7,23 +7,27 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 )
 
+//User holds a reference to a user session
 type User struct {
 	// Username  string
 	// Password  string
-	NlzToken  string
+	JWT       string
 	AWSBucket string
 }
 
+//GetCurrentUser returns the current user session
 func GetCurrentUser() *User {
-	//TODO: Get nlz token from env variables
+	//TODO: Get jwt from env variables
 	return &User{
-		// Username:  "",
-		// Password:  "",
-		NlzToken:  "",
+		JWT: "",
+		//TODO: This should not be hardcoded.
 		AWSBucket: "boris.nerdalize.net",
 	}
 }
 
+//GetAWSCredentials fetches the user's AWS token.
+//At the moment this is a mock function that reads the credentials from
+//environment variables, in the future this function would interface with the NCE API.
 func (user *User) GetAWSCredentials() (*credentials.Credentials, error) {
 	accessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
 	if accessKeyID == "" {

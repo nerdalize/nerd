@@ -3,8 +3,6 @@ package command
 import (
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
@@ -30,7 +28,7 @@ func UploadFactory() func() (cmd cli.Command, err error) {
 		command: &command{
 			help:     "",
 			synopsis: "push task data as input to cloud storage",
-			parser:   flags.NewNamedParser("nerd upload <dataset> <file-1> [<file-2> ... <file-n>]", flags.Default),
+			parser:   flags.NewNamedParser("nerd upload <dataset> <path>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
 				Writer: os.Stderr,
@@ -58,6 +56,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	}
 
 	dataset := args[0]
+	path := args[1]
 
 	awsCreds, err := nerd.GetCurrentUser().GetAWSCredentials()
 	if err != nil {
@@ -69,37 +68,16 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		return fmt.Errorf("could not create data client: %v", err)
 	}
 
-	var files []string
-	var errs []string
-
-	for i := 1; i < len(args); i++ {
-		f, err := os.Stat(args[i])
-		if err != nil {
-			errs = append(errs, fmt.Sprintf("argument '%v' is not a valid file or directory", args[i]))
-			break
-		}
-
-		switch mode := f.Mode(); {
-		case mode.IsDir():
-			filepath.Walk(args[i], func(path string, f os.FileInfo, err error) error {
-				if f.Mode().IsRegular() {
-					files = append(files, path)
-				}
-				return nil
-			})
-		case mode.IsRegular():
-			files = append(files, args[i])
-		}
-	}
-
-	if len(errs) > 0 {
-		return fmt.Errorf("the following error(s) occured when uploading to the dataset: %v", strings.Join(errs, ","))
-	}
-
-	err = client.UploadFiles(files, dataset, &stdoutkw{}, 64)
+	fi, err := os.Stat(path)
 	if err != nil {
-		return fmt.Errorf("could not upload files: %v", err)
+		return fmt.Errorf("argument '%v' is not a valid file or directory", path)
 	}
 
+	switch mode := fi.Mode(); {
+	case mode.IsDir():
+		return client.UploadDir(path, dataset, &stdoutkw{}, 64)
+	case mode.IsRegular():
+		return client.UploadFile(path, dataset)
+	}
 	return nil
 }
