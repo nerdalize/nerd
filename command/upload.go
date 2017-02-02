@@ -101,23 +101,5 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		return fmt.Errorf("could not upload files: %v", err)
 	}
 
-	// for i := 1; i < len(args); i++ {
-	// 	f, err := os.Stat(args[i])
-	// 	if err != nil {
-	// 		errs = append(errs, fmt.Sprintf("argument '%v' is not a valid file or directory", args[i]))
-	// 		break
-	// 	}
-	//
-	// 	switch mode := f.Mode(); {
-	// 	case mode.IsDir():
-	// 		err = client.UploadDir(args[i], dataset)
-	// 	case mode.IsRegular():
-	// 		err = client.UploadFile(args[i], dataset)
-	// 	}
-	// 	if err != nil {
-	// 		errs = append(errs, err.Error())
-	// 	}
-	// }
-
 	return nil
 }
