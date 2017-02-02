@@ -13,6 +13,7 @@ type User struct {
 	// Password  string
 	JWT       string
 	AWSBucket string
+	Region    string
 }
 
 //GetCurrentUser returns the current user session
@@ -22,6 +23,7 @@ func GetCurrentUser() *User {
 		JWT: "",
 		//TODO: This should not be hardcoded.
 		AWSBucket: "boris.nerdalize.net",
+		Region:    "eu-west-1",
 	}
 }
 

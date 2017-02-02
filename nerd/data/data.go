@@ -17,7 +17,7 @@ import (
 //DirectoryPermissions are the permissions when a new directory is created upon file download.
 const DirectoryPermissions = 0755
 
-//KeyWriter
+//KeyWriter writes a given key.
 type KeyWriter interface {
 	Write(k string) error
 }
@@ -31,8 +31,7 @@ type Client struct {
 func NewClient(awsCreds *credentials.Credentials) (*Client, error) {
 	sess, err := session.NewSession(&aws.Config{
 		Credentials: awsCreds,
-		//TODO: this should not be hardcoded.
-		Region: aws.String("eu-west-1"),
+		Region:      aws.String(nerd.GetCurrentUser().Region),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("could not create AWS sessions: %v", err)
