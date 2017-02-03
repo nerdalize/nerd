@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 
@@ -60,16 +61,20 @@ func (cmd *Run) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
+	fmt.Println(args)
+
 	loc, err := cmd.opts.URL("/tasks")
 	if err != nil {
 		return fmt.Errorf("failed to create API url from cli options: %+v", err)
 	}
 
+	log.Printf("submitting task to %s", loc)
 	body := bytes.NewBuffer(nil)
 	enc := json.NewEncoder(body)
 	err = enc.Encode(&nerd.Task{
 		Image:   args[0],
 		Dataset: args[1],
+		Args:    args[2:],
 	})
 	if err != nil {
 		return fmt.Errorf("failed to encode provided task definition: %v", err)
@@ -80,6 +85,7 @@ func (cmd *Run) DoRun(args []string) (err error) {
 		return fmt.Errorf("failed to create API request: %+v", err)
 	}
 
+	//@TODO abstract into a default http client
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("API request '%s %s' failed: %v", req.Method, loc, err)
