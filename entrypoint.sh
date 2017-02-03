@@ -9,3 +9,6 @@ touch /s3data/pils.txt
 
 echo "Uploading"
 nerd upload $DATASET /s3data
+
+echo "Stressing"
+stress -c 1 -t 10
