@@ -42,7 +42,6 @@ func (c *command) Synopsis() string {
 func (c *command) Run(args []string) int {
 	a, err := c.parser.ParseArgs(args)
 	if err != nil {
-		c.ui.Error(err.Error())
 		return 127
 	}
 
