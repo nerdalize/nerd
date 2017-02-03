@@ -226,7 +226,8 @@ func (client *Client) DownloadFiles(dataset string, outDir string, kw KeyWriter,
 			return fmt.Errorf("failed to download '%v': %v", it.key, it.err)
 		}
 
-		err := kw.Write(path.Join(outDir, it.key))
+		stripped := strings.Join(strings.Split(it.key, "/")[1:], "/")
+		err := kw.Write(path.Join(outDir, stripped))
 		if err != nil {
 			return fmt.Errorf("failed to write key: %v", err)
 		}
