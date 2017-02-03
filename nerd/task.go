@@ -6,3 +6,9 @@ type Task struct {
 	Dataset string   `json:"dataset"`
 	Args    []string `json:"args"`
 }
+
+//TaskStatus is used to update the status of a task
+type TaskStatus struct {
+	Status string   `json:"status"`
+	Logs   []string `json:"logs"`
+}

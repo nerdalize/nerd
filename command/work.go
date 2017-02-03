@@ -1,9 +1,13 @@
 package command
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"time"
@@ -19,6 +23,7 @@ import (
 //WorkOpts describes command options
 type WorkOpts struct {
 	AWSQueueURL string `long:"aws-queue-url" required:"true" description:"url of the aws sqs queue"`
+	*NerdAPIOpts
 }
 
 //Work command
@@ -85,12 +90,53 @@ func (cmd *Work) DoRun(args []string) (err error) {
 		}
 
 		if len(msgs.Messages) > 0 {
-			go handleTask(qurl, mq, msgs.Messages[0], wtime)
+			go handleTask(qurl, mq, msgs.Messages[0], wtime, cmd.opts)
 		}
 	}
 }
 
-func handleTask(qurl string, mq *sqs.SQS, msg *sqs.Message, timeout int64) {
+func patchTaskStatus(taskID string, ts *nerd.TaskStatus, opts *WorkOpts) (err error) {
+	loc, err := opts.URL("/tasks/" + taskID)
+	if err != nil {
+		return fmt.Errorf("failed to create API url from cli options: %+v", err)
+	}
+
+	log.Printf("patching task to %s", loc)
+	body := bytes.NewBuffer(nil)
+	enc := json.NewEncoder(body)
+	err = enc.Encode(ts)
+	if err != nil {
+		return fmt.Errorf("failed to encode provided task status: %v", err)
+	}
+
+	req, err := http.NewRequest("PATCH", loc.String(), body)
+	if err != nil {
+		return fmt.Errorf("failed to create API request: %+v", err)
+	}
+
+	//@TODO abstract into a default http client
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("API request '%s %s' failed: %v", req.Method, loc, err)
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("API request '%s %s' returned unexpected status from API: %v", req.Method, loc, resp.Status)
+	}
+
+	//@TODO find a more user friendly way of returning info from the API
+	_, err = io.Copy(os.Stderr, resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to output API response: %v", err)
+	}
+
+	log.Printf("patched task '%s' with a new status", taskID)
+
+	return nil
+}
+
+func handleTask(qurl string, mq *sqs.SQS, msg *sqs.Message, timeout int64, opts *WorkOpts) {
 	log.Printf("received task '%v' now in-flight, invisible for: %vs)", aws.StringValue(msg.Body), timeout)
 
 	//for now simply start a docker run command for each task
@@ -101,11 +147,25 @@ func handleTask(qurl string, mq *sqs.SQS, msg *sqs.Message, timeout int64) {
 		return
 	}
 
+	loglines := []string{}
+	pr, pw := io.Pipe()
+	go func() {
+		scanner := bufio.NewScanner(pr)
+		for scanner.Scan() {
+			loglines = append(loglines, scanner.Text())
+		}
+		if err := scanner.Err(); err != nil {
+			fmt.Fprintln(os.Stderr, "reading standard input:", err)
+		}
+	}()
+
+	//@TODO without filtering for privileged, this is obviously very dangerous
 	t.Args = append([]string{"run"}, t.Args...)
 	t.Args = append(t.Args, t.Image)
 	cmd := exec.Command("docker", t.Args...)
-	cmd.Stdout = os.Stderr
-	cmd.Stderr = os.Stderr
+
+	cmd.Stdout = pw
+	cmd.Stderr = pw
 	err = cmd.Start()
 	if err != nil {
 		log.Printf("failed to start docker container: %v", err)
@@ -115,6 +175,24 @@ func handleTask(qurl string, mq *sqs.SQS, msg *sqs.Message, timeout int64) {
 	go func() {
 		f := time.Duration(timeout) * time.Second
 		for range time.Tick(f) {
+
+			//create new status
+			taskStatus := &nerd.TaskStatus{
+				Status: "running",
+				Logs:   loglines,
+			}
+
+			if cmd.ProcessState != nil {
+				taskStatus.Status = cmd.ProcessState.String()
+			}
+
+			//always update the task
+			log.Printf("task status is: '%v', patching...", taskStatus)
+			err = patchTaskStatus(aws.StringValue(msg.MessageId), taskStatus, opts)
+			if err != nil {
+				fmt.Printf("Failed to patch task with status: %v", err)
+			}
+
 			//as long as the process state is nil, it has not finished and we want to prologin the invisibility
 			if cmd.ProcessState != nil {
 				break
@@ -152,6 +230,11 @@ func handleTask(qurl string, mq *sqs.SQS, msg *sqs.Message, timeout int64) {
 		ReceiptHandle: msg.ReceiptHandle,
 	}); err != nil {
 		log.Printf("failed to delete message: %v", err)
+	}
+
+	err = pw.Close()
+	if err != nil {
+		log.Printf("error closing scanner: %v", err)
 	}
 
 }
