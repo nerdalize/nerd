@@ -22,7 +22,7 @@ import (
 
 //WorkOpts describes command options
 type WorkOpts struct {
-	AWSQueueURL string `long:"aws-queue-url" required:"true" description:"url of the aws sqs queue"`
+	AWSQueueURL string `long:"aws-queue-url" required:"true" description:"url of the aws sqs queue" env:"AWS_SQS_QUEUE_URL"`
 	*NerdAPIOpts
 }
 

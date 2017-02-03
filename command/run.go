@@ -86,6 +86,7 @@ func (cmd *Run) DoRun(args []string) (err error) {
 		skey = keys.SecretAccessKey
 	}
 
+	args = append(args, "-e=DATASET="+args[1])
 	args = append(args, "-e=AWS_ACCESS_KEY_ID="+akey)
 	args = append(args, "-e=AWS_SECRET_ACCESS_KEY="+skey)
 
