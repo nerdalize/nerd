@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd"
@@ -65,6 +66,28 @@ func (cmd *Run) DoRun(args []string) (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to create API url from cli options: %+v", err)
 	}
+
+	user := nerd.GetCurrentUser()
+	var akey string
+	var skey string
+	var creds *credentials.Credentials
+	if user != nil {
+		creds, err = user.GetAWSCredentials()
+		if err != nil {
+			return fmt.Errorf("failed to get user credentials: %v", err)
+		}
+
+		keys, err := creds.Get()
+		if err != nil {
+			return fmt.Errorf("failed to get access key from credentials: %v", err)
+		}
+
+		akey = keys.AccessKeyID
+		skey = keys.SecretAccessKey
+	}
+
+	args = append(args, "-e=AWS_ACCESS_KEY_ID="+akey)
+	args = append(args, "-e=AWS_SECRET_ACCESS_KEY="+skey)
 
 	log.Printf("submitting task to %s", loc)
 	body := bytes.NewBuffer(nil)

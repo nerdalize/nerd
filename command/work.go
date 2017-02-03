@@ -236,5 +236,4 @@ func handleTask(qurl string, mq *sqs.SQS, msg *sqs.Message, timeout int64, opts 
 	if err != nil {
 		log.Printf("error closing scanner: %v", err)
 	}
-
 }
