@@ -24,6 +24,7 @@ func main() {
 		"run":      command.RunFactory(),
 		"logs":     command.LogsFactory(),
 		"work":     command.WorkFactory(),
+		"status":   command.StatusFactory(),
 		"download": command.DownloadFactory(),
 	}
 

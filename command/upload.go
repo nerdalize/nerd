@@ -77,7 +77,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	case mode.IsDir():
 		return client.UploadDir(path, dataset, &stdoutkw{}, 64)
 	case mode.IsRegular():
-		return client.UploadFile(path, dataset)
+		return client.UploadFile(path, path, dataset)
 	}
 	return nil
 }

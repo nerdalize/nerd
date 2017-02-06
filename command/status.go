@@ -1,7 +1,6 @@
 package command
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,34 +11,34 @@ import (
 	"github.com/nerdalize/nerd/nerd"
 )
 
-//LoginOpts describes command options
-type LoginOpts struct {
+//StatusOpts describes command options
+type StatusOpts struct {
 	*NerdAPIOpts
 }
 
-//Login command
-type Login struct {
+//Status command
+type Status struct {
 	*command
 
 	ui     cli.Ui
-	opts   *LoginOpts
+	opts   *StatusOpts
 	parser *flags.Parser
 }
 
-//LoginFactory returns a factory method for the join command
-func LoginFactory() func() (cmd cli.Command, err error) {
-	cmd := &Login{
+//StatusFactory returns a factory method for the join command
+func StatusFactory() func() (cmd cli.Command, err error) {
+	cmd := &Status{
 		command: &command{
 			help:     "",
-			synopsis: "setup an authorized session for the cloud",
-			parser:   flags.NewNamedParser("nerd login", flags.Default),
+			synopsis: "show the status of all queued tasks",
+			parser:   flags.NewNamedParser("nerd status", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
 				Writer: os.Stderr,
 			},
 		},
 
-		opts: &LoginOpts{},
+		opts: &StatusOpts{},
 	}
 
 	cmd.runFunc = cmd.DoRun
@@ -54,22 +53,18 @@ func LoginFactory() func() (cmd cli.Command, err error) {
 }
 
 //DoRun is called by run and allows an error to be returned
-func (cmd *Login) DoRun(args []string) (err error) {
-	if len(args) < 1 {
-		return fmt.Errorf("not enough arguments, see --help")
-	}
+func (cmd *Status) DoRun(args []string) (err error) {
 
-	loc, err := cmd.opts.URL("/sessions/" + args[0])
+	loc, err := cmd.opts.URL("/tasks")
 	if err != nil {
 		return fmt.Errorf("failed to create API url from cli options: %+v", err)
 	}
 
-	req, err := http.NewRequest("POST", loc.String(), bytes.NewBufferString(`{}`))
+	req, err := http.NewRequest("GET", loc.String(), nil)
 	if err != nil {
 		return fmt.Errorf("failed to create API request: %+v", err)
 	}
 
-	//@TODO abstract into a default http client
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("API request '%s %s' failed: %v", req.Method, loc, err)
@@ -80,17 +75,16 @@ func (cmd *Login) DoRun(args []string) (err error) {
 		return fmt.Errorf("API request '%s %s' returned unexpected status from API: %v", req.Method, loc, resp.Status)
 	}
 
-	sess := &nerd.Session{}
+	tasks := []*nerd.Task{}
 	dec := json.NewDecoder(resp.Body)
-	err = dec.Decode(sess)
+	err = dec.Decode(&tasks)
 	if err != nil {
-		return fmt.Errorf("failed to deserialize session: %v", err)
+		return fmt.Errorf("failed to decode: %v", err)
 	}
 
-	fmt.Println("AWS_ACCESS_KEY_ID=" + sess.AWSAccessKeyID)
-	fmt.Println("AWS_SECRET_ACCESS_KEY=" + sess.AWSSecretAccessKey)
-	fmt.Println("AWS_SQS_QUEUE_URL=" + sess.AWSSQSQueueURL)
-	fmt.Println("AWS_REGION=" + sess.AWSRegion)
+	for _, t := range tasks {
+		fmt.Printf("%s (%s@%s): %s\n", t.ID, t.Image, t.Dataset, t.Status)
+	}
 
 	return nil
 }

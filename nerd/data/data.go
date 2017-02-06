@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -42,7 +43,7 @@ func NewClient(awsCreds *credentials.Credentials) (*Client, error) {
 }
 
 //UploadFile uploads a single file.
-func (client *Client) UploadFile(filePath string, dataset string) error {
+func (client *Client) UploadFile(filePath string, key string, dataset string) error {
 	file, err := os.Open(filePath)
 	defer file.Close()
 	if err != nil {
@@ -51,7 +52,7 @@ func (client *Client) UploadFile(filePath string, dataset string) error {
 	svc := s3.New(client.Session)
 	params := &s3.PutObjectInput{
 		Bucket: aws.String(nerd.GetCurrentUser().AWSBucket), // Required
-		Key:    aws.String(path.Join(dataset, filePath)),    // Required
+		Key:    aws.String(path.Join(dataset, key)),         // Required
 		Body:   file,
 	}
 	_, err = svc.PutObject(params)
@@ -64,13 +65,19 @@ func (client *Client) UploadFile(filePath string, dataset string) error {
 //UploadDir uploads every single file in the directory and all its subdirectories.
 func (client *Client) UploadDir(dir string, dataset string, kw KeyWriter, concurrency int) error {
 	var files []string
+	var keys []string
 	filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
 		if f.Mode().IsRegular() {
+			rel, err := filepath.Rel(dir, path)
+			if err != nil {
+				return fmt.Errorf("could not get relative path for '%v': %v", path, err)
+			}
+			keys = append(keys, rel)
 			files = append(files, path)
 		}
 		return nil
 	})
-	err := client.UploadFiles(files, dataset, kw, concurrency)
+	err := client.UploadFiles(files, keys, dataset, kw, concurrency)
 	if err != nil {
 		return fmt.Errorf("could not upload directory '%v': %v", dir, err)
 	}
@@ -78,16 +85,17 @@ func (client *Client) UploadDir(dir string, dataset string, kw KeyWriter, concur
 }
 
 //UploadFiles uploads a list of files concurrently.
-func (client *Client) UploadFiles(files []string, dataset string, kw KeyWriter, concurrency int) error {
+func (client *Client) UploadFiles(files []string, keys []string, dataset string, kw KeyWriter, concurrency int) error {
 
 	type item struct {
 		filePath string
+		key      string
 		resCh    chan bool
 		err      error
 	}
 
 	work := func(it *item) {
-		it.err = client.UploadFile(it.filePath, dataset)
+		it.err = client.UploadFile(it.filePath, it.key, dataset)
 		it.resCh <- true
 	}
 
@@ -97,6 +105,7 @@ func (client *Client) UploadFiles(files []string, dataset string, kw KeyWriter, 
 		for i := 0; i < len(files); i++ {
 			it := &item{
 				filePath: files[i],
+				key:      keys[i],
 				resCh:    make(chan bool),
 			}
 
@@ -123,12 +132,14 @@ func (client *Client) UploadFiles(files []string, dataset string, kw KeyWriter, 
 
 //DownloadFile downloads a single file.
 func (client *Client) DownloadFile(key string, outDir string) error {
-	base := filepath.Dir(path.Join(outDir, key))
+	//strip the "dataset" prefix
+	stripped := strings.Join(strings.Split(key, "/")[1:], "/")
+	base := filepath.Dir(path.Join(outDir, stripped))
 	err := os.MkdirAll(base, DirectoryPermissions)
 	if err != nil {
 		return fmt.Errorf("failed to create path '%v': %v", base, err)
 	}
-	outFile, err := os.Create(path.Join(outDir, key))
+	outFile, err := os.Create(path.Join(outDir, stripped))
 	defer outFile.Close()
 	if err != nil {
 		return fmt.Errorf("failed to create local file '%v': %v", path.Join(outDir, key), err)
@@ -215,7 +226,8 @@ func (client *Client) DownloadFiles(dataset string, outDir string, kw KeyWriter,
 			return fmt.Errorf("failed to download '%v': %v", it.key, it.err)
 		}
 
-		err := kw.Write(path.Join(outDir, it.key))
+		stripped := strings.Join(strings.Split(it.key, "/")[1:], "/")
+		err := kw.Write(path.Join(outDir, stripped))
 		if err != nil {
 			return fmt.Errorf("failed to write key: %v", err)
 		}
