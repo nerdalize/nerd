@@ -1,14 +1,57 @@
-hash: 2e2450c421b28f5da0e26ba6456079d88b858b787f04707a7f9ba81b61e4bdbe
-updated: 2017-01-31T16:31:01.577719691+01:00
+hash: ed90a15da11e313fe56c21e76b5b9179a775a72b22d0b6b2ff9bab476a2ddb01
+updated: 2017-02-07T14:31:50.446698822+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 4239b77079c7b5d1243b7b4736304ce8ddb6f0f2
 - name: github.com/aws/aws-sdk-go
   version: 3f8f870ec9939e32b3372abf74d24e468bcd285d
+  subpackages:
+  - aws
+  - aws/awserr
+  - aws/awsutil
+  - aws/client
+  - aws/client/metadata
+  - aws/corehandlers
+  - aws/credentials
+  - aws/credentials/ec2rolecreds
+  - aws/credentials/endpointcreds
+  - aws/credentials/stscreds
+  - aws/defaults
+  - aws/ec2metadata
+  - aws/endpoints
+  - aws/request
+  - aws/session
+  - aws/signer/v4
+  - private/protocol
+  - private/protocol/query
+  - private/protocol/query/queryutil
+  - private/protocol/rest
+  - private/protocol/restxml
+  - private/protocol/xml/xmlutil
+  - private/waiter
+  - service/s3
+  - service/sqs
+  - service/sts
 - name: github.com/bgentry/speakeasy
   version: 675b82c74c0ed12283ee81ba8a534c8982c07b85
+- name: github.com/dghubble/sling
+  version: eb56e89ac5088bebb12eef3cb4b293300f43608b
+- name: github.com/go-playground/locales
+  version: 273913d3b2ff7127452603d55dd3f6f888e4f268
+  subpackages:
+  - currency
+- name: github.com/go-playground/universal-translator
+  version: 03ee8962f44dd72cfae8382f319f5d2a61521e99
+- name: github.com/go-playground/validator
+  version: 691ea5506371685479307baaf0e623e850de4dbf
+- name: github.com/google/go-querystring
+  version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
+  subpackages:
+  - query
 - name: github.com/jessevdk/go-flags
   version: 4e64e4a4e2552194cf594243e23aa9baf3b4297e
+- name: github.com/jmespath/go-jmespath
+  version: bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d
 - name: github.com/mattn/go-isatty
   version: 30a891c33c7cde7b02a981314b4228ec99380cca
 - name: github.com/mitchellh/cli

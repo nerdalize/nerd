@@ -12,7 +12,9 @@ type NerdAPIOpts struct {
 
 	NerdAPIHostname string `long:"api-hostname" default:"platform.nerdalize.net" default-mask:"platform.nerdalize.net" env:"NERD_API_HOST" description:"hostname of the compute platform"`
 
-	NerdAPIVersion string `long:"api-basepath" default:"v1" default-mask:"v1" env:"NERD_API_VERSION" description:"endpoint version as basepath"`
+	NerdAPIBasePath string `long:"api-basepath" default:"" default-mask:"" env:"NERD_API_BASE_PATH" description:"basepath of the endpoint"`
+
+	NerdAPIVersion string `long:"api-version" default:"v1" default-mask:"v1" env:"NERD_API_VERSION" description:"endpoint version"`
 }
 
 //URL returns a fully qualitied url on the platform endpoint

@@ -1,14 +1,12 @@
 package command
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd"
+	"github.com/nerdalize/nerd/nerd/client"
 )
 
 //StatusOpts describes command options
@@ -55,31 +53,38 @@ func StatusFactory() func() (cmd cli.Command, err error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *Status) DoRun(args []string) (err error) {
 
-	loc, err := cmd.opts.URL("/tasks")
+	// loc, err := cmd.opts.URL("/tasks")
+	// if err != nil {
+	// 	return fmt.Errorf("failed to create API url from cli options: %+v", err)
+	// }
+	//
+	// req, err := http.NewRequest("GET", loc.String(), nil)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to create API request: %+v", err)
+	// }
+	//
+	// resp, err := http.DefaultClient.Do(req)
+	// if err != nil {
+	// 	return fmt.Errorf("API request '%s %s' failed: %v", req.Method, loc, err)
+	// }
+	//
+	// defer resp.Body.Close()
+	// if resp.StatusCode >= 400 {
+	// 	return fmt.Errorf("API request '%s %s' returned unexpected status from API: %v", req.Method, loc, resp.Status)
+	// }
+	//
+	// tasks := []*nerd.Task{}
+	// dec := json.NewDecoder(resp.Body)
+	// err = dec.Decode(&tasks)
+	c := client.NewNerdAPI(client.NerdAPIConfig{
+		Scheme:   cmd.opts.NerdAPIScheme,
+		Host:     cmd.opts.NerdAPIHostname,
+		BasePath: cmd.opts.NerdAPIBasePath,
+		Version:  cmd.opts.NerdAPIVersion,
+	})
+	tasks, err := c.Status()
 	if err != nil {
-		return fmt.Errorf("failed to create API url from cli options: %+v", err)
-	}
-
-	req, err := http.NewRequest("GET", loc.String(), nil)
-	if err != nil {
-		return fmt.Errorf("failed to create API request: %+v", err)
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("API request '%s %s' failed: %v", req.Method, loc, err)
-	}
-
-	defer resp.Body.Close()
-	if resp.StatusCode >= 400 {
-		return fmt.Errorf("API request '%s %s' returned unexpected status from API: %v", req.Method, loc, resp.Status)
-	}
-
-	tasks := []*nerd.Task{}
-	dec := json.NewDecoder(resp.Body)
-	err = dec.Decode(&tasks)
-	if err != nil {
-		return fmt.Errorf("failed to decode: %v", err)
+		return fmt.Errorf("failed receive task statuses: %v", err)
 	}
 
 	for _, t := range tasks {
