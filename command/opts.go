@@ -15,6 +15,8 @@ type NerdAPIOpts struct {
 	NerdAPIBasePath string `long:"api-basepath" default:"" default-mask:"" env:"NERD_API_BASE_PATH" description:"basepath of the endpoint"`
 
 	NerdAPIVersion string `long:"api-version" default:"v1" default-mask:"v1" env:"NERD_API_VERSION" description:"endpoint version"`
+
+	NerdAPIFullURL string `long:"api-full-url" default:"" default-mask:"" env:"NERD_API_FULL_URL" description:"full endpoint url"`
 }
 
 //URL returns a fully qualitied url on the platform endpoint

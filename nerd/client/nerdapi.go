@@ -17,9 +17,7 @@ const (
 )
 
 type NerdAPIClient struct {
-	// client *REST
 	NerdAPIConfig
-	sl *sling.Sling
 }
 
 type NerdAPIConfig struct {
@@ -45,6 +43,21 @@ func NewNerdAPI(config NerdAPIConfig) *NerdAPIClient {
 	return &NerdAPIClient{
 		NerdAPIConfig: config,
 	}
+}
+
+func NewNerdAPIFromURL(fullURL string, version string) (*NerdAPIClient, error) {
+	u, err := url.Parse(fullURL)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse url '%v': %v", fullURL, err)
+	}
+	return &NerdAPIClient{
+		NerdAPIConfig: NerdAPIConfig{
+			Scheme:   u.Scheme,
+			Host:     u.Host,
+			BasePath: u.Path,
+			Version:  version,
+		},
+	}, nil
 }
 
 func (nerdapi *NerdAPIClient) url(p string) string {

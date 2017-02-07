@@ -1,29 +1,22 @@
 // +build integration
 
-package client
+package client_test
 
 import (
 	"fmt"
 	"os"
 	"testing"
 
-	flags "github.com/jessevdk/go-flags"
-	"github.com/nerdalize/nerd/command"
 	"github.com/nerdalize/nerd/nerd/client"
 )
 
-func newClient() (*NerdAPIClient, error) {
-	opts := &command.NerdAPIOpts{}
-	args, err := flags.ParseArgs(opts, os.Args)
+func newClient() (*client.NerdAPIClient, error) {
+	fullUrl := os.Getenv("TEST_NERD_API_FULL_URL")
+	version := os.Getenv("TEST_NERD_API_VERSION")
+	c, err := client.NewNerdAPIFromURL(fullUrl, version)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse flags: %v", err)
+		return nil, fmt.Errorf("failed to create nerd API client: %v", err)
 	}
-	c := client.NewNerdAPI(client.NerdAPIConfig{
-		Scheme:   cmd.opts.NerdAPIScheme,
-		Host:     cmd.opts.NerdAPIHostname,
-		BasePath: cmd.opts.NerdAPIBasePath,
-		Version:  cmd.opts.NerdAPIVersion,
-	})
 	return c, nil
 }
 

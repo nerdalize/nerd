@@ -18,8 +18,26 @@ function run_build { #build a new binary and place it in $GOPATH/bin
     main.go
 }
 
+function run_test_integration {
+	if [ ! -d "../universe" ]; then
+		echo "The universe directory is not present"
+		exit 1
+	fi
+	cd ../universe
+	./make.sh deploy
+	endpoint=$(terraform output infra_endpoint)
+	export TEST_NERD_API_FULL_URL=$endpoint
+	export TEST_NERD_API_VERSION="v1"
+	cd ../nerd
+	go test $(go list ./... | grep -v /vendor/) -tags=integration || true
+	cd ../universe
+	./make.sh destroy force
+	cd ../nerd
+}
+
 case $1 in
 	"build") run_build ;;
+	"test_integration") run_test_integration ;;
 
 	*) print_help ;;
 esac
