@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+
+	"github.com/nerdalize/nerd/nerd/client"
 )
 
 //NerdAPIOpts configure how the platform endpoint is reached
@@ -29,4 +31,14 @@ func (opts *NerdAPIOpts) URL(path string) (loc *url.URL, err error) {
 		strings.TrimLeft(path, "/"),
 	))
 	return loc, err
+}
+
+//NerdAPIConfig returns a populated configuration struct for the Nerd API client.
+func (opts *NerdAPIOpts) NerdAPIConfig() client.NerdAPIConfig {
+	return client.NerdAPIConfig{
+		Scheme:   opts.NerdAPIScheme,
+		Host:     opts.NerdAPIHostname,
+		BasePath: opts.NerdAPIBasePath,
+		Version:  opts.NerdAPIVersion,
+	}
 }

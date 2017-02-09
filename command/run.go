@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd"
@@ -53,7 +52,7 @@ func RunFactory() func() (cmd cli.Command, err error) {
 }
 
 //DoRun is called by run and allows an error to be returned
-func (cmd *Run) DoRun(args []string) (err error) {
+func (cmd *Run) DoRun(args []string) error {
 	if len(args) < 2 {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
@@ -61,9 +60,8 @@ func (cmd *Run) DoRun(args []string) (err error) {
 	user := nerd.GetCurrentUser()
 	var akey string
 	var skey string
-	var creds *credentials.Credentials
 	if user != nil {
-		creds, err = user.GetAWSCredentials()
+		creds, err := user.GetAWSCredentials()
 		if err != nil {
 			return fmt.Errorf("failed to get user credentials: %v", err)
 		}
@@ -77,14 +75,9 @@ func (cmd *Run) DoRun(args []string) (err error) {
 		skey = keys.SecretAccessKey
 	}
 
-	c := client.NewNerdAPI(client.NerdAPIConfig{
-		Scheme:   cmd.opts.NerdAPIScheme,
-		Host:     cmd.opts.NerdAPIHostname,
-		BasePath: cmd.opts.NerdAPIBasePath,
-		Version:  cmd.opts.NerdAPIVersion,
-	})
+	c := client.NewNerdAPI(cmd.opts.NerdAPIConfig())
 
-	err = c.Run(args[0], args[1], akey, skey, args[2:])
+	err := c.CreateTask(args[0], args[1], akey, skey, args[2:])
 	if err != nil {
 		return fmt.Errorf("failed to post to nerdalize API: %v", err)
 	}

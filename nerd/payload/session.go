@@ -1,4 +1,4 @@
-package nerd
+package payload
 
 //Session returns session information for authorization purposes
 type Session struct {

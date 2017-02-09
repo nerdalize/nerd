@@ -1,14 +1,12 @@
 package command
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd"
+	"github.com/nerdalize/nerd/nerd/client"
 )
 
 //LogsOpts describes command options
@@ -58,34 +56,14 @@ func (cmd *Logs) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	loc, err := cmd.opts.URL("/tasks/" + args[0])
+	c := client.NewNerdAPI(cmd.opts.NerdAPIConfig())
+
+	lines, err := c.ListTaskLogs(args[0])
 	if err != nil {
-		return fmt.Errorf("failed to create API url from cli options: %+v", err)
+		return fmt.Errorf("failed to list logs: %v", err)
 	}
 
-	req, err := http.NewRequest("GET", loc.String(), nil)
-	if err != nil {
-		return fmt.Errorf("failed to create API request: %+v", err)
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("API request '%s %s' failed: %v", req.Method, loc, err)
-	}
-
-	defer resp.Body.Close()
-	if resp.StatusCode >= 400 {
-		return fmt.Errorf("API request '%s %s' returned unexpected status from API: %v", req.Method, loc, resp.Status)
-	}
-
-	t := &nerd.Task{}
-	dec := json.NewDecoder(resp.Body)
-	err = dec.Decode(t)
-	if err != nil {
-		return fmt.Errorf("failed to deserialize: %v", err)
-	}
-
-	for _, line := range t.LogLines {
+	for _, line := range lines {
 		fmt.Println(line)
 	}
 

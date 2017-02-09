@@ -32,7 +32,7 @@ func TestRun(t *testing.T) {
 	awsAccessKey := "12345"
 	awsSecret := "67890"
 	args := []string{}
-	err = c.Run(image, dataset, awsAccessKey, awsSecret, args)
+	err = c.CreateTask(image, dataset, awsAccessKey, awsSecret, args)
 	if err != nil {
 		t.Errorf("failed to create task %v: %v", image, err)
 	}
