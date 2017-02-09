@@ -78,9 +78,5 @@ func (cmd *Run) DoRun(args []string) error {
 	c := client.NewNerdAPI(cmd.opts.NerdAPIConfig())
 
 	err := c.CreateTask(args[0], args[1], akey, skey, args[2:])
-	if err != nil {
-		return fmt.Errorf("failed to post to nerdalize API: %v", err)
-	}
-
-	return nil
+	return HandleClientError(err)
 }
