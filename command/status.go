@@ -12,6 +12,7 @@ import (
 //StatusOpts describes command options
 type StatusOpts struct {
 	*NerdAPIOpts
+	*OutputOpts
 }
 
 //Status command
@@ -53,9 +54,10 @@ func StatusFactory() func() (cmd cli.Command, err error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *Status) DoRun(args []string) (err error) {
 	c := client.NewNerdAPI(cmd.opts.NerdAPIConfig())
-	tasks, err := c.ListTasks()
-	if err != nil {
-		return fmt.Errorf("failed receive task statuses: %v", err)
+	tasks, aerr := c.ListTasks()
+	if aerr != nil {
+		err = HandleClientError(aerr, cmd.opts.VerboseOutput)
+		return HandleError(err, cmd.opts.VerboseOutput)
 	}
 
 	for _, t := range tasks {

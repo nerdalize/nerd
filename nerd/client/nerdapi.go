@@ -2,7 +2,6 @@ package client
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 	"path"
 
@@ -81,38 +80,45 @@ func (nerdapi *NerdAPIClient) url(p string) string {
 	return url.String()
 }
 
-func (nerdapi *NerdAPIClient) handleError(err error, aerr *payload.Error, resp *http.Response) error {
+func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, successV interface{}) *APIError {
+	e := &payload.Error{}
+	req, err := s.Request()
 	if err != nil {
-		//TODO: error message something like this: fmt.Errorf("failed to send request to %v (POST): %v", url, err)
-		return errors.Wrap(err, "unexpected behaviour")
+		//TODO: should error message include more details like URL, HTTP method and payload (sling is not very verbose in giving detailed error information)?
+		return &APIError{
+			Response: nil,
+			Request:  nil,
+			Err:      errors.Wrap(err, "could not create request"),
+		}
 	}
-	if aerr.Message != "" {
-		return &payload.APIError{
+	resp, err := s.Receive(successV, e)
+	if err != nil {
+		return &APIError{
+			Response: nil,
+			Request:  req,
+			Err:      errors.Wrapf(err, "unexpected behaviour when making request to %v (%v), with headers (%v)", req.URL, req.Method, req.Header),
+		}
+	}
+	if e.Message != "" {
+		return &APIError{
 			Response: resp,
-			APIError: aerr,
+			Request:  req,
+			Err:      e,
 		}
 	}
 	return nil
 }
 
 //CreateSession creates a new user session.
-func (nerdapi *NerdAPIClient) CreateSession(token string) (*payload.Session, error) {
+func (nerdapi *NerdAPIClient) CreateSession(token string) (sess *payload.Session, err *APIError) {
 	url := nerdapi.url(path.Join(sessionsEndpoint, token))
-	s := &payload.Session{}
-	e := &payload.Error{}
-	resp, err := sling.New().
-		Post(url).
-		Receive(s, e)
-
-	err = nerdapi.handleError(err, e, resp)
-	if err != nil {
-		return nil, err
-	}
-	return s, nil
+	s := sling.New().Post(url)
+	err = nerdapi.doRequest(s, sess)
+	return
 }
 
 //CreateTask creates a new executable task.
-func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, awsAccessKey string, awsSecret string, args []string) error {
+func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, awsAccessKey string, awsSecret string, args []string) *APIError {
 	// set env variables
 	args = append(args, "-e=DATASET="+dataset)
 	args = append(args, "-e=AWS_ACCESS_KEY_ID="+awsAccessKey)
@@ -127,69 +133,36 @@ func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, awsAccess
 
 	// post request
 	url := nerdapi.url(tasksEndpoint)
-	resp, err := sling.New().
+	s := sling.New().
 		Post(url).
-		BodyJSON(p).
-		ReceiveSuccess(nil)
+		BodyJSON(p)
 
-	if err != nil {
-		return fmt.Errorf("failed to send request to %v (POST): %v", url, err)
-	}
-	if resp.StatusCode >= 400 {
-		return fmt.Errorf("API request '%s (POST)' returned unexpected status from API: %v", url, resp.Status)
-	}
-
-	return nil
+	return nerdapi.doRequest(s, nil)
 }
 
 //PatchTaskStatus updates the status of a task.
-func (nerdapi *NerdAPIClient) PatchTaskStatus(id string, ts *payload.TaskStatus) error {
+func (nerdapi *NerdAPIClient) PatchTaskStatus(id string, ts *payload.TaskStatus) *APIError {
 	url := nerdapi.url(path.Join(tasksEndpoint, id))
-	resp, err := sling.New().
+	s := sling.New().
 		Patch(url).
-		BodyJSON(ts).
-		ReceiveSuccess(nil)
+		BodyJSON(ts)
 
-	if err != nil {
-		return fmt.Errorf("failed to send request to %v (PATCH): %v", url, err)
-	}
-	if resp.StatusCode >= 400 {
-		return fmt.Errorf("API request '%s (PATCH)' returned unexpected status from API: %v", url, resp.Status)
-	}
-
-	return nil
+	return nerdapi.doRequest(s, nil)
 }
 
 //ListTaskLogs lists the logs of a task.
-func (nerdapi *NerdAPIClient) ListTaskLogs(id string) ([]string, error) {
+func (nerdapi *NerdAPIClient) ListTaskLogs(id string) ([]string, *APIError) {
 	url := nerdapi.url(path.Join(tasksEndpoint, id))
 	t := &payload.Task{}
-	resp, err := sling.New().
-		Get(url).
-		ReceiveSuccess(t)
-
-	if err != nil {
-		return []string{}, fmt.Errorf("failed to send request to %v (GET): %v", url, err)
-	}
-	if resp.StatusCode >= 400 {
-		return []string{}, fmt.Errorf("API request '%s (GET)' returned unexpected status from API: %v", url, resp.Status)
-	}
-
-	return t.LogLines, nil
+	s := sling.New().Get(url)
+	err := nerdapi.doRequest(s, t)
+	return t.LogLines, err
 }
 
 //ListTasks lists all tasks.
-func (nerdapi *NerdAPIClient) ListTasks() (s []payload.Task, err error) {
+func (nerdapi *NerdAPIClient) ListTasks() (t []payload.Task, err *APIError) {
 	url := nerdapi.url(tasksEndpoint)
-	resp, err := sling.New().
-		Get(url).
-		ReceiveSuccess(&s)
-
-	if err != nil {
-		return []payload.Task{}, fmt.Errorf("failed to send request to %v (GET): %v", url, err)
-	}
-	if resp.StatusCode >= 400 {
-		return []payload.Task{}, fmt.Errorf("API request '%s (GET)' returned unexpected status from API: %v", url, resp.Status)
-	}
+	s := sling.New().Get(url)
+	err = nerdapi.doRequest(s, &t)
 	return
 }

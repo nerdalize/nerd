@@ -19,6 +19,10 @@ type NerdAPIOpts struct {
 	NerdAPIVersion string `long:"api-version" default:"v1" default-mask:"v1" env:"NERD_API_VERSION" description:"endpoint version"`
 }
 
+type OutputOpts struct {
+	VerboseOutput bool `short:"v" long:"verbose" default-mask:"false" description:"show verbose output"`
+}
+
 //URL returns a fully qualitied url on the platform endpoint
 func (opts *NerdAPIOpts) URL(path string) (loc *url.URL, err error) {
 	loc, err = url.Parse(fmt.Sprintf(

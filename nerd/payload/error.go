@@ -1,18 +1,6 @@
 package payload
 
-import "net/http"
-
 var EmptyError = Error{}
-
-type APIError struct {
-	Request  *http.Request
-	Response *http.Response
-	APIError *Error
-}
-
-func (e APIError) Error() string {
-	return e.APIError.Message
-}
 
 //Error struct is returned by the API if anything goes wrong
 type Error struct {

@@ -13,6 +13,7 @@ import (
 //RunOpts describes command options
 type RunOpts struct {
 	*NerdAPIOpts
+	*OutputOpts
 }
 
 //Run command
@@ -77,6 +78,7 @@ func (cmd *Run) DoRun(args []string) error {
 
 	c := client.NewNerdAPI(cmd.opts.NerdAPIConfig())
 
-	err := c.CreateTask(args[0], args[1], akey, skey, args[2:])
-	return HandleClientError(err)
+	aerr := c.CreateTask(args[0], args[1], akey, skey, args[2:])
+	err := HandleClientError(aerr, cmd.opts.VerboseOutput)
+	return HandleError(err, cmd.opts.VerboseOutput)
 }
