@@ -18,33 +18,30 @@ func (kw *stdoutkw) Write(k string) (err error) {
 	return err
 }
 
-func HandleClientError(err *client.APIError, verbose bool) error {
-	if perr, ok := err.Err.(*payload.Error); ok {
-		var errString string
+//HandleClientError handles errors produced by client.NerdAPIClient
+func HandleClientError(err error, verbose bool) error {
+	// only handle *client.APIError
+	aerr, ok := err.(*client.APIError)
+	if !ok {
+		return err
+	}
+	ret := aerr.Err
+	if perr, ok := aerr.Err.(*payload.Error); ok && aerr.Response != nil {
 		// create error message according to response code
-		switch err.Response.StatusCode {
+		switch aerr.Response.StatusCode {
 		case 422:
 			if len(perr.Fields) > 0 {
-				errString = fmt.Sprintf("validation error: %v", perr.Fields)
+				ret = errors.Wrapf(aerr.Err, "validation error: %v", perr.Fields)
 			}
 		}
-		// use default server error
-		if errString == "" {
-			errString = perr.Error()
-		}
-		errString = "server side error: " + errString
-		if verbose {
-			errString += verboseClientError(err)
-		}
-		return errors.New(errString)
-	} else {
-		if err != nil && verbose {
-			return errors.Wrap(err.Err, "debug info: \n"+verboseClientError(err))
-		}
 	}
-	return err.Err
+	if verbose {
+		return errors.Wrap(ret, "\n\n[DEBUG INFO]:"+verboseClientError(aerr)+"\n\n")
+	}
+	return ret
 }
 
+//verboseClientError creates pretty formatted represntations of HTTP request and response.
 func verboseClientError(aerr *client.APIError) string {
 	var message []string
 
@@ -76,10 +73,14 @@ func verboseClientError(aerr *client.APIError) string {
 	return strings.Join(message, "\n")
 }
 
+//HandleError handles the way errors are presented to the user.
 func HandleError(err error, verbose bool) error {
-	if err != nil && verbose {
-		//print stack trace
+	if verbose {
 		return fmt.Errorf("%+v", err)
+	}
+	// when there's are more than 1 message on the message stack, only print the top one for user friendlyness.
+	if errors.Cause(err) != nil {
+		return fmt.Errorf(strings.Replace(err.Error(), ": "+errors.Cause(err).Error(), "", 1))
 	}
 	return err
 }

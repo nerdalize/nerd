@@ -54,10 +54,9 @@ func StatusFactory() func() (cmd cli.Command, err error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *Status) DoRun(args []string) (err error) {
 	c := client.NewNerdAPI(cmd.opts.NerdAPIConfig())
-	tasks, aerr := c.ListTasks()
-	if aerr != nil {
-		err = HandleClientError(aerr, cmd.opts.VerboseOutput)
-		return HandleError(err, cmd.opts.VerboseOutput)
+	tasks, err := c.ListTasks()
+	if err != nil {
+		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
 	}
 
 	for _, t := range tasks {

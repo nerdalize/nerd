@@ -12,6 +12,7 @@ import (
 //LoginOpts describes command options
 type LoginOpts struct {
 	*NerdAPIOpts
+	*OutputOpts
 }
 
 //Login command
@@ -60,7 +61,7 @@ func (cmd *Login) DoRun(args []string) (err error) {
 
 	sess, err := c.CreateSession(args[0])
 	if err != nil {
-		return fmt.Errorf("failed to create session: %v", err)
+		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
 	}
 
 	fmt.Println("AWS_ACCESS_KEY_ID=" + sess.AWSAccessKeyID)

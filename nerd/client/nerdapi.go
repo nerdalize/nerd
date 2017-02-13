@@ -80,7 +80,7 @@ func (nerdapi *NerdAPIClient) url(p string) string {
 	return url.String()
 }
 
-func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, successV interface{}) *APIError {
+func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, successV interface{}) error {
 	e := &payload.Error{}
 	req, err := s.Request()
 	if err != nil {
@@ -110,7 +110,7 @@ func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, successV interface{}) *A
 }
 
 //CreateSession creates a new user session.
-func (nerdapi *NerdAPIClient) CreateSession(token string) (sess *payload.Session, err *APIError) {
+func (nerdapi *NerdAPIClient) CreateSession(token string) (sess *payload.Session, err error) {
 	url := nerdapi.url(path.Join(sessionsEndpoint, token))
 	s := sling.New().Post(url)
 	err = nerdapi.doRequest(s, sess)
@@ -118,7 +118,7 @@ func (nerdapi *NerdAPIClient) CreateSession(token string) (sess *payload.Session
 }
 
 //CreateTask creates a new executable task.
-func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, awsAccessKey string, awsSecret string, args []string) *APIError {
+func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, awsAccessKey string, awsSecret string, args []string) error {
 	// set env variables
 	args = append(args, "-e=DATASET="+dataset)
 	args = append(args, "-e=AWS_ACCESS_KEY_ID="+awsAccessKey)
@@ -141,7 +141,7 @@ func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, awsAccess
 }
 
 //PatchTaskStatus updates the status of a task.
-func (nerdapi *NerdAPIClient) PatchTaskStatus(id string, ts *payload.TaskStatus) *APIError {
+func (nerdapi *NerdAPIClient) PatchTaskStatus(id string, ts *payload.TaskStatus) error {
 	url := nerdapi.url(path.Join(tasksEndpoint, id))
 	s := sling.New().
 		Patch(url).
@@ -151,7 +151,7 @@ func (nerdapi *NerdAPIClient) PatchTaskStatus(id string, ts *payload.TaskStatus)
 }
 
 //ListTaskLogs lists the logs of a task.
-func (nerdapi *NerdAPIClient) ListTaskLogs(id string) ([]string, *APIError) {
+func (nerdapi *NerdAPIClient) ListTaskLogs(id string) ([]string, error) {
 	url := nerdapi.url(path.Join(tasksEndpoint, id))
 	t := &payload.Task{}
 	s := sling.New().Get(url)
@@ -160,7 +160,7 @@ func (nerdapi *NerdAPIClient) ListTaskLogs(id string) ([]string, *APIError) {
 }
 
 //ListTasks lists all tasks.
-func (nerdapi *NerdAPIClient) ListTasks() (t []payload.Task, err *APIError) {
+func (nerdapi *NerdAPIClient) ListTasks() (t []payload.Task, err error) {
 	url := nerdapi.url(tasksEndpoint)
 	s := sling.New().Get(url)
 	err = nerdapi.doRequest(s, &t)

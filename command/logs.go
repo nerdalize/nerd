@@ -12,6 +12,7 @@ import (
 //LogsOpts describes command options
 type LogsOpts struct {
 	*NerdAPIOpts
+	*OutputOpts
 }
 
 //Logs command
@@ -60,7 +61,7 @@ func (cmd *Logs) DoRun(args []string) (err error) {
 
 	lines, err := c.ListTaskLogs(args[0])
 	if err != nil {
-		return fmt.Errorf("failed to list logs: %v", err)
+		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
 	}
 
 	for _, line := range lines {
