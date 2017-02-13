@@ -12,6 +12,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	debugHeader = "\n\n[DEBUG INFO]:"
+)
+
 type stdoutkw struct{}
 
 func (kw *stdoutkw) Write(k string) (err error) {
@@ -32,12 +36,12 @@ func HandleClientError(err error, verbose bool) error {
 		switch aerr.Response.StatusCode {
 		case http.StatusUnprocessableEntity:
 			if len(perr.Fields) > 0 {
-				ret = errors.Wrapf(aerr.Err, "validation error: %v", perr.Fields)
+				ret = errors.Wrapf(perr, "validation error: %v", perr.Fields)
 			}
 		}
 	}
 	if verbose {
-		return errors.Wrap(ret, "\n\n[DEBUG INFO]:"+verboseClientError(aerr)+"\n\n")
+		return errors.Wrap(ret, debugHeader+verboseClientError(aerr))
 	}
 	return ret
 }
@@ -80,7 +84,9 @@ func HandleError(err error, verbose bool) error {
 		return fmt.Errorf("%+v", err)
 	}
 	// when there's are more than 1 message on the message stack, only print the top one for user friendlyness.
+	//TODO this will return the entire error chain except the last error. Created issue on GH: https://github.com/pkg/errors/issues/104
 	if errors.Cause(err) != nil {
+		fmt.Println(errors.Cause(err))
 		return fmt.Errorf(strings.Replace(err.Error(), ": "+errors.Cause(err).Error(), "", 1))
 	}
 	return err
