@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"net/http"
 	"net/http/httputil"
 	"os"
 	"strings"
@@ -29,7 +30,7 @@ func HandleClientError(err error, verbose bool) error {
 	if perr, ok := aerr.Err.(*payload.Error); ok && aerr.Response != nil {
 		// create error message according to response code
 		switch aerr.Response.StatusCode {
-		case 422:
+		case http.StatusUnprocessableEntity:
 			if len(perr.Fields) > 0 {
 				ret = errors.Wrapf(aerr.Err, "validation error: %v", perr.Fields)
 			}

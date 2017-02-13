@@ -1,7 +1,6 @@
 package client
 
 import (
-	"fmt"
 	"net/url"
 	"path"
 
@@ -56,7 +55,7 @@ func NewNerdAPI(config NerdAPIConfig) *NerdAPIClient {
 func NewNerdAPIFromURL(fullURL string, version string) (*NerdAPIClient, error) {
 	u, err := url.Parse(fullURL)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse url '%v': %v", fullURL, err)
+		return nil, errors.Wrapf(err, "could not parse url '%v': %v", fullURL)
 	}
 	return &NerdAPIClient{
 		NerdAPIConfig: NerdAPIConfig{
@@ -80,7 +79,7 @@ func (nerdapi *NerdAPIClient) url(p string) string {
 	return url.String()
 }
 
-func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, successV interface{}) error {
+func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, result interface{}) error {
 	e := &payload.Error{}
 	req, err := s.Request()
 	if err != nil {
@@ -91,7 +90,7 @@ func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, successV interface{}) er
 			Err:      errors.Wrap(err, "could not create request"),
 		}
 	}
-	resp, err := s.Receive(successV, e)
+	resp, err := s.Receive(result, e)
 	if err != nil {
 		return &APIError{
 			Response: nil,
