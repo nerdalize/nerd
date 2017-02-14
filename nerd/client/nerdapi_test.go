@@ -1,39 +1,82 @@
-// +build integration
-
-package client_test
+package client
 
 import (
-	"fmt"
-	"os"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"reflect"
+	"strings"
 	"testing"
 
-	"github.com/nerdalize/nerd/nerd/client"
+	"github.com/dghubble/sling"
+	"github.com/nerdalize/nerd/nerd/payload"
 )
 
-func newClient() (*client.NerdAPIClient, error) {
-	fullUrl := os.Getenv("TEST_NERD_API_FULL_URL")
-	version := os.Getenv("TEST_NERD_API_VERSION")
-	c, err := client.NewNerdAPIFromURL(fullUrl, version)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create nerd API client: %v", err)
-	}
-	return c, nil
+func newServer(result interface{}, success bool) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if success {
+			w.WriteHeader(http.StatusOK)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		enc := json.NewEncoder(w)
+		enc.Encode(result)
+	}))
 }
 
-func TestRun(t *testing.T) {
-	c, err := newClient()
-	if err != nil {
-		t.Error(err)
-		return
+func TestDoRequest(t *testing.T) {
+	testCases := map[string]struct {
+		successResult      interface{}
+		failureResult      *payload.Error
+		successfullRequest bool
+		errorMessage       string
+	}{
+		"success": {
+			successResult:      "blaat",
+			failureResult:      nil,
+			successfullRequest: true,
+			errorMessage:       "",
+		},
+		"payload error": {
+			successResult: nil,
+			failureResult: &payload.Error{
+				Message: "error message",
+				Fields: map[string]string{
+					"field1": "cause1",
+				},
+			},
+			successfullRequest: false,
+			errorMessage:       "error message",
+		},
 	}
-
-	image := "busybox"
-	dataset := "test-dataset"
-	awsAccessKey := "12345"
-	awsSecret := "67890"
-	args := []string{}
-	err = c.CreateTask(image, dataset, awsAccessKey, awsSecret, args)
-	if err != nil {
-		t.Errorf("failed to create task %v: %v", image, err)
+	for name, tc := range testCases {
+		var svr *httptest.Server
+		if tc.successfullRequest {
+			svr = newServer(tc.successResult, tc.successfullRequest)
+		} else {
+			svr = newServer(tc.failureResult, tc.successfullRequest)
+		}
+		defer svr.Close()
+		s := sling.New().Get(svr.URL)
+		err := doRequest(s, tc.successResult)
+		if err != nil {
+			aerr, ok := err.(*APIError)
+			if !ok {
+				t.Fatalf("[%v]: could not cast error to *APIError", name)
+				continue
+			}
+			if !strings.Contains(err.Error(), tc.errorMessage) {
+				t.Errorf("[%v]: error message does not match, expected substring '%v' actual '%v'", name, tc.errorMessage, err.Error())
+			}
+			if perr, ok := aerr.Err.(*payload.Error); ok {
+				if !reflect.DeepEqual(perr, tc.failureResult) {
+					t.Errorf("[%v]: errors do not match, expected '%v' actual '%v'", name, tc.failureResult, perr)
+				}
+			}
+		} else {
+			if !tc.successfullRequest {
+				t.Errorf("[%v]: request was supposed to fail but succeeded", name)
+			}
+		}
 	}
 }
