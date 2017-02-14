@@ -78,7 +78,7 @@ func (cmd *Run) DoRun(args []string) error {
 
 	c := client.NewNerdAPI(cmd.opts.NerdAPIConfig())
 
-	err := c.CreateTask(args[0], args[1], akey, skey, args[2:])
+	_, err := c.CreateTask(args[0], args[1], akey, skey, args[2:])
 	if err != nil {
 		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
 	}

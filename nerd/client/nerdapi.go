@@ -109,7 +109,7 @@ func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, result interface{}) erro
 }
 
 //CreateSession creates a new user session.
-func (nerdapi *NerdAPIClient) CreateSession(token string) (sess *payload.Session, err error) {
+func (nerdapi *NerdAPIClient) CreateSession(token string) (sess *payload.SessionCreateOutput, err error) {
 	url := nerdapi.url(path.Join(sessionsEndpoint, token))
 	s := sling.New().Post(url)
 	err = nerdapi.doRequest(s, sess)
@@ -117,17 +117,16 @@ func (nerdapi *NerdAPIClient) CreateSession(token string) (sess *payload.Session
 }
 
 //CreateTask creates a new executable task.
-func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, awsAccessKey string, awsSecret string, args []string) error {
+func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, awsAccessKey string, awsSecret string, args []string) (output *payload.TaskCreateOutput, err error) {
 	// set env variables
 	args = append(args, "-e=DATASET="+dataset)
 	args = append(args, "-e=AWS_ACCESS_KEY_ID="+awsAccessKey)
 	args = append(args, "-e=AWS_SECRET_ACCESS_KEY="+awsSecret)
+	_ = args //@TODO fetch these via the API itself
 
 	// create payload
-	p := &payload.Task{
-		Image:   image,
-		Dataset: dataset,
-		Args:    args,
+	p := &payload.TaskCreateInput{
+		Image: image,
 	}
 
 	// post request
@@ -136,11 +135,12 @@ func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, awsAccess
 		Post(url).
 		BodyJSON(p)
 
-	return nerdapi.doRequest(s, nil)
+	err = nerdapi.doRequest(s, output)
+	return
 }
 
 //PatchTaskStatus updates the status of a task.
-func (nerdapi *NerdAPIClient) PatchTaskStatus(id string, ts *payload.TaskStatus) error {
+func (nerdapi *NerdAPIClient) PatchTaskStatus(id string, ts *payload.TaskCreateInput) error {
 	url := nerdapi.url(path.Join(tasksEndpoint, id))
 	s := sling.New().
 		Patch(url).
@@ -149,19 +149,10 @@ func (nerdapi *NerdAPIClient) PatchTaskStatus(id string, ts *payload.TaskStatus)
 	return nerdapi.doRequest(s, nil)
 }
 
-//ListTaskLogs lists the logs of a task.
-func (nerdapi *NerdAPIClient) ListTaskLogs(id string) ([]string, error) {
-	url := nerdapi.url(path.Join(tasksEndpoint, id))
-	t := &payload.Task{}
-	s := sling.New().Get(url)
-	err := nerdapi.doRequest(s, t)
-	return t.LogLines, err
-}
-
 //ListTasks lists all tasks.
-func (nerdapi *NerdAPIClient) ListTasks() (t []payload.Task, err error) {
+func (nerdapi *NerdAPIClient) ListTasks() (tl *payload.TaskListOutput, err error) {
 	url := nerdapi.url(tasksEndpoint)
 	s := sling.New().Get(url)
-	err = nerdapi.doRequest(s, &t)
+	err = nerdapi.doRequest(s, &tl)
 	return
 }

@@ -1,7 +1,5 @@
 package payload
 
-var EmptyError = Error{}
-
 //Error struct is returned by the API if anything goes wrong
 type Error struct {
 	//Retry indicates if the client can retry the request as is, this is mostly false on validation/encoding errors and true in other cases
