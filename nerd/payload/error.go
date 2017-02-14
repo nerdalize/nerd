@@ -1,7 +1,5 @@
 package payload
 
-var EmptyError = Error{}
-
 //Error struct is returned by the API if anything goes wrong
 type Error struct {
 	//Retry indicates if the client can retry the request as is, this is mostly false on validation/encoding errors and true in other cases
@@ -15,8 +13,4 @@ type Error struct {
 
 	//Fields can hold validation messages for individual fields, if empty the cause of the overal error is not due to specific field's input
 	Fields map[string]string `json:"fields,omitempty"`
-}
-
-func (e Error) Error() string {
-	return e.Message
 }

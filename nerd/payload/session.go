@@ -1,9 +1,13 @@
 package payload
 
-//Session returns session information for authorization purposes
-type Session struct {
-	AWSAccessKeyID     string `json:"aws_access_key_id"`
-	AWSSecretAccessKey string `json:"aws_secret_access_key"`
-	AWSSQSQueueURL     string `json:"aws_sqs_queue_url"`
-	AWSRegion          string `json:"aws_region"`
+import "time"
+
+//SessionCreateOutput is returned when a user created a valid session
+type SessionCreateOutput struct {
+	AWSAccessKeyID     string    `json:"aws_access_key_id"`
+	AWSExpiration      time.Time `json:"aws_expiration"`
+	AWSSecretAccessKey string    `json:"aws_secret_access_key"`
+	AWSSessionToken    string    `json:"aws_session_token"`
+	AWSStorageBucket   string    `json:"aws_storage_bucket"`
+	AWSStorageRoot     string    `json:"aws_storage_root"`
 }
