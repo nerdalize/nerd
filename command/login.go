@@ -66,8 +66,9 @@ func (cmd *Login) DoRun(args []string) (err error) {
 
 	fmt.Println("AWS_ACCESS_KEY_ID=" + sess.AWSAccessKeyID)
 	fmt.Println("AWS_SECRET_ACCESS_KEY=" + sess.AWSSecretAccessKey)
-	fmt.Println("AWS_SQS_QUEUE_URL=" + sess.AWSSQSQueueURL)
-	fmt.Println("AWS_REGION=" + sess.AWSRegion)
+	fmt.Println("AWS_SESSION_TOKEN=" + sess.AWSSessionToken)
+	fmt.Println("AWS_STORAGE_BUCKET=" + sess.AWSStorageBucket)
+	fmt.Println("AWS_STORAGE_ROOT=" + sess.AWSStorageRoot)
 
 	return nil
 }

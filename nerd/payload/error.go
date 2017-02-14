@@ -14,3 +14,7 @@ type Error struct {
 	//Fields can hold validation messages for individual fields, if empty the cause of the overal error is not due to specific field's input
 	Fields map[string]string `json:"fields,omitempty"`
 }
+
+func (e Error) Error() string {
+	return e.Message
+}

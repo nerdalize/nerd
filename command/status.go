@@ -60,7 +60,7 @@ func (cmd *Status) DoRun(args []string) (err error) {
 	}
 
 	for _, t := range tasks {
-		fmt.Printf("%s (%s@%s): %s\n", t.ID, t.Image, t.Dataset, t.Status)
+		fmt.Printf("%s %s\n", t.ID, t.Image)
 	}
 
 	return nil
