@@ -1,12 +1,10 @@
 package command
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/client"
 )
 
 //LogsOpts describes command options
@@ -53,20 +51,5 @@ func LogsFactory() func() (cmd cli.Command, err error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *Logs) DoRun(args []string) (err error) {
-	if len(args) < 1 {
-		return fmt.Errorf("not enough arguments, see --help")
-	}
-
-	c := client.NewNerdAPI(cmd.opts.NerdAPIConfig())
-
-	lines, err := c.ListTaskLogs(args[0])
-	if err != nil {
-		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
-	}
-
-	for _, line := range lines {
-		fmt.Println(line)
-	}
-
 	return nil
 }

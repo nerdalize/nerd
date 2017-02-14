@@ -59,8 +59,8 @@ func (cmd *Status) DoRun(args []string) (err error) {
 		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
 	}
 
-	for _, t := range tasks {
-		fmt.Printf("%s %s\n", t.ID, t.Image)
+	for _, t := range tasks.Tasks {
+		fmt.Printf("%s\n", t.ID)
 	}
 
 	return nil

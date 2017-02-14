@@ -7,7 +7,16 @@ type TaskCreateInput struct {
 
 //TaskCreateOutput is returned from
 type TaskCreateOutput struct {
-	ID       string   `json:"id"`
-	Image    string   `json:"image"`
-	LogLines []string `json:"log_lines"`
+	Task
+}
+
+//TaskListOutput is returned from the task listing
+type TaskListOutput struct {
+	Tasks []*Task `json:"tasks"`
+}
+
+//Task is a task in the list output
+type Task struct {
+	ID    string `json:"id"`
+	Image string `json:"image"`
 }

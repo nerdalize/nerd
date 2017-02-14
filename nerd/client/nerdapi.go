@@ -122,6 +122,7 @@ func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, awsAccess
 	args = append(args, "-e=DATASET="+dataset)
 	args = append(args, "-e=AWS_ACCESS_KEY_ID="+awsAccessKey)
 	args = append(args, "-e=AWS_SECRET_ACCESS_KEY="+awsSecret)
+	_ = args //@TODO fetch these via the API itself
 
 	// create payload
 	p := &payload.TaskCreateInput{
@@ -148,19 +149,10 @@ func (nerdapi *NerdAPIClient) PatchTaskStatus(id string, ts *payload.TaskCreateI
 	return nerdapi.doRequest(s, nil)
 }
 
-//ListTaskLogs lists the logs of a task.
-func (nerdapi *NerdAPIClient) ListTaskLogs(id string) ([]string, error) {
-	url := nerdapi.url(path.Join(tasksEndpoint, id))
-	t := &payload.TaskCreateOutput{}
-	s := sling.New().Get(url)
-	err := nerdapi.doRequest(s, t)
-	return t.LogLines, err
-}
-
 //ListTasks lists all tasks.
-func (nerdapi *NerdAPIClient) ListTasks() (t []payload.TaskCreateOutput, err error) {
+func (nerdapi *NerdAPIClient) ListTasks() (tl *payload.TaskListOutput, err error) {
 	url := nerdapi.url(tasksEndpoint)
 	s := sling.New().Get(url)
-	err = nerdapi.doRequest(s, &t)
+	err = nerdapi.doRequest(s, &tl)
 	return
 }
