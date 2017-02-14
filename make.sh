@@ -18,8 +18,16 @@ function run_build { #build a new binary and place it in $GOPATH/bin
     main.go
 }
 
+function run_test_integration {
+	endpoint=$(terraform output infra_endpoint)
+	export TEST_NERD_API_FULL_URL=$endpoint
+	export TEST_NERD_API_VERSION="v1"
+	go test $(go list ./... | grep -v /vendor/) -tags=integration
+}
+
 case $1 in
 	"build") run_build ;;
+	"test_integration") run_test_integration ;;
 
 	*) print_help ;;
 esac

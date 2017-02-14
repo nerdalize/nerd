@@ -1,20 +1,18 @@
 package command
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd"
+	"github.com/nerdalize/nerd/nerd/client"
 )
 
 //LoginOpts describes command options
 type LoginOpts struct {
 	*NerdAPIOpts
+	*OutputOpts
 }
 
 //Login command
@@ -59,32 +57,11 @@ func (cmd *Login) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	loc, err := cmd.opts.URL("/sessions/" + args[0])
-	if err != nil {
-		return fmt.Errorf("failed to create API url from cli options: %+v", err)
-	}
+	c := client.NewNerdAPI(cmd.opts.NerdAPIConfig())
 
-	req, err := http.NewRequest("POST", loc.String(), bytes.NewBufferString(`{}`))
+	sess, err := c.CreateSession(args[0])
 	if err != nil {
-		return fmt.Errorf("failed to create API request: %+v", err)
-	}
-
-	//@TODO abstract into a default http client
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("API request '%s %s' failed: %v", req.Method, loc, err)
-	}
-
-	defer resp.Body.Close()
-	if resp.StatusCode >= 400 {
-		return fmt.Errorf("API request '%s %s' returned unexpected status from API: %v", req.Method, loc, resp.Status)
-	}
-
-	sess := &nerd.Session{}
-	dec := json.NewDecoder(resp.Body)
-	err = dec.Decode(sess)
-	if err != nil {
-		return fmt.Errorf("failed to deserialize session: %v", err)
+		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
 	}
 
 	fmt.Println("AWS_ACCESS_KEY_ID=" + sess.AWSAccessKeyID)

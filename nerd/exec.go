@@ -1,15 +1,17 @@
 package nerd
 
+import "github.com/nerdalize/nerd/nerd/payload"
+
 //Executor allows execution of a Task
 type Executor interface {
-	Execute(*Task) error
+	Execute(*payload.Task) error
 }
 
 //DockerExecutor runs tasks using the Docker command line interface
 type DockerExecutor struct{}
 
 //Execute a task
-func (exec *DockerExecutor) Execute(t *Task) error {
+func (exec *DockerExecutor) Execute(t *payload.Task) error {
 	return ErrNotImplemented
 }
 
@@ -17,6 +19,6 @@ func (exec *DockerExecutor) Execute(t *Task) error {
 type KubeExecutor struct{}
 
 //Execute a task
-func (exec *KubeExecutor) Execute(t *Task) error {
+func (exec *KubeExecutor) Execute(t *payload.Task) error {
 	return ErrNotImplemented
 }

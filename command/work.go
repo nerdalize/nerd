@@ -2,12 +2,10 @@ package command
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
-	"net/http"
 	"os"
 	"os/exec"
 	"time"
@@ -17,7 +15,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd"
+	"github.com/nerdalize/nerd/nerd/client"
+	"github.com/nerdalize/nerd/nerd/payload"
 )
 
 //WorkOpts describes command options
@@ -77,6 +76,8 @@ func (cmd *Work) DoRun(args []string) (err error) {
 	qurl := cmd.opts.AWSQueueURL
 	wtime := int64(5)
 
+	c := client.NewNerdAPI(cmd.opts.NerdAPIConfig())
+
 	//star long polling sqs queue
 	cmd.command.ui.Info(fmt.Sprintf("long-polling '%s'", qurl))
 	for {
@@ -90,57 +91,16 @@ func (cmd *Work) DoRun(args []string) (err error) {
 		}
 
 		if len(msgs.Messages) > 0 {
-			go handleTask(qurl, mq, msgs.Messages[0], wtime, cmd.opts)
+			go handleTask(qurl, mq, msgs.Messages[0], wtime, cmd.opts, c)
 		}
 	}
 }
 
-func patchTaskStatus(taskID string, ts *nerd.TaskStatus, opts *WorkOpts) (err error) {
-	loc, err := opts.URL("/tasks/" + taskID)
-	if err != nil {
-		return fmt.Errorf("failed to create API url from cli options: %+v", err)
-	}
-
-	log.Printf("patching task to %s", loc)
-	body := bytes.NewBuffer(nil)
-	enc := json.NewEncoder(body)
-	err = enc.Encode(ts)
-	if err != nil {
-		return fmt.Errorf("failed to encode provided task status: %v", err)
-	}
-
-	req, err := http.NewRequest("PATCH", loc.String(), body)
-	if err != nil {
-		return fmt.Errorf("failed to create API request: %+v", err)
-	}
-
-	//@TODO abstract into a default http client
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("API request '%s %s' failed: %v", req.Method, loc, err)
-	}
-
-	defer resp.Body.Close()
-	if resp.StatusCode >= 400 {
-		return fmt.Errorf("API request '%s %s' returned unexpected status from API: %v", req.Method, loc, resp.Status)
-	}
-
-	//@TODO find a more user friendly way of returning info from the API
-	_, err = io.Copy(os.Stderr, resp.Body)
-	if err != nil {
-		return fmt.Errorf("failed to output API response: %v", err)
-	}
-
-	log.Printf("patched task '%s' with a new status", taskID)
-
-	return nil
-}
-
-func handleTask(qurl string, mq *sqs.SQS, msg *sqs.Message, timeout int64, opts *WorkOpts) {
+func handleTask(qurl string, mq *sqs.SQS, msg *sqs.Message, timeout int64, opts *WorkOpts, c *client.NerdAPIClient) {
 	log.Printf("received task '%v' now in-flight, invisible for: %vs)", aws.StringValue(msg.Body), timeout)
 
 	//for now simply start a docker run command for each task
-	t := &nerd.Task{}
+	t := &payload.Task{}
 	err := json.Unmarshal([]byte(aws.StringValue(msg.Body)), t)
 	if err != nil {
 		log.Printf("failed to decode task: %v", err)
@@ -177,7 +137,7 @@ func handleTask(qurl string, mq *sqs.SQS, msg *sqs.Message, timeout int64, opts 
 		for range time.Tick(f) {
 
 			//create new status
-			taskStatus := &nerd.TaskStatus{
+			taskStatus := &payload.TaskStatus{
 				Status: "running",
 				Logs:   loglines,
 			}
@@ -188,9 +148,12 @@ func handleTask(qurl string, mq *sqs.SQS, msg *sqs.Message, timeout int64, opts 
 
 			//always update the task
 			log.Printf("task status is: '%v', patching...", taskStatus)
-			err = patchTaskStatus(aws.StringValue(msg.MessageId), taskStatus, opts)
+			taskID := aws.StringValue(msg.MessageId)
+			err = c.PatchTaskStatus(taskID, taskStatus)
 			if err != nil {
 				fmt.Printf("Failed to patch task with status: %v", err)
+			} else {
+				log.Printf("patched task '%s' with a new status", taskID)
 			}
 
 			//as long as the process state is nil, it has not finished and we want to prologin the invisibility
