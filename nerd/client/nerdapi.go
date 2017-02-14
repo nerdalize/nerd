@@ -1,8 +1,11 @@
 package client
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"net/url"
 	"path"
+	"strings"
 
 	"github.com/dghubble/sling"
 	"github.com/nerdalize/nerd/nerd/payload"
@@ -65,6 +68,28 @@ func NewNerdAPIFromURL(fullURL string, version string) (*NerdAPIClient, error) {
 			Version:  version,
 		},
 	}, nil
+}
+
+type JWT struct {
+	URL     string `json:"url"`
+	Version string `json:"version"`
+}
+
+func NewNerdAPIFromJWT(jwt string) (*NerdAPIClient, error) {
+	split := strings.Split(jwt, ".")
+	if len(split) != 3 {
+		return nil, errors.Errorf("jwt '%v' should consist of three parts", jwt)
+	}
+	dec, err := base64.URLEncoding.DecodeString(split[1])
+	if err != nil {
+		return nil, errors.Wrapf(err, "jwt '%v' payload could not be base64 decoded", jwt)
+	}
+	res := &JWT{}
+	err = json.Unmarshal(dec, res)
+	if err != nil {
+		return nil, errors.Wrapf(err, "jwt '%v' payload (%v) could not be json decoded", jwt, string(dec))
+	}
+	return NewNerdAPIFromURL(res.URL, res.Version)
 }
 
 //url returns the full endpoint url appended with a given path.
