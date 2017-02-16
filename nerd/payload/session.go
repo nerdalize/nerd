@@ -8,6 +8,8 @@ type SessionCreateOutput struct {
 	AWSExpiration      time.Time `json:"aws_expiration"`
 	AWSSecretAccessKey string    `json:"aws_secret_access_key"`
 	AWSSessionToken    string    `json:"aws_session_token"`
-	AWSStorageBucket   string    `json:"aws_storage_bucket"`
-	AWSStorageRoot     string    `json:"aws_storage_root"`
+
+	AWSQueueURL      string `json:"aws_queue_url"`
+	AWSStorageBucket string `json:"aws_storage_bucket"`
+	AWSStorageRoot   string `json:"aws_storage_root"`
 }
