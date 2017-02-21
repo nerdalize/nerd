@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	// TODO: remove these
 	defaultScheme   = "https"
 	defaultHost     = "platform.nerdalize.net"
 	defaultBasePath = ""
@@ -100,6 +101,7 @@ func (nerdapi *NerdAPIClient) url(p string) string {
 func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, result interface{}) error {
 	value, err := nerdapi.Credentials.Get()
 	if err != nil {
+		// TODO: Is return err ok?
 		return &APIError{
 			Response: nil,
 			Request:  nil,

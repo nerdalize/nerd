@@ -120,6 +120,7 @@ func verifyNbf(nbf int64, now int64, required bool) bool {
 	return now >= nbf
 }
 
+// TODO: Use go-jwt package?
 func DecodeToken(nerdToken string) (*NerdClaims, error) {
 	// token, err := jwt.ParseWithClaims(nerdToken, NerdClaims{}, func(token *jwt.Token) (interface{}, error) {
 	// 	// Don't forget to validate the alg is what you expect:
@@ -145,7 +146,7 @@ func DecodeToken(nerdToken string) (*NerdClaims, error) {
 	if len(split) != 3 {
 		return nil, errors.Errorf("token '%v' should consist of three parts", nerdToken)
 	}
-	dec, err := base64.URLEncoding.DecodeString(split[1])
+	dec, err := DecodeSegment(split[1])
 	if err != nil {
 		return nil, errors.Wrapf(err, "token '%v' payload could not be base64 decoded", nerdToken)
 	}
@@ -155,4 +156,12 @@ func DecodeToken(nerdToken string) (*NerdClaims, error) {
 		return nil, errors.Wrapf(err, "token '%v' payload (%v) could not be json decoded", nerdToken, string(dec))
 	}
 	return res, nil
+}
+
+func DecodeSegment(seg string) ([]byte, error) {
+	if l := len(seg) % 4; l > 0 {
+		seg += strings.Repeat("=", 4-l)
+	}
+
+	return base64.URLEncoding.DecodeString(seg)
 }

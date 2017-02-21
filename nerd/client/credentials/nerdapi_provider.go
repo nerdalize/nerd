@@ -16,6 +16,7 @@ import (
 
 // ProviderName is the name of the credentials provider.
 // TODO: Rename JWT to NerdToken
+// TODO: Fix absolute path and think about Microsoft Windows
 const JWTHomeLocation = `/Users/borismattijssen/.nerd/jwt`
 const NerdTokenPermissions = 0644
 const DefaultExpireWindow = 20

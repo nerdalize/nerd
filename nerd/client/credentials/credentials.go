@@ -19,6 +19,7 @@ type NerdAPIValue struct {
 
 func NewNerdAPI() *NerdAPI {
 	return &NerdAPI{
+		// TODO: Also add local file (~/.nerd/token) provider
 		provider: NewNerdAPIProvider(),
 		m:        sync.Mutex{},
 	}

@@ -7,6 +7,7 @@ import (
 )
 
 //NerdAPIOpts configure how the platform endpoint is reached
+// TODO: Change to one flag for URL
 type NerdAPIOpts struct {
 	NerdAPIScheme string `long:"api-scheme" default:"https" default-mask:"https" env:"NERD_API_SCHEME" description:"protocol for endpoint communication"`
 
