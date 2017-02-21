@@ -45,6 +45,7 @@ func NewNerdAPIProvider() *NerdAPIProvider {
 
 // IsExpired returns true if the credentials retrieved are expired, or not yet
 // retrieved.
+// TODO: Test expired things, also include exp in JWT
 func (p *NerdAPIProvider) IsExpired() bool {
 	if p.CurrentTime == nil {
 		p.CurrentTime = time.Now
