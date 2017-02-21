@@ -1,12 +1,10 @@
 package command
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/client"
 )
 
 //StatusOpts describes command options
@@ -53,15 +51,15 @@ func StatusFactory() func() (cmd cli.Command, err error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *Status) DoRun(args []string) (err error) {
-	c := client.NewNerdAPI(cmd.opts.NerdAPIConfig())
-	tasks, err := c.ListTasks()
-	if err != nil {
-		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
-	}
-
-	for _, t := range tasks.Tasks {
-		fmt.Printf("%s\n", t.ID)
-	}
+	// c := client.NewNerdAPI(cmd.opts.NerdAPIConfig())
+	// tasks, err := c.ListTasks()
+	// if err != nil {
+	// 	return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+	// }
+	//
+	// for _, t := range tasks.Tasks {
+	// 	fmt.Printf("%s\n", t.ID)
+	// }
 
 	return nil
 }

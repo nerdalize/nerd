@@ -2,9 +2,11 @@ package credentials
 
 import (
 	"crypto/subtle"
+	"encoding/base64"
+	"encoding/json"
+	"strings"
 	"time"
 
-	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 )
 
@@ -32,13 +34,13 @@ func (c NerdClaims) Valid() error {
 		return errors.Errorf("token is expired by %v", delta)
 	}
 
-	if c.VerifyIssuedAt(now, false) == false {
-		return errors.Errorf("Token used before issued")
-	}
-
-	if c.VerifyNotBefore(now, false) == false {
-		return errors.Errorf("token is not valid yet")
-	}
+	// if c.VerifyIssuedAt(now, false) == false {
+	// 	return errors.Errorf("Token used before issued")
+	// }
+	//
+	// if c.VerifyNotBefore(now, false) == false {
+	// 	return errors.Errorf("token is not valid yet")
+	// }
 
 	return nil
 }
@@ -119,24 +121,38 @@ func verifyNbf(nbf int64, now int64, required bool) bool {
 }
 
 func DecodeToken(nerdToken string) (*NerdClaims, error) {
-	token, err := jwt.ParseWithClaims(nerdToken, NerdClaims{}, func(token *jwt.Token) (interface{}, error) {
-		// Don't forget to validate the alg is what you expect:
-		// if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-		// 	return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
-		// }
-
-		// TODO: include public key?
-		return nil, nil
-	})
+	// token, err := jwt.ParseWithClaims(nerdToken, NerdClaims{}, func(token *jwt.Token) (interface{}, error) {
+	// 	// Don't forget to validate the alg is what you expect:
+	// 	// if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+	// 	// 	return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+	// 	// }
+	//
+	// 	// TODO: include public key?
+	// 	return nil, nil
+	// })
+	// if err != nil {
+	// 	return nil, errors.Wrapf(err, "failed to parse nerd token '%v'", nerdToken)
+	// }
+	//
+	// //TODO Check if token is valid?
+	// // if token.Valid {
+	// if claims, ok := token.Claims.(*NerdClaims); ok {
+	// 	return claims, nil
+	// }
+	//
+	// return nil, errors.Errorf("could not decode nerd token '%v'", nerdToken)
+	split := strings.Split(nerdToken, ".")
+	if len(split) != 3 {
+		return nil, errors.Errorf("token '%v' should consist of three parts", nerdToken)
+	}
+	dec, err := base64.URLEncoding.DecodeString(split[1])
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse nerd token '%v'", nerdToken)
+		return nil, errors.Wrapf(err, "token '%v' payload could not be base64 decoded", nerdToken)
 	}
-
-	//TODO Check if token is valid?
-	// if token.Valid {
-	if claims, ok := token.Claims.(*NerdClaims); ok {
-		return claims, nil
+	res := &NerdClaims{}
+	err = json.Unmarshal(dec, res)
+	if err != nil {
+		return nil, errors.Wrapf(err, "token '%v' payload (%v) could not be json decoded", nerdToken, string(dec))
 	}
-
-	return nil, errors.Errorf("could not decode nerd token '%v'", nerdToken)
+	return res, nil
 }

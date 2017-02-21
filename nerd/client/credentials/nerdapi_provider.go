@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -15,8 +16,9 @@ import (
 
 // ProviderName is the name of the credentials provider.
 // TODO: Rename JWT to NerdToken
-const JWTHomeLocation = `~/.nerd/jwt`
+const JWTHomeLocation = `/Users/borismattijssen/.nerd/jwt`
 const NerdTokenPermissions = 0644
+const DefaultExpireWindow = 20
 
 // Provider satisfies the credentials.Provider interface, and is a client to
 // retrieve credentials from an arbitrary endpoint.
@@ -30,13 +32,15 @@ type NerdAPIProvider struct {
 	CurrentTime func() time.Time
 
 	// TODO: include Client field to mock it for testing
+
+	ExpireWindow time.Duration
 }
 
-// NewCredentialsClient returns a Credentials wrapper for retrieving credentials
-// from an arbitrary endpoint concurrently. The client will request the
-// func NewNerdalizeCredentials() *credentials.Credentials {
-// 	return credentials.NewCredentials(&Provider{staticCreds: false})
-// }
+func NewNerdAPIProvider() *NerdAPIProvider {
+	return &NerdAPIProvider{
+		ExpireWindow: DefaultExpireWindow,
+	}
+}
 
 // IsExpired returns true if the credentials retrieved are expired, or not yet
 // retrieved.
@@ -45,6 +49,13 @@ func (p *NerdAPIProvider) IsExpired() bool {
 		p.CurrentTime = time.Now
 	}
 	return p.expiration.Before(p.CurrentTime())
+}
+
+func (p *NerdAPIProvider) SetExpiration(expiration time.Time) {
+	p.expiration = expiration
+	if p.ExpireWindow > 0 {
+		p.expiration = p.expiration.Add(-p.ExpireWindow)
+	}
 }
 
 func promptUserPass() (string, string, error) {
@@ -64,12 +75,12 @@ func promptUserPass() (string, string, error) {
 }
 
 // TODO: Move this to separate client?
-func getNerdToken(user, pass string) (string, error) {
+func fetchNerdToken(user, pass string) (string, error) {
 	type body struct {
-		token string `json:"token"`
+		Token string `json:"token"`
 	}
 	b := &body{}
-	url := "thatacher_url"
+	url := "http://localhost:8000"
 	s := sling.New().Get(url)
 	req, err := s.Request()
 	if err != nil {
@@ -80,10 +91,10 @@ func getNerdToken(user, pass string) (string, error) {
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to request nerd token (%v)", url)
 	}
-	if b.token == "" {
+	if b.Token == "" {
 		return "", errors.Errorf("failed to read nerd token from response body (%v)", url)
 	}
-	return b.token, nil
+	return b.Token, nil
 }
 
 func saveNerdToken(token string) error {
@@ -94,14 +105,51 @@ func saveNerdToken(token string) error {
 	return nil
 }
 
+func readNerdToken() (token string, valid bool, err error) {
+	if _, err := os.Stat(JWTHomeLocation); os.IsNotExist(err) {
+		if _, err = os.Stat(path.Dir(JWTHomeLocation)); os.IsNotExist(err) {
+			err = os.Mkdir(path.Dir(JWTHomeLocation), 0777)
+			if err != nil {
+				return "", false, errors.Wrapf(err, "could not create dir '%v'", path.Dir(JWTHomeLocation))
+			}
+		}
+		_, err = os.Create(JWTHomeLocation)
+		if err != nil {
+			return "", false, errors.Wrapf(err, "could not create empty file '%v'", JWTHomeLocation)
+		}
+	}
+	t, err := ioutil.ReadFile(JWTHomeLocation)
+	token = string(t)
+	if err != nil {
+		return "", false, errors.Wrapf(err, "could not read nerd token at '%v'", JWTHomeLocation)
+	}
+	if token == "" {
+		return "", false, nil
+	}
+	claims, err := DecodeToken(token)
+	if err != nil {
+		return "", false, errors.Wrapf(err, "failed to retreive claims from nerd token '%v'", token)
+	}
+	return token, claims.Valid() == nil, nil
+}
+
 // Retrieve will attempt to request the credentials from the endpoint the Provider
 // was configured for. And error will be returned if the retrieval fails.
-func (p *NerdAPIProvider) Retrieve() (*NerdClaims, error) {
+func (p *NerdAPIProvider) Retrieve() (*NerdAPIValue, error) {
+	token, valid, err := readNerdToken()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read nerd token")
+	}
+	if valid {
+		return &NerdAPIValue{
+			NerdToken: token,
+		}, nil
+	}
 	user, pass, err := promptUserPass()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get username or password")
 	}
-	token, err := getNerdToken(user, pass)
+	token, err = fetchNerdToken(user, pass)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get nerd token for username and password")
 	}
@@ -113,6 +161,8 @@ func (p *NerdAPIProvider) Retrieve() (*NerdClaims, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retreive claims from nerd token")
 	}
-	p.expiration = time.Unix(claims.ExpiresAt, 0)
-	return claims, nil
+	p.SetExpiration(time.Unix(claims.ExpiresAt, 0))
+	return &NerdAPIValue{
+		NerdToken: token,
+	}, nil
 }

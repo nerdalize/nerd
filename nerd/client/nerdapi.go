@@ -1,10 +1,10 @@
 package client
 
 import (
-	"net/url"
 	"path"
 
 	"github.com/dghubble/sling"
+	"github.com/nerdalize/nerd/nerd/client/credentials"
 	"github.com/nerdalize/nerd/nerd/payload"
 	"github.com/pkg/errors"
 )
@@ -15,73 +15,100 @@ const (
 	defaultBasePath = ""
 	defaultVersion  = "v1"
 
+	AuthHeader = "Authorization"
+
 	tasksEndpoint    = "tasks"
 	sessionsEndpoint = "sessions"
 )
 
 //NerdAPIClient is a client for the Nerdalize API.
 type NerdAPIClient struct {
-	NerdAPIConfig
+	URL         string
+	Credentials *credentials.NerdAPI
 }
 
 //NerdAPIConfig contains the information needed to create a NerdAPIClient.
 type NerdAPIConfig struct {
-	Scheme   string
-	Host     string
-	BasePath string
-	Version  string
+	// Scheme   string
+	// Host     string
+	// BasePath string
+	// Version  string
 }
 
 //NewNerdAPI returns a new NerdAPIClient according to a given configuration.
-func NewNerdAPI(config NerdAPIConfig) *NerdAPIClient {
-	if config.Scheme == "" {
-		config.Scheme = defaultScheme
+// func NewNerdAPI(config NerdAPIConfig) *NerdAPIClient {
+// 	if config.Scheme == "" {
+// 		config.Scheme = defaultScheme
+// 	}
+// 	if config.Host == "" {
+// 		config.Host = defaultHost
+// 	}
+// 	if config.BasePath == "" {
+// 		config.BasePath = defaultBasePath
+// 	}
+// 	if config.Version == "" {
+// 		config.Version = defaultVersion
+// 	}
+// 	return &NerdAPIClient{
+// 		NerdAPIConfig: config,
+// 	}
+// }
+
+func NewNerdAPI(cred *credentials.NerdAPI) (*NerdAPIClient, error) {
+	value, err := cred.Get()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get credentials")
 	}
-	if config.Host == "" {
-		config.Host = defaultHost
+	claims, err := credentials.DecodeToken(value.NerdToken)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to decode token '%v'", value.NerdToken)
 	}
-	if config.BasePath == "" {
-		config.BasePath = defaultBasePath
+	if claims.Audience == "" {
+		return nil, errors.Errorf("nerd token '%v' does not contain audience field", claims.Audience)
 	}
-	if config.Version == "" {
-		config.Version = defaultVersion
-	}
+	return NewNerdAPIWithEndpoint(cred, claims.Audience), nil
+}
+
+func NewNerdAPIWithEndpoint(cred *credentials.NerdAPI, url string) *NerdAPIClient {
 	return &NerdAPIClient{
-		NerdAPIConfig: config,
+		Credentials: cred,
+		URL:         url,
 	}
 }
 
 //NewNerdAPIFromURL returns a new NerdAPIClient given a full endpoint URL.
-func NewNerdAPIFromURL(fullURL string, version string) (*NerdAPIClient, error) {
-	u, err := url.Parse(fullURL)
-	if err != nil {
-		return nil, errors.Wrapf(err, "could not parse url '%v': %v", fullURL)
-	}
-	return &NerdAPIClient{
-		NerdAPIConfig: NerdAPIConfig{
-			Scheme:   u.Scheme,
-			Host:     u.Host,
-			BasePath: u.Path,
-			Version:  version,
-		},
-	}, nil
-}
+// func NewNerdAPIFromURL(fullURL string, version string) (*NerdAPIClient, error) {
+// 	u, err := url.Parse(fullURL)
+// 	if err != nil {
+// 		return nil, errors.Wrapf(err, "could not parse url '%v': %v", fullURL)
+// 	}
+// 	return &NerdAPIClient{
+// 		NerdAPIConfig: NerdAPIConfig{
+// 			Scheme:   u.Scheme,
+// 			Host:     u.Host,
+// 			BasePath: u.Path,
+// 			Version:  version,
+// 		},
+// 	}, nil
+// }
 
 //url returns the full endpoint url appended with a given path.
 func (nerdapi *NerdAPIClient) url(p string) string {
-	url := &url.URL{
-		Scheme: nerdapi.Scheme,
-		Host:   nerdapi.Host,
-		Path:   path.Join(nerdapi.BasePath, p),
-		//TODO: include version
-		// Path:   path.Join(nerdapi.BasePath, nerdapi.Version, p),
-	}
-	return url.String()
+	return nerdapi.URL + "/" + p
 }
 
 func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, result interface{}) error {
+	value, err := nerdapi.Credentials.Get()
+	if err != nil {
+		return &APIError{
+			Response: nil,
+			Request:  nil,
+			Err:      errors.Wrap(err, "failed to get credentials"),
+		}
+	}
 	e := &payload.Error{}
 	req, err := s.Request()
+	req.Header.Add(AuthHeader, "Bearer "+value.NerdToken)
 	if err != nil {
 		//TODO: should error message include more details like URL, HTTP method and payload (sling is not very verbose in giving detailed error information)?
 		return &APIError{

@@ -8,6 +8,7 @@ import (
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd"
 	"github.com/nerdalize/nerd/nerd/client"
+	"github.com/nerdalize/nerd/nerd/client/credentials"
 )
 
 //RunOpts describes command options
@@ -76,9 +77,12 @@ func (cmd *Run) DoRun(args []string) error {
 		skey = keys.SecretAccessKey
 	}
 
-	c := client.NewNerdAPI(cmd.opts.NerdAPIConfig())
+	c, err := client.NewNerdAPI(credentials.NewNerdAPI())
+	if err != nil {
+		return fmt.Errorf("failed to create client: %v", err)
+	}
 
-	_, err := c.CreateTask(args[0], args[1], akey, skey, args[2:])
+	_, err = c.CreateTask(args[0], args[1], akey, skey, args[2:])
 	if err != nil {
 		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
 	}
