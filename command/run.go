@@ -6,7 +6,6 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd"
 	"github.com/nerdalize/nerd/nerd/client"
 	"github.com/nerdalize/nerd/nerd/client/credentials"
 )
@@ -59,30 +58,12 @@ func (cmd *Run) DoRun(args []string) error {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	user := nerd.GetCurrentUser()
-	var akey string
-	var skey string
-	if user != nil {
-		creds, err := user.GetAWSCredentials()
-		if err != nil {
-			return fmt.Errorf("failed to get user credentials: %v", err)
-		}
-
-		keys, err := creds.Get()
-		if err != nil {
-			return fmt.Errorf("failed to get access key from credentials: %v", err)
-		}
-
-		akey = keys.AccessKeyID
-		skey = keys.SecretAccessKey
-	}
-
 	c, err := client.NewNerdAPI(credentials.NewNerdAPI())
 	if err != nil {
 		return fmt.Errorf("failed to create client: %v", err)
 	}
 
-	_, err = c.CreateTask(args[0], args[1], akey, skey, args[2:])
+	_, err = c.CreateTask(args[0], args[1], args[2:])
 	if err != nil {
 		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
 	}

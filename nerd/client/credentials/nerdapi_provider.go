@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"strings"
 	"time"
 
@@ -17,7 +16,7 @@ import (
 // ProviderName is the name of the credentials provider.
 // TODO: Rename JWT to NerdToken
 // TODO: Fix absolute path and think about Microsoft Windows
-const JWTHomeLocation = `/Users/borismattijssen/.nerd/jwt`
+const JWTHomeLocation = `/Users/borismattijssen/.nerd/token`
 const NerdTokenPermissions = 0644
 const DefaultExpireWindow = 20
 
@@ -108,26 +107,15 @@ func saveNerdToken(token string) error {
 }
 
 func readNerdToken() (token string, valid bool, err error) {
-	if _, err := os.Stat(JWTHomeLocation); os.IsNotExist(err) {
-		if _, err = os.Stat(path.Dir(JWTHomeLocation)); os.IsNotExist(err) {
-			err = os.Mkdir(path.Dir(JWTHomeLocation), 0777)
-			if err != nil {
-				return "", false, errors.Wrapf(err, "could not create dir '%v'", path.Dir(JWTHomeLocation))
-			}
-		}
-		_, err = os.Create(JWTHomeLocation)
-		if err != nil {
-			return "", false, errors.Wrapf(err, "could not create empty file '%v'", JWTHomeLocation)
-		}
-	}
+	// TODO: also try to read from env NERD_TOKEN
 	t, err := ioutil.ReadFile(JWTHomeLocation)
-	token = string(t)
+	if os.IsNotExist(err) {
+		return "", false, nil
+	}
 	if err != nil {
 		return "", false, errors.Wrapf(err, "could not read nerd token at '%v'", JWTHomeLocation)
 	}
-	if token == "" {
-		return "", false, nil
-	}
+	token = string(t)
 	claims, err := DecodeToken(token)
 	if err != nil {
 		return "", false, errors.Wrapf(err, "failed to retreive claims from nerd token '%v'", token)
@@ -161,7 +149,7 @@ func (p *NerdAPIProvider) Retrieve() (*NerdAPIValue, error) {
 	}
 	claims, err := DecodeToken(token)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to retreive claims from nerd token")
+		return nil, errors.Wrapf(err, "failed to retreive claims from nerd token '%v'", token)
 	}
 	p.SetExpiration(time.Unix(claims.ExpiresAt, 0))
 	return &NerdAPIValue{

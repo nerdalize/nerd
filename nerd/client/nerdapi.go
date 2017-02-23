@@ -139,6 +139,7 @@ func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, result interface{}) erro
 
 //CreateSession creates a new user session.
 func (nerdapi *NerdAPIClient) CreateSession(token string) (sess *payload.SessionCreateOutput, err error) {
+	sess = &payload.SessionCreateOutput{}
 	url := nerdapi.url(path.Join(sessionsEndpoint, token))
 	s := sling.New().Post(url)
 	err = nerdapi.doRequest(s, sess)
@@ -146,13 +147,13 @@ func (nerdapi *NerdAPIClient) CreateSession(token string) (sess *payload.Session
 }
 
 //CreateTask creates a new executable task.
-func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, awsAccessKey string, awsSecret string, args []string) (output *payload.TaskCreateOutput, err error) {
+func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, args []string) (output *payload.TaskCreateOutput, err error) {
 	// set env variables
-	args = append(args, "-e=DATASET="+dataset)
-	args = append(args, "-e=AWS_ACCESS_KEY_ID="+awsAccessKey)
-	args = append(args, "-e=AWS_SECRET_ACCESS_KEY="+awsSecret)
-	_ = args //@TODO fetch these via the API itself
-
+	// args = append(args, "-e=DATASET="+dataset)
+	// args = append(args, "-e=AWS_ACCESS_KEY_ID="+awsAccessKey)
+	// args = append(args, "-e=AWS_SECRET_ACCESS_KEY="+awsSecret)
+	// _ = args //@TODO fetch these via the API itself
+	output = &payload.TaskCreateOutput{}
 	// create payload
 	p := &payload.TaskCreateInput{
 		Image: image,
@@ -170,6 +171,7 @@ func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, awsAccess
 
 //PatchTaskStatus updates the status of a task.
 func (nerdapi *NerdAPIClient) PatchTaskStatus(id string, ts *payload.TaskCreateInput) error {
+	ts = &payload.TaskCreateInput{}
 	url := nerdapi.url(path.Join(tasksEndpoint, id))
 	s := sling.New().
 		Patch(url).
@@ -180,8 +182,9 @@ func (nerdapi *NerdAPIClient) PatchTaskStatus(id string, ts *payload.TaskCreateI
 
 //ListTasks lists all tasks.
 func (nerdapi *NerdAPIClient) ListTasks() (tl *payload.TaskListOutput, err error) {
+	tl = &payload.TaskListOutput{}
 	url := nerdapi.url(tasksEndpoint)
 	s := sling.New().Get(url)
-	err = nerdapi.doRequest(s, &tl)
+	err = nerdapi.doRequest(s, tl)
 	return
 }

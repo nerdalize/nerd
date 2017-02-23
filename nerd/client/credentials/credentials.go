@@ -8,7 +8,7 @@ import (
 
 type NerdAPI struct {
 	value        *NerdAPIValue
-	provider     *NerdAPIProvider
+	provider     Provider
 	forceRefresh bool
 	m            sync.Mutex
 }
@@ -17,10 +17,15 @@ type NerdAPIValue struct {
 	NerdToken string
 }
 
+type Provider interface {
+	IsExpired() bool
+	Retrieve() (*NerdAPIValue, error)
+}
+
 func NewNerdAPI() *NerdAPI {
 	return &NerdAPI{
 		// TODO: Also add local file (~/.nerd/token) provider
-		provider: NewNerdAPIProvider(),
+		provider: NewEnvProvider(),
 		m:        sync.Mutex{},
 	}
 }
