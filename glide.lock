@@ -1,5 +1,5 @@
-hash: ed90a15da11e313fe56c21e76b5b9179a775a72b22d0b6b2ff9bab476a2ddb01
-updated: 2017-02-07T14:31:50.446698822+01:00
+hash: 4589ad02bc5e9c0f1b659b9a88c236936faa25a9479795162b02c179f75b5a57
+updated: 2017-02-23T12:37:32.741680563+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 4239b77079c7b5d1243b7b4736304ce8ddb6f0f2
@@ -30,20 +30,11 @@ imports:
   - private/protocol/xml/xmlutil
   - private/waiter
   - service/s3
-  - service/sqs
   - service/sts
 - name: github.com/bgentry/speakeasy
   version: 675b82c74c0ed12283ee81ba8a534c8982c07b85
 - name: github.com/dghubble/sling
   version: eb56e89ac5088bebb12eef3cb4b293300f43608b
-- name: github.com/go-playground/locales
-  version: 273913d3b2ff7127452603d55dd3f6f888e4f268
-  subpackages:
-  - currency
-- name: github.com/go-playground/universal-translator
-  version: 03ee8962f44dd72cfae8382f319f5d2a61521e99
-- name: github.com/go-playground/validator
-  version: 691ea5506371685479307baaf0e623e850de4dbf
 - name: github.com/google/go-querystring
   version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
   subpackages:
@@ -56,4 +47,6 @@ imports:
   version: 30a891c33c7cde7b02a981314b4228ec99380cca
 - name: github.com/mitchellh/cli
   version: fa17b36f6c61f1ddbbb08c9f6fde94b3c065a09d
+- name: github.com/pkg/errors
+  version: 645ef00459ed84a119197bfb8d8205042c6df63d
 testImports: []
