@@ -11,14 +11,21 @@ function print_help {
 		| expand -t 30
 }
 
-function run_build { #build a new binary and place it in $GOPATH/bin
+function run_buildgit { #build a new binary, tag it with git commit hash, and place it in $GOPATH/bin
   go build \
     -ldflags "-X main.version=$(cat VERSION) -X main.commit=$(git rev-parse --short HEAD )" \
     -o $GOPATH/bin/nerd \
     main.go
 }
 
+function run_build { #build a new binary and place it in $GOPATH/bin
+  go build \
+    -o $GOPATH/bin/nerd \
+    main.go
+}
+
 case $1 in
 	"build") run_build ;;
+	"buildgit") run_buildgit ;;
 	*) print_help ;;
 esac
