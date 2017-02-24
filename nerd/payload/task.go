@@ -4,7 +4,7 @@ import "time"
 
 //TaskCreateInput is used as input to task creation
 type TaskCreateInput struct {
-	ProjectID   string            `json:"project_id" valid:"min=1,required"`
+	ProjectID   string            `json:"project_id" valid:"min=1,required,uuid"`
 	Image       string            `json:"image" valid:"min=1,max=64,required"`
 	InputID     string            `json:"input_id" valid:"datasetid"`
 	Environment map[string]string `json:"environment"`
