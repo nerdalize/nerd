@@ -10,12 +10,6 @@ import (
 )
 
 const (
-	// TODO: remove these
-	defaultScheme   = "https"
-	defaultHost     = "platform.nerdalize.net"
-	defaultBasePath = ""
-	defaultVersion  = "v1"
-
 	AuthHeader = "Authorization"
 
 	tasksEndpoint    = "tasks"
@@ -27,33 +21,6 @@ type NerdAPIClient struct {
 	URL         string
 	Credentials *credentials.NerdAPI
 }
-
-//NerdAPIConfig contains the information needed to create a NerdAPIClient.
-type NerdAPIConfig struct {
-	// Scheme   string
-	// Host     string
-	// BasePath string
-	// Version  string
-}
-
-//NewNerdAPI returns a new NerdAPIClient according to a given configuration.
-// func NewNerdAPI(config NerdAPIConfig) *NerdAPIClient {
-// 	if config.Scheme == "" {
-// 		config.Scheme = defaultScheme
-// 	}
-// 	if config.Host == "" {
-// 		config.Host = defaultHost
-// 	}
-// 	if config.BasePath == "" {
-// 		config.BasePath = defaultBasePath
-// 	}
-// 	if config.Version == "" {
-// 		config.Version = defaultVersion
-// 	}
-// 	return &NerdAPIClient{
-// 		NerdAPIConfig: config,
-// 	}
-// }
 
 func NewNerdAPI(cred *credentials.NerdAPI) (*NerdAPIClient, error) {
 	value, err := cred.Get()
@@ -76,22 +43,6 @@ func NewNerdAPIWithEndpoint(cred *credentials.NerdAPI, url string) *NerdAPIClien
 		URL:         url,
 	}
 }
-
-//NewNerdAPIFromURL returns a new NerdAPIClient given a full endpoint URL.
-// func NewNerdAPIFromURL(fullURL string, version string) (*NerdAPIClient, error) {
-// 	u, err := url.Parse(fullURL)
-// 	if err != nil {
-// 		return nil, errors.Wrapf(err, "could not parse url '%v': %v", fullURL)
-// 	}
-// 	return &NerdAPIClient{
-// 		NerdAPIConfig: NerdAPIConfig{
-// 			Scheme:   u.Scheme,
-// 			Host:     u.Host,
-// 			BasePath: u.Path,
-// 			Version:  version,
-// 		},
-// 	}, nil
-// }
 
 //url returns the full endpoint url appended with a given path.
 func (nerdapi *NerdAPIClient) url(p string) string {

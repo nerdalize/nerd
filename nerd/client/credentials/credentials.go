@@ -22,10 +22,9 @@ type Provider interface {
 	Retrieve() (*NerdAPIValue, error)
 }
 
-func NewNerdAPI() *NerdAPI {
+func NewNerdAPI(provider Provider) *NerdAPI {
 	return &NerdAPI{
-		// TODO: Also add local file (~/.nerd/token) provider
-		provider: NewEnvProvider(),
+		provider: provider,
 		m:        sync.Mutex{},
 	}
 }
@@ -46,7 +45,6 @@ func (n *NerdAPI) Get() (*NerdAPIValue, error) {
 	return n.value, nil
 }
 
-// isExpired helper method wrapping the definition of expired credentials.
 func (n *NerdAPI) isExpired() bool {
 	return n.forceRefresh || n.provider.IsExpired()
 }

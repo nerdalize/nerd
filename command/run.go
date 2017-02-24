@@ -6,13 +6,12 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/client"
-	"github.com/nerdalize/nerd/nerd/client/credentials"
 )
 
 //RunOpts describes command options
 type RunOpts struct {
 	*NerdAPIOpts
+	*AuthAPIOpts
 	*OutputOpts
 }
 
@@ -20,7 +19,6 @@ type RunOpts struct {
 type Run struct {
 	*command
 
-	ui     cli.Ui
 	opts   *RunOpts
 	parser *flags.Parser
 }
@@ -58,12 +56,9 @@ func (cmd *Run) DoRun(args []string) error {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	c, err := client.NewNerdAPI(credentials.NewNerdAPI())
-	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
-	}
+	c := NewClient(cmd.ui, cmd.opts.URL(), cmd.opts.AuthAPIURL)
 
-	_, err = c.CreateTask(args[0], args[1], args[2:])
+	_, err := c.CreateTask(args[0], args[1], args[2:])
 	if err != nil {
 		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
 	}

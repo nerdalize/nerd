@@ -1,13 +1,10 @@
 package command
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/client"
-	"github.com/nerdalize/nerd/nerd/client/credentials"
 )
 
 //StatusOpts describes command options
@@ -54,18 +51,18 @@ func StatusFactory() func() (cmd cli.Command, err error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *Status) DoRun(args []string) (err error) {
-	c, err := client.NewNerdAPI(credentials.NewNerdAPI())
-	if err != nil {
-		return fmt.Errorf("failed to create client: %v", err)
-	}
-	tasks, err := c.ListTasks()
-	if err != nil {
-		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
-	}
-
-	for _, t := range tasks.Tasks {
-		fmt.Printf("%s\n", t.ID)
-	}
-
+	// c, err := client.NewNerdAPI(credentials.NewNerdAPI())
+	// if err != nil {
+	// 	return fmt.Errorf("failed to create client: %v", err)
+	// }
+	// tasks, err := c.ListTasks()
+	// if err != nil {
+	// 	return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+	// }
+	//
+	// for _, t := range tasks.Tasks {
+	// 	fmt.Printf("%s\n", t.ID)
+	// }
+	//
 	return nil
 }

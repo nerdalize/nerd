@@ -1,10 +1,6 @@
 package command
 
-import (
-	"fmt"
-	"net/url"
-	"strings"
-)
+import "fmt"
 
 //NerdAPIOpts configure how the platform endpoint is reached
 // TODO: Change to one flag for URL
@@ -16,6 +12,12 @@ type NerdAPIOpts struct {
 	NerdAPIBasePath string `long:"api-basepath" default:"" default-mask:"" env:"NERD_API_BASE_PATH" description:"basepath of the endpoint"`
 
 	NerdAPIVersion string `long:"api-version" default:"v1" default-mask:"v1" env:"NERD_API_VERSION" description:"endpoint version"`
+
+	NerdAPIURL string `long:"api-url" default:"" default-mask:"" env:"NERD_API_URL" description:"full endpoint url"`
+}
+
+type AuthAPIOpts struct {
+	AuthAPIURL string `long:"auth-url" default:"" default-mask:"" env:"AUTH_API_URL" description:"full auth endpoint url"`
 }
 
 type OutputOpts struct {
@@ -23,15 +25,16 @@ type OutputOpts struct {
 }
 
 //URL returns a fully qualitied url on the platform endpoint
-func (opts *NerdAPIOpts) URL(path string) (loc *url.URL, err error) {
-	loc, err = url.Parse(fmt.Sprintf(
+func (opts *NerdAPIOpts) URL() (loc string) {
+	if opts.NerdAPIURL != "" {
+		return opts.NerdAPIURL
+	}
+	return fmt.Sprintf(
 		"%s://%s/%s/%s",
 		opts.NerdAPIScheme,
 		opts.NerdAPIHostname,
 		opts.NerdAPIVersion,
-		strings.TrimLeft(path, "/"),
-	))
-	return loc, err
+	)
 }
 
 //NerdAPIConfig returns a populated configuration struct for the Nerd API client.
