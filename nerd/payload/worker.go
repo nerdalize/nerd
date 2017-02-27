@@ -1,9 +1,7 @@
 package payload
 
 //WorkerCreateInput is used as input to worker creation
-type WorkerCreateInput struct {
-	ProjectID string `json:"project_id" valid:"min=1,required,uuid"`
-}
+type WorkerCreateInput struct{}
 
 //WorkerCreateOutput is returned from
 type WorkerCreateOutput struct {
