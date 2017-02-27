@@ -3,8 +3,13 @@ package payload
 //WorkerCreateInput is used as input to worker creation
 type WorkerCreateInput struct{}
 
-//WorkerCreateOutput is returned from
+//WorkerCreateOutput is returned from creating a worker
 type WorkerCreateOutput struct {
+	Worker
+}
+
+//WorkerDescribeOutput is returned from a specific worker
+type WorkerDescribeOutput struct {
 	Worker
 }
 
