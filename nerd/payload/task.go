@@ -22,9 +22,10 @@ type TaskListOutput struct {
 //Task is a task in the list output
 type Task struct {
 	ProjectID   string            `json:"project_id"`
-	CreatedAt   time.Time         `json:"created_at"`
+	TaskID      string            `json:"task_id"`
 	InputID     string            `json:"input_id"`
 	OutputID    string            `json:"output_id"`
 	Image       string            `json:"image"`
 	Environment map[string]string `json:"environment"`
+	CreatedAt   time.Time         `json:"created_at"`
 }
