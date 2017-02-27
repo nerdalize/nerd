@@ -6,12 +6,13 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd"
 	"github.com/nerdalize/nerd/nerd/data"
 )
 
 //UploadOpts describes command options
-type UploadOpts struct{}
+type UploadOpts struct {
+	*AuthAPIOpts
+}
 
 //Upload command
 type Upload struct {
@@ -58,12 +59,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	dataset := args[0]
 	path := args[1]
 
-	awsCreds, err := nerd.GetCurrentUser().GetAWSCredentials()
-	if err != nil {
-		return fmt.Errorf("could not get AWS credentials: %v", err)
-	}
-
-	client, err := data.NewClient(awsCreds)
+	client, err := data.NewClient(data.NewNerdalizeCredentials(cmd.opts.AuthAPIURL))
 	if err != nil {
 		return fmt.Errorf("could not create data client: %v", err)
 	}

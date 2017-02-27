@@ -89,9 +89,9 @@ func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, result interface{}) erro
 }
 
 //CreateSession creates a new user session.
-func (nerdapi *NerdAPIClient) CreateSession(token string) (sess *payload.SessionCreateOutput, err error) {
+func (nerdapi *NerdAPIClient) CreateSession() (sess *payload.SessionCreateOutput, err error) {
 	sess = &payload.SessionCreateOutput{}
-	url := nerdapi.url(path.Join(sessionsEndpoint, token))
+	url := nerdapi.url(path.Join(sessionsEndpoint))
 	s := sling.New().Post(url)
 	err = nerdapi.doRequest(s, sess)
 	return
