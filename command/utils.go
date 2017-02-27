@@ -7,7 +7,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/client"
+	"github.com/nerdalize/nerd/nerd/client/credentials/provider"
 	"github.com/nerdalize/nerd/nerd/payload"
 	"github.com/pkg/errors"
 )
@@ -21,6 +23,25 @@ type stdoutkw struct{}
 func (kw *stdoutkw) Write(k string) (err error) {
 	_, err = fmt.Fprintf(os.Stdout, "%v\n", k)
 	return err
+}
+
+//NewClient creates a new NerdAPIClient with two credential providers.
+func NewClient(ui cli.Ui, nerdAPIURL, authURL string) *client.NerdAPIClient {
+	return client.NewNerdAPIWithEndpoint(provider.NewChainCredentials(
+		provider.NewEnvDisk(),
+		provider.NewAuthAPI(func() (string, string, error) {
+			ui.Info("Please enter your Nerdalize username and password.")
+			user, err := ui.Ask("Username: ")
+			if err != nil {
+				return "", "", errors.Wrap(err, "failed to read username")
+			}
+			pass, err := ui.AskSecret("Password: ")
+			if err != nil {
+				return "", "", errors.Wrap(err, "failed to read password")
+			}
+			return user, pass, nil
+		}, client.NewAuthAPI(authURL)),
+	), nerdAPIURL)
 }
 
 //HandleClientError handles errors produced by client.NerdAPIClient

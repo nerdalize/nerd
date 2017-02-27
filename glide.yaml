@@ -8,8 +8,12 @@ import:
 - package: github.com/jessevdk/go-flags               #flexible flag parsing
   version: 4e64e4a4e2552194cf594243e23aa9baf3b4297e
 - package: github.com/aws/aws-sdk-go                  #official AWS Go sdk
-  version: v1.6.18
-- package: github.com/dghubble/sling
+  version: ^v1.7.0
+- package: github.com/dghubble/sling                  #http client
   version: v1.1.0
 - package: github.com/pkg/errors
   version: v0.8.0
+- package: github.com/mitchellh/go-homedir            #utility to retreive homedir path
+  version: b8bc1bf767474819792c23f32d8286a45736f1c6
+- package: github.com/dgrijalva/jwt-go                #JWT parsing
+  version: 2268707a8f0843315e2004ee4f1d021dc08baedf

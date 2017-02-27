@@ -1,12 +1,10 @@
 package command
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/client"
 )
 
 //LoginOpts describes command options
@@ -53,22 +51,22 @@ func LoginFactory() func() (cmd cli.Command, err error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *Login) DoRun(args []string) (err error) {
-	if len(args) < 1 {
-		return fmt.Errorf("not enough arguments, see --help")
-	}
-
-	c := client.NewNerdAPI(cmd.opts.NerdAPIConfig())
-
-	sess, err := c.CreateSession(args[0])
-	if err != nil {
-		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
-	}
-
-	fmt.Println("AWS_ACCESS_KEY_ID=" + sess.AWSAccessKeyID)
-	fmt.Println("AWS_SECRET_ACCESS_KEY=" + sess.AWSSecretAccessKey)
-	fmt.Println("AWS_SESSION_TOKEN=" + sess.AWSSessionToken)
-	fmt.Println("AWS_STORAGE_BUCKET=" + sess.AWSStorageBucket)
-	fmt.Println("AWS_STORAGE_ROOT=" + sess.AWSStorageRoot)
+	// if len(args) < 1 {
+	// 	return fmt.Errorf("not enough arguments, see --help")
+	// }
+	//
+	// c := client.NewNerdAPI(cmd.opts.NerdAPIConfig())
+	//
+	// sess, err := c.CreateSession(args[0])
+	// if err != nil {
+	// 	return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+	// }
+	//
+	// fmt.Println("AWS_ACCESS_KEY_ID=" + sess.AWSAccessKeyID)
+	// fmt.Println("AWS_SECRET_ACCESS_KEY=" + sess.AWSSecretAccessKey)
+	// fmt.Println("AWS_SESSION_TOKEN=" + sess.AWSSessionToken)
+	// fmt.Println("AWS_STORAGE_BUCKET=" + sess.AWSStorageBucket)
+	// fmt.Println("AWS_STORAGE_ROOT=" + sess.AWSStorageRoot)
 
 	return nil
 }

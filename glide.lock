@@ -1,10 +1,10 @@
-hash: 4589ad02bc5e9c0f1b659b9a88c236936faa25a9479795162b02c179f75b5a57
-updated: 2017-02-23T12:37:32.741680563+01:00
+hash: 9876054ccf578d8655d3ac867b1325e8a2699defb8c6351c5216982d9a385e55
+updated: 2017-02-27T12:46:14.558182132+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 4239b77079c7b5d1243b7b4736304ce8ddb6f0f2
 - name: github.com/aws/aws-sdk-go
-  version: 3f8f870ec9939e32b3372abf74d24e468bcd285d
+  version: 1bd588c8b2dba4da57dd4664b2b2750d260a5915
   subpackages:
   - aws
   - aws/awserr
@@ -35,6 +35,8 @@ imports:
   version: 675b82c74c0ed12283ee81ba8a534c8982c07b85
 - name: github.com/dghubble/sling
   version: eb56e89ac5088bebb12eef3cb4b293300f43608b
+- name: github.com/dgrijalva/jwt-go
+  version: 2268707a8f0843315e2004ee4f1d021dc08baedf
 - name: github.com/google/go-querystring
   version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
   subpackages:
@@ -47,6 +49,8 @@ imports:
   version: 30a891c33c7cde7b02a981314b4228ec99380cca
 - name: github.com/mitchellh/cli
   version: fa17b36f6c61f1ddbbb08c9f6fde94b3c065a09d
+- name: github.com/mitchellh/go-homedir
+  version: b8bc1bf767474819792c23f32d8286a45736f1c6
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 testImports: []
