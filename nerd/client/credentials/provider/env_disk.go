@@ -52,7 +52,6 @@ func (e *EnvDisk) Retrieve() (*credentials.NerdAPIValue, error) {
 	t, err := ioutil.ReadFile(e.DiskLocation)
 	if err != nil && !os.IsNotExist(err) {
 		return nil, errors.Wrapf(err, "could not read nerd token at '%v'", e.DiskLocation)
-		// return nil, errors.Wrapf(err, "both env variable %v and disk location %v are empty", credentials.NerdTokenEnvVar, filename)
 	}
 	token := ""
 	if !os.IsNotExist(err) {
