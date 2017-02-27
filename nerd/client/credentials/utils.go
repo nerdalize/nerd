@@ -1,19 +1,14 @@
 package credentials
 
 import (
-	"errors"
-	"os"
-	"path/filepath"
+	homedir "github.com/mitchellh/go-homedir"
+	"github.com/pkg/errors"
 )
 
 func TokenFilename() (string, error) {
-	homeDir := os.Getenv("HOME") // *nix
-	if homeDir == "" {           // Windows
-		homeDir = os.Getenv("USERPROFILE")
+	f, err := homedir.Expand("~/.nerd/token")
+	if err != nil {
+		return "", errors.Wrap(err, "failed to retreive homedir path")
 	}
-	if homeDir == "" {
-		return "", errors.New("homedir not found")
-	}
-
-	return filepath.Join(homeDir, ".nerd", "token"), nil
+	return f, nil
 }

@@ -28,8 +28,8 @@ func (kw *stdoutkw) Write(k string) (err error) {
 //NewClient creates a new NerdAPIClient with two credential providers.
 func NewClient(ui cli.Ui, nerdAPIURL, authURL string) *client.NerdAPIClient {
 	return client.NewNerdAPIWithEndpoint(provider.NewChainCredentials(
-		provider.NewEnvDiskProvider(),
-		provider.NewNerdAPIProvider(func() (string, string, error) {
+		provider.NewEnvDisk(),
+		provider.NewAuthAPI(func() (string, string, error) {
 			ui.Info("Please enter your Nerdalize username and password.")
 			user, err := ui.Ask("Username: ")
 			if err != nil {

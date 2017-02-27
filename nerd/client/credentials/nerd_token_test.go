@@ -1,66 +1,41 @@
 package credentials
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"strings"
 	"testing"
-	"time"
-
-	jwt "github.com/dgrijalva/jwt-go"
 )
 
-func TestParseECDSAPublicKeyFromPemBytes(t *testing.T) {
-	key := `
+const key = `
 -----BEGIN PUBLIC KEY-----
 MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEAkYbLnam4wo+heLlTZEeh1ZWsfruz9nk
 kyvc4LwKZ8pez5KYY76H1ox+AfUlWOEq+bExypcFfEIrJkf/JXa7jpzkOWBDF9Sa
 OWbQHMK+vvUXieCJvCc9Vj084ABwLBgX
 -----END PUBLIC KEY----
 `
+
+func TestParseECDSAPublicKeyFromPemBytes(t *testing.T) {
 	_, err := ParseECDSAPublicKeyFromPemBytes([]byte(key))
 	if err != nil {
 		t.Errorf("Failed to parse valid public key. Error message: %v", err)
 	}
 }
 
-func testkey(tb testing.TB) *ecdsa.PrivateKey {
-	k, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
-	if err != nil {
-		tb.Fatalf("failed to generate test key: %v", err)
-	}
-	return k
-}
-
 func TestDecodeToken(t *testing.T) {
-	key := testkey(t)
-	pub, ok := key.Public().(*ecdsa.PublicKey)
-	if !ok {
-		t.Fatal("Could not cast ECDSA public key")
-	}
-	successTime := time.Now().Add(time.Hour).Unix()
 	testCases := map[string]struct {
-		claims    *NerdClaims
 		token     string
 		success   bool
 		errorMsg  string
 		expiresAt int64
 		audience  string
 	}{
-		"success": {
-			claims: &NerdClaims{
-				Audience:  "nlz.com",
-				ExpiresAt: successTime,
-			},
-			token:     "",
+		"expired valid": {
+			token:     "eyJhbGciOiJFUzM4NCIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhdXRoLm5lcmRhbGl6ZS5jb20iLCJleHAiOjE0ODgxODk1MzcsImF1ZCI6Im5jZS5uZXJkYWxpemUuY29tIiwibmJmIjoxNDg4MTg5MTc3LCJhY2Nlc3MiOlt7InNlcnZpY2UiOiJuY2UubmVyZGFsaXplLmNvbSIsInJlc291cmNlX3R5cGUiOiJjbHVzdGVyIiwicmVzb3VyY2VfaWRlbnRpZmllciI6ImNsdXN0ZXIxLm5lcmQubmV0L2UxNWxqMTJhYWZzZCIsImFjdGlvbnMiOiJDUlVEIn0seyJzZXJ2aWNlIjoibmNlLm5lcmRhbGl6ZS5jb20iLCJyZXNvdXJjZV90eXBlIjoib2JqZWN0X3N0b3JlIiwicmVzb3VyY2VfaWRlbnRpZmllciI6Im5lcmRzLnMzLmFtYXphbmF3cy5jb20vMjQ1bGtqMjM0NSIsImFjdGlvbnMiOiJSIn1dLCJzdWIiOiI0IiwiaWF0IjoxNDg4MTg5MjM3fQ.pk7yAGW8L80uEKAFUctupj4PO8UHIGmpikEi-ERkwZao73dEx5GlAnVmNTnXOO-xxjT8BomQtqL6Od15d7K6c4fY5YU8s64di4HA1SJuqIK0u0Mk8N6oVS216Y3FJkkD",
 			success:   true,
 			errorMsg:  "",
-			expiresAt: successTime,
-			audience:  "nlz.com",
+			expiresAt: 1488189537,
+			audience:  "nce.nerdalize.com",
 		},
 		"json parse error": {
-			claims:    &NerdClaims{},
 			token:     "jwt.jwt.jwt",
 			success:   false,
 			errorMsg:  "failed to parse nerd token",
@@ -70,15 +45,7 @@ func TestDecodeToken(t *testing.T) {
 	}
 
 	for name, tc := range testCases {
-		token := jwt.NewWithClaims(jwt.SigningMethodES384, tc.claims)
-		ss, err := token.SignedString(key)
-		if err != nil {
-			t.Fatalf("failed to sign test token: %v", err)
-		}
-		if tc.token != "" {
-			ss = tc.token
-		}
-		claims, err := DecodeTokenWithKey(ss, pub)
+		claims, err := DecodeTokenWithPEM(tc.token, key)
 		if tc.success {
 			if err != nil {
 				t.Errorf("%v: expected success but got error '%v'", name, err)

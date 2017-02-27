@@ -22,10 +22,15 @@ function run_build { #build a new binary and place it in $GOPATH/bin
   go build \
     -o $GOPATH/bin/nerd \
     main.go
+	}
+function run_test { #unit test project
+	go test -v ./command
+  go test -v ./nerd/...
 }
 
 case $1 in
 	"build") run_build ;;
 	"buildgit") run_buildgit ;;
+	"test") run_test ;;
 	*) print_help ;;
 esac

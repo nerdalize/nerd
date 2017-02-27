@@ -12,9 +12,10 @@ import (
 const NerdTokenPermissions = 0644
 const DefaultExpireWindow = 20
 
-type NerdAPIProvider struct {
+type AuthAPI struct {
 	// The date/time when to expire on
-	expiration time.Time
+	expiration  time.Time
+	AlwaysValid bool
 
 	// If set will be used by IsExpired to determine the current time.
 	// Defaults to time.Now if CurrentTime is not set.  Available for testing
@@ -27,8 +28,9 @@ type NerdAPIProvider struct {
 	UserPassProvider func() (string, string, error)
 }
 
-func NewNerdAPIProvider(userPassProvider func() (string, string, error), c *client.AuthAPIClient) *NerdAPIProvider {
-	return &NerdAPIProvider{
+func NewAuthAPI(userPassProvider func() (string, string, error), c *client.AuthAPIClient) *AuthAPI {
+	return &AuthAPI{
+		AlwaysValid:      false,
 		ExpireWindow:     DefaultExpireWindow,
 		UserPassProvider: userPassProvider,
 		Client:           c,
@@ -37,15 +39,14 @@ func NewNerdAPIProvider(userPassProvider func() (string, string, error), c *clie
 
 // IsExpired returns true if the credentials retrieved are expired, or not yet
 // retrieved.
-// TODO: Test expired things, also include exp in JWT
-func (p *NerdAPIProvider) IsExpired() bool {
+func (p *AuthAPI) IsExpired() bool {
 	if p.CurrentTime == nil {
 		p.CurrentTime = time.Now
 	}
-	return p.expiration.Before(p.CurrentTime())
+	return p.AlwaysValid || p.expiration.Before(p.CurrentTime())
 }
 
-func (p *NerdAPIProvider) SetExpiration(expiration time.Time) {
+func (p *AuthAPI) SetExpiration(expiration time.Time) {
 	p.expiration = expiration
 	if p.ExpireWindow > 0 {
 		p.expiration = p.expiration.Add(-p.ExpireWindow)
@@ -66,7 +67,7 @@ func saveNerdToken(token string) error {
 
 // Retrieve will attempt to request the credentials from the endpoint the Provider
 // was configured for. And error will be returned if the retrieval fails.
-func (p *NerdAPIProvider) Retrieve() (*credentials.NerdAPIValue, error) {
+func (p *AuthAPI) Retrieve() (*credentials.NerdAPIValue, error) {
 	user, pass, err := p.UserPassProvider()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get username or password")
@@ -83,6 +84,7 @@ func (p *NerdAPIProvider) Retrieve() (*credentials.NerdAPIValue, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retreive claims from nerd token '%v'", token)
 	}
+	p.AlwaysValid = claims.ExpiresAt == 0 // if unset
 	p.SetExpiration(time.Unix(claims.ExpiresAt, 0))
 	return &credentials.NerdAPIValue{
 		NerdToken: token,
