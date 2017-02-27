@@ -14,6 +14,11 @@ type TaskCreateOutput struct {
 	Task
 }
 
+//TaskDescribeOutput is returned from a specific task
+type TaskDescribeOutput struct {
+	Task
+}
+
 //TaskListOutput is returned from the task listing
 type TaskListOutput struct {
 	Tasks []*Task `json:"tasks"`
