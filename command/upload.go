@@ -23,16 +23,13 @@ type Upload struct {
 }
 
 //UploadFactory returns a factory method for the join command
-func UploadFactory() func() (cmd cli.Command, err error) {
+func UploadFactory(ui cli.Ui) func() (cmd cli.Command, err error) {
 	cmd := &Upload{
 		command: &command{
 			help:     "",
 			synopsis: "push task data as input to cloud storage",
 			parser:   flags.NewNamedParser("nerd upload <dataset> <path>", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
+			ui:       ui,
 		},
 
 		opts: &UploadOpts{},

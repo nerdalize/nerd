@@ -16,11 +16,16 @@ var (
 )
 
 func main() {
+	ui := &cli.BasicUi{
+		Reader: os.Stdin,
+		Writer: os.Stderr,
+	}
+
 	c := cli.NewCLI(name, fmt.Sprintf("%s (%s)", version, commit))
 	c.Args = os.Args[1:]
 	c.Commands = map[string]cli.CommandFactory{
 		"login":    command.LoginFactory(),
-		"upload":   command.UploadFactory(),
+		"upload":   command.UploadFactory(ui),
 		"run":      command.RunFactory(),
 		"logs":     command.LogsFactory(),
 		"work":     command.WorkFactory(),
