@@ -61,7 +61,6 @@ func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, result interface{}) erro
 	}
 	e := &payload.Error{}
 	req, err := s.Request()
-	req.Header.Add(AuthHeader, "Bearer "+value.NerdToken)
 	if err != nil {
 		return &APIError{
 			Response: nil,
@@ -69,6 +68,7 @@ func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, result interface{}) erro
 			Err:      errors.Wrap(err, "could not create request"),
 		}
 	}
+	req.Header.Add(AuthHeader, "Bearer "+value.NerdToken)
 	resp, err := s.Receive(result, e)
 	if err != nil {
 		return &APIError{

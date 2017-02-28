@@ -9,8 +9,21 @@ import (
 	"testing"
 
 	"github.com/dghubble/sling"
+	"github.com/nerdalize/nerd/nerd/client/credentials"
 	"github.com/nerdalize/nerd/nerd/payload"
 )
+
+type fakeProvider struct{}
+
+func (f *fakeProvider) IsExpired() bool {
+	return true
+}
+
+func (f *fakeProvider) Retrieve() (*credentials.NerdAPIValue, error) {
+	return &credentials.NerdAPIValue{
+		NerdToken: "",
+	}, nil
+}
 
 func newServer(result interface{}, success bool) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -58,7 +71,8 @@ func TestDoRequest(t *testing.T) {
 		}
 		defer svr.Close()
 		s := sling.New().Get(svr.URL)
-		err := doRequest(s, tc.successResult)
+		cl := NewNerdAPIWithEndpoint(credentials.NewNerdAPI(&fakeProvider{}), svr.URL)
+		err := cl.doRequest(s, tc.successResult)
 		if err != nil {
 			aerr, ok := err.(*APIError)
 			if !ok {
