@@ -11,6 +11,7 @@ import (
 
 //UploadOpts describes command options
 type UploadOpts struct {
+	*NerdAPIOpts
 	*AuthAPIOpts
 }
 
@@ -59,7 +60,8 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	dataset := args[0]
 	path := args[1]
 
-	client, err := data.NewClient(data.NewNerdalizeCredentials(cmd.opts.AuthAPIURL))
+	nerdclient := NewClient(cmd.ui, cmd.opts.URL(), cmd.opts.AuthAPIURL)
+	client, err := data.NewClient(data.NewNerdalizeCredentials(nerdclient))
 	if err != nil {
 		return fmt.Errorf("could not create data client: %v", err)
 	}

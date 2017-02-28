@@ -4,7 +4,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -38,12 +37,20 @@ func tokenAndPub(claims *credentials.NerdClaims, t *testing.T) (string, *ecdsa.P
 	return ss, pub
 }
 
+func newEnvProvider(pub *ecdsa.PublicKey) *Env {
+	return &Env{
+		ProviderBasis: &ProviderBasis{
+			TokenDecoder: func(t string) (*credentials.NerdClaims, error) {
+				return credentials.DecodeTokenWithKey(t, pub)
+			},
+		},
+	}
+}
+
 func TestEnvProviderRetrieve(t *testing.T) {
-	testCases := map[string]struct {
-		claims     *credentials.NerdClaims
-		success    bool
-		createFile bool
-		errorMsg   string
+	// Success cases
+	successCases := map[string]struct {
+		claims *credentials.NerdClaims
 	}{
 		"valid": {
 			claims: &credentials.NerdClaims{
@@ -51,7 +58,6 @@ func TestEnvProviderRetrieve(t *testing.T) {
 					Audience: "nlz.com",
 				},
 			},
-			success: true,
 		},
 		"valid expired": {
 			claims: &credentials.NerdClaims{
@@ -60,8 +66,29 @@ func TestEnvProviderRetrieve(t *testing.T) {
 					ExpiresAt: time.Now().Unix() + 300,
 				},
 			},
-			success: true,
 		},
+	}
+	for name, tc := range successCases {
+		token, pub := tokenAndPub(tc.claims, t)
+		if tc.claims == EmptyClaims {
+			token = ""
+		}
+		os.Setenv("NERD_TOKEN", token)
+		e := newEnvProvider(pub)
+		value, err := e.Retrieve()
+		if err != nil {
+			t.Fatalf("%v: Unexpected error: %v", name, err)
+		}
+		if value.NerdToken != token {
+			t.Errorf("%v: Expected token '%v', but got token '%v'", name, token, value.NerdToken)
+		}
+	}
+
+	// Error cases
+	errorCases := map[string]struct {
+		claims   *credentials.NerdClaims
+		errorMsg string
+	}{
 		"invalid expired": {
 			claims: &credentials.NerdClaims{
 				StandardClaims: &jwt.StandardClaims{
@@ -69,61 +96,27 @@ func TestEnvProviderRetrieve(t *testing.T) {
 					ExpiresAt: time.Now().Unix() - 300,
 				},
 			},
-			success:  false,
 			errorMsg: "is invalid",
 		},
 		"no token found": {
 			claims:   EmptyClaims,
-			success:  false,
-			errorMsg: "are empty",
-		},
-		"valid file": {
-			claims: &credentials.NerdClaims{
-				StandardClaims: &jwt.StandardClaims{
-					Audience: "nlz.com",
-				},
-			},
-			success:    true,
-			createFile: true,
+			errorMsg: "environment variable NERD_TOKEN is not set",
 		},
 	}
-	for name, tc := range testCases {
+	for name, tc := range errorCases {
 		token, pub := tokenAndPub(tc.claims, t)
 		if tc.claims == EmptyClaims {
 			token = ""
 		}
-		temp, err := ioutil.TempFile("/tmp", "token")
-		defer temp.Close()
-		if err != nil {
-			t.Fatalf("%v: Unexpected error for temp file: %v", name, err)
-		}
-		if tc.createFile {
-			temp.WriteString(token)
-		} else {
-			os.Setenv("NERD_TOKEN", token)
-		}
+		os.Setenv("NERD_TOKEN", token)
 
-		e := &EnvDisk{
-			TokenDecoder: func(t string) (*credentials.NerdClaims, error) {
-				return credentials.DecodeTokenWithKey(t, pub)
-			},
-			DiskLocation: temp.Name(),
+		e := newEnvProvider(pub)
+		_, err := e.Retrieve()
+		if err == nil {
+			t.Fatalf("%v: Expected error but error was nil", name)
 		}
-		value, err := e.Retrieve()
-		if tc.success {
-			if err != nil {
-				t.Fatalf("%v: Unexpected error: %v", name, err)
-			}
-			if value.NerdToken != token {
-				t.Errorf("%v: Expected token '%v', but got token '%v'", name, token, value.NerdToken)
-			}
-		} else {
-			if err == nil {
-				t.Fatalf("%v: Expected error but error was nil", name)
-			}
-			if !strings.Contains(err.Error(), tc.errorMsg) {
-				t.Errorf("%v: Expected error '%v' message to contain '%v'", name, err, tc.errorMsg)
-			}
+		if !strings.Contains(err.Error(), tc.errorMsg) {
+			t.Errorf("%v: Expected error '%v' message to contain '%v'", name, err, tc.errorMsg)
 		}
 	}
 }

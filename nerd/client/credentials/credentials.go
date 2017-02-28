@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+//NerdAPI holds a reference to a nerdalize auth token. A credentials provider is needed to provide this value.
 type NerdAPI struct {
 	value        *NerdAPIValue
 	provider     Provider
@@ -29,6 +30,7 @@ func NewNerdAPI(provider Provider) *NerdAPI {
 	}
 }
 
+//Get the nerd token. This function checks with the provider whether the token is expired and if so retrieves a new token from the provider.
 func (n *NerdAPI) Get() (*NerdAPIValue, error) {
 	n.m.Lock()
 	defer n.m.Unlock()

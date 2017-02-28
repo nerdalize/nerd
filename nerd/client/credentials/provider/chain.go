@@ -5,13 +5,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+//ChainProvider provides nerdalize credentials based on multiple providers. The given providers are tried in sequential order.
 type ChainProvider struct {
 	Providers []credentials.Provider
 	curr      credentials.Provider
 }
 
-// NewChainCredentials returns a pointer to a new Credentials object
-// wrapping a chain of providers.
 func NewChainCredentials(providers ...credentials.Provider) *credentials.NerdAPI {
 	return credentials.NewNerdAPI(&ChainProvider{
 		Providers: providers,
