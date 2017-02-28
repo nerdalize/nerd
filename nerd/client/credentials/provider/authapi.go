@@ -10,63 +10,26 @@ import (
 )
 
 const NerdTokenPermissions = 0644
-const DefaultExpireWindow = 20
 
+//AuthAPI provides nerdalize credentials by making a request to the nerdalize auth server.
+//The UserPassProvider is used to retreive the username and password required to authenticate with the auth server.
 type AuthAPI struct {
-	// The date/time when to expire on
-	expiration  time.Time
-	AlwaysValid bool
+	*ProviderBasis
 
-	// If set will be used by IsExpired to determine the current time.
-	// Defaults to time.Now if CurrentTime is not set.  Available for testing
-	// to be able to mock out the current time.
-	CurrentTime func() time.Time
-
-	Client       *client.AuthAPIClient
-	ExpireWindow time.Duration
-
+	Client           *client.AuthAPIClient
 	UserPassProvider func() (string, string, error)
 }
 
 func NewAuthAPI(userPassProvider func() (string, string, error), c *client.AuthAPIClient) *AuthAPI {
 	return &AuthAPI{
-		AlwaysValid:      false,
-		ExpireWindow:     DefaultExpireWindow,
+		ProviderBasis: &ProviderBasis{
+			ExpireWindow: DefaultExpireWindow,
+		},
 		UserPassProvider: userPassProvider,
 		Client:           c,
 	}
 }
 
-// IsExpired returns true if the credentials retrieved are expired, or not yet
-// retrieved.
-func (p *AuthAPI) IsExpired() bool {
-	if p.CurrentTime == nil {
-		p.CurrentTime = time.Now
-	}
-	return p.AlwaysValid || p.expiration.Before(p.CurrentTime())
-}
-
-func (p *AuthAPI) SetExpiration(expiration time.Time) {
-	p.expiration = expiration
-	if p.ExpireWindow > 0 {
-		p.expiration = p.expiration.Add(-p.ExpireWindow)
-	}
-}
-
-func saveNerdToken(token string) error {
-	filename, err := credentials.TokenFilename()
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(filename, []byte(token), NerdTokenPermissions)
-	if err != nil {
-		return errors.Wrapf(err, "failed to write nerd token to '%v'", filename)
-	}
-	return nil
-}
-
-// Retrieve will attempt to request the credentials from the endpoint the Provider
-// was configured for. And error will be returned if the retrieval fails.
 func (p *AuthAPI) Retrieve() (*credentials.NerdAPIValue, error) {
 	user, pass, err := p.UserPassProvider()
 	if err != nil {
@@ -89,4 +52,17 @@ func (p *AuthAPI) Retrieve() (*credentials.NerdAPIValue, error) {
 	return &credentials.NerdAPIValue{
 		NerdToken: token,
 	}, nil
+}
+
+//saveNerdToken saves the token to disk.
+func saveNerdToken(token string) error {
+	filename, err := TokenFilename()
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(filename, []byte(token), NerdTokenPermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to write nerd token to '%v'", filename)
+	}
+	return nil
 }

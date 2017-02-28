@@ -37,6 +37,8 @@ func DecodeTokenWithPEM(nerdToken, pem string) (*NerdClaims, error) {
 func DecodeTokenWithKey(nerdToken string, key *ecdsa.PublicKey) (*NerdClaims, error) {
 	return decodeToken(nerdToken, key)
 }
+
+//decodeToken decodes a nerd token (JWT) given the public key to check if the signature is valid.
 func decodeToken(nerdToken string, key *ecdsa.PublicKey) (*NerdClaims, error) {
 	p := &jwt.Parser{
 		SkipClaimsValidation: true,

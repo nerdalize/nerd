@@ -99,11 +99,6 @@ func (nerdapi *NerdAPIClient) CreateSession() (sess *payload.SessionCreateOutput
 
 //CreateTask creates a new executable task.
 func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, args []string) (output *payload.TaskCreateOutput, err error) {
-	// set env variables
-	// args = append(args, "-e=DATASET="+dataset)
-	// args = append(args, "-e=AWS_ACCESS_KEY_ID="+awsAccessKey)
-	// args = append(args, "-e=AWS_SECRET_ACCESS_KEY="+awsSecret)
-	// _ = args //@TODO fetch these via the API itself
 	output = &payload.TaskCreateOutput{}
 	// create payload
 	p := &payload.TaskCreateInput{
