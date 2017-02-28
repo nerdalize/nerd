@@ -9,6 +9,14 @@ type TaskCreateInput struct {
 	Environment map[string]string `json:"environment"`
 }
 
+//TaskResult is used when the worker needs to provide results of the execution
+type TaskResult struct {
+	ProjectID  string `json:"project_id"`
+	TaskID     string `json:"task_id"`
+	OutputID   string `json:"output_id"`
+	ExitStatus string `json:"exit_status"`
+}
+
 //TaskCreateOutput is returned from
 type TaskCreateOutput struct {
 	Task
@@ -30,6 +38,7 @@ type Task struct {
 	TaskID        string            `json:"task_id"`
 	InputID       string            `json:"input_id"`
 	OutputID      string            `json:"output_id,omitempty"`
+	WorkerID      string            `json:"worker_id,omitempty"`
 	Image         string            `json:"image"`
 	Environment   map[string]string `json:"environment,omitempty"`
 	CreatedAt     time.Time         `json:"created_at"`
