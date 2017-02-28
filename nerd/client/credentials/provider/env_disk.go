@@ -21,6 +21,12 @@ type EnvDisk struct {
 	TokenDecoder func(string) (*credentials.NerdClaims, error)
 }
 
+// NewChainCredentials returns a pointer to a new Credentials object
+// wrapping a chain of providers.
+func NewEnvDiskCredentials() *credentials.NerdAPI {
+	return credentials.NewNerdAPI(NewEnvDisk())
+}
+
 func NewEnvDisk() *EnvDisk {
 	return &EnvDisk{
 		AlwaysValid: false,
