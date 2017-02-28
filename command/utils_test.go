@@ -7,6 +7,7 @@ import (
 
 	"github.com/nerdalize/nerd/nerd/client"
 	"github.com/nerdalize/nerd/nerd/payload"
+	"github.com/pkg/errors"
 )
 
 func newRequest() *http.Request {
@@ -110,11 +111,11 @@ func TestHandleClientError(t *testing.T) {
 	return
 }
 
-// func TestHandleError(t *testing.T) {
-// 	err := errors.Wrap(errors.Wrap(errors.New("error1"), "error2"), "error3")
-// 	h := HandleError(err, false)
-// 	expected := "error3"
-// 	if fmt.Sprintf("%v", h) != expected {
-// 		t.Errorf("errors do not match: expected '%v' but got '%v'", expected, h)
-// 	}
-// }
+func TestHandleError(t *testing.T) {
+	err := errors.Wrap(errors.Wrap(errors.New("error1"), "error2"), "error3")
+	h := HandleError(err, false)
+	expected := "error3"
+	if fmt.Sprintf("%v", h) != expected {
+		t.Errorf("errors do not match: expected '%v' but got '%v'", expected, h)
+	}
+}

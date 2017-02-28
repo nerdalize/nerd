@@ -100,16 +100,25 @@ func verboseClientError(aerr *client.APIError) string {
 	return strings.Join(message, "\n")
 }
 
+func ErrorCauser(err error) error {
+	type causer interface {
+		Cause() error
+	}
+
+	if err2, ok := err.(causer); ok {
+		err = err2.Cause()
+	}
+	return err
+}
+
 //HandleError handles the way errors are presented to the user.
 func HandleError(err error, verbose bool) error {
 	if verbose {
 		return fmt.Errorf("%+v", err)
 	}
 	// when there's are more than 1 message on the message stack, only print the top one for user friendlyness.
-	//TODO this will return the entire error chain except the last error. Created issue on GH: https://github.com/pkg/errors/issues/104
 	if errors.Cause(err) != nil {
-		fmt.Println(errors.Cause(err))
-		return fmt.Errorf(strings.Replace(err.Error(), ": "+errors.Cause(err).Error(), "", 1))
+		return fmt.Errorf(strings.Replace(err.Error(), ": "+ErrorCauser(ErrorCauser(err)).Error(), "", 1))
 	}
 	return err
 }
