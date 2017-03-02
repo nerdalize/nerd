@@ -12,6 +12,8 @@ import (
 const (
 	AuthHeader = "Authorization"
 
+	projectsPrefix = "projects"
+
 	tasksEndpoint    = "tasks"
 	sessionsEndpoint = "sessions"
 )
@@ -45,8 +47,16 @@ func NewNerdAPIWithEndpoint(cred *credentials.NerdAPI, url string) *NerdAPIClien
 }
 
 //url returns the full endpoint url appended with a given path.
-func (nerdapi *NerdAPIClient) url(p string) string {
-	return nerdapi.URL + "/" + p
+func (nerdapi *NerdAPIClient) url(p string) (string, error) {
+	value, err := nerdapi.Credentials.Get()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get credentials")
+	}
+	claims, err := credentials.DecodeToken(value.NerdToken)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to decode token")
+	}
+	return nerdapi.URL + "/" + path.Join(projectsPrefix, claims.ProjectID, p), nil
 }
 
 func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, result interface{}) error {
@@ -90,7 +100,10 @@ func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, result interface{}) erro
 //CreateSession creates a new user session.
 func (nerdapi *NerdAPIClient) CreateSession() (sess *payload.SessionCreateOutput, err error) {
 	sess = &payload.SessionCreateOutput{}
-	url := nerdapi.url(path.Join(sessionsEndpoint))
+	url, err := nerdapi.url(path.Join(sessionsEndpoint))
+	if err != nil {
+		return nil, err
+	}
 	s := sling.New().Post(url)
 	err = nerdapi.doRequest(s, sess)
 	return
@@ -105,7 +118,10 @@ func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, args []st
 	}
 
 	// post request
-	url := nerdapi.url(tasksEndpoint)
+	url, err := nerdapi.url(tasksEndpoint)
+	if err != nil {
+		return nil, err
+	}
 	s := sling.New().
 		Post(url).
 		BodyJSON(p)
@@ -117,7 +133,10 @@ func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, args []st
 //PatchTaskStatus updates the status of a task.
 func (nerdapi *NerdAPIClient) PatchTaskStatus(id string, ts *payload.TaskCreateInput) error {
 	ts = &payload.TaskCreateInput{}
-	url := nerdapi.url(path.Join(tasksEndpoint, id))
+	url, err := nerdapi.url(path.Join(tasksEndpoint, id))
+	if err != nil {
+		return err
+	}
 	s := sling.New().
 		Patch(url).
 		BodyJSON(ts)
@@ -128,7 +147,10 @@ func (nerdapi *NerdAPIClient) PatchTaskStatus(id string, ts *payload.TaskCreateI
 //ListTasks lists all tasks.
 func (nerdapi *NerdAPIClient) ListTasks() (tl *payload.TaskListOutput, err error) {
 	tl = &payload.TaskListOutput{}
-	url := nerdapi.url(tasksEndpoint)
+	url, err := nerdapi.url(tasksEndpoint)
+	if err != nil {
+		return nil, err
+	}
 	s := sling.New().Get(url)
 	err = nerdapi.doRequest(s, tl)
 	return

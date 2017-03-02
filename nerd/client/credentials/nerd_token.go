@@ -22,6 +22,7 @@ OWbQHMK+vvUXieCJvCc9Vj084ABwLBgX
 
 type NerdClaims struct {
 	*jwt.StandardClaims
+	ProjectID string `json:"proj,omitempty"`
 }
 
 func DecodeToken(nerdToken string) (*NerdClaims, error) {
