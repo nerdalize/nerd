@@ -1,18 +1,31 @@
 package client
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
 
-//APIError is the error that is returned by client.NerdAPIClient
-type APIError struct {
-	Request  *http.Request
-	Response *http.Response
-	Err      error
+	"github.com/nerdalize/nerd/nerd/payload"
+)
+
+type HTTPError struct {
+	StatusCode int
+	Err        *payload.Error
 }
 
-func (e APIError) Error() string {
-	return e.Err.Error()
+func (e HTTPError) Error() string {
+	switch e.StatusCode {
+	case http.StatusUnprocessableEntity:
+		if len(e.Err.Fields) > 0 {
+			return fmt.Sprintf("validation error: %v", e.Err.Fields)
+		}
+	}
+	return fmt.Sprintf("unknown server error (%v)", e.StatusCode)
 }
 
-func (e APIError) Cause() error {
-	return e.Err
+func (e HTTPError) UserFacingMsg() string {
+	return e.Error()
+}
+
+func (e HTTPError) Underlying() error {
+	return nil
 }

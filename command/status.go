@@ -57,11 +57,11 @@ func (cmd *Status) DoRun(args []string) (err error) {
 
 	client, err := NewClient(cmd.ui)
 	if err != nil {
-		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
 	tasks, err := client.ListTasks()
 	if err != nil {
-		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
 	drawTable(tasks)

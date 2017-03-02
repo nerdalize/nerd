@@ -7,6 +7,7 @@ import (
 	"github.com/nerdalize/nerd/nerd/client"
 	"github.com/nerdalize/nerd/nerd/client/credentials"
 	"github.com/nerdalize/nerd/nerd/conf"
+	"github.com/nerdalize/nerd/nerd/payload"
 	"github.com/pkg/errors"
 )
 
@@ -40,6 +41,12 @@ func (p *AuthAPI) Retrieve(pub *ecdsa.PublicKey) (*credentials.NerdAPIValue, err
 	}
 	token, err := p.Client.GetToken(user, pass)
 	if err != nil {
+		if aerr, ok := err.(*payload.AuthError); ok {
+			return nil, &UserFacingError{
+				userFacingMsg: "Authentication server responded with: " + aerr.Detail,
+				underlying:    aerr,
+			}
+		}
 		return nil, errors.Wrap(err, "failed to get nerd token for username and password")
 	}
 	claims, err := credentials.DecodeTokenWithKey(token, pub)

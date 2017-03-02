@@ -12,7 +12,7 @@ import (
 
 //UploadOpts describes command options
 type UploadOpts struct {
-	*NerdOpts
+	NerdOpts
 }
 
 //Upload command
@@ -62,11 +62,11 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 
 	nerdclient, err := NewClient(cmd.ui)
 	if err != nil {
-		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
 	ds, err := nerdclient.CreateDataset()
 	if err != nil {
-		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
 	client, err := aws.NewDataClient(&aws.DataClientConfig{
@@ -90,7 +90,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	}
 
 	if err != nil {
-		return err
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
 	fmt.Printf("\nUploaded data to dataset with ID: %v\n", ds.DatasetID)

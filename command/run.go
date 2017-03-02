@@ -58,6 +58,7 @@ func (cmd *Run) DoRun(args []string) error {
 	if len(args) < 2 {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
+	SetLogSettings(cmd.opts.VerboseOutput)
 
 	conf.SetLocation(cmd.opts.ConfigFile)
 
@@ -72,12 +73,12 @@ func (cmd *Run) DoRun(args []string) error {
 
 	client, err := NewClient(cmd.ui)
 	if err != nil {
-		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
 	task, err := client.CreateTask(args[0], args[1], env)
 	if err != nil {
-		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
 	fmt.Printf("Created task with ID %v\n", task.TaskID)
 	return nil

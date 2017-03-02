@@ -7,7 +7,6 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/aws"
-	"github.com/pkg/errors"
 )
 
 //DownloadOpts describes command options
@@ -68,11 +67,11 @@ func (cmd *Download) DoRun(args []string) (err error) {
 
 	nerdclient, err := NewClient(cmd.ui)
 	if err != nil {
-		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
 	ds, err := nerdclient.GetDataset(dataset)
 	if err != nil {
-		return errors.Wrapf(err, "failed to get dataset information for dataset %v", dataset)
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
 	client, err := aws.NewDataClient(&aws.DataClientConfig{
