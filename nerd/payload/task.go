@@ -1,12 +1,29 @@
 package payload
 
+import "time"
+
 //TaskCreateInput is used as input to task creation
 type TaskCreateInput struct {
-	Image string `json:"image" valid:"min=1,max=64,required"`
+	Image       string            `json:"image" valid:"min=1,max=64,required"`
+	InputID     string            `json:"input_id" valid:"datasetid"`
+	Environment map[string]string `json:"environment"`
+}
+
+//TaskResult is used when the worker needs to provide results of the execution
+type TaskResult struct {
+	ProjectID  string `json:"project_id"`
+	TaskID     string `json:"task_id"`
+	OutputID   string `json:"output_id"`
+	ExitStatus string `json:"exit_status"`
 }
 
 //TaskCreateOutput is returned from
 type TaskCreateOutput struct {
+	Task
+}
+
+//TaskDescribeOutput is returned from a specific task
+type TaskDescribeOutput struct {
 	Task
 }
 
@@ -17,6 +34,13 @@ type TaskListOutput struct {
 
 //Task is a task in the list output
 type Task struct {
-	ID    string `json:"id"`
-	Image string `json:"image"`
+	ProjectID     string            `json:"project_id"`
+	TaskID        string            `json:"task_id"`
+	InputID       string            `json:"input_id"`
+	OutputID      string            `json:"output_id,omitempty"`
+	WorkerID      string            `json:"worker_id,omitempty"`
+	Image         string            `json:"image"`
+	Environment   map[string]string `json:"environment,omitempty"`
+	CreatedAt     time.Time         `json:"created_at"`
+	ActivityToken string            `json:"activity_token,omitempty"`
 }
