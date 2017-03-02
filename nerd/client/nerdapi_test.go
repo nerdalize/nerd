@@ -3,15 +3,21 @@ package client
 import (
 	"crypto/ecdsa"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/dghubble/sling"
 	"github.com/nerdalize/nerd/nerd/client/credentials"
 	"github.com/nerdalize/nerd/nerd/payload"
 )
+
+func init() {
+	logrus.SetOutput(ioutil.Discard)
+}
 
 //fakeProvider is a fake credentials provider for testing purposes.
 type fakeProvider struct{}
