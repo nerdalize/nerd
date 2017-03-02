@@ -58,7 +58,7 @@ func (cmd *Run) DoRun(args []string) error {
 	if len(args) < 2 {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
-	SetLogSettings(cmd.opts.VerboseOutput)
+	SetLogSettings(cmd.opts.JSONOutput, cmd.opts.VerboseOutput)
 
 	conf.SetLocation(cmd.opts.ConfigFile)
 

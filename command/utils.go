@@ -60,9 +60,13 @@ func UserPassProvider(ui cli.Ui) func() (string, string, error) {
 	}
 }
 
-func SetLogSettings(verbose bool) {
+func SetLogSettings(json bool, verbose bool) {
 	if verbose {
+		logrus.SetFormatter(new(logrus.TextFormatter))
 		logrus.SetLevel(logrus.DebugLevel)
+	}
+	if json {
+		logrus.SetFormatter(new(logrus.JSONFormatter))
 	}
 }
 
