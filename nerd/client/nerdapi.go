@@ -12,10 +12,11 @@ import (
 const (
 	AuthHeader = "Authorization"
 
-	projectsPrefix = "projects"
+	projectsPrefix = "projects/6de308f4-face-11e6-bc64-92361f002671"
 
 	tasksEndpoint    = "tasks"
-	sessionsEndpoint = "sessions"
+	sessionsEndpoint = "tokens"
+	workersEndpoint  = "workers"
 )
 
 //NerdAPIClient is a client for the Nerdalize API.
@@ -33,6 +34,7 @@ func NewNerdAPI(cred *credentials.NerdAPI) (*NerdAPIClient, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to decode token '%v'", value.NerdToken)
 	}
+
 	if claims.Audience == "" {
 		return nil, errors.Errorf("nerd token '%v' does not contain audience field", claims.Audience)
 	}
@@ -97,6 +99,31 @@ func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, result interface{}) erro
 	return nil
 }
 
+//CreateWorker creates registers this client as workable capacity
+func (nerdapi *NerdAPIClient) CreateWorker() (worker *payload.WorkerCreateOutput, err error) {
+	worker = &payload.WorkerCreateOutput{}
+	url, err := nerdapi.url(path.Join(workersEndpoint))
+	if err != nil {
+		return nil, err
+	}
+
+	s := sling.New().Post(url)
+	err = nerdapi.doRequest(s, worker)
+	return
+}
+
+//DeleteWorker removes a worker
+func (nerdapi *NerdAPIClient) DeleteWorker(workerID string) (err error) {
+	url, err := nerdapi.url(path.Join(workersEndpoint, workerID))
+	if err != nil {
+		return err
+	}
+
+	s := sling.New().Delete(url)
+	err = nerdapi.doRequest(s, nil)
+	return
+}
+
 //CreateSession creates a new user session.
 func (nerdapi *NerdAPIClient) CreateSession() (sess *payload.SessionCreateOutput, err error) {
 	sess = &payload.SessionCreateOutput{}
@@ -122,6 +149,7 @@ func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, args []st
 	if err != nil {
 		return nil, err
 	}
+
 	s := sling.New().
 		Post(url).
 		BodyJSON(p)
