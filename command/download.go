@@ -6,12 +6,14 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd"
-	"github.com/nerdalize/nerd/nerd/data"
+	"github.com/nerdalize/nerd/nerd/aws"
+	"github.com/pkg/errors"
 )
 
 //DownloadOpts describes command options
-type DownloadOpts struct{}
+type DownloadOpts struct {
+	NerdOpts
+}
 
 //Download command
 type Download struct {
@@ -65,17 +67,26 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		return fmt.Errorf("provided path '%s' is not a directory", outputDir)
 	}
 
-	awsCreds, err := nerd.GetCurrentUser().GetAWSCredentials()
+	nerdclient, err := NewClient(cmd.ui)
 	if err != nil {
-		return fmt.Errorf("could not get AWS credentials: %v", err)
+		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+	}
+	ds, err := nerdclient.GetDataset(dataset)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get dataset information for dataset %v", dataset)
 	}
 
-	client, err := data.NewClient(awsCreds)
+	fmt.Println("Root: " + ds.Root)
+
+	client, err := aws.NewDataClient(&aws.DataClientConfig{
+		Credentials: aws.NewNerdalizeCredentials(nerdclient),
+		Bucket:      ds.Bucket,
+	})
 	if err != nil {
 		return fmt.Errorf("could not create data client: %v", err)
 	}
 
-	err = client.DownloadFiles(dataset, outputDir, &stdoutkw{}, 64)
+	err = client.DownloadFiles(ds.Root, outputDir, &stdoutkw{}, 64)
 	if err != nil {
 		return fmt.Errorf("could not download files: %v", err)
 	}
