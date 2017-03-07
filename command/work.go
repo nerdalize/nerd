@@ -136,6 +136,7 @@ func (cmd *Work) DoRun(args []string) (err error) {
 				for _, msg := range out.Messages {
 					task := &payload.Task{}
 					if err = json.Unmarshal([]byte(aws.StringValue(msg.Body)), task); err != nil {
+
 						//@TODO return deserialization errors
 						fmt.Fprintf(os.Stderr, "failed to deserialize: %+v", err)
 						return

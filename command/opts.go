@@ -16,10 +16,12 @@ type NerdAPIOpts struct {
 	NerdAPIURL string `long:"api-url" default:"" default-mask:"" env:"NERD_API_URL" description:"full endpoint url"`
 }
 
+//AuthAPIOpts configures the remote url for the authentication service
 type AuthAPIOpts struct {
 	AuthAPIURL string `long:"auth-url" default:"" default-mask:"" env:"AUTH_API_URL" description:"full auth endpoint url"`
 }
 
+//OutputOpts configures the level of output
 type OutputOpts struct {
 	VerboseOutput bool `short:"v" long:"verbose" default-mask:"false" description:"show verbose output"`
 }
@@ -30,7 +32,7 @@ func (opts *NerdAPIOpts) URL() (loc string) {
 		return opts.NerdAPIURL
 	}
 	return fmt.Sprintf(
-		"%s://%s/%s/%s",
+		"%s://%s/%s",
 		opts.NerdAPIScheme,
 		opts.NerdAPIHostname,
 		opts.NerdAPIVersion,

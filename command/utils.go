@@ -100,6 +100,7 @@ func verboseClientError(aerr *client.APIError) string {
 	return strings.Join(message, "\n")
 }
 
+//ErrorCauser can be implemented by error return values to define a root cause
 func ErrorCauser(err error) error {
 	type causer interface {
 		Cause() error
