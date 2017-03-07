@@ -9,7 +9,9 @@ import (
 
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/client"
+	"github.com/nerdalize/nerd/nerd/client/credentials"
 	"github.com/nerdalize/nerd/nerd/client/credentials/provider"
+	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/payload"
 	"github.com/pkg/errors"
 )
@@ -26,23 +28,35 @@ func (kw *stdoutkw) Write(k string) (err error) {
 }
 
 //NewClient creates a new NerdAPIClient with two credential providers.
-func NewClient(ui cli.Ui, nerdAPIURL, authURL string) *client.NerdAPIClient {
-	return client.NewNerdAPIWithEndpoint(provider.NewChainCredentials(
-		provider.NewEnv(),
-		provider.NewDisk(),
-		provider.NewAuthAPI(func() (string, string, error) {
-			ui.Info("Please enter your Nerdalize username and password.")
-			user, err := ui.Ask("Username: ")
-			if err != nil {
-				return "", "", errors.Wrap(err, "failed to read username")
-			}
-			pass, err := ui.AskSecret("Password: ")
-			if err != nil {
-				return "", "", errors.Wrap(err, "failed to read password")
-			}
-			return user, pass, nil
-		}, client.NewAuthAPI(authURL)),
-	), nerdAPIURL)
+func NewClient(ui cli.Ui) (*client.NerdAPIClient, error) {
+	c, err := conf.Read()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read config")
+	}
+	key, err := credentials.ParseECDSAPublicKeyFromPemBytes([]byte(c.Auth.PublicKey))
+	if err != nil {
+		return nil, errors.Wrap(err, "ECDSA Public Key is invalid")
+	}
+	return client.NewNerdAPI(client.NerdAPIConfig{
+		Credentials: provider.NewChainCredentials(
+			key,
+			provider.NewEnv(),
+			provider.NewConfig(),
+			provider.NewAuthAPI(func() (string, string, error) {
+				ui.Info("Please enter your Nerdalize username and password.")
+				user, err := ui.Ask("Username: ")
+				if err != nil {
+					return "", "", errors.Wrap(err, "failed to read username")
+				}
+				pass, err := ui.AskSecret("Password: ")
+				if err != nil {
+					return "", "", errors.Wrap(err, "failed to read password")
+				}
+				return user, pass, nil
+			}, client.NewAuthAPI(c.Auth.APIEndpoint)),
+		),
+		URL: c.NerdAPIEndpoint,
+	})
 }
 
 //HandleClientError handles errors produced by client.NerdAPIClient

@@ -6,13 +6,12 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/nerd/conf"
 )
 
 //RunOpts describes command options
 type RunOpts struct {
-	*NerdAPIOpts
-	*AuthAPIOpts
-	*OutputOpts
+	*NerdOpts
 }
 
 //Run command
@@ -56,9 +55,14 @@ func (cmd *Run) DoRun(args []string) error {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	c := NewClient(cmd.ui, cmd.opts.URL(), cmd.opts.AuthAPIURL)
+	conf.SetLocation(cmd.opts.ConfigFile)
 
-	_, err := c.CreateTask(args[0], args[1], args[2:])
+	client, err := NewClient(cmd.ui)
+	if err != nil {
+		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+	}
+
+	_, err = client.CreateTask(args[0], args[1], args[2:])
 	if err != nil {
 		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
 	}

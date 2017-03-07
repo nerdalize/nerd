@@ -20,41 +20,48 @@ const (
 
 //NerdAPIClient is a client for the Nerdalize API.
 type NerdAPIClient struct {
-	URL         string
-	Credentials *credentials.NerdAPI
+	NerdAPIConfig
 }
 
-func NewNerdAPI(cred *credentials.NerdAPI) (*NerdAPIClient, error) {
-	value, err := cred.Get()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get credentials")
+type NerdAPIConfig struct {
+	Credentials *credentials.NerdAPI
+	URL         string
+}
+
+func NewNerdAPI(conf NerdAPIConfig) (*NerdAPIClient, error) {
+	cl := &NerdAPIClient{
+		conf,
 	}
-	claims, err := credentials.DecodeToken(value.NerdToken)
+	if cl.URL == "" {
+		aud, err := getAudience(conf.Credentials)
+		if err != nil {
+			// TODO: make it a user facing err
+			return nil, errors.Wrap(err, "no valid URL was provided")
+		}
+		cl.URL = aud
+	}
+	return cl, nil
+}
+
+func getAudience(cred *credentials.NerdAPI) (string, error) {
+	if cred == nil {
+		return "", errors.New("credentials object was nil")
+	}
+	claims, err := cred.GetClaims()
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to decode token '%v'", value.NerdToken)
+		return "", errors.Wrap(err, "failed to retreive nerd claims")
 	}
 	if claims.Audience == "" {
-		return nil, errors.Errorf("nerd token '%v' does not contain audience field", claims.Audience)
+		return "", errors.Errorf("nerd token '%v' does not contain audience field", claims.Audience)
 	}
-	return NewNerdAPIWithEndpoint(cred, claims.Audience), nil
-}
-
-func NewNerdAPIWithEndpoint(cred *credentials.NerdAPI, url string) *NerdAPIClient {
-	return &NerdAPIClient{
-		Credentials: cred,
-		URL:         url,
-	}
+	return claims.Audience, nil
 }
 
 //url returns the full endpoint url appended with a given path.
 func (nerdapi *NerdAPIClient) url(p string) (string, error) {
-	value, err := nerdapi.Credentials.Get()
+	claims, err := nerdapi.Credentials.GetClaims()
 	if err != nil {
-		return "", errors.Wrap(err, "failed to get credentials")
-	}
-	claims, err := credentials.DecodeToken(value.NerdToken)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to decode token")
+		return "", errors.Wrap(err, "failed to retreive nerd claims")
 	}
 	return nerdapi.URL + "/" + path.Join(projectsPrefix, claims.ProjectID, p), nil
 }
