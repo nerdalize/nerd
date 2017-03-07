@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"sync"
 
+	"github.com/nerdalize/nerd/nerd/payload"
 	"github.com/pkg/errors"
 )
 
@@ -50,7 +51,7 @@ func (n *NerdAPI) Get() (*NerdAPIValue, error) {
 	return n.value, nil
 }
 
-func (n *NerdAPI) GetClaims() (*NerdClaims, error) {
+func (n *NerdAPI) GetClaims() (*payload.NerdClaims, error) {
 	val, err := n.Get()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retreive token")

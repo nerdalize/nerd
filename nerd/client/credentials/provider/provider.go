@@ -1,11 +1,9 @@
 package provider
 
 import (
-	"crypto/ecdsa"
 	"time"
 
 	homedir "github.com/mitchellh/go-homedir"
-	"github.com/nerdalize/nerd/nerd/client/credentials"
 	"github.com/pkg/errors"
 )
 
@@ -18,7 +16,6 @@ type ProviderBasis struct {
 	AlwaysValid bool
 
 	ExpireWindow time.Duration
-	TokenDecoder func(string, *ecdsa.PublicKey) (*credentials.NerdClaims, error)
 }
 
 //IsExpired checks if the current token is expired.
