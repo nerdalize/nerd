@@ -1,11 +1,13 @@
 package provider
 
 import (
+	"crypto/ecdsa"
 	"io/ioutil"
 	"time"
 
 	"github.com/nerdalize/nerd/nerd/client"
 	"github.com/nerdalize/nerd/nerd/client/credentials"
+	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
 )
 
@@ -30,7 +32,7 @@ func NewAuthAPI(userPassProvider func() (string, string, error), c *client.AuthA
 	}
 }
 
-func (p *AuthAPI) Retrieve() (*credentials.NerdAPIValue, error) {
+func (p *AuthAPI) Retrieve(pub *ecdsa.PublicKey) (*credentials.NerdAPIValue, error) {
 	user, pass, err := p.UserPassProvider()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get username or password")
@@ -43,9 +45,13 @@ func (p *AuthAPI) Retrieve() (*credentials.NerdAPIValue, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to save nerd token")
 	}
-	claims, err := credentials.DecodeToken(token)
+	claims, err := credentials.DecodeTokenWithKey(token, pub)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retreive claims from nerd token '%v'", token)
+	}
+	err = conf.WriteNerdToken(token)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to write nerd token to config")
 	}
 	p.AlwaysValid = claims.ExpiresAt == 0 // if unset
 	p.SetExpiration(time.Unix(claims.ExpiresAt, 0))

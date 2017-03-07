@@ -11,13 +11,6 @@ import (
 
 const (
 	NerdTokenEnvVar = "NERD_TOKEN"
-	PublicKey       = `
------BEGIN PUBLIC KEY-----
-MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEAkYbLnam4wo+heLlTZEeh1ZWsfruz9nk
-kyvc4LwKZ8pez5KYY76H1ox+AfUlWOEq+bExypcFfEIrJkf/JXa7jpzkOWBDF9Sa
-OWbQHMK+vvUXieCJvCc9Vj084ABwLBgX
------END PUBLIC KEY-----
-`
 )
 
 type NerdClaims struct {
@@ -25,9 +18,6 @@ type NerdClaims struct {
 	ProjectID string `json:"proj,omitempty"`
 }
 
-func DecodeToken(nerdToken string) (*NerdClaims, error) {
-	return DecodeTokenWithPEM(nerdToken, PublicKey)
-}
 func DecodeTokenWithPEM(nerdToken, pem string) (*NerdClaims, error) {
 	key, err := ParseECDSAPublicKeyFromPemBytes([]byte(pem))
 	if err != nil {

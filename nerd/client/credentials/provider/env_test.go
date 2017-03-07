@@ -39,11 +39,7 @@ func tokenAndPub(claims *credentials.NerdClaims, t *testing.T) (string, *ecdsa.P
 
 func newEnvProvider(pub *ecdsa.PublicKey) *Env {
 	return &Env{
-		ProviderBasis: &ProviderBasis{
-			TokenDecoder: func(t string) (*credentials.NerdClaims, error) {
-				return credentials.DecodeTokenWithKey(t, pub)
-			},
-		},
+		ProviderBasis: &ProviderBasis{},
 	}
 }
 
@@ -75,7 +71,7 @@ func TestEnvProviderRetrieve(t *testing.T) {
 		}
 		os.Setenv("NERD_TOKEN", token)
 		e := newEnvProvider(pub)
-		value, err := e.Retrieve()
+		value, err := e.Retrieve(pub)
 		if err != nil {
 			t.Fatalf("%v: Unexpected error: %v", name, err)
 		}
@@ -111,7 +107,7 @@ func TestEnvProviderRetrieve(t *testing.T) {
 		os.Setenv("NERD_TOKEN", token)
 
 		e := newEnvProvider(pub)
-		_, err := e.Retrieve()
+		_, err := e.Retrieve(pub)
 		if err == nil {
 			t.Fatalf("%v: Expected error but error was nil", name)
 		}

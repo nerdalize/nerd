@@ -2,35 +2,38 @@ package provider
 
 import (
 	"crypto/ecdsa"
-	"os"
 	"time"
 
 	"github.com/nerdalize/nerd/nerd/client/credentials"
+	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
 )
 
-//Env provides nerdalize credentials from the `credentials.NerdTokenEnvVar` environment variable.
-type Env struct {
+//Config provides nerdalize credentials from a file on Config. The default file can be found in TokenFilename().
+type Config struct {
 	*ProviderBasis
 }
 
-//NewEnvCredentials creates new nerdalize credentials with the env provider.
-func NewEnvCredentials(pub *ecdsa.PublicKey) *credentials.NerdAPI {
-	return credentials.NewNerdAPI(pub, NewEnv())
+func NewConfigCredentials(pub *ecdsa.PublicKey) *credentials.NerdAPI {
+	return credentials.NewNerdAPI(pub, NewConfig())
 }
 
-func NewEnv() *Env {
-	return &Env{
+func NewConfig() *Config {
+	return &Config{
 		ProviderBasis: &ProviderBasis{
 			ExpireWindow: DefaultExpireWindow,
 		},
 	}
 }
 
-func (e *Env) Retrieve(pub *ecdsa.PublicKey) (*credentials.NerdAPIValue, error) {
-	token := os.Getenv(credentials.NerdTokenEnvVar)
+func (e *Config) Retrieve(pub *ecdsa.PublicKey) (*credentials.NerdAPIValue, error) {
+	c, err := conf.Read()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read config")
+	}
+	token := c.NerdToken
 	if token == "" {
-		return nil, errors.Errorf("environment variable %v is not set", credentials.NerdTokenEnvVar)
+		return nil, errors.New("nerd_token is not set in config")
 	}
 	claims, err := credentials.DecodeTokenWithKey(token, pub)
 	if err != nil {

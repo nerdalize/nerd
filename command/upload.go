@@ -6,13 +6,13 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/data"
 )
 
 //UploadOpts describes command options
 type UploadOpts struct {
-	*NerdAPIOpts
-	*AuthAPIOpts
+	*NerdOpts
 }
 
 //Upload command
@@ -57,10 +57,15 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
+	conf.SetLocation(cmd.opts.ConfigFile)
+
 	dataset := args[0]
 	path := args[1]
 
-	nerdclient := NewClient(cmd.ui, cmd.opts.URL(), cmd.opts.AuthAPIURL)
+	nerdclient, err := NewClient(cmd.ui)
+	if err != nil {
+		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+	}
 	client, err := data.NewClient(data.NewNerdalizeCredentials(nerdclient))
 	if err != nil {
 		return fmt.Errorf("could not create data client: %v", err)

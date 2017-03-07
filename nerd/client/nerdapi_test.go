@@ -1,6 +1,7 @@
 package client
 
 import (
+	"crypto/ecdsa"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -19,7 +20,7 @@ func (f *fakeProvider) IsExpired() bool {
 	return true
 }
 
-func (f *fakeProvider) Retrieve() (*credentials.NerdAPIValue, error) {
+func (f *fakeProvider) Retrieve(pub *ecdsa.PublicKey) (*credentials.NerdAPIValue, error) {
 	return &credentials.NerdAPIValue{
 		NerdToken: "",
 	}, nil
@@ -71,8 +72,14 @@ func TestDoRequest(t *testing.T) {
 		}
 		defer svr.Close()
 		s := sling.New().Get(svr.URL)
-		cl := NewNerdAPIWithEndpoint(credentials.NewNerdAPI(&fakeProvider{}), svr.URL)
-		err := cl.doRequest(s, tc.successResult)
+		cl, err := NewNerdAPI(NerdAPIConfig{
+			Credentials: credentials.NewNerdAPI(&fakeProvider{}),
+			URL:         svr.URL,
+		})
+		if err != nil {
+			t.Fatalf("[%v]: Failed to create client", name)
+		}
+		err = cl.doRequest(s, tc.successResult)
 		if err != nil {
 			aerr, ok := err.(*APIError)
 			if !ok {
