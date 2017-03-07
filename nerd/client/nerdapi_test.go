@@ -73,7 +73,7 @@ func TestDoRequest(t *testing.T) {
 		defer svr.Close()
 		s := sling.New().Get(svr.URL)
 		cl, err := NewNerdAPI(NerdAPIConfig{
-			Credentials: credentials.NewNerdAPI(&fakeProvider{}),
+			Credentials: credentials.NewNerdAPI(&ecdsa.PublicKey{}, &fakeProvider{}),
 			URL:         svr.URL,
 		})
 		if err != nil {
