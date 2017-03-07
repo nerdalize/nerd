@@ -11,13 +11,11 @@ import (
 
 const (
 	NerdTokenEnvVar = "NERD_TOKEN"
-	PublicKey       = `
------BEGIN PUBLIC KEY-----
-MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAElCqCpOM/H3lzyVA1/w3J58zQX4gro6wg
-tzg5VVTp9fK+gCqMF4qROgQwbnJrsnAay9Xjj9TvIYIp+3G6dwHGTpO5CmXD+ybK
-nP9DfaloYX8Y4S7mls9SuO5wVYCW+u34
------END PUBLIC KEY-----
-`
+	PublicKey       = `-----BEGIN PUBLIC KEY-----
+MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAErp9eD4KGAN/eC8FNGFV4idcXGKOEgI2Z
+6gaPcNSdb9R5nsCXw0k/FrMHp9CTzkfL0akK0vVo10HJPY+jgSHmW9wAuBeh8+pn
+rLSU0XRvg673TGBW5Fj2LAJTPNQQ/Auw
+-----END PUBLIC KEY-----`
 )
 
 type NerdClaims struct {
