@@ -12,9 +12,9 @@ import (
 const (
 	NerdTokenEnvVar = "NERD_TOKEN"
 	PublicKey       = `-----BEGIN PUBLIC KEY-----
-MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEq+vArxUax61kU9w3i27s5xQQt0Qdlm58
-hNnFGSq5sktUgv9UcuEeVeLgjsKPRL8WiBpLvlcEqSK5u50pwRFRlPvY8oBPUcv/
-mybXzEj4hJK8Ty+L1HyAKGJi/RIy9rFB
+MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAE2Khq+qnocP6Cuc0v5qTH0GfdjNdsxi6Q
+hztIBBbdwLqJrZG3f3qiXBYtzYFlM20crc9DdNKkgAK5XygcHvZbSiQQVtythgJa
+/bjaK2weOUbHAmfLOyA2t+jwYmugkg96
 -----END PUBLIC KEY-----`
 )
 
