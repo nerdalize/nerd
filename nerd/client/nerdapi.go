@@ -12,10 +12,11 @@ import (
 const (
 	AuthHeader = "Authorization"
 
-	projectsPrefix = "projects"
+	projectsPrefix = "projects/6de308f4-face-11e6-bc64-92361f002671"
 
 	tasksEndpoint    = "tasks"
-	sessionsEndpoint = "sessions"
+	sessionsEndpoint = "tokens"
+	datasetEndpoint  = "datasets"
 )
 
 //NerdAPIClient is a client for the Nerdalize API.
@@ -59,11 +60,14 @@ func getAudience(cred *credentials.NerdAPI) (string, error) {
 
 //url returns the full endpoint url appended with a given path.
 func (nerdapi *NerdAPIClient) url(p string) (string, error) {
-	claims, err := nerdapi.Credentials.GetClaims()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to retreive nerd claims")
-	}
-	return nerdapi.URL + "/" + path.Join(projectsPrefix, claims.ProjectID, p), nil
+	// claims, err := nerdapi.Credentials.GetClaims()
+	// if err != nil {
+	// 	return "", errors.Wrap(err, "failed to retreive nerd claims")
+	// }
+	// return nerdapi.URL + "/" + path.Join(projectsPrefix, claims.ProjectID, p), nil
+
+	// TODO: Don't hardcode the ProjectID
+	return nerdapi.URL + "/" + path.Join(projectsPrefix, p), nil
 }
 
 func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, result interface{}) error {
@@ -117,11 +121,13 @@ func (nerdapi *NerdAPIClient) CreateSession() (sess *payload.SessionCreateOutput
 }
 
 //CreateTask creates a new executable task.
-func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, args []string) (output *payload.TaskCreateOutput, err error) {
+func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, env map[string]string) (output *payload.TaskCreateOutput, err error) {
 	output = &payload.TaskCreateOutput{}
 	// create payload
 	p := &payload.TaskCreateInput{
-		Image: image,
+		Image:       image,
+		InputID:     dataset,
+		Environment: env,
 	}
 
 	// post request
@@ -160,5 +166,29 @@ func (nerdapi *NerdAPIClient) ListTasks() (tl *payload.TaskListOutput, err error
 	}
 	s := sling.New().Get(url)
 	err = nerdapi.doRequest(s, tl)
+	return
+}
+
+//CreateDataset creates a new dataset.
+func (nerdapi *NerdAPIClient) CreateDataset() (d *payload.DatasetCreateOutput, err error) {
+	d = &payload.DatasetCreateOutput{}
+	url, err := nerdapi.url(datasetEndpoint)
+	if err != nil {
+		return nil, err
+	}
+	s := sling.New().Post(url)
+	err = nerdapi.doRequest(s, d)
+	return
+}
+
+//GetDataset gets a dataset by ID.
+func (nerdapi *NerdAPIClient) GetDataset(id string) (d *payload.DatasetDescribeOutput, err error) {
+	d = &payload.DatasetDescribeOutput{}
+	url, err := nerdapi.url(path.Join(datasetEndpoint, id))
+	if err != nil {
+		return nil, err
+	}
+	s := sling.New().Get(url)
+	err = nerdapi.doRequest(s, d)
 	return
 }

@@ -6,8 +6,8 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/nerd/aws"
 	"github.com/nerdalize/nerd/nerd/conf"
-	"github.com/nerdalize/nerd/nerd/data"
 )
 
 //UploadOpts describes command options
@@ -30,7 +30,7 @@ func UploadFactory() func() (cmd cli.Command, err error) {
 		command: &command{
 			help:     "",
 			synopsis: "push task data as input to cloud storage",
-			parser:   flags.NewNamedParser("nerd upload <dataset> <path>", flags.Default),
+			parser:   flags.NewNamedParser("nerd upload <path>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
 				Writer: os.Stderr,
@@ -53,20 +53,27 @@ func UploadFactory() func() (cmd cli.Command, err error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *Upload) DoRun(args []string) (err error) {
-	if len(args) < 2 {
+	if len(args) < 1 {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
 	conf.SetLocation(cmd.opts.ConfigFile)
 
-	dataset := args[0]
-	path := args[1]
+	path := args[0]
 
 	nerdclient, err := NewClient(cmd.ui)
 	if err != nil {
 		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
 	}
-	client, err := data.NewClient(data.NewNerdalizeCredentials(nerdclient))
+	ds, err := nerdclient.CreateDataset()
+	if err != nil {
+		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+	}
+
+	client, err := aws.NewDataClient(&aws.DataClientConfig{
+		Credentials: aws.NewNerdalizeCredentials(nerdclient),
+		Bucket:      ds.Bucket,
+	})
 	if err != nil {
 		return fmt.Errorf("could not create data client: %v", err)
 	}
@@ -78,9 +85,16 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 
 	switch mode := fi.Mode(); {
 	case mode.IsDir():
-		return client.UploadDir(path, dataset, &stdoutkw{}, 64)
+		err = client.UploadDir(path, ds.Root, &stdoutkw{}, 64)
 	case mode.IsRegular():
-		return client.UploadFile(path, path, dataset)
+		err = client.UploadFile(path, path, ds.Root)
 	}
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("\nUploaded data to dataset with ID: %v\n", ds.DatasetID)
+
 	return nil
 }

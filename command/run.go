@@ -3,15 +3,19 @@ package command
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/conf"
+	"github.com/pkg/errors"
 )
 
 //RunOpts describes command options
 type RunOpts struct {
 	*NerdOpts
+
+	Environment []string `short:"e" description:"container environment variables"`
 }
 
 //Run command
@@ -57,14 +61,24 @@ func (cmd *Run) DoRun(args []string) error {
 
 	conf.SetLocation(cmd.opts.ConfigFile)
 
+	env := make(map[string]string)
+	for i, e := range cmd.opts.Environment {
+		split := strings.Split(e, "=")
+		if len(split) != 2 {
+			return errors.Errorf("Environment variable %v (%v) is in the wrong format. Please specify environment flag as '-e [KEY]=[VALUE]'", (i + 1), e)
+		}
+		env[split[0]] = split[1]
+	}
+
 	client, err := NewClient(cmd.ui)
 	if err != nil {
 		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
 	}
 
-	_, err = client.CreateTask(args[0], args[1], args[2:])
+	task, err := client.CreateTask(args[0], args[1], env)
 	if err != nil {
 		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
 	}
+	fmt.Printf("Created task with ID %v\n", task.TaskID)
 	return nil
 }
