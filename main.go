@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/nerdalize/nerd/command"
+	"github.com/nerdalize/nerd/nerd"
 
 	"github.com/mitchellh/cli"
 )
