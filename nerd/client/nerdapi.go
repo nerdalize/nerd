@@ -121,11 +121,13 @@ func (nerdapi *NerdAPIClient) CreateSession() (sess *payload.SessionCreateOutput
 }
 
 //CreateTask creates a new executable task.
-func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, args []string) (output *payload.TaskCreateOutput, err error) {
+func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, env map[string]string) (output *payload.TaskCreateOutput, err error) {
 	output = &payload.TaskCreateOutput{}
 	// create payload
 	p := &payload.TaskCreateInput{
-		Image: image,
+		Image:       image,
+		InputID:     dataset,
+		Environment: env,
 	}
 
 	// post request

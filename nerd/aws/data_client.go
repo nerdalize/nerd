@@ -36,6 +36,7 @@ type DataClientConfig struct {
 
 //NewDataClient creates a new data client that is capable of uploading and downloading (multiple) files.
 func NewDataClient(conf *DataClientConfig) (*DataClient, error) {
+	// TODO: Don't hardcode region
 	sess, err := session.NewSession(&aws.Config{
 		Credentials: conf.Credentials,
 		Region:      aws.String(nerd.GetCurrentUser().Region),
@@ -152,8 +153,8 @@ func (client *DataClient) DownloadFile(key, outFile string) error {
 
 	svc := s3.New(client.Session)
 	params := &s3.GetObjectInput{
-		Bucket: aws.String(nerd.GetCurrentUser().AWSBucket), // Required
-		Key:    aws.String(key),                             // Required
+		Bucket: aws.String(client.Bucket), // Required
+		Key:    aws.String(key),           // Required
 	}
 	resp, err := svc.GetObject(params)
 
@@ -174,7 +175,7 @@ func (client *DataClient) ListObjects(root string) (keys []string, err error) {
 	svc := s3.New(client.Session)
 
 	params := &s3.ListObjectsInput{
-		Bucket: aws.String(nerd.GetCurrentUser().AWSBucket), // Required
+		Bucket: aws.String(client.Bucket), // Required
 		Prefix: aws.String(root),
 	}
 	resp, err := svc.ListObjects(params)
@@ -198,15 +199,14 @@ func (client *DataClient) DownloadFiles(root string, outDir string, kw KeyWriter
 	}
 
 	type item struct {
-		key    string
-		outDir string
-		resCh  chan bool
-		err    error
+		key     string
+		outFile string
+		resCh   chan bool
+		err     error
 	}
 
 	work := func(it *item) {
-		outFile := path.Join(it.outDir, strings.Replace(it.key, root+"/", "", 1))
-		it.err = client.DownloadFile(it.key, outFile)
+		it.err = client.DownloadFile(it.key, it.outFile)
 		it.resCh <- true
 	}
 
@@ -215,9 +215,9 @@ func (client *DataClient) DownloadFiles(root string, outDir string, kw KeyWriter
 		defer close(itemCh)
 		for i := 0; i < len(keys); i++ {
 			it := &item{
-				key:    keys[i],
-				outDir: outDir,
-				resCh:  make(chan bool),
+				key:     keys[i],
+				outFile: path.Join(outDir, strings.Replace(keys[i], root+"/", "", 1)),
+				resCh:   make(chan bool),
 			}
 
 			go work(it)  //create work
@@ -232,8 +232,7 @@ func (client *DataClient) DownloadFiles(root string, outDir string, kw KeyWriter
 			return fmt.Errorf("failed to download '%v': %v", it.key, it.err)
 		}
 
-		stripped := strings.Join(strings.Split(it.key, "/")[1:], "/")
-		err := kw.Write(path.Join(outDir, stripped))
+		err := kw.Write(it.outFile)
 		if err != nil {
 			return fmt.Errorf("failed to write key: %v", err)
 		}

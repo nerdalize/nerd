@@ -77,6 +77,7 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	}
 
 	fmt.Println("Root: " + ds.Root)
+	fmt.Println("Bucket: " + ds.Bucket)
 
 	client, err := aws.NewDataClient(&aws.DataClientConfig{
 		Credentials: aws.NewNerdalizeCredentials(nerdclient),
