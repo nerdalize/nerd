@@ -17,3 +17,7 @@ import:
   version: b8bc1bf767474819792c23f32d8286a45736f1c6
 - package: github.com/dgrijalva/jwt-go                #JWT parsing
   version: 2268707a8f0843315e2004ee4f1d021dc08baedf
+- package: github.com/olekukonko/tablewriter          #ASCII table formatting
+  version: febf2d34b54a69ce7530036c7503b1c9fbfdf0bb
+- package: github.com/dustin/go-humanize              #Humanize time format (x secs ago)
+  version: 259d2a102b871d17f30e3cd9881a642961a1e486
