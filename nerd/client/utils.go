@@ -14,7 +14,7 @@ func logRequest(req *http.Request) {
 		txt, err = httputil.DumpRequest(req, false)
 	}
 	if err == nil {
-		logrus.Infof("HTTP Request:\n%s", txt)
+		logrus.Debugf("HTTP Request:\n%s", txt)
 	} else {
 		logrus.Error("Failed to log HTTP request")
 	}
@@ -27,7 +27,7 @@ func logResponse(res *http.Response) {
 		txt, err = httputil.DumpResponse(res, false)
 	}
 	if err == nil {
-		logrus.Infof("HTTP Response:\n%s", txt)
+		logrus.Debugf("HTTP Response:\n%s", txt)
 	} else {
 		logrus.Error("Failed to log HTTP response")
 	}

@@ -21,10 +21,10 @@ func (f *PlainFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 }
 
 func SetupLogging() {
-	logrus.SetLevel(logrus.WarnLevel)
+	logrus.SetLevel(logrus.InfoLevel)
 	logrus.SetFormatter(new(PlainFormatter))
-	addFSHook()
-	addSentryHook()
+	// addFSHook()
+	// addSentryHook()
 }
 
 //addFSHook adds a filesystem logging hook to Logrus

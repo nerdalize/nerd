@@ -1,8 +1,6 @@
 package command
 
 import (
-	"fmt"
-	"os"
 	"strings"
 
 	"github.com/Sirupsen/logrus"
@@ -18,8 +16,9 @@ type stdoutkw struct{}
 
 //Write writes a key to stdout.
 func (kw *stdoutkw) Write(k string) (err error) {
-	_, err = fmt.Fprintf(os.Stdout, "%v\n", k)
-	return err
+	// _, err = fmt.Fprintf(os.Stdout, "%v\n", k)
+	logrus.Info(k)
+	return nil
 }
 
 //NewClient creates a new NerdAPIClient with two credential providers.
@@ -89,8 +88,8 @@ func printUserFacing(err error, verbose bool) {
 		Underlying() error
 	}
 	if uerr, ok := cause.(userFacing); ok {
-		logrus.Warn(uerr.UserFacingMsg())
-		logrus.Infof("Underlying error: %v", uerr.Underlying())
+		logrus.Info(uerr.UserFacingMsg())
+		logrus.Debugf("Underlying error: %v", uerr.Underlying())
 	}
 	logrus.Exit(-1)
 }
@@ -100,8 +99,8 @@ func HandleError(err error, verbose bool) {
 	printUserFacing(err, verbose)
 	// when there's are more than 1 message on the message stack, only print the top one for user friendlyness.
 	if errors.Cause(err) != nil {
-		logrus.Warn(strings.Replace(err.Error(), ": "+ErrorCauser(ErrorCauser(err)).Error(), "", 1))
+		logrus.Info(strings.Replace(err.Error(), ": "+ErrorCauser(ErrorCauser(err)).Error(), "", 1))
 	}
-	logrus.Infof("Underlying error: %+v", err)
+	logrus.Debugf("Underlying error: %+v", err)
 	logrus.Exit(-1)
 }

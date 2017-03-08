@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/aws"
@@ -56,6 +57,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
+	SetLogSettings(cmd.opts.JSONOutput, cmd.opts.VerboseOutput)
 	conf.SetLocation(cmd.opts.ConfigFile)
 
 	path := args[0]
@@ -93,7 +95,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	fmt.Printf("\nUploaded data to dataset with ID: %v\n", ds.DatasetID)
+	logrus.Infof("Uploaded data to dataset with ID: %v", ds.DatasetID)
 
 	return nil
 }

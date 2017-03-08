@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/conf"
@@ -59,7 +60,6 @@ func (cmd *Run) DoRun(args []string) error {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 	SetLogSettings(cmd.opts.JSONOutput, cmd.opts.VerboseOutput)
-
 	conf.SetLocation(cmd.opts.ConfigFile)
 
 	env := make(map[string]string)
@@ -80,6 +80,6 @@ func (cmd *Run) DoRun(args []string) error {
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
-	fmt.Printf("Created task with ID %v\n", task.TaskID)
+	logrus.Infof("Created task with ID %v", task.TaskID)
 	return nil
 }

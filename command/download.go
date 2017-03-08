@@ -7,6 +7,7 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/aws"
+	"github.com/nerdalize/nerd/nerd/conf"
 )
 
 //DownloadOpts describes command options
@@ -54,6 +55,8 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	if len(args) < 2 {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
+	SetLogSettings(cmd.opts.JSONOutput, cmd.opts.VerboseOutput)
+	conf.SetLocation(cmd.opts.ConfigFile)
 
 	dataset := args[0]
 	outputDir := args[1]

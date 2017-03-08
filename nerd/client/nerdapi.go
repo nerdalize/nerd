@@ -118,7 +118,7 @@ func (nerdapi *NerdAPIClient) DeleteWorker(workerID string) (err error) {
 
 //CreateSession creates a new user session.
 func (nerdapi *NerdAPIClient) CreateSession() (sess *payload.SessionCreateOutput, err error) {
-	logrus.Info("Creating session")
+	logrus.Debug("Creating session")
 	sess = &payload.SessionCreateOutput{}
 	url := nerdapi.url(path.Join(sessionsEndpoint))
 	s := sling.New().Post(url)
@@ -131,7 +131,7 @@ func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, env map[s
 	logrus.WithFields(logrus.Fields{
 		"image":   image,
 		"dataset": dataset,
-	}).Info("Creating task")
+	}).Debug("Creating task")
 	output = &payload.TaskCreateOutput{}
 	// create payload
 	p := &payload.TaskCreateInput{
@@ -154,7 +154,7 @@ func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, env map[s
 func (nerdapi *NerdAPIClient) PatchTaskStatus(id string, ts *payload.TaskCreateInput) error {
 	logrus.WithFields(logrus.Fields{
 		"id": id,
-	}).Info("Patching task")
+	}).Debug("Patching task")
 	ts = &payload.TaskCreateInput{}
 	url := nerdapi.url(path.Join(tasksEndpoint, id))
 	s := sling.New().
@@ -166,7 +166,7 @@ func (nerdapi *NerdAPIClient) PatchTaskStatus(id string, ts *payload.TaskCreateI
 
 //ListTasks lists all tasks.
 func (nerdapi *NerdAPIClient) ListTasks() (tl *payload.TaskListOutput, err error) {
-	logrus.Info("Listing tasks")
+	logrus.Debug("Listing tasks")
 	tl = &payload.TaskListOutput{}
 	url := nerdapi.url(tasksEndpoint)
 	s := sling.New().Get(url)
