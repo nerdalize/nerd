@@ -1,9 +1,7 @@
 package command
 
 import (
-	"fmt"
 	"os"
-	"strings"
 
 	humanize "github.com/dustin/go-humanize"
 	"github.com/jessevdk/go-flags"
@@ -75,21 +73,15 @@ func (cmd *Status) DoRun(args []string) (err error) {
 func drawTable(tasks *payload.TaskListOutput) {
 	data := make([][]string, len(tasks.Tasks))
 	for i, task := range tasks.Tasks {
-		env := make([]string, len(task.Environment))
-		for k, v := range task.Environment {
-			env = append(env, fmt.Sprintf("%s=%s", k, v))
-		}
 		data[i] = []string{
 			task.TaskID,
 			task.Image,
 			task.InputID,
-			task.OutputID,
-			strings.Join(env, ", "),
 			humanize.Time(task.CreatedAt),
 		}
 	}
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"TaskID", "Image", "Input Dataset", "Output Dataset", "Environment", "Created"})
+	table.SetHeader([]string{"TaskID", "Image", "Input Dataset", "Created"})
 	table.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
 	table.SetCenterSeparator("|")
 	table.AppendBulk(data) // Add Bulk Data

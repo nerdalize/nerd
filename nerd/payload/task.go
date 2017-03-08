@@ -29,7 +29,15 @@ type TaskDescribeOutput struct {
 
 //TaskListOutput is returned from the task listing
 type TaskListOutput struct {
-	Tasks []*Task `json:"tasks"`
+	Tasks []*TaskSummary `json:"tasks"`
+}
+
+type TaskSummary struct {
+	ProjectID string    `json:"project_id"`
+	TaskID    string    `json:"task_id"`
+	InputID   string    `json:"input_id"`
+	Image     string    `json:"image"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 //Task is a task in the list output
