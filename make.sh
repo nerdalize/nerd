@@ -29,7 +29,7 @@ function run_buildworker { #build the worker as a Docker container
 }
 
 function run_work { #run the worker using Docker
-	docker run \
+	docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v ~/.nerd:/root/.nerd \
 		-it quay.io/nerdalize/worker work

@@ -1,14 +1,18 @@
 package command
 
 import (
-	"bytes"
+	"bufio"
+	"crypto/sha1"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -90,6 +94,10 @@ func (cmd *Work) DoRun(args []string) (err error) {
 		return errors.Wrap(err, "failed to determin home directory")
 	}
 
+	// t-096054f3 AAAAKgAAAAIAAAAAAAAAATVEhfvQqWZIB1VJWhfj+CPkQeqJrEGOLrm1BD8tCDxr+UyNuQAFG7mmtfmy4hG12cJprYiXNEq8j3dyfugvOrsjma42GwbzW+41YwJcmMIb47F/cvvpT+qNQgHbBjP3Mc3vIWpPTe8AWC/z5WugqgPyx5ekbbYAow5qPE4haXkmnuADJRB6exwg0qQa8IkryZ7zYWfCPiQZI2WwreNOmhEJscRqmBbNZAn9waBs+aBlcmq/BEz5qXxwVpfCS0whFPg5u42gOwWImcbe3O5zSaIByq4sox6wCPE8lFuDm7P6efqOQcC5jhY0Lq2EbOilIPRDh1XIfwLQh4WOKI8YME7RxG9hxGt8mXKXZFd5+KqCWhKqQtdrzFR5+QCHL6Szsh+7k2CcMJ2C0ySWq6xSDZjW9rC3IvUWtd47w8NbLcpbr2QOZGekqztzCKHT5b2DqlvWLo+hcxqLkugSoixhP4QliYYfMTAbtzkAjUx9cXXXUkrUzhIAf5HNqptLTrfSknV8oXcQmhtJtd+Kk4yETADBJIZXqo+DuIG0g469Hikc
+
+	// t-1e619f00 AAAAKgAAAAIAAAAAAAAAAcY3enG5WaFwpCZUDiKi8Wv+730Kdj0hJPQMRagD5CR76kuNUoriAtExsw3yUmvgiZNdk/E0xeeZ/uCxcQjiR+sAV3tWHmphZWYurcs2opHPyyUXHLzSVa8mlpYjER3DVzN3kfgMfrX7rf8aFtBM7XEdu2phFKg815O//Fq4niOXUkHq1UJhqhu9EyfY2lKEFgg/Wclm3atjXhcOzilHqvmIqFtrhKGmuM9hxSfq+/N5ecJLEHhQBzk8Qz5GGC0mFOjhlsqM/RKt1H3/2wJR0I/yhL0KnIOtaitPD18S1/AVP9yWwMIC2JB98tnO8mJcSVM8dOx3nNCGHKC71B1p+/z5l+sKfWuwfc6pR76q90/3LAN878lRCG/KJFzZOAMSaudd+ckpU0xHoIXtY7GFIIicdHerN2mURet76WwXuW+z/XvNWko0AExFY3AURG4xCOcPQHrc9lOH9UDJVoAFLnMXRKUJ9OOV5qQ8/c0Tu/Nz4CL1vvkobEBR+x0bvbhoS/xqRAnTiZjmkhWyqGBx44H827ax1tkhe8RJrOgEQ+xY
+
 	jwtp := filepath.Join(home, ".nerd", "token")
 	jwtd, err := ioutil.ReadFile(jwtp)
 	if err != nil {
@@ -113,7 +121,15 @@ func (cmd *Work) DoRun(args []string) (err error) {
 		}
 	}
 
-	fmt.Fprintf(os.Stderr, "identified as worker '%s'", worker.WorkerID)
+	defer func() {
+		err = api.DeleteWorker(worker.WorkerID)
+		if err != nil {
+			//@TODO report worker delete error
+			// return err
+		}
+	}()
+
+	fmt.Fprintf(os.Stderr, "identified as worker '%s'\n", worker.WorkerID)
 
 	//@TODO create worker if no local state is available?
 
@@ -122,8 +138,32 @@ func (cmd *Work) DoRun(args []string) (err error) {
 		aws.NewConfig().WithCredentials(awscreds).WithRegion("eu-west-1"),
 	)
 
-	//the taskch receives tasks from the message queue
-	taskCh := make(chan *payload.Task)
+	//
+	// The logic below should be merged into master
+	//
+
+	// tasks := map[string]
+
+	type TaskPK struct {
+		pid string //project id
+		tid string //task id
+	}
+
+	type TaskStatus struct {
+		cid string //container id
+		TaskPK
+		token string //activity token
+		code  int    //exit code
+		err   error  //application error
+	}
+
+	//for now, we just parse use the docker cli
+	exe, err := exec.LookPath("docker")
+	if err != nil {
+		return errors.Wrap(err, "failed to find docker executable")
+	}
+
+	//receive tasks from the message queue and start the container run loop, it will attemp to create containers for tasks unconditionally if it keeps failing queue retry will backoff. If it succeeds, fails the feedback loop will notify
 	go func() {
 		messages := sqs.New(awssess)
 		for {
@@ -147,158 +187,176 @@ func (cmd *Work) DoRun(args []string) (err error) {
 						return
 					}
 
-					taskCh <- task
+					fmt.Fprintf(os.Stderr, "message: %s %x \n", task.TaskID, sha1.Sum([]byte(task.ActivityToken)))
+
+					name := fmt.Sprintf("%s_%s", task.ProjectID, task.TaskID)
+					args := []string{
+						"run", "-d",
+						//@TODO add logging to aws
+						fmt.Sprintf("--name=%s", name),
+						fmt.Sprintf("--label=nerd-token=%s", task.ActivityToken),
+						fmt.Sprintf("--label=nerd-project=%s", task.ProjectID),
+						fmt.Sprintf("--label=nerd-task=%s", task.TaskID),
+						task.Image,
+					}
+
+					//@TODO if task is scheduled for deletion remove it
+
+					cmd := exec.Command(exe, args...)
+					_ = cmd.Run() //any result is ok
+
+					//delete message, state is persisted in Docker, it is no longer relevant
+					if _, err := messages.DeleteMessage(&sqs.DeleteMessageInput{
+						QueueUrl:      aws.String(worker.QueueURL),
+						ReceiptHandle: msg.ReceiptHandle,
+					}); err != nil {
+						//@TODO error on return error
+						fmt.Fprintf(os.Stderr, "failed to delete message: %+v", err)
+						continue
+					}
 				}
 			}
 		}
 	}()
 
-	states := sfn.New(awssess)
-
-	tasks := map[string]struct{}{}
-MAINLOOP:
-	for {
-		select {
-		case task := <-taskCh:
-			if _, ok := tasks[task.TaskID]; ok {
-				continue //already managed, skip
+	//the container loop feeds running task tokens to the feedback loop by polling the `docker ps` output
+	ticker := time.Tick(time.Second * 5)
+	pr, pw := io.Pipe()
+	go func() {
+		for range ticker {
+			args := []string{"ps", "-a",
+				"--no-trunc",
+				"--filter=label=nerd-token",
+				"--format={{.ID}}\t{{.Status}}\t{{.Label \"nerd-token\"}}\t{{.Label \"nerd-project\"}}\t{{.Label \"nerd-task\"}}",
 			}
 
-			//@TODO we're keeping state here, is that OK
-			tasks[task.TaskID] = struct{}{}
+			cmd := exec.Command(exe, args...)
+			cmd.Stdout = pw
+			cmd.Stderr = os.Stderr
+			err = cmd.Run()
+			if err != nil {
+				//@TODO handle errors
+				fmt.Fprintln(os.Stderr, "failed to list containers: ", err)
+				continue
+			}
+		}
+	}()
 
-			//the task routine
-			go func() {
-				ticker := time.Tick(time.Second * 5)
-				for range ticker {
+	//the scan loop will parse docker states into exit statuses
+	scanner := bufio.NewScanner(pr)
+	statusCh := make(chan TaskStatus)
+	go func() {
+		for scanner.Scan() {
+			fields := strings.SplitN(scanner.Text(), "\t", 5)
+			if len(fields) != 5 {
+				statusCh <- TaskStatus{fields[0], TaskPK{fields[3], fields[4]}, fields[2], 255, errors.New("unexpected ps line")}
+				continue //less then 2 fields, shouldnt happen
+			}
 
-					exe, err := exec.LookPath("docker")
-					if err != nil {
-						//@TODO mark as failure, unlikely the exe will ever be resolved
-						break
-					}
+			//second field can be interpreted by reversing state .String() https://github.com/docker/docker/blob/b59ee9486fad5fa19f3d0af0eb6c5ce100eae0fc/container/state.go#L70
+			status := fields[1]
+			if strings.HasPrefix(status, "Up") || strings.HasPrefix(status, "Restarting") || status == "Removal In Progress" || status == "Created" {
+				//container is not yet "done": still in progress without statuscode, send heartbeat and continue to next tick
+				statusCh <- TaskStatus{fields[0], TaskPK{fields[3], fields[4]}, fields[2], -1, nil}
+				continue
+			} else {
+				//container has "exited" or is "dead"
+				if status == "Dead" {
+					//@See https://github.com/docker/docker/issues/5684
+					// There is also a new(ish) container state called "dead", which is set when there were issues removing the container. This is of course a work around for this particular issue, which lets you go and investigate why there is the device or resource busy error (probably a race condition), in which case you can attempt to remove again, or attempt to manually fix (e.g. unmount any left-over mounts, and then remove).
+					statusCh <- TaskStatus{fields[0], TaskPK{fields[3], fields[4]}, fields[2], 255, errors.New("failed to remove container")}
+					continue
 
-					name := fmt.Sprintf("%s_%s", task.ProjectID, task.TaskID)
-					args := []string{
-						"run",
-						"-d",
-						fmt.Sprintf("--name=%s", name),
-						fmt.Sprintf("--label=task-token=%s", task.ActivityToken),
-						task.Image,
-					}
-
-					//@TODO what do we do with stdout?
-					runcmd := exec.Command(exe, args...)
-					runcmd.Stderr = os.Stderr
-					runcmd.Stdout = os.Stderr
-					_ = runcmd.Start()
-					//@TODO we dont actually care if this succeeds
-
-					// if err != nil {
-					// 	fmt.Fprintf(os.Stderr, "couldnt start: %+v", err)
-					// 	//@TODO determine if:
-					// 	//	- still running: heartbeat
-					// 	//  - not running:
-					// 	//   - if failed: send failure
-					// 	//   - if success: send success
-					// }
-
-					buf := bytes.NewBuffer(nil)
-					args = []string{"inspect", name}
-					inscmd := exec.Command(exe, args...)
-					// inscmd.Stderr = os.Stderr
-					inscmd.Stdout = buf
-					_ = inscmd.Run()
-
-					//@SEE https://github.com/docker/docker/blob/b59ee9486fad5fa19f3d0af0eb6c5ce100eae0fc/container/state.go#L17
-					status := []struct {
-						State struct {
-							Status     string
-							Running    bool
-							Paused     bool
-							Restarting bool
-							OOMKilled  bool
-							Dead       bool
-							Pid        int
-							ExitCode   int
-							Error      string
-							StartedAt  time.Time
-							FinishedAt time.Time
-						}
-					}{}
-
-					err = json.Unmarshal(buf.Bytes(), &status)
-					if err != nil || len(status) < 1 {
-						fmt.Fprintf(os.Stderr, "failed to unmarshal: %+v\n", buf.String())
+				} else if strings.HasPrefix(status, "Exited") {
+					right := strings.TrimPrefix(status, "Exited (")
+					lefts := strings.SplitN(right, ")", 2)
+					if len(lefts) != 2 {
+						statusCh <- TaskStatus{fields[0], TaskPK{fields[3], fields[4]}, fields[2], 255, errors.New("unexpected exited format: " + status)}
 						continue
 					}
 
-					//@TODO if task timed out, cancel container
-
-					if status[0].State.Running {
-						fmt.Fprintf(os.Stderr, "task '%s' is still running, sending hb\n", name)
-						_, err = states.SendTaskHeartbeat(&sfn.SendTaskHeartbeatInput{
-							TaskToken: aws.String(task.ActivityToken),
-						})
-						if err != nil {
-							aerr, ok := err.(awserr.Error)
-							if !ok || aerr.Code() != sfn.ErrCodeTaskTimedOut {
-								fmt.Fprintf(os.Stderr, "failed to send hb for %s: %+v\n", name, err)
-								continue
-							}
-
-							//task timed out, nothing to do
-							break
-						}
-						//heartbeat
+					//write actual status code, can be zero in case of success
+					code, err := strconv.Atoi(lefts[0])
+					if err != nil {
+						statusCh <- TaskStatus{fields[0], TaskPK{fields[3], fields[4]}, fields[2], 255, errors.New("unexpected status code, not a number: " + status)}
+						continue
 					} else {
-						fmt.Fprintf(os.Stderr, "task '%s' is NOT running: %+v\n", name, status[0].State)
-
-						if status[0].State.ExitCode != 0 {
-							if _, err = states.SendTaskFailure(&sfn.SendTaskFailureInput{
-								Cause:     aws.String(status[0].State.Error),
-								Error:     aws.String(fmt.Sprintf("exit code: %d", status[0].State.ExitCode)),
-								TaskToken: aws.String(task.ActivityToken),
-							}); err != nil {
-								aerr, ok := err.(awserr.Error)
-								if !ok || aerr.Code() != sfn.ErrCodeTaskTimedOut {
-									fmt.Fprintf(os.Stderr, "failed to send failure for %s: %+v\n", name, err)
-									continue
-								}
-
-								//task timed out, nothing to do
-								break
-							}
-						} else {
-							if _, err = states.SendTaskSuccess(&sfn.SendTaskSuccessInput{
-								TaskToken: aws.String(task.ActivityToken),
-								Output:    aws.String(`{"foo": "bar"}`), //@TODO send task with output
-							}); err != nil {
-								aerr, ok := err.(awserr.Error)
-								if !ok || aerr.Code() != sfn.ErrCodeTaskTimedOut {
-									fmt.Fprintf(os.Stderr, "failed to send success for %s: %+v\n", name, err)
-									continue
-								}
-
-								//task timed out, nothing to do
-								break
-							}
-						}
-
-						break
+						statusCh <- TaskStatus{fields[0], TaskPK{fields[3], fields[4]}, fields[2], code, nil}
+						continue
 					}
+
+				} else {
+					statusCh <- TaskStatus{fields[0], TaskPK{fields[3], fields[4]}, fields[2], 255, errors.New("unexpected status: " + status)}
+					continue
 				}
-			}()
-
-		case <-sigCh:
-			break MAINLOOP
+			}
 		}
-	}
+		if err := scanner.Err(); err != nil {
+			//@TODO handle scanniong IO errors
+			fmt.Fprintln(os.Stderr, "reading standard input:", err)
+		}
+	}()
 
-	err = api.DeleteWorker(worker.WorkerID)
-	if err != nil {
-		return err
-	}
+	//the feedback loop will constantly evaluate the state of containers with a token filter and provide feedback to the state machine
+	states := sfn.New(awssess)
+	go func() {
+		for status := range statusCh {
+
+			var err error
+			if status.code < 0 {
+				fmt.Fprintln(os.Stderr, "heartbeat:", status.TaskPK)
+				_, err = states.SendTaskHeartbeat(&sfn.SendTaskHeartbeatInput{
+					TaskToken: aws.String(status.token),
+				})
+			} else if status.code == 0 {
+				//success
+				fmt.Fprintln(os.Stderr, "success:", status.TaskPK)
+				_, err = states.SendTaskSuccess(&sfn.SendTaskSuccessInput{
+					TaskToken: aws.String(status.token),
+					Output:    aws.String(`{"foo": "bar"}`),
+				})
+
+			} else {
+				//failure
+				fmt.Fprintln(os.Stderr, "failed:", status.TaskPK)
+				_, err = states.SendTaskFailure(&sfn.SendTaskFailureInput{
+					TaskToken: aws.String(status.token),
+					Error:     aws.String(`{"error": "foo"}`),
+					Cause:     aws.String(`{"cause": "bar"}`),
+				})
+			}
+
+			aerr, ok := err.(awserr.Error)
+			if !ok {
+				//@TODO not an aws error, connection issues or otherwise
+				continue
+			}
+
+			//the activity token is no longer valid, this could be that a newer activity token has replaced it, schedule for destruction
+			if aerr.Code() == sfn.ErrCodeTaskTimedOut {
+
+				//@TODO task timeout could mean the task was cancelled or that a new activity token was sendout in the meantime
+				fmt.Fprintf(os.Stderr, "task '%+v' timed out, removing container...\n", status.TaskPK)
+
+				cmd := exec.Command(exe, "stop", status.cid)
+				err = cmd.Run()
+				if err != nil {
+					fmt.Println("failed to stop task container:", status.cid, status.code, err)
+					//@TODO report error
+				}
+
+				cmd = exec.Command(exe, "rm", status.cid)
+				err = cmd.Run()
+				if err != nil {
+					fmt.Println("failed to remove timed out task container:", status.cid, status.code, err)
+					//@TODO report error
+				}
+			}
+		}
+	}()
+
+	//block until exited
+	<-sigCh
 
 	return nil
 }
