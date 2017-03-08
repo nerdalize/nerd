@@ -76,9 +76,6 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		return errors.Wrapf(err, "failed to get dataset information for dataset %v", dataset)
 	}
 
-	fmt.Println("Root: " + ds.Root)
-	fmt.Println("Bucket: " + ds.Bucket)
-
 	client, err := aws.NewDataClient(&aws.DataClientConfig{
 		Credentials: aws.NewNerdalizeCredentials(nerdclient),
 		Bucket:      ds.Bucket,
