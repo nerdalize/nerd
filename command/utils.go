@@ -55,7 +55,8 @@ func NewClient(ui cli.Ui) (*client.NerdAPIClient, error) {
 				return user, pass, nil
 			}, client.NewAuthAPI(c.Auth.APIEndpoint)),
 		),
-		URL: c.NerdAPIEndpoint,
+		URL:       c.NerdAPIEndpoint,
+		ProjectID: c.CurrentProject,
 	})
 }
 

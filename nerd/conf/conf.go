@@ -14,6 +14,7 @@ var conf *Config
 
 type Config struct {
 	Auth            AuthConfig `json:"auth"`
+	CurrentProject  string     `json:"current_project"`
 	NerdToken       string     `json:"nerd_token"`
 	NerdAPIEndpoint string     `json:"nerd_api_endpoint"`
 }
@@ -33,6 +34,7 @@ kyvc4LwKZ8pez5KYY76H1ox+AfUlWOEq+bExypcFfEIrJkf/JXa7jpzkOWBDF9Sa
 OWbQHMK+vvUXieCJvCc9Vj084ABwLBgX
 -----END PUBLIC KEY-----`,
 		},
+		CurrentProject:  "6de308f4-face-11e6-bc64-92361f002671",
 		NerdAPIEndpoint: "https://platform.nerdalize.net",
 	}
 }
