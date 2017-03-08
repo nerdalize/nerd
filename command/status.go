@@ -1,16 +1,21 @@
 package command
 
 import (
+	"fmt"
 	"os"
+	"strings"
 
+	humanize "github.com/dustin/go-humanize"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/nerd/conf"
+	"github.com/nerdalize/nerd/nerd/payload"
+	"github.com/olekukonko/tablewriter"
 )
 
 //StatusOpts describes command options
 type StatusOpts struct {
-	*NerdAPIOpts
-	*OutputOpts
+	NerdOpts
 }
 
 //Status command
@@ -51,18 +56,42 @@ func StatusFactory() func() (cmd cli.Command, err error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *Status) DoRun(args []string) (err error) {
-	// c, err := client.NewNerdAPI(credentials.NewNerdAPI())
-	// if err != nil {
-	// 	return fmt.Errorf("failed to create client: %v", err)
-	// }
-	// tasks, err := c.ListTasks()
-	// if err != nil {
-	// 	return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
-	// }
-	//
-	// for _, t := range tasks.Tasks {
-	// 	fmt.Printf("%s\n", t.ID)
-	// }
-	//
+	conf.SetLocation(cmd.opts.ConfigFile)
+
+	client, err := NewClient(cmd.ui)
+	if err != nil {
+		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+	}
+	tasks, err := client.ListTasks()
+	if err != nil {
+		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+	}
+
+	drawTable(tasks)
+
 	return nil
+}
+
+func drawTable(tasks *payload.TaskListOutput) {
+	data := make([][]string, len(tasks.Tasks))
+	for i, task := range tasks.Tasks {
+		env := make([]string, len(task.Environment))
+		for k, v := range task.Environment {
+			env = append(env, fmt.Sprintf("%s=%s", k, v))
+		}
+		data[i] = []string{
+			task.TaskID,
+			task.Image,
+			task.InputID,
+			task.OutputID,
+			strings.Join(env, ", "),
+			humanize.Time(task.CreatedAt),
+		}
+	}
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"TaskID", "Image", "Input Dataset", "Output Dataset", "Environment", "Created"})
+	table.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
+	table.SetCenterSeparator("|")
+	table.AppendBulk(data) // Add Bulk Data
+	table.Render()
 }
