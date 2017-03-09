@@ -17,6 +17,7 @@ const (
 	tasksEndpoint    = "tasks"
 	sessionsEndpoint = "tokens"
 	datasetEndpoint  = "datasets"
+	workersEndpoint  = "workers"
 )
 
 //NerdAPIClient is a client for the Nerdalize API.
@@ -100,6 +101,23 @@ func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, result interface{}) erro
 		}
 	}
 	return nil
+}
+
+//CreateWorker creates registers this client as workable capacity
+func (nerdapi *NerdAPIClient) CreateWorker() (worker *payload.WorkerCreateOutput, err error) {
+	worker = &payload.WorkerCreateOutput{}
+	url := nerdapi.url(path.Join(workersEndpoint))
+	s := sling.New().Post(url)
+	err = nerdapi.doRequest(s, worker)
+	return
+}
+
+//DeleteWorker removes a worker
+func (nerdapi *NerdAPIClient) DeleteWorker(workerID string) (err error) {
+	url := nerdapi.url(path.Join(workersEndpoint, workerID))
+	s := sling.New().Delete(url)
+	err = nerdapi.doRequest(s, nil)
+	return
 }
 
 //CreateSession creates a new user session.
