@@ -8,7 +8,6 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/aws"
-	"github.com/nerdalize/nerd/nerd/conf"
 )
 
 //UploadOpts describes command options
@@ -58,7 +57,6 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	}
 
 	SetLogSettings(cmd.opts.JSONOutput, cmd.opts.VerboseOutput)
-	conf.SetLocation(cmd.opts.ConfigFile)
 
 	path := args[0]
 

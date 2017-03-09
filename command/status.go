@@ -6,7 +6,6 @@ import (
 	humanize "github.com/dustin/go-humanize"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/payload"
 	"github.com/olekukonko/tablewriter"
 )
@@ -54,7 +53,6 @@ func StatusFactory() func() (cmd cli.Command, err error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *Status) DoRun(args []string) (err error) {
 	SetLogSettings(cmd.opts.JSONOutput, cmd.opts.VerboseOutput)
-	conf.SetLocation(cmd.opts.ConfigFile)
 
 	client, err := NewClient(cmd.ui)
 	if err != nil {

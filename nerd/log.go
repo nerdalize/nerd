@@ -8,6 +8,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/evalphobia/logrus_sentry"
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/rifflock/lfshook"
 )
 
@@ -23,20 +24,23 @@ func (f *PlainFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 func SetupLogging() {
 	logrus.SetLevel(logrus.InfoLevel)
 	logrus.SetFormatter(new(PlainFormatter))
-	// addFSHook()
-	// addSentryHook()
+	addFSHook()
+	addSentryHook()
 }
 
 //addFSHook adds a filesystem logging hook to Logrus
 func addFSHook() {
-	// TODO: Maybe only do this when a local flag is set (e.g. ~/.nerd/log_local is present)
-	f, err := homedir.Expand("~/.nerd/log")
-	if err == nil {
-		logrus.AddHook(lfshook.NewHook(lfshook.PathMap{
-			logrus.InfoLevel:  f,
-			logrus.WarnLevel:  f,
-			logrus.ErrorLevel: f,
-		}))
+	c, err := conf.Read()
+	if err == nil && c.EnableLogging {
+		f, err := homedir.Expand("~/.nerd/log")
+		if err == nil {
+			logrus.AddHook(lfshook.NewHook(lfshook.PathMap{
+				logrus.DebugLevel: f,
+				logrus.InfoLevel:  f,
+				logrus.WarnLevel:  f,
+				logrus.ErrorLevel: f,
+			}))
+		}
 	}
 }
 

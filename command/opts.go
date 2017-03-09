@@ -14,12 +14,10 @@ type NerdAPIOpts struct {
 	// NerdAPIURL string `long:"api-url" default:"" default-mask:"" env:"NERD_API_URL" description:"full endpoint url"`
 }
 
-//ConfOpts is used to set the location of the config file.
-type ConfOpts struct {
-	ConfigFile string `long:"config" default:"" default-mask:"" env:"CONFIG" description:"location of config file"`
+type AuthAPIOpts struct {
+	// AuthAPIURL string `long:"auth-url" default:"" default-mask:"" env:"AUTH_API_URL" description:"full auth endpoint url"`
 }
 
-//OutputOpts is used to determine how output should be presented to the user.
 type OutputOpts struct {
 	VerboseOutput bool `short:"v" long:"verbose" default-mask:"false" description:"show verbose output"`
 	JSONOutput    bool `long:"json-format" default-mask:"false" description:"show output in json format"`
@@ -29,7 +27,6 @@ type OutputOpts struct {
 type NerdOpts struct {
 	NerdAPIOpts
 	OutputOpts
-	ConfOpts
 }
 
 //URL returns a fully qualitied url on the platform endpoint

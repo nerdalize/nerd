@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 
+	flags "github.com/jessevdk/go-flags"
 	"github.com/nerdalize/nerd/command"
 	"github.com/nerdalize/nerd/nerd"
+	"github.com/nerdalize/nerd/nerd/conf"
 
 	"github.com/mitchellh/cli"
 )
@@ -16,8 +18,17 @@ var (
 	commit  = "0000000"
 )
 
+type ConfOpts struct {
+	ConfigFile string `long:"config" default:"" default-mask:"" env:"CONFIG" description:"location of config file"`
+}
+
 func init() {
-	nerd.SetupLogging()
+	opts := new(ConfOpts)
+	_, err := flags.ParseArgs(opts, os.Args[1:])
+	if err == nil {
+		conf.SetLocation(opts.ConfigFile)
+		nerd.SetupLogging()
+	}
 }
 
 func main() {

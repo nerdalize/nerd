@@ -8,7 +8,6 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
 )
 
@@ -60,7 +59,6 @@ func (cmd *Run) DoRun(args []string) error {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 	SetLogSettings(cmd.opts.JSONOutput, cmd.opts.VerboseOutput)
-	conf.SetLocation(cmd.opts.ConfigFile)
 
 	env := make(map[string]string)
 	for i, e := range cmd.opts.Environment {
