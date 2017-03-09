@@ -11,7 +11,7 @@ import (
 
 //Env provides nerdalize credentials from the `credentials.NerdTokenEnvVar` environment variable.
 type Env struct {
-	*ProviderBasis
+	*Basis
 }
 
 //NewEnvCredentials creates new nerdalize credentials with the env provider.
@@ -19,14 +19,16 @@ func NewEnvCredentials(pub *ecdsa.PublicKey) *credentials.NerdAPI {
 	return credentials.NewNerdAPI(pub, NewEnv())
 }
 
+//NewEnv creates a new Env provider.
 func NewEnv() *Env {
 	return &Env{
-		ProviderBasis: &ProviderBasis{
+		Basis: &Basis{
 			ExpireWindow: DefaultExpireWindow,
 		},
 	}
 }
 
+//Retrieve retrieves the token from the env variable.
 func (e *Env) Retrieve(pub *ecdsa.PublicKey) (*credentials.NerdAPIValue, error) {
 	token := os.Getenv(credentials.NerdTokenEnvVar)
 	if token == "" {

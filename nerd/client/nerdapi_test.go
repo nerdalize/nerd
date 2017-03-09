@@ -14,18 +14,23 @@ import (
 	"github.com/nerdalize/nerd/nerd/payload"
 )
 
+//fakeProvider is a fake credentials provider for testing purposes.
 type fakeProvider struct{}
 
+//IsExpired stub
 func (f *fakeProvider) IsExpired() bool {
 	return true
 }
 
+//Retrieve returns empty token.
 func (f *fakeProvider) Retrieve(pub *ecdsa.PublicKey) (*credentials.NerdAPIValue, error) {
 	return &credentials.NerdAPIValue{
 		NerdToken: "",
 	}, nil
 }
 
+//newServer creates a new server that responds with the result on every request and sets a
+//status code > 2xx when success is false.
 func newServer(result interface{}, success bool) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if success {

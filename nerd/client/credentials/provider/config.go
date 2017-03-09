@@ -11,21 +11,24 @@ import (
 
 //Config provides nerdalize credentials from a file on Config. The default file can be found in TokenFilename().
 type Config struct {
-	*ProviderBasis
+	*Basis
 }
 
+//NewConfigCredentials creates a new NerdAPI credentials object with the Config provider as provider.
 func NewConfigCredentials(pub *ecdsa.PublicKey) *credentials.NerdAPI {
 	return credentials.NewNerdAPI(pub, NewConfig())
 }
 
+//NewConfig creates a new Config provider.
 func NewConfig() *Config {
 	return &Config{
-		ProviderBasis: &ProviderBasis{
+		Basis: &Basis{
 			ExpireWindow: DefaultExpireWindow,
 		},
 	}
 }
 
+//Retrieve retrieves the token from the nerd config file.
 func (e *Config) Retrieve(pub *ecdsa.PublicKey) (*credentials.NerdAPIValue, error) {
 	c, err := conf.Read()
 	if err != nil {

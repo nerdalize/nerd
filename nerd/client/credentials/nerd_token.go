@@ -14,14 +14,17 @@ const (
 	NerdTokenEnvVar = "NERD_TOKEN"
 )
 
+//DecodeTokenWithKey decodes a nerd token (JWT) and verifies it with the given public key.
+func DecodeTokenWithKey(nerdToken string, key *ecdsa.PublicKey) (*payload.NerdClaims, error) {
+	return decodeToken(nerdToken, key)
+}
+
+//DecodeTokenWithPEM decodes a nerd token (JWT) and verifies it with the given public key in PEM format.
 func DecodeTokenWithPEM(nerdToken, pem string) (*payload.NerdClaims, error) {
 	key, err := ParseECDSAPublicKeyFromPemBytes([]byte(pem))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse public key PEM to ecdsa key")
 	}
-	return decodeToken(nerdToken, key)
-}
-func DecodeTokenWithKey(nerdToken string, key *ecdsa.PublicKey) (*payload.NerdClaims, error) {
 	return decodeToken(nerdToken, key)
 }
 

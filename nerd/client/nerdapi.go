@@ -24,12 +24,15 @@ type NerdAPIClient struct {
 	NerdAPIConfig
 }
 
+//NerdAPIConfig provides config details to create a NerdAPIClient.
 type NerdAPIConfig struct {
 	Credentials *credentials.NerdAPI
 	URL         string
 	ProjectID   string
 }
 
+//NewNerdAPI creates a new NerdAPIClient from a config object. When no URL is set
+//it tries to get the URL from the audience field in the JWT.
 func NewNerdAPI(conf NerdAPIConfig) (*NerdAPIClient, error) {
 	cl := &NerdAPIClient{
 		conf,
@@ -45,6 +48,7 @@ func NewNerdAPI(conf NerdAPIConfig) (*NerdAPIClient, error) {
 	return cl, nil
 }
 
+//getAudience gets the audience from the JWT.
 func getAudience(cred *credentials.NerdAPI) (string, error) {
 	if cred == nil {
 		return "", errors.New("credentials object was nil")
@@ -64,6 +68,8 @@ func (nerdapi *NerdAPIClient) url(p string) string {
 	return nerdapi.URL + "/" + path.Join(projectsPrefix, nerdapi.ProjectID, p)
 }
 
+//doRequest makes the actual request. First it fetches the credentials (nerd token) and then it creates the request to the API server.
+//doRequest checks if the server responded with a payload error and hands this error back to the user.
 func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, result interface{}) error {
 	value, err := nerdapi.Credentials.Get()
 	if err != nil {

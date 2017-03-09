@@ -5,10 +5,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+//AuthAPIClient is the client for the nerdalize authentication server.
 type AuthAPIClient struct {
 	URL string
 }
 
+//NewAuthAPI creates a new AuthAPIClient.
 func NewAuthAPI(url string) *AuthAPIClient {
 	return &AuthAPIClient{
 		URL: url,

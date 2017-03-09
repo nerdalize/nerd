@@ -22,6 +22,7 @@ const (
 
 type stdoutkw struct{}
 
+//Write writes a key to stdout.
 func (kw *stdoutkw) Write(k string) (err error) {
 	_, err = fmt.Fprintf(os.Stdout, "%v\n", k)
 	return err
@@ -115,6 +116,7 @@ func verboseClientError(aerr *client.APIError) string {
 	return strings.Join(message, "\n")
 }
 
+//ErrorCauser returns the error that is one level up in the error chain.
 func ErrorCauser(err error) error {
 	type causer interface {
 		Cause() error
