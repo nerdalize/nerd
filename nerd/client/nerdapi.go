@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	//AuthHeader is the name of the HTTP Authorization header.
 	AuthHeader = "Authorization"
 
 	projectsPrefix = "projects"

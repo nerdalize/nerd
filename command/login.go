@@ -54,7 +54,7 @@ func LoginFactory() func() (cmd cli.Command, err error) {
 }
 
 //DoRun is called by run and allows an error to be returned
-func (cmd *Login) DoRun(args []string) (err error) {
+func (cmd *Login) DoRun(args []string) error {
 	user := cmd.opts.User
 	pass := cmd.opts.Pass
 	if cmd.opts.User == "" || cmd.opts.Pass == "" {
@@ -80,5 +80,6 @@ func (cmd *Login) DoRun(args []string) (err error) {
 	if err != nil {
 		return errors.Wrap(err, "failed to write nerd token to disk")
 	}
+	// TODO: Show successful login message
 	return nil
 }

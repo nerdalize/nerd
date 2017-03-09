@@ -50,6 +50,7 @@ func NewClient(ui cli.Ui) (*client.NerdAPIClient, error) {
 	})
 }
 
+//UserPassProvider prompts the username and password on stdin.
 func UserPassProvider(ui cli.Ui) func() (string, string, error) {
 	return func() (string, string, error) {
 		ui.Info("Please enter your Nerdalize username and password.")
