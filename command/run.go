@@ -64,7 +64,7 @@ func (cmd *Run) DoRun(args []string) error {
 	for i, e := range cmd.opts.Environment {
 		split := strings.Split(e, "=")
 		if len(split) != 2 {
-			return errors.Errorf("Environment variable %v (%v) is in the wrong format. Please specify environment flag as '-e [KEY]=[VALUE]'", (i + 1), e)
+			HandleError(errors.Errorf("Environment variable %v (%v) is in the wrong format. Please specify environment flag as '-e [KEY]=[VALUE]'", (i+1), e), cmd.opts.VerboseOutput)
 		}
 		env[split[0]] = split[1]
 	}

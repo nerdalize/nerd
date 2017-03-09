@@ -8,6 +8,7 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/aws"
+	"github.com/pkg/errors"
 )
 
 //UploadOpts describes command options
@@ -74,12 +75,12 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		Bucket:      ds.Bucket,
 	})
 	if err != nil {
-		return fmt.Errorf("could not create data client: %v", err)
+		HandleError(errors.Wrap(err, "could not create data client"), cmd.opts.VerboseOutput)
 	}
 
 	fi, err := os.Stat(path)
 	if err != nil {
-		return fmt.Errorf("argument '%v' is not a valid file or directory", path)
+		HandleError(errors.Errorf("argument '%v' is not a valid file or directory", path), cmd.opts.VerboseOutput)
 	}
 
 	switch mode := fi.Mode(); {

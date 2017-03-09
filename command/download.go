@@ -7,6 +7,7 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/aws"
+	"github.com/pkg/errors"
 )
 
 //DownloadOpts describes command options
@@ -61,9 +62,9 @@ func (cmd *Download) DoRun(args []string) (err error) {
 
 	fi, err := os.Stat(outputDir)
 	if err != nil {
-		return fmt.Errorf("failed to inspect '%s': %v", outputDir, err)
+		HandleError(err, cmd.opts.VerboseOutput)
 	} else if !fi.IsDir() {
-		return fmt.Errorf("provided path '%s' is not a directory", outputDir)
+		HandleError(errors.Errorf("provided path '%s' is not a directory", outputDir), cmd.opts.VerboseOutput)
 	}
 
 	nerdclient, err := NewClient(cmd.ui)
@@ -80,12 +81,12 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		Bucket:      ds.Bucket,
 	})
 	if err != nil {
-		return fmt.Errorf("could not create data client: %v", err)
+		HandleError(errors.Wrap(err, "could not create data client"), cmd.opts.VerboseOutput)
 	}
 
 	err = client.DownloadFiles(ds.Root, outputDir, &stdoutkw{}, 64)
 	if err != nil {
-		return fmt.Errorf("could not download files: %v", err)
+		HandleError(errors.Wrap(err, "could not download files"), cmd.opts.VerboseOutput)
 	}
 
 	return nil
