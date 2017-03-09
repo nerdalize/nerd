@@ -3,21 +3,21 @@ ignore:
  - github.com/go-ini/ini #only used for AWS shared credentials provider
  - golang.org/x/sys #only used for solaris support
 import:
-- package: github.com/mitchellh/cli                   #command line library
+- package: github.com/mitchellh/cli           #command line library
   version: fa17b36f6c61f1ddbbb08c9f6fde94b3c065a09d
-- package: github.com/jessevdk/go-flags               #flexible flag parsing
+- package: github.com/jessevdk/go-flags       #flexible flag parsing
   version: 4e64e4a4e2552194cf594243e23aa9baf3b4297e
-- package: github.com/aws/aws-sdk-go                  #official AWS Go sdk
+- package: github.com/aws/aws-sdk-go          #official AWS Go sdk
   version: ^v1.7.0
-- package: github.com/dghubble/sling                  #http client
+- package: github.com/dghubble/sling          #http client
   version: v1.1.0
-- package: github.com/pkg/errors
+- package: github.com/pkg/errors              #structured error wrapping
   version: v0.8.0
-- package: github.com/mitchellh/go-homedir            #utility to retreive homedir path
+- package: github.com/mitchellh/go-homedir    #utility to retreive homedir path
   version: b8bc1bf767474819792c23f32d8286a45736f1c6
-- package: github.com/dgrijalva/jwt-go                #JWT parsing
+- package: github.com/dgrijalva/jwt-go        #JWT parsing
   version: 2268707a8f0843315e2004ee4f1d021dc08baedf
-- package: github.com/olekukonko/tablewriter          #ASCII table formatting
+- package: github.com/olekukonko/tablewriter  #ASCII table formatting
   version: febf2d34b54a69ce7530036c7503b1c9fbfdf0bb
-- package: github.com/dustin/go-humanize              #Humanize time format (x secs ago)
+- package: github.com/dustin/go-humanize      #humanize time format (x secs ago)
   version: 259d2a102b871d17f30e3cd9881a642961a1e486
