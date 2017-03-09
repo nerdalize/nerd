@@ -29,6 +29,7 @@ type DataClient struct {
 	*DataClientConfig
 }
 
+//DataClientConfig provides config details to create a new DataClient.
 type DataClientConfig struct {
 	Credentials *credentials.Credentials
 	Bucket      string

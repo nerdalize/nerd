@@ -5,10 +5,15 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/nerd/client"
+	"github.com/nerdalize/nerd/nerd/conf"
+	"github.com/pkg/errors"
 )
 
 //LoginOpts describes command options
 type LoginOpts struct {
+	User string `long:"user" default:"" default-mask:"" env:"NERD_USER" description:"nerd username"`
+	Pass string `long:"pass" default:"" default-mask:"" env:"NERD_PASS" description:"nerd password"`
 	*NerdAPIOpts
 	*OutputOpts
 }
@@ -17,7 +22,6 @@ type LoginOpts struct {
 type Login struct {
 	*command
 
-	ui     cli.Ui
 	opts   *LoginOpts
 	parser *flags.Parser
 }
@@ -50,23 +54,32 @@ func LoginFactory() func() (cmd cli.Command, err error) {
 }
 
 //DoRun is called by run and allows an error to be returned
-func (cmd *Login) DoRun(args []string) (err error) {
-	// if len(args) < 1 {
-	// 	return fmt.Errorf("not enough arguments, see --help")
-	// }
-	//
-	// c := client.NewNerdAPI(cmd.opts.NerdAPIConfig())
-	//
-	// sess, err := c.CreateSession(args[0])
-	// if err != nil {
-	// 	return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
-	// }
-	//
-	// fmt.Println("AWS_ACCESS_KEY_ID=" + sess.AWSAccessKeyID)
-	// fmt.Println("AWS_SECRET_ACCESS_KEY=" + sess.AWSSecretAccessKey)
-	// fmt.Println("AWS_SESSION_TOKEN=" + sess.AWSSessionToken)
-	// fmt.Println("AWS_STORAGE_BUCKET=" + sess.AWSStorageBucket)
-	// fmt.Println("AWS_STORAGE_ROOT=" + sess.AWSStorageRoot)
-
+func (cmd *Login) DoRun(args []string) error {
+	user := cmd.opts.User
+	pass := cmd.opts.Pass
+	if cmd.opts.User == "" || cmd.opts.Pass == "" {
+		var err error
+		user, pass, err = UserPassProvider(cmd.ui)()
+		if err != nil {
+			return errors.Wrap(err, "failed to retreive username and password")
+		}
+	}
+	config, err := conf.Read()
+	if err != nil {
+		return errors.Wrap(err, "failed to read nerd config file")
+	}
+	cl := client.NewAuthAPI(config.Auth.APIEndpoint)
+	token, err := cl.GetToken(user, pass)
+	if err != nil {
+		return errors.Wrap(err, "failed to get nerd token for username and password")
+	}
+	if token == "" {
+		return errors.New("failed to get nerd token for username and password")
+	}
+	err = conf.WriteNerdToken(token)
+	if err != nil {
+		return errors.Wrap(err, "failed to write nerd token to disk")
+	}
+	// TODO: Show successful login message
 	return nil
 }

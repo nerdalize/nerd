@@ -17,15 +17,19 @@ type NerdAPI struct {
 	m            sync.Mutex
 }
 
+//NerdAPIValue is the value struct that contains credential values.
 type NerdAPIValue struct {
 	NerdToken string
 }
 
+//Provider is a credential provider that gives a NerdAPIValue when Retrieve is called.
+//A provider can define it's own logic of where to fetch this NerdAPIValue from.
 type Provider interface {
 	IsExpired() bool
 	Retrieve(*ecdsa.PublicKey) (*NerdAPIValue, error)
 }
 
+//NewNerdAPI creates a new credentials.NerdAPI struct.
 func NewNerdAPI(pub *ecdsa.PublicKey, provider Provider) *NerdAPI {
 	return &NerdAPI{
 		PublicKey: pub,
@@ -51,6 +55,7 @@ func (n *NerdAPI) Get() (*NerdAPIValue, error) {
 	return n.value, nil
 }
 
+//GetClaims calls Get() and decodes the token string into a NerdClaims object.
 func (n *NerdAPI) GetClaims() (*payload.NerdClaims, error) {
 	val, err := n.Get()
 	if err != nil {
@@ -63,6 +68,7 @@ func (n *NerdAPI) GetClaims() (*payload.NerdClaims, error) {
 	return claims, nil
 }
 
+//isExpired checks if the provider is expired or if it's the first time to call the IsExpired function.
 func (n *NerdAPI) isExpired() bool {
 	return n.forceRefresh || n.provider.IsExpired()
 }

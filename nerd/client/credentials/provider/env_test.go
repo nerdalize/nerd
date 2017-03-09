@@ -15,6 +15,7 @@ import (
 
 var EmptyClaims = &payload.NerdClaims{}
 
+//testkey creates a new ecdsa keypair.
 func testkey(t *testing.T) *ecdsa.PrivateKey {
 	k, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	if err != nil {
@@ -23,6 +24,7 @@ func testkey(t *testing.T) *ecdsa.PrivateKey {
 	return k
 }
 
+//tokenAndPub returns a token string and public key.
 func tokenAndPub(claims *payload.NerdClaims, t *testing.T) (string, *ecdsa.PublicKey) {
 	key := testkey(t)
 	pub, ok := key.Public().(*ecdsa.PublicKey)
@@ -37,9 +39,10 @@ func tokenAndPub(claims *payload.NerdClaims, t *testing.T) (string, *ecdsa.Publi
 	return ss, pub
 }
 
+//newEnvProvider creates a new Env provider
 func newEnvProvider(pub *ecdsa.PublicKey) *Env {
 	return &Env{
-		ProviderBasis: &ProviderBasis{},
+		Basis: &Basis{},
 	}
 }
 
