@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-const test_conf = `
+const testConf = `
 {
   "auth": {
       "public_key": "test_key",
@@ -19,7 +19,7 @@ func TestFromFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unexpected error for temp file: %v", err)
 	}
-	temp.WriteString(test_conf)
+	temp.WriteString(testConf)
 	SetLocation(temp.Name())
 	conf, err := Read()
 	if err != nil {

@@ -19,12 +19,14 @@ type Provider struct {
 	Client       *client.NerdAPIClient
 }
 
+//NewNerdalizeCredentials creates a new credentials object with the NerdalizeProvider as provider.
 func NewNerdalizeCredentials(c *client.NerdAPIClient) *credentials.Credentials {
 	return credentials.NewCredentials(&Provider{
 		Client: c,
 	})
 }
 
+//IsExpired checks if the AWS sessions is expired.
 func (p *Provider) IsExpired() bool {
 	return p.Expiry.IsExpired()
 }

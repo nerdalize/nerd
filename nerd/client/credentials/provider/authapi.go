@@ -2,7 +2,6 @@ package provider
 
 import (
 	"crypto/ecdsa"
-	"io/ioutil"
 	"time"
 
 	"github.com/nerdalize/nerd/nerd/client"
@@ -11,20 +10,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-const NerdTokenPermissions = 0644
-
 //AuthAPI provides nerdalize credentials by making a request to the nerdalize auth server.
 //The UserPassProvider is used to retreive the username and password required to authenticate with the auth server.
 type AuthAPI struct {
-	*ProviderBasis
+	*Basis
 
-	Client           *client.AuthAPIClient
+	Client *client.AuthAPIClient
+	//UserPassProvider is a function that provides the AuthAPI provider with a username and password. This could for example be a function
+	//that reads from stdin.
 	UserPassProvider func() (string, string, error)
 }
 
+//NewAuthAPI creates a new AuthAPI provider.
 func NewAuthAPI(userPassProvider func() (string, string, error), c *client.AuthAPIClient) *AuthAPI {
 	return &AuthAPI{
-		ProviderBasis: &ProviderBasis{
+		Basis: &Basis{
 			ExpireWindow: DefaultExpireWindow,
 		},
 		UserPassProvider: userPassProvider,
@@ -32,6 +32,7 @@ func NewAuthAPI(userPassProvider func() (string, string, error), c *client.AuthA
 	}
 }
 
+//Retrieve retrieves the token from the authentication server.
 func (p *AuthAPI) Retrieve(pub *ecdsa.PublicKey) (*credentials.NerdAPIValue, error) {
 	user, pass, err := p.UserPassProvider()
 	if err != nil {
@@ -40,10 +41,6 @@ func (p *AuthAPI) Retrieve(pub *ecdsa.PublicKey) (*credentials.NerdAPIValue, err
 	token, err := p.Client.GetToken(user, pass)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get nerd token for username and password")
-	}
-	err = saveNerdToken(token)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to save nerd token")
 	}
 	claims, err := credentials.DecodeTokenWithKey(token, pub)
 	if err != nil {
@@ -58,17 +55,4 @@ func (p *AuthAPI) Retrieve(pub *ecdsa.PublicKey) (*credentials.NerdAPIValue, err
 	return &credentials.NerdAPIValue{
 		NerdToken: token,
 	}, nil
-}
-
-//saveNerdToken saves the token to disk.
-func saveNerdToken(token string) error {
-	filename, err := TokenFilename()
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(filename, []byte(token), NerdTokenPermissions)
-	if err != nil {
-		return errors.Wrapf(err, "failed to write nerd token to '%v'", filename)
-	}
-	return nil
 }
