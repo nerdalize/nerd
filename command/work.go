@@ -36,7 +36,6 @@ type WorkOpts struct {
 type Work struct {
 	*command
 
-	ui     cli.Ui
 	opts   *WorkOpts
 	parser *flags.Parser
 }
@@ -74,6 +73,8 @@ type TaskStatus struct {
 	token string //activity token
 	code  int    //exit code
 	err   error  //application error
+	pid   string //project id
+	tid   string //task id
 }
 
 //DoRun is called by run and allows an error to be returned
@@ -188,7 +189,7 @@ func (cmd *Work) DoRun(args []string) (err error) {
 			args := []string{"ps", "-a",
 				"--no-trunc",
 				"--filter=label=nerd-token",
-				"--format={{.ID}}\t{{.Status}}\t{{.Label \"nerd-token\"}}",
+				"--format={{.ID}}\t{{.Status}}\t{{.Label \"nerd-token\"}}\t{{.Label \"nerd-project\"}}\t{{.Label \"nerd-task\"}}",
 			}
 
 			cmd := exec.Command(exe, args...)
@@ -208,9 +209,9 @@ func (cmd *Work) DoRun(args []string) (err error) {
 	statusCh := make(chan TaskStatus)
 	go func() {
 		for scanner.Scan() {
-			fields := strings.SplitN(scanner.Text(), "\t", 3)
-			if len(fields) != 3 {
-				statusCh <- TaskStatus{fields[0], fields[2], 255, errors.New("unexpected ps line")}
+			fields := strings.SplitN(scanner.Text(), "\t", 5)
+			if len(fields) != 5 {
+				statusCh <- TaskStatus{fields[0], fields[2], 255, errors.New("unexpected ps line"), fields[3], fields[4]}
 				continue //less then 2 fields, shouldnt happen
 			}
 
@@ -218,36 +219,36 @@ func (cmd *Work) DoRun(args []string) (err error) {
 			status := fields[1]
 			if strings.HasPrefix(status, "Up") || strings.HasPrefix(status, "Restarting") || status == "Removal In Progress" || status == "Created" {
 				//container is not yet "done": still in progress without statuscode, send heartbeat and continue to next tick
-				statusCh <- TaskStatus{fields[0], fields[2], -1, nil}
+				statusCh <- TaskStatus{fields[0], fields[2], -1, nil, fields[3], fields[4]}
 				continue
 			} else {
 				//container has "exited" or is "dead"
 				if status == "Dead" {
 					//@See https://github.com/docker/docker/issues/5684
 					// There is also a new(ish) container state called "dead", which is set when there were issues removing the container. This is of course a work around for this particular issue, which lets you go and investigate why there is the device or resource busy error (probably a race condition), in which case you can attempt to remove again, or attempt to manually fix (e.g. unmount any left-over mounts, and then remove).
-					statusCh <- TaskStatus{fields[0], fields[2], 255, errors.New("failed to remove container")}
+					statusCh <- TaskStatus{fields[0], fields[2], 255, errors.New("failed to remove container"), fields[3], fields[4]}
 					continue
 
 				} else if strings.HasPrefix(status, "Exited") {
 					right := strings.TrimPrefix(status, "Exited (")
 					lefts := strings.SplitN(right, ")", 2)
 					if len(lefts) != 2 {
-						statusCh <- TaskStatus{fields[0], fields[2], 255, errors.New("unexpected exited format: " + status)}
+						statusCh <- TaskStatus{fields[0], fields[2], 255, errors.New("unexpected exited format: " + status), fields[3], fields[4]}
 						continue
 					}
 
 					//write actual status code, can be zero in case of success
 					code, err := strconv.Atoi(lefts[0])
 					if err != nil {
-						statusCh <- TaskStatus{fields[0], fields[2], 255, errors.New("unexpected status code, not a number: " + status)}
+						statusCh <- TaskStatus{fields[0], fields[2], 255, errors.New("unexpected status code, not a number: " + status), fields[3], fields[4]}
 						continue
 					} else {
-						statusCh <- TaskStatus{fields[0], fields[2], code, nil}
+						statusCh <- TaskStatus{fields[0], fields[2], code, nil, fields[3], fields[4]}
 						continue
 					}
 
 				} else {
-					statusCh <- TaskStatus{fields[0], fields[2], 255, errors.New("unexpected status: " + status)}
+					statusCh <- TaskStatus{fields[0], fields[2], 255, errors.New("unexpected status: " + status), fields[3], fields[4]}
 					continue
 				}
 			}
@@ -276,11 +277,23 @@ func (cmd *Work) DoRun(args []string) (err error) {
 					TaskToken: aws.String(statusEv.token),
 				})
 			} else if statusEv.code == 0 {
+
+				var outdata []byte
+				if outdata, err = json.Marshal(&payload.TaskResult{
+					ProjectID:  statusEv.pid,
+					TaskID:     statusEv.tid,
+					OutputID:   "d-ffffffff",
+					ExitStatus: fmt.Sprintf("Exit Status: %d", statusEv.code),
+				}); err != nil {
+					fmt.Println("failed to marshal task result: ", err)
+					continue
+				}
+
 				//success
 				fmt.Fprintln(os.Stderr, "success!")
 				_, err = states.SendTaskSuccess(&sfn.SendTaskSuccessInput{
 					TaskToken: aws.String(statusEv.token),
-					Output:    aws.String(`{"foo": "bar"}`),
+					Output:    aws.String(string(outdata)),
 				})
 
 			} else {

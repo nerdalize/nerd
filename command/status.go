@@ -20,7 +20,6 @@ type StatusOpts struct {
 type Status struct {
 	*command
 
-	ui     cli.Ui
 	opts   *StatusOpts
 	parser *flags.Parser
 }
@@ -75,13 +74,12 @@ func drawTable(tasks *payload.TaskListOutput) {
 	for i, task := range tasks.Tasks {
 		data[i] = []string{
 			task.TaskID,
-			task.Image,
-			task.InputID,
+			task.OutputID,
 			humanize.Time(task.CreatedAt),
 		}
 	}
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"TaskID", "Image", "Input Dataset", "Created"})
+	table.SetHeader([]string{"TaskID", "Output Dataset", "Created"})
 	table.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
 	table.SetCenterSeparator("|")
 	table.AppendBulk(data) // Add Bulk Data
