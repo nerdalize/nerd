@@ -42,22 +42,26 @@ func NewClient(ui cli.Ui) (*client.NerdAPIClient, error) {
 			key,
 			provider.NewEnv(),
 			provider.NewConfig(),
-			provider.NewAuthAPI(func() (string, string, error) {
-				ui.Info("Please enter your Nerdalize username and password.")
-				user, err := ui.Ask("Username: ")
-				if err != nil {
-					return "", "", errors.Wrap(err, "failed to read username")
-				}
-				pass, err := ui.AskSecret("Password: ")
-				if err != nil {
-					return "", "", errors.Wrap(err, "failed to read password")
-				}
-				return user, pass, nil
-			}, client.NewAuthAPI(c.Auth.APIEndpoint)),
+			provider.NewAuthAPI(UserPassProvider(ui), client.NewAuthAPI(c.Auth.APIEndpoint)),
 		),
 		URL:       c.NerdAPIEndpoint,
 		ProjectID: c.CurrentProject,
 	})
+}
+
+func UserPassProvider(ui cli.Ui) func() (string, string, error) {
+	return func() (string, string, error) {
+		ui.Info("Please enter your Nerdalize username and password.")
+		user, err := ui.Ask("Username: ")
+		if err != nil {
+			return "", "", errors.Wrap(err, "failed to read username")
+		}
+		pass, err := ui.AskSecret("Password: ")
+		if err != nil {
+			return "", "", errors.Wrap(err, "failed to read password")
+		}
+		return user, pass, nil
+	}
 }
 
 //HandleClientError handles errors produced by client.NerdAPIClient
