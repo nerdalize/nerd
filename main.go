@@ -27,8 +27,8 @@ func init() {
 	_, err := flags.ParseArgs(opts, os.Args[1:])
 	if err == nil {
 		conf.SetLocation(opts.ConfigFile)
-		nerd.SetupLogging()
 	}
+	nerd.SetupLogging()
 }
 
 func main() {

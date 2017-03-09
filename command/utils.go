@@ -5,7 +5,6 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd"
 	"github.com/nerdalize/nerd/nerd/client"
 	"github.com/nerdalize/nerd/nerd/client/credentials"
 	"github.com/nerdalize/nerd/nerd/client/credentials/provider"
@@ -61,7 +60,6 @@ func UserPassProvider(ui cli.Ui) func() (string, string, error) {
 }
 
 func SetLogSettings(json bool, verbose bool) {
-	nerd.SetupLogging()
 	if verbose {
 		logrus.SetFormatter(new(logrus.TextFormatter))
 		logrus.SetLevel(logrus.DebugLevel)
