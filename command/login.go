@@ -17,8 +17,7 @@ import (
 type LoginOpts struct {
 	User string `long:"user" default:"" default-mask:"" env:"NERD_USER" description:"nerd username"`
 	Pass string `long:"pass" default:"" default-mask:"" env:"NERD_PASS" description:"nerd password"`
-	*NerdAPIOpts
-	*OutputOpts
+	NerdOpts
 }
 
 //Login command

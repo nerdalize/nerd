@@ -9,8 +9,7 @@ import (
 
 //LogsOpts describes command options
 type LogsOpts struct {
-	*NerdAPIOpts
-	*OutputOpts
+	NerdOpts
 }
 
 //Logs command
