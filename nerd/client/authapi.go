@@ -5,6 +5,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	//TokenEndpoint is the endpoint from where to fetch the JWT.
+	TokenEndpoint = "token/?service=nce.nerdalize.com"
+)
+
 //AuthAPIClient is the client for the nerdalize authentication server.
 type AuthAPIClient struct {
 	URL string
@@ -23,7 +28,7 @@ func (auth *AuthAPIClient) GetToken(user, pass string) (string, error) {
 		Token string `json:"token"`
 	}
 	b := &body{}
-	s := sling.New().Get(auth.URL)
+	s := sling.New().Get(auth.URL + "/" + TokenEndpoint)
 	req, err := s.Request()
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to create request (%v)", auth.URL)
