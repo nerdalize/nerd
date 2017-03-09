@@ -110,10 +110,6 @@ func (cmd *Work) DoRun(args []string) (err error) {
 	messages := sqs.New(awssess)
 	states := sfn.New(awssess)
 
-	//
-	// The logic below should be merged into master
-	//
-
 	//for now, we just parse use the docker cli
 	exe, err := exec.LookPath("docker")
 	if err != nil {
@@ -143,7 +139,7 @@ func (cmd *Work) DoRun(args []string) (err error) {
 						return
 					}
 
-					//@TODO execute a pre-run heartbeat to prevent starting containers for delayed but outdated task tokens.
+					//@TODO execute a pre-run heartbeat to prevent starting containers for delayed but outdated task tokens. if the heartbeat returns a timed out error don't attempt to start it: (dont forget to delete the message)
 
 					fmt.Fprintf(os.Stderr, "starting task: %s, token: %x\n", task.TaskID, sha1.Sum([]byte(task.ActivityToken)))
 					args := []string{
@@ -153,10 +149,21 @@ func (cmd *Work) DoRun(args []string) (err error) {
 						fmt.Sprintf("--label=nerd-project=%s", task.ProjectID),
 						fmt.Sprintf("--label=nerd-task=%s", task.TaskID),
 						fmt.Sprintf("--label=nerd-token=%s", task.ActivityToken),
-						task.Image,
+						fmt.Sprintf("-e=NERD_PROJECT_ID=%s", task.ProjectID),
+						fmt.Sprintf("-e=NERD_TASK_ID=%s", task.TaskID),
 					}
 
+					if task.InputID != "" {
+						args = append(args, fmt.Sprintf("-e=NERD_DATASET_INPUT=%s", task.InputID))
+					}
+
+					for key, val := range task.Environment {
+						args = append(args, fmt.Sprintf("-e=%s=%s", key, val))
+					}
+
+					args = append(args, task.Image)
 					cmd := exec.Command(exe, args...)
+					cmd.Stderr = os.Stderr
 					_ = cmd.Run() //any result is ok
 
 					//delete message, state is persisted in Docker, it is no longer relevant
@@ -257,6 +264,9 @@ func (cmd *Work) DoRun(args []string) (err error) {
 		case <-sigCh: //exit our main loop
 			return
 		case statusEv := <-statusCh: //sync docker status
+
+			//@TODO start moving logs from the container to cloudwatch
+
 			fmt.Fprintf(os.Stderr, "task-%x is %d\n", sha1.Sum([]byte(statusEv.token)), statusEv.code)
 
 			var err error
