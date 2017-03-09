@@ -11,18 +11,30 @@ function print_help {
 		| expand -t 30
 }
 
-function run_buildgit { #build a new binary, tag it with git commit hash, and place it in $GOPATH/bin
-  go build \
+function run_build { #compile versioned executable and place it in $GOPATH/bin
+	go build \
     -ldflags "-X main.version=$(cat VERSION) -X main.commit=$(git rev-parse --short HEAD )" \
     -o $GOPATH/bin/nerd \
     main.go
 }
 
-function run_build { #build a new binary and place it in $GOPATH/bin
-  go build \
-    -o $GOPATH/bin/nerd \
-    main.go
-	}
+function run_build-worker { #build worker container image
+	docker build -t quay.io/nerdalize/worker:$(cat VERSION) -f Dockerfile.linux .
+}
+
+function run_run-worker { #run the worker container
+	run_build-worker
+	docker run --rm \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v ~/.nerd:/root/.nerd \
+		-it quay.io/nerdalize/worker:$(cat VERSION) work
+}
+
+function run_publish-worker { #publish the worker container image
+	run_build-worker
+	docker push quay.io/nerdalize/worker:$(cat VERSION)
+}
+
 function run_test { #unit test project
 	go test -v ./command
   go test -v ./nerd/...
@@ -30,7 +42,10 @@ function run_test { #unit test project
 
 case $1 in
 	"build") run_build ;;
-	"buildgit") run_buildgit ;;
 	"test") run_test ;;
+
+	"build-worker") run_build-worker ;;
+	"run-worker") run_run-worker ;;
+	"publish-worker") run_publish-worker ;;
 	*) print_help ;;
 esac
