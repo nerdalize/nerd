@@ -18,34 +18,56 @@ function run_build { #compile versioned executable and place it in $GOPATH/bin
     main.go
 }
 
-function run_build-worker { #build worker container image
-	docker build -t quay.io/nerdalize/worker:$(cat VERSION) -f Dockerfile.linux .
-}
-
-function run_run-worker { #run the worker container
-	run_build-worker
-	docker run --rm \
-		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v ~/.nerd:/root/.nerd \
-		-it quay.io/nerdalize/worker:$(cat VERSION) work
-}
-
-function run_publish-worker { #publish the worker container image
-	run_build-worker
-	docker push quay.io/nerdalize/worker:$(cat VERSION)
-}
-
 function run_test { #unit test project
 	go test -v ./command
   go test -v ./nerd/...
 }
 
+function run_release { #cross compile new release builds
+	mkdir -p bin
+	gox -ldflags "-X main.version=$(cat VERSION) -X main.commit=$(git rev-parse --short HEAD )" -osarch="linux/amd64 windows/amd64 darwin/amd64" -output=./bin/{{.OS}}_{{.Arch}}/nerd
+}
+
+function run_publish { #publish cross compiled binaries
+	cd bin/darwin_amd64; tar -zcvf ../nerd-$(cat ../../VERSION)-macos.tar.gz nerd
+	cd ../linux_amd64; tar -zcvf ../nerd-$(cat ../../VERSION)-linux.tar.gz nerd
+	cd ../windows_amd64; zip ../nerd-$(cat ../../VERSION)-win.zip ./nerd.exe; cd ../..
+
+	git tag v`cat VERSION` || true
+	git push --tags
+
+	github-release release \
+		--user nerdalize \
+		--repo nerd \
+		--tag v`cat VERSION` \
+		--pre-release || true
+
+	github-release upload \
+			--user nerdalize \
+			--repo nerd \
+			--tag v`cat VERSION` \
+			--name nerd-$(cat VERSION)-macos.tar.gz \
+			--file bin/nerd-$(cat VERSION)-macos.tar.gz || true
+
+	github-release upload \
+			--user nerdalize \
+			--repo nerd \
+			--tag v`cat VERSION` \
+			--name nerd-$(cat VERSION)-linux.tar.gz \
+			--file bin/nerd-$(cat VERSION)-linux.tar.gz || true
+
+	github-release upload \
+			--user nerdalize \
+			--repo nerd \
+			--tag v`cat VERSION` \
+			--name nerd-$(cat VERSION)-win.zip \
+			--file bin/nerd-$(cat VERSION)-win.zip || true
+}
+
 case $1 in
 	"build") run_build ;;
 	"test") run_test ;;
-
-	"build-worker") run_build-worker ;;
-	"run-worker") run_run-worker ;;
-	"publish-worker") run_publish-worker ;;
+	"release") run_release ;;
+	"publish") run_publish ;;
 	*) print_help ;;
 esac
