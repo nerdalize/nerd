@@ -1,11 +1,12 @@
 package command
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/nerd/client"
+	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
 )
 
@@ -63,7 +64,21 @@ func (cmd *Login) DoRun(args []string) (err error) {
 			return errors.Wrap(err, "failed to retreive username and password")
 		}
 	}
-	fmt.Println(user)
-	fmt.Println(pass)
+	config, err := conf.Read()
+	if err != nil {
+		return errors.Wrap(err, "failed to read nerd config file")
+	}
+	cl := client.NewAuthAPI(config.Auth.APIEndpoint)
+	token, err := cl.GetToken(user, pass)
+	if err != nil {
+		return errors.Wrap(err, "failed to get nerd token for username and password")
+	}
+	if token == "" {
+		return errors.New("failed to get nerd token for username and password")
+	}
+	err = conf.WriteNerdToken(token)
+	if err != nil {
+		return errors.Wrap(err, "failed to write nerd token to disk")
+	}
 	return nil
 }
