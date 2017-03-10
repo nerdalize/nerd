@@ -19,7 +19,6 @@ type UploadOpts struct {
 type Upload struct {
 	*command
 
-	ui     cli.Ui
 	opts   *UploadOpts
 	parser *flags.Parser
 }

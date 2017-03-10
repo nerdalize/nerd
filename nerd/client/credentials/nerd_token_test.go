@@ -10,7 +10,7 @@ const key = `
 MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEAkYbLnam4wo+heLlTZEeh1ZWsfruz9nk
 kyvc4LwKZ8pez5KYY76H1ox+AfUlWOEq+bExypcFfEIrJkf/JXa7jpzkOWBDF9Sa
 OWbQHMK+vvUXieCJvCc9Vj084ABwLBgX
------END PUBLIC KEY----
+-----END PUBLIC KEY-----
 `
 
 func TestParseECDSAPublicKeyFromPemBytes(t *testing.T) {

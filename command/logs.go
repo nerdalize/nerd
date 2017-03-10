@@ -17,7 +17,6 @@ type LogsOpts struct {
 type Logs struct {
 	*command
 
-	ui     cli.Ui
 	opts   *LogsOpts
 	parser *flags.Parser
 }
