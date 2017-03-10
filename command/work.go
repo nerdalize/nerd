@@ -299,10 +299,11 @@ func (cmd *Work) DoRun(args []string) (err error) {
 			} else {
 				//failure
 				fmt.Fprintln(os.Stderr, "failed!")
+				//@TODO dont send cause if .err is nil
 				_, err = states.SendTaskFailure(&sfn.SendTaskFailureInput{
 					TaskToken: aws.String(statusEv.token),
-					Error:     aws.String(`{"error": "foo"}`),
-					Cause:     aws.String(`{"cause": "bar"}`),
+					Error:     aws.String(fmt.Sprintf(`{"error": "%d"}`, statusEv.code)),
+					Cause:     aws.String(fmt.Sprintf(`{"cause": "%v"}`, statusEv.err)),
 				})
 			}
 
