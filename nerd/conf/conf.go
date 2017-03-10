@@ -38,7 +38,7 @@ type AuthConfig struct {
 func Defaults() *Config {
 	return &Config{
 		Auth: AuthConfig{
-			APIEndpoint: "https://auth.nerdalize.com",
+			APIEndpoint: "http://auth.nerdalize.com",
 			PublicKey: `-----BEGIN PUBLIC KEY-----
 MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEAkYbLnam4wo+heLlTZEeh1ZWsfruz9nk
 kyvc4LwKZ8pez5KYY76H1ox+AfUlWOEq+bExypcFfEIrJkf/JXa7jpzkOWBDF9Sa
