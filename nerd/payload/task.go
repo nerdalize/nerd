@@ -32,11 +32,11 @@ type TaskListOutput struct {
 	Tasks []*TaskSummary `json:"tasks"`
 }
 
+//TaskSummary is a summarized view of a task
 type TaskSummary struct {
 	ProjectID string    `json:"project_id"`
 	TaskID    string    `json:"task_id"`
-	InputID   string    `json:"input_id"`
-	Image     string    `json:"image"`
+	OutputID  string    `json:"output_id,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 }
 

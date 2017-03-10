@@ -19,7 +19,6 @@ type DownloadOpts struct {
 type Download struct {
 	*command
 
-	ui     cli.Ui
 	opts   *DownloadOpts
 	parser *flags.Parser
 }
