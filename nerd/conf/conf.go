@@ -46,7 +46,7 @@ OWbQHMK+vvUXieCJvCc9Vj084ABwLBgX
 -----END PUBLIC KEY-----`,
 		},
 		CurrentProject:  "6de308f4-face-11e6-bc64-92361f002671",
-		NerdAPIEndpoint: "https://platform.nerdalize.net",
+		NerdAPIEndpoint: "https://batch.nerdalize.com/v1",
 	}
 }
 
