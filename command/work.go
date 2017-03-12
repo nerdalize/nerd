@@ -215,6 +215,9 @@ func (cmd *Work) DoRun(args []string) (err error) {
 				continue //less then 2 fields, shouldnt happen
 			}
 
+			//fields: | cid | status | token | project | task |
+			//we would like to start routines that pipe log lines to cloudwatch
+
 			//second field can be interpreted by reversing state .String() https://github.com/docker/docker/blob/b59ee9486fad5fa19f3d0af0eb6c5ce100eae0fc/container/state.go#L70
 			status := fields[1]
 			if strings.HasPrefix(status, "Up") || strings.HasPrefix(status, "Restarting") || status == "Removal In Progress" || status == "Created" {
