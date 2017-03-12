@@ -181,8 +181,8 @@ func (cmd *Work) DoRun(args []string) (err error) {
 			//@TODO send buffered logs when shutting down
 			case <-to:
 				if len(logsEvIn.LogEvents) > 0 {
-					//@TODO got some remaining events lying around
 
+					//@TODO got some remaining events lying around
 					fmt.Println("AFT", logsEvIn.LogEvents)
 					logsEvIn.LogEvents = nil
 				}
