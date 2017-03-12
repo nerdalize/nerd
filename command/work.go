@@ -123,6 +123,7 @@ func (cmd *Work) DoRun(args []string) (err error) {
 
 	messages := sqs.New(awssess)
 	states := sfn.New(awssess)
+	cwatch := cloudwatchlogs.New(awssess)
 
 	//for now, we just parse use the docker cli
 	exe, err := exec.LookPath("docker")
@@ -156,6 +157,10 @@ func (cmd *Work) DoRun(args []string) (err error) {
 				continue
 			}
 
+			if fields[1] == "" {
+				continue //ignore empty lines
+			}
+
 			ev := TaskLogEvent{TaskContainer: &tc, msg: fields[1]}
 			if ev.t, err = time.Parse(time.RFC3339Nano, fields[0]); err != nil {
 				fmt.Println("unexpected time stamp: ", err)
@@ -173,31 +178,51 @@ func (cmd *Work) DoRun(args []string) (err error) {
 	//pushLogs moves the actual log events to the platform it is responsible for batching events together as to not run into throttling issues or keeping state too long
 	bufTimeout := time.Second * 5
 	bufSize := 30
-	pushLogs := func(evCh <-chan TaskLogEvent) {
+	pushLogs := func(evCh <-chan TaskLogEvent, group, stream string) {
 		logsEvIn := &cloudwatchlogs.PutLogEventsInput{}
+		put := func() {
+			if logsEvIn.LogGroupName == nil {
+				if _, err = cwatch.CreateLogStream(&cloudwatchlogs.CreateLogStreamInput{
+					LogGroupName:  aws.String(group),
+					LogStreamName: aws.String(stream),
+				}); err != nil {
+					//@TODO better error handling
+					fmt.Println("failed to create stream:", err)
+					return
+				}
+
+				logsEvIn.SetLogGroupName(group)
+				logsEvIn.SetLogStreamName(stream)
+			}
+
+			var out *cloudwatchlogs.PutLogEventsOutput
+			if out, err = cwatch.PutLogEvents(logsEvIn); err != nil {
+				//@TODO what if put logs fails?
+				fmt.Println("put logs failed:", err)
+				return
+			}
+
+			fmt.Printf("log events: %+v\n", logsEvIn.LogEvents)
+			logsEvIn.LogEvents = nil
+			logsEvIn.SequenceToken = out.NextSequenceToken
+		}
+
 		for {
 			to := time.After(bufTimeout)
 			select {
 			//@TODO send buffered logs when shutting down
 			case <-to:
 				if len(logsEvIn.LogEvents) > 0 {
-
-					//@TODO got some remaining events lying around
-					fmt.Println("AFT", logsEvIn.LogEvents)
-					logsEvIn.LogEvents = nil
+					put()
 				}
 			case ev := <-evCh:
 				logsEvIn.LogEvents = append(logsEvIn.LogEvents, &cloudwatchlogs.InputLogEvent{
-					Timestamp: aws.Int64(ev.t.UnixNano()),
+					Timestamp: aws.Int64(ev.t.UnixNano() / 1000 / 1000), //only milliseconds are accepted (visible)
 					Message:   aws.String(ev.msg),
 				})
 
 				if len(logsEvIn.LogEvents) >= bufSize {
-
-					fmt.Println("BUF", logsEvIn.LogEvents)
-					//@TODO push log events immediately
-
-					logsEvIn.LogEvents = nil
+					put()
 				}
 			}
 		}
@@ -210,13 +235,16 @@ func (cmd *Work) DoRun(args []string) (err error) {
 		for taskc := range containerCh {
 			//if the container wasn't seen before we setup a logging pipeline
 			if _, ok := containers[taskc.cid]; !ok {
+				groupName := worker.LogGroupName
+				streamName := fmt.Sprintf("%s-%s-%s", taskc.tid, worker.WorkerID, taskc.cid)
+
 				//@TODO create a remote log stream for first sequence token
 				evCh := make(chan TaskLogEvent, bufSize)
 				pr, pw := io.Pipe()
 				containers[taskc.cid] = pr
 				go pipeLogs(pw, taskc)
 				go scanLogs(pr, evCh, taskc)
-				go pushLogs(evCh)
+				go pushLogs(evCh, groupName, streamName)
 			}
 		}
 	}()
