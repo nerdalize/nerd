@@ -69,12 +69,17 @@ func WorkFactory() func() (cmd cli.Command, err error) {
 
 //TaskStatus describes the container status of a task
 type TaskStatus struct {
+	TaskContainer
+	code int   //exit code
+	err  error //application error
+}
+
+//TaskContainer is a unique execution for a specific task
+type TaskContainer struct {
 	cid   string //container id
-	token string //activity token
-	code  int    //exit code
-	err   error  //application error
-	pid   string //project id
 	tid   string //task id
+	pid   string //project id
+	token string //activity token
 }
 
 //DoRun is called by run and allows an error to be returned
@@ -116,6 +121,8 @@ func (cmd *Work) DoRun(args []string) (err error) {
 	if err != nil {
 		return errors.Wrap(err, "failed to find docker executable")
 	}
+
+	// pipeCh := make(chan )
 
 	//receive tasks from the message queue and start the container run loop, it will attemp to create containers for tasks unconditionally if it keeps failing queue retry will backoff. If it succeeds, fails the feedback loop will notify
 	go func() {
@@ -211,7 +218,7 @@ func (cmd *Work) DoRun(args []string) (err error) {
 		for scanner.Scan() {
 			fields := strings.SplitN(scanner.Text(), "\t", 5)
 			if len(fields) != 5 {
-				statusCh <- TaskStatus{fields[0], fields[2], 255, errors.New("unexpected ps line"), fields[3], fields[4]}
+				statusCh <- TaskStatus{TaskContainer{fields[0], fields[4], fields[3], fields[2]}, 255, errors.New("unexpected ps line")}
 				continue //less then 2 fields, shouldnt happen
 			}
 
@@ -222,36 +229,36 @@ func (cmd *Work) DoRun(args []string) (err error) {
 			status := fields[1]
 			if strings.HasPrefix(status, "Up") || strings.HasPrefix(status, "Restarting") || status == "Removal In Progress" || status == "Created" {
 				//container is not yet "done": still in progress without statuscode, send heartbeat and continue to next tick
-				statusCh <- TaskStatus{fields[0], fields[2], -1, nil, fields[3], fields[4]}
+				statusCh <- TaskStatus{TaskContainer{fields[0], fields[4], fields[3], fields[2]}, -1, nil}
 				continue
 			} else {
 				//container has "exited" or is "dead"
 				if status == "Dead" {
 					//@See https://github.com/docker/docker/issues/5684
 					// There is also a new(ish) container state called "dead", which is set when there were issues removing the container. This is of course a work around for this particular issue, which lets you go and investigate why there is the device or resource busy error (probably a race condition), in which case you can attempt to remove again, or attempt to manually fix (e.g. unmount any left-over mounts, and then remove).
-					statusCh <- TaskStatus{fields[0], fields[2], 255, errors.New("failed to remove container"), fields[3], fields[4]}
+					statusCh <- TaskStatus{TaskContainer{fields[0], fields[4], fields[3], fields[2]}, 255, errors.New("failed to remove container")}
 					continue
 
 				} else if strings.HasPrefix(status, "Exited") {
 					right := strings.TrimPrefix(status, "Exited (")
 					lefts := strings.SplitN(right, ")", 2)
 					if len(lefts) != 2 {
-						statusCh <- TaskStatus{fields[0], fields[2], 255, errors.New("unexpected exited format: " + status), fields[3], fields[4]}
+						statusCh <- TaskStatus{TaskContainer{fields[0], fields[4], fields[3], fields[2]}, 255, errors.New("unexpected exited format: " + status)}
 						continue
 					}
 
 					//write actual status code, can be zero in case of success
 					code, err := strconv.Atoi(lefts[0])
 					if err != nil {
-						statusCh <- TaskStatus{fields[0], fields[2], 255, errors.New("unexpected status code, not a number: " + status), fields[3], fields[4]}
+						statusCh <- TaskStatus{TaskContainer{fields[0], fields[4], fields[3], fields[2]}, 255, errors.New("unexpected status code, not a number: " + status)}
 						continue
 					} else {
-						statusCh <- TaskStatus{fields[0], fields[2], code, nil, fields[3], fields[4]}
+						statusCh <- TaskStatus{TaskContainer{fields[0], fields[4], fields[3], fields[2]}, code, nil}
 						continue
 					}
 
 				} else {
-					statusCh <- TaskStatus{fields[0], fields[2], 255, errors.New("unexpected status: " + status), fields[3], fields[4]}
+					statusCh <- TaskStatus{TaskContainer{fields[0], fields[4], fields[3], fields[2]}, 255, errors.New("unexpected status: " + status)}
 					continue
 				}
 			}
