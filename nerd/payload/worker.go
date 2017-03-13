@@ -20,7 +20,8 @@ type WorkerListOutput struct {
 
 //Worker is a worker in the list output
 type Worker struct {
-	ProjectID string `json:"project_id"`
-	WorkerID  string `json:"worker_id"`
-	QueueURL  string `json:"queue_url"`
+	ProjectID    string `json:"project_id"`
+	WorkerID     string `json:"worker_id"`
+	QueueURL     string `json:"queue_url"`
+	LogGroupName string `json:"log_group_name"`
 }

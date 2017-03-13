@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 	"github.com/aws/aws-sdk-go/service/sfn"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/jessevdk/go-flags"
@@ -69,12 +70,24 @@ func WorkFactory() func() (cmd cli.Command, err error) {
 
 //TaskStatus describes the container status of a task
 type TaskStatus struct {
+	TaskContainer
+	code int   //exit code
+	err  error //application error
+}
+
+//TaskLogEvent is a log event for a certain task container
+type TaskLogEvent struct {
+	*TaskContainer
+	t   time.Time
+	msg string
+}
+
+//TaskContainer is a unique execution for a specific task
+type TaskContainer struct {
 	cid   string //container id
-	token string //activity token
-	code  int    //exit code
-	err   error  //application error
-	pid   string //project id
 	tid   string //task id
+	pid   string //project id
+	token string //activity token
 }
 
 //DoRun is called by run and allows an error to be returned
@@ -110,12 +123,130 @@ func (cmd *Work) DoRun(args []string) (err error) {
 
 	messages := sqs.New(awssess)
 	states := sfn.New(awssess)
+	cwatch := cloudwatchlogs.New(awssess)
 
 	//for now, we just parse use the docker cli
 	exe, err := exec.LookPath("docker")
 	if err != nil {
 		return errors.Wrap(err, "failed to find docker executable")
 	}
+
+	//this function in run concurrently for each task container and writes output from 'docker log' to an I/O pipe for scanning and event handling
+	pipeLogs := func(w io.Writer, tc TaskContainer) {
+		args := []string{"logs", "-f", "-t", tc.cid}
+		cmd := exec.Command(exe, args...)
+		cmd.Stdout = w
+		cmd.Stderr = w
+		err = cmd.Run() //blocks until command ends
+		if err != nil {
+			fmt.Println("err starting log pipe", err)
+			//@TODO error following logs
+		}
+
+		//@TODO main routine signals will also cancel, so the cancelling routine could wait for us to send remaining stuff over.
+	}
+
+	//scanLogs will read a stream container output and split and parsed it into lines as log events that can be stored remotely.
+	scanLogs := func(r io.Reader, evCh chan<- TaskLogEvent, tc TaskContainer) {
+		logscan := bufio.NewScanner(r)
+		for logscan.Scan() {
+			fields := strings.SplitN(logscan.Text(), " ", 2)
+			if len(fields) < 2 {
+				fmt.Println("unexpected log line:", logscan.Text())
+				//@TODO show error that log line was not of expected format
+				continue
+			}
+
+			if fields[1] == "" {
+				continue //ignore empty lines
+			}
+
+			ev := TaskLogEvent{TaskContainer: &tc, msg: fields[1]}
+			if ev.t, err = time.Parse(time.RFC3339Nano, fields[0]); err != nil {
+				fmt.Println("unexpected time stamp: ", err)
+				//@TODO handle error better
+				continue
+			}
+
+			evCh <- ev
+		}
+		if err := logscan.Err(); err != nil {
+			fmt.Fprintln(os.Stderr, "failed to scan logs:", err)
+		}
+	}
+
+	//pushLogs moves the actual log events to the platform it is responsible for batching events together as to not run into throttling issues or keeping state too long
+	bufTimeout := time.Second * 5
+	bufSize := 30
+	pushLogs := func(evCh <-chan TaskLogEvent, group, stream string) {
+		logsEvIn := &cloudwatchlogs.PutLogEventsInput{}
+		put := func() {
+			if logsEvIn.LogGroupName == nil {
+				if _, err = cwatch.CreateLogStream(&cloudwatchlogs.CreateLogStreamInput{
+					LogGroupName:  aws.String(group),
+					LogStreamName: aws.String(stream),
+				}); err != nil {
+					//@TODO better error handling
+					fmt.Println("failed to create stream:", err)
+					return
+				}
+
+				logsEvIn.SetLogGroupName(group)
+				logsEvIn.SetLogStreamName(stream)
+			}
+
+			var out *cloudwatchlogs.PutLogEventsOutput
+			if out, err = cwatch.PutLogEvents(logsEvIn); err != nil {
+				//@TODO what if put logs fails?
+				fmt.Println("put logs failed:", err)
+				return
+			}
+
+			logsEvIn.LogEvents = nil
+			logsEvIn.SequenceToken = out.NextSequenceToken
+		}
+
+		for {
+			to := time.After(bufTimeout)
+			select {
+			//@TODO send buffered logs when shutting down
+			case <-to:
+				if len(logsEvIn.LogEvents) > 0 {
+					put()
+				}
+			case ev := <-evCh:
+				logsEvIn.LogEvents = append(logsEvIn.LogEvents, &cloudwatchlogs.InputLogEvent{
+					Timestamp: aws.Int64(ev.t.UnixNano() / 1000 / 1000), //only milliseconds are accepted (visible)
+					Message:   aws.String(fmt.Sprintf(`{"t": %d, "line": "%s"}`, ev.t.UnixNano(), ev.msg)),
+				})
+
+				if len(logsEvIn.LogEvents) >= bufSize {
+					put()
+				}
+			}
+		}
+	}
+
+	//the logging routine takes a containers found in the listing and fans out into a routine for each container that is resposible for shipping logs to the platform
+	containerCh := make(chan TaskContainer)
+	go func() {
+		containers := map[string]io.Reader{}
+		for taskc := range containerCh {
+			//if the container wasn't seen before we setup a logging pipeline
+			if _, ok := containers[taskc.cid]; !ok {
+				groupName := worker.LogGroupName
+				streamName := fmt.Sprintf("%s-%s-%s", taskc.tid, worker.WorkerID, taskc.cid)
+
+				//@TODO create a remote log stream for first sequence token
+				evCh := make(chan TaskLogEvent, bufSize)
+				pr, pw := io.Pipe()
+				containers[taskc.cid] = pr
+				go pipeLogs(pw, taskc)
+				go scanLogs(pr, evCh, taskc)
+				go pushLogs(evCh, groupName, streamName)
+			}
+		}
+	}()
 
 	//receive tasks from the message queue and start the container run loop, it will attemp to create containers for tasks unconditionally if it keeps failing queue retry will backoff. If it succeeds, fails the feedback loop will notify
 	go func() {
@@ -211,47 +342,49 @@ func (cmd *Work) DoRun(args []string) (err error) {
 		for scanner.Scan() {
 			fields := strings.SplitN(scanner.Text(), "\t", 5)
 			if len(fields) != 5 {
-				statusCh <- TaskStatus{fields[0], fields[2], 255, errors.New("unexpected ps line"), fields[3], fields[4]}
-				continue //less then 2 fields, shouldnt happen
+				// statusCh <- TaskStatus{TaskContainer{fields[0], fields[4], fields[3], fields[2]}, 255, errors.New("unexpected ps line")}
+				continue //less then 2 fields, shouldnt happen, and unable to scope error the o project/task/token
 			}
 
 			//fields: | cid | status | token | project | task |
+			taskc := TaskContainer{fields[0], fields[4], fields[3], fields[2]}
+
 			//we would like to start routines that pipe log lines to cloudwatch
 
 			//second field can be interpreted by reversing state .String() https://github.com/docker/docker/blob/b59ee9486fad5fa19f3d0af0eb6c5ce100eae0fc/container/state.go#L70
 			status := fields[1]
 			if strings.HasPrefix(status, "Up") || strings.HasPrefix(status, "Restarting") || status == "Removal In Progress" || status == "Created" {
 				//container is not yet "done": still in progress without statuscode, send heartbeat and continue to next tick
-				statusCh <- TaskStatus{fields[0], fields[2], -1, nil, fields[3], fields[4]}
+				statusCh <- TaskStatus{taskc, -1, nil}
 				continue
 			} else {
 				//container has "exited" or is "dead"
 				if status == "Dead" {
 					//@See https://github.com/docker/docker/issues/5684
 					// There is also a new(ish) container state called "dead", which is set when there were issues removing the container. This is of course a work around for this particular issue, which lets you go and investigate why there is the device or resource busy error (probably a race condition), in which case you can attempt to remove again, or attempt to manually fix (e.g. unmount any left-over mounts, and then remove).
-					statusCh <- TaskStatus{fields[0], fields[2], 255, errors.New("failed to remove container"), fields[3], fields[4]}
+					statusCh <- TaskStatus{taskc, 255, errors.New("failed to remove container")}
 					continue
 
 				} else if strings.HasPrefix(status, "Exited") {
 					right := strings.TrimPrefix(status, "Exited (")
 					lefts := strings.SplitN(right, ")", 2)
 					if len(lefts) != 2 {
-						statusCh <- TaskStatus{fields[0], fields[2], 255, errors.New("unexpected exited format: " + status), fields[3], fields[4]}
+						statusCh <- TaskStatus{taskc, 255, errors.New("unexpected exited format: " + status)}
 						continue
 					}
 
 					//write actual status code, can be zero in case of success
 					code, err := strconv.Atoi(lefts[0])
 					if err != nil {
-						statusCh <- TaskStatus{fields[0], fields[2], 255, errors.New("unexpected status code, not a number: " + status), fields[3], fields[4]}
+						statusCh <- TaskStatus{taskc, 255, errors.New("unexpected status code, not a number: " + status)}
 						continue
 					} else {
-						statusCh <- TaskStatus{fields[0], fields[2], code, nil, fields[3], fields[4]}
+						statusCh <- TaskStatus{taskc, code, nil}
 						continue
 					}
 
 				} else {
-					statusCh <- TaskStatus{fields[0], fields[2], 255, errors.New("unexpected status: " + status), fields[3], fields[4]}
+					statusCh <- TaskStatus{taskc, 255, errors.New("unexpected status: " + status)}
 					continue
 				}
 			}
@@ -269,8 +402,8 @@ func (cmd *Work) DoRun(args []string) (err error) {
 			return
 		case statusEv := <-statusCh: //sync docker status
 
-			//@TODO start moving logs from the container to cloudwatch
-
+			//container is in a state we understand, pass on the container fanout logic
+			containerCh <- statusEv.TaskContainer
 			fmt.Fprintf(os.Stderr, "task-%x is %d\n", sha1.Sum([]byte(statusEv.token)), statusEv.code)
 
 			var err error
