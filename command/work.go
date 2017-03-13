@@ -202,7 +202,6 @@ func (cmd *Work) DoRun(args []string) (err error) {
 				return
 			}
 
-			fmt.Printf("log events: %+v\n", logsEvIn.LogEvents)
 			logsEvIn.LogEvents = nil
 			logsEvIn.SequenceToken = out.NextSequenceToken
 		}
@@ -218,7 +217,7 @@ func (cmd *Work) DoRun(args []string) (err error) {
 			case ev := <-evCh:
 				logsEvIn.LogEvents = append(logsEvIn.LogEvents, &cloudwatchlogs.InputLogEvent{
 					Timestamp: aws.Int64(ev.t.UnixNano() / 1000 / 1000), //only milliseconds are accepted (visible)
-					Message:   aws.String(ev.msg),
+					Message:   aws.String(fmt.Sprintf(`{"t": %d, "line": "%s"}`, ev.t.UnixNano(), ev.msg)),
 				})
 
 				if len(logsEvIn.LogEvents) >= bufSize {
