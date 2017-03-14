@@ -1,10 +1,10 @@
-hash: 46113cebcd9b6e75ebb7f6d3ffc2879a59dcb618f67a1f2036d7ad93fdaad2ff
-updated: 2017-03-08T11:40:41.822982141+01:00
+hash: 40957cbe2b17386789bd99030ac9fe070445f5defe7a87c812b3c75cc37825e6
+updated: 2017-03-14T14:29:06.401656664+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 4239b77079c7b5d1243b7b4736304ce8ddb6f0f2
 - name: github.com/aws/aws-sdk-go
-  version: fa1a4bc634fffa6ac468d8fb217e05475e063440
+  version: 695fe24acaf9afe80b0ce261d4637f42ba0b4c7d
   subpackages:
   - aws
   - aws/awserr
@@ -59,4 +59,6 @@ imports:
   version: febf2d34b54a69ce7530036c7503b1c9fbfdf0bb
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
+- name: github.com/Sirupsen/logrus
+  version: 0208149b40d863d2c1a2f8fe5753096a9cf2cc8b
 testImports: []

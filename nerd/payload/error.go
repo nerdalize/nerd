@@ -2,6 +2,8 @@ package payload
 
 //Error struct is returned by the API if anything goes wrong
 type Error struct {
+	HTTPRespCode int
+
 	//Retry indicates if the client can retry the request as is, this is mostly false on validation/encoding errors and true in other cases
 	Retry bool `json:"retry"`
 
@@ -17,4 +19,12 @@ type Error struct {
 
 func (e Error) Error() string {
 	return e.Message
+}
+
+type AuthError struct {
+	Detail string `json:"detail"`
+}
+
+func (e AuthError) Error() string {
+	return e.Detail
 }

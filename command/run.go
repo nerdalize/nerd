@@ -5,9 +5,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
 )
 
@@ -58,27 +58,26 @@ func (cmd *Run) DoRun(args []string) error {
 	if len(args) < 2 {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
-
-	conf.SetLocation(cmd.opts.ConfigFile)
+	SetLogSettings(cmd.opts.JSONOutput, cmd.opts.VerboseOutput)
 
 	env := make(map[string]string)
 	for i, e := range cmd.opts.Environment {
 		split := strings.Split(e, "=")
 		if len(split) != 2 {
-			return errors.Errorf("Environment variable %v (%v) is in the wrong format. Please specify environment flag as '-e [KEY]=[VALUE]'", (i + 1), e)
+			HandleError(errors.Errorf("Environment variable %v (%v) is in the wrong format. Please specify environment flag as '-e [KEY]=[VALUE]'", (i+1), e), cmd.opts.VerboseOutput)
 		}
 		env[split[0]] = split[1]
 	}
 
 	client, err := NewClient(cmd.ui)
 	if err != nil {
-		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
 	task, err := client.CreateTask(args[0], args[1], env)
 	if err != nil {
-		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
-	fmt.Printf("Created task with ID %v\n", task.TaskID)
+	logrus.Infof("Created task with ID %v", task.TaskID)
 	return nil
 }

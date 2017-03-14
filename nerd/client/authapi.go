@@ -2,6 +2,7 @@ package client
 
 import (
 	"github.com/dghubble/sling"
+	"github.com/nerdalize/nerd/nerd/payload"
 	"github.com/pkg/errors"
 )
 
@@ -34,9 +35,13 @@ func (auth *AuthAPIClient) GetToken(user, pass string) (string, error) {
 		return "", errors.Wrapf(err, "failed to create request (%v)", auth.URL)
 	}
 	req.SetBasicAuth(user, pass)
-	_, err = s.Do(req, b, nil)
+	e := &payload.AuthError{}
+	_, err = s.Do(req, b, e)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to do request (%v)", auth.URL)
+	}
+	if e.Detail != "" {
+		return "", e
 	}
 	return b.Token, nil
 }

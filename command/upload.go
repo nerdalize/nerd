@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/aws"
-	"github.com/nerdalize/nerd/nerd/conf"
+	"github.com/pkg/errors"
 )
 
 //UploadOpts describes command options
 type UploadOpts struct {
-	*NerdOpts
+	NerdOpts
 }
 
 //Upload command
@@ -56,17 +57,17 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	conf.SetLocation(cmd.opts.ConfigFile)
+	SetLogSettings(cmd.opts.JSONOutput, cmd.opts.VerboseOutput)
 
 	path := args[0]
 
 	nerdclient, err := NewClient(cmd.ui)
 	if err != nil {
-		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
 	ds, err := nerdclient.CreateDataset()
 	if err != nil {
-		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
 	client, err := aws.NewDataClient(&aws.DataClientConfig{
@@ -74,12 +75,12 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		Bucket:      ds.Bucket,
 	})
 	if err != nil {
-		return fmt.Errorf("could not create data client: %v", err)
+		HandleError(errors.Wrap(err, "could not create data client"), cmd.opts.VerboseOutput)
 	}
 
 	fi, err := os.Stat(path)
 	if err != nil {
-		return fmt.Errorf("argument '%v' is not a valid file or directory", path)
+		HandleError(errors.Errorf("argument '%v' is not a valid file or directory", path), cmd.opts.VerboseOutput)
 	}
 
 	switch mode := fi.Mode(); {
@@ -90,10 +91,10 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	}
 
 	if err != nil {
-		return err
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	fmt.Printf("\nUploaded data to dataset with ID: %v\n", ds.DatasetID)
+	logrus.Infof("Uploaded data to dataset with ID: %v", ds.DatasetID)
 
 	return nil
 }

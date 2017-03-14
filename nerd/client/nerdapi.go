@@ -3,6 +3,7 @@ package client
 import (
 	"path"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/dghubble/sling"
 	"github.com/nerdalize/nerd/nerd/client/credentials"
 	"github.com/nerdalize/nerd/nerd/payload"
@@ -75,36 +76,24 @@ func (nerdapi *NerdAPIClient) url(p string) string {
 func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, result interface{}) error {
 	value, err := nerdapi.Credentials.Get()
 	if err != nil {
-		// TODO: Is return err ok?
-		return &APIError{
-			Response: nil,
-			Request:  nil,
-			Err:      errors.Wrap(err, "failed to get credentials"),
-		}
+		return errors.Wrap(err, "failed to get credentials")
 	}
 	e := &payload.Error{}
 	req, err := s.Request()
 	if err != nil {
-		return &APIError{
-			Response: nil,
-			Request:  nil,
-			Err:      errors.Wrap(err, "could not create request"),
-		}
+		return errors.Wrap(err, "could not create request")
 	}
 	req.Header.Add(AuthHeader, "Bearer "+value.NerdToken)
-	resp, err := s.Receive(result, e)
+	logRequest(req)
+	res, err := s.Receive(result, e)
 	if err != nil {
-		return &APIError{
-			Response: nil,
-			Request:  req,
-			Err:      errors.Wrapf(err, "unexpected behaviour when making request to %v (%v), with headers (%v)", req.URL, req.Method, req.Header),
-		}
+		return errors.Wrapf(err, "unexpected behaviour when making request to %v (%v), with headers (%v)", req.URL, req.Method, req.Header)
 	}
+	logResponse(res)
 	if e.Message != "" {
-		return &APIError{
-			Response: resp,
-			Request:  req,
-			Err:      e,
+		return &HTTPError{
+			StatusCode: res.StatusCode,
+			Err:        e,
 		}
 	}
 	return nil
@@ -129,6 +118,7 @@ func (nerdapi *NerdAPIClient) DeleteWorker(workerID string) (err error) {
 
 //CreateSession creates a new user session.
 func (nerdapi *NerdAPIClient) CreateSession() (sess *payload.SessionCreateOutput, err error) {
+	logrus.Debug("Creating session")
 	sess = &payload.SessionCreateOutput{}
 	url := nerdapi.url(path.Join(sessionsEndpoint))
 	s := sling.New().Post(url)
@@ -138,6 +128,10 @@ func (nerdapi *NerdAPIClient) CreateSession() (sess *payload.SessionCreateOutput
 
 //CreateTask creates a new executable task.
 func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, env map[string]string) (output *payload.TaskCreateOutput, err error) {
+	logrus.WithFields(logrus.Fields{
+		"image":   image,
+		"dataset": dataset,
+	}).Debug("Creating task")
 	output = &payload.TaskCreateOutput{}
 	// create payload
 	p := &payload.TaskCreateInput{
@@ -158,6 +152,9 @@ func (nerdapi *NerdAPIClient) CreateTask(image string, dataset string, env map[s
 
 //PatchTaskStatus updates the status of a task.
 func (nerdapi *NerdAPIClient) PatchTaskStatus(id string, ts *payload.TaskCreateInput) error {
+	logrus.WithFields(logrus.Fields{
+		"id": id,
+	}).Debug("Patching task")
 	ts = &payload.TaskCreateInput{}
 	url := nerdapi.url(path.Join(tasksEndpoint, id))
 	s := sling.New().
@@ -169,6 +166,7 @@ func (nerdapi *NerdAPIClient) PatchTaskStatus(id string, ts *payload.TaskCreateI
 
 //ListTasks lists all tasks.
 func (nerdapi *NerdAPIClient) ListTasks() (tl *payload.TaskListOutput, err error) {
+	logrus.Debug("Listing tasks")
 	tl = &payload.TaskListOutput{}
 	url := nerdapi.url(tasksEndpoint)
 	s := sling.New().Get(url)

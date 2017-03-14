@@ -1,13 +1,11 @@
 package command
 
 import (
-	"io/ioutil"
 	"os"
-	"path/filepath"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	homedir "github.com/mitchellh/go-homedir"
 	"github.com/nerdalize/nerd/nerd/client"
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
@@ -17,8 +15,7 @@ import (
 type LoginOpts struct {
 	User string `long:"user" default:"" default-mask:"" env:"NERD_USER" description:"nerd username"`
 	Pass string `long:"pass" default:"" default-mask:"" env:"NERD_PASS" description:"nerd password"`
-	*NerdAPIOpts
-	*OutputOpts
+	NerdOpts
 }
 
 //Login command
@@ -69,33 +66,7 @@ func (cmd *Login) DoRun(args []string) error {
 	}
 	config, err := conf.Read()
 	if err != nil {
-		if os.IsNotExist(errors.Cause(err)) {
-			//@TODO move this to a library, make permissions sensible!
-			hdir, err := homedir.Dir()
-			if err != nil {
-				return errors.Wrap(err, "failed to get home directory")
-			}
-
-			cdir := filepath.Join(hdir, ".nerd")
-			err = os.MkdirAll(cdir, 0777)
-			if err != nil {
-				return errors.Wrap(err, "failed to create config dir")
-			}
-
-			fpath := filepath.Join(cdir, "config.json")
-			err = ioutil.WriteFile(fpath, []byte(`{}`), 0777)
-			if err != nil {
-				return errors.Wrap(err, "failed to initialize config file")
-			}
-
-			config, err = conf.Read()
-			if err != nil {
-				return errors.Wrap(err, "failed to re-read after creating conf file")
-			}
-
-		} else {
-			return errors.Wrap(err, "failed to read nerd config file")
-		}
+		return errors.Wrap(err, "failed to read nerd config file")
 	}
 	cl := client.NewAuthAPI(config.Auth.APIEndpoint)
 	token, err := cl.GetToken(user, pass)
@@ -109,6 +80,6 @@ func (cmd *Login) DoRun(args []string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to write nerd token to disk")
 	}
-	// TODO: Show successful login message
+	logrus.Info("Successful login")
 	return nil
 }

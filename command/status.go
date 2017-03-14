@@ -6,7 +6,6 @@ import (
 	humanize "github.com/dustin/go-humanize"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/payload"
 	"github.com/olekukonko/tablewriter"
 )
@@ -53,15 +52,15 @@ func StatusFactory() func() (cmd cli.Command, err error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *Status) DoRun(args []string) (err error) {
-	conf.SetLocation(cmd.opts.ConfigFile)
+	SetLogSettings(cmd.opts.JSONOutput, cmd.opts.VerboseOutput)
 
 	client, err := NewClient(cmd.ui)
 	if err != nil {
-		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
 	tasks, err := client.ListTasks()
 	if err != nil {
-		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
 	drawTable(tasks)

@@ -1,31 +1,24 @@
 package command
 
 import (
-	"fmt"
-	"net/http"
-	"net/http/httputil"
-	"os"
 	"strings"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/client"
 	"github.com/nerdalize/nerd/nerd/client/credentials"
 	"github.com/nerdalize/nerd/nerd/client/credentials/provider"
 	"github.com/nerdalize/nerd/nerd/conf"
-	"github.com/nerdalize/nerd/nerd/payload"
 	"github.com/pkg/errors"
-)
-
-const (
-	debugHeader = "\n\n[DEBUG INFO]:"
 )
 
 type stdoutkw struct{}
 
 //Write writes a key to stdout.
 func (kw *stdoutkw) Write(k string) (err error) {
-	_, err = fmt.Fprintf(os.Stdout, "%v\n", k)
-	return err
+	// _, err = fmt.Fprintf(os.Stdout, "%v\n", k)
+	logrus.Info(k)
+	return nil
 }
 
 //NewClient creates a new NerdAPIClient with two credential providers.
@@ -66,59 +59,15 @@ func UserPassProvider(ui cli.Ui) func() (string, string, error) {
 	}
 }
 
-//HandleClientError handles errors produced by client.NerdAPIClient
-func HandleClientError(err error, verbose bool) error {
-	// only handle *client.APIError
-	aerr, ok := err.(*client.APIError)
-	if !ok {
-		return err
-	}
-	ret := aerr.Err
-	if perr, ok := aerr.Err.(*payload.Error); ok && aerr.Response != nil {
-		// create error message according to response code
-		switch aerr.Response.StatusCode {
-		case http.StatusUnprocessableEntity:
-			if len(perr.Fields) > 0 {
-				ret = errors.Wrapf(perr, "validation error: %v", perr.Fields)
-			}
-		}
-	}
+//SetLogSettings sets log settings depending on json outputting and verbose settings.
+func SetLogSettings(json bool, verbose bool) {
 	if verbose {
-		return errors.Wrap(ret, debugHeader+verboseClientError(aerr))
+		logrus.SetFormatter(new(logrus.TextFormatter))
+		logrus.SetLevel(logrus.DebugLevel)
 	}
-	return ret
-}
-
-//verboseClientError creates pretty formatted represntations of HTTP request and response.
-func verboseClientError(aerr *client.APIError) string {
-	var message []string
-
-	if aerr.Request != nil {
-		message = append(message, "", "HTTP Request:")
-
-		req, err := httputil.DumpRequest(aerr.Request, true)
-		// retry without printing the body
-		if err != nil {
-			req, err = httputil.DumpRequest(aerr.Request, false)
-		}
-		if err == nil {
-			message = append(message, string(req))
-		}
+	if json {
+		logrus.SetFormatter(new(logrus.JSONFormatter))
 	}
-
-	if aerr.Response != nil {
-		message = append(message, "", "HTTP Response:")
-		resp, err := httputil.DumpResponse(aerr.Response, true)
-		// retry without printing the body
-		if err != nil {
-			resp, err = httputil.DumpResponse(aerr.Response, false)
-		}
-		if err == nil {
-			message = append(message, string(resp))
-		}
-	}
-
-	return strings.Join(message, "\n")
 }
 
 //ErrorCauser returns the error that is one level up in the error chain.
@@ -133,14 +82,26 @@ func ErrorCauser(err error) error {
 	return err
 }
 
-//HandleError handles the way errors are presented to the user.
-func HandleError(err error, verbose bool) error {
-	if verbose {
-		return fmt.Errorf("%+v", err)
+func printUserFacing(err error, verbose bool) {
+	cause := errors.Cause(err)
+	type userFacing interface {
+		UserFacingMsg() string
+		Underlying() error
 	}
+	if uerr, ok := cause.(userFacing); ok {
+		logrus.Info(uerr.UserFacingMsg())
+		logrus.Debugf("Underlying error: %v", uerr.Underlying())
+	}
+	logrus.Exit(-1)
+}
+
+//HandleError handles the way errors are presented to the user.
+func HandleError(err error, verbose bool) {
+	printUserFacing(err, verbose)
 	// when there's are more than 1 message on the message stack, only print the top one for user friendlyness.
 	if errors.Cause(err) != nil {
-		return fmt.Errorf(strings.Replace(err.Error(), ": "+ErrorCauser(ErrorCauser(err)).Error(), "", 1))
+		logrus.Info(strings.Replace(err.Error(), ": "+ErrorCauser(ErrorCauser(err)).Error(), "", 1))
 	}
-	return err
+	logrus.Debugf("Underlying error: %+v", err)
+	logrus.Exit(-1)
 }

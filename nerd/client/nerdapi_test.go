@@ -3,16 +3,21 @@ package client
 import (
 	"crypto/ecdsa"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/dghubble/sling"
 	"github.com/nerdalize/nerd/nerd/client/credentials"
 	"github.com/nerdalize/nerd/nerd/payload"
 )
+
+func init() {
+	logrus.SetOutput(ioutil.Discard)
+}
 
 //fakeProvider is a fake credentials provider for testing purposes.
 type fakeProvider struct{}
@@ -65,7 +70,7 @@ func TestDoRequest(t *testing.T) {
 				},
 			},
 			successfullRequest: false,
-			errorMessage:       "error message",
+			errorMessage:       "unknown server error",
 		},
 	}
 	for name, tc := range testCases {
@@ -86,18 +91,8 @@ func TestDoRequest(t *testing.T) {
 		}
 		err = cl.doRequest(s, tc.successResult)
 		if err != nil {
-			aerr, ok := err.(*APIError)
-			if !ok {
-				t.Fatalf("[%v]: could not cast error to *APIError", name)
-				continue
-			}
 			if !strings.Contains(err.Error(), tc.errorMessage) {
 				t.Errorf("[%v]: error message does not match, expected substring '%v' actual '%v'", name, tc.errorMessage, err.Error())
-			}
-			if perr, ok := aerr.Err.(*payload.Error); ok {
-				if !reflect.DeepEqual(perr, tc.failureResult) {
-					t.Errorf("[%v]: errors do not match, expected '%v' actual '%v'", name, tc.failureResult, perr)
-				}
 			}
 		} else {
 			if !tc.successfullRequest {

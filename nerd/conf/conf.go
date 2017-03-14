@@ -8,6 +8,7 @@ package conf
 import (
 	"encoding/json"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -23,6 +24,7 @@ var conf *Config
 //Config is the structure that describes how the config file looks.
 type Config struct {
 	Auth            AuthConfig `json:"auth"`
+	EnableLogging   bool       `json:"enable_logging"`
 	CurrentProject  string     `json:"current_project"`
 	NerdToken       string     `json:"nerd_token"`
 	NerdAPIEndpoint string     `json:"nerd_api_endpoint"`
@@ -45,6 +47,7 @@ kyvc4LwKZ8pez5KYY76H1ox+AfUlWOEq+bExypcFfEIrJkf/JXa7jpzkOWBDF9Sa
 OWbQHMK+vvUXieCJvCc9Vj084ABwLBgX
 -----END PUBLIC KEY-----`,
 		},
+		EnableLogging:   false,
 		CurrentProject:  "6de308f4-face-11e6-bc64-92361f002671",
 		NerdAPIEndpoint: "https://batch.nerdalize.com/v1",
 	}
@@ -90,6 +93,9 @@ func Read() (*Config, error) {
 		return nil, errors.Wrap(err, "failed to get config location")
 	}
 	content, err := ioutil.ReadFile(loc)
+	if err != nil && os.IsNotExist(err) {
+		return Defaults(), nil
+	}
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open config file")
 	}
