@@ -23,7 +23,3 @@ import:
   version: 259d2a102b871d17f30e3cd9881a642961a1e486
 - package: github.com/Sirupsen/logrus                 #Logging
   version: v0.11.4
-- package: github.com/rifflock/lfshook                #Filesystem hook for Logrus
-  version: 1.5
-- package: github.com/evalphobia/logrus_sentry        #Sentry.io hook for Logrus
-  version: v0.2.12
