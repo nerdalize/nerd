@@ -91,8 +91,8 @@ func printUserFacing(err error, verbose bool) {
 	if uerr, ok := cause.(userFacing); ok {
 		logrus.Info(uerr.UserFacingMsg())
 		logrus.Debugf("Underlying error: %v", uerr.Underlying())
+		logrus.Exit(-1)
 	}
-	logrus.Exit(-1)
 }
 
 //HandleError handles the way errors are presented to the user.
