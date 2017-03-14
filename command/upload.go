@@ -2,13 +2,22 @@ package command
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/aws"
 	"github.com/pkg/errors"
+)
+
+const (
+	//DatasetFilename is the filename of the file that contains the dataset ID in the data folder.
+	DatasetFilename = ".dataset"
+	//DatasetPermissions are the permissions for DatasetFilename
+	DatasetPermissions = 0644
 )
 
 //UploadOpts describes command options
@@ -59,7 +68,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 
 	SetLogSettings(cmd.opts.JSONOutput, cmd.opts.VerboseOutput)
 
-	path := args[0]
+	dataPath := args[0]
 
 	nerdclient, err := NewClient(cmd.ui)
 	if err != nil {
@@ -78,18 +87,19 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		HandleError(errors.Wrap(err, "could not create data client"), cmd.opts.VerboseOutput)
 	}
 
-	fi, err := os.Stat(path)
+	fi, err := os.Stat(dataPath)
 	if err != nil {
-		HandleError(errors.Errorf("argument '%v' is not a valid file or directory", path), cmd.opts.VerboseOutput)
+		HandleError(errors.Errorf("argument '%v' is not a valid file or directory", dataPath), cmd.opts.VerboseOutput)
+	} else if !fi.IsDir() {
+		HandleError(errors.Errorf("provided path '%s' is not a directory", dataPath), cmd.opts.VerboseOutput)
 	}
 
-	switch mode := fi.Mode(); {
-	case mode.IsDir():
-		err = client.UploadDir(path, ds.Root, &stdoutkw{}, 64)
-	case mode.IsRegular():
-		err = client.UploadFile(path, path, ds.Root)
+	err = ioutil.WriteFile(path.Join(dataPath, DatasetFilename), []byte(ds.DatasetID), DatasetPermissions)
+	if err != nil {
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
+	err = client.UploadDir(dataPath, ds.Root, &stdoutkw{}, 64)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
