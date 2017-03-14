@@ -1,11 +1,14 @@
 package command
 
 import (
+	"archive/tar"
 	"bufio"
+	"bytes"
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -29,7 +32,6 @@ import (
 
 //WorkOpts describes command options
 type WorkOpts struct {
-	AWSQueueURL string `long:"aws-queue-url" required:"true" description:"url of the aws sqs queue" env:"AWS_SQS_QUEUE_URL"`
 	NerdOpts
 }
 
@@ -71,8 +73,9 @@ func WorkFactory() func() (cmd cli.Command, err error) {
 //TaskStatus describes the container status of a task
 type TaskStatus struct {
 	TaskContainer
-	code int   //exit code
-	err  error //application error
+	code   int      //exit code
+	err    error    //application error
+	mounts []string //mount ids
 }
 
 //TaskLogEvent is a log event for a certain task container
@@ -280,6 +283,7 @@ func (cmd *Work) DoRun(args []string) (err error) {
 						fmt.Sprintf("--label=nerd-project=%s", task.ProjectID),
 						fmt.Sprintf("--label=nerd-task=%s", task.TaskID),
 						fmt.Sprintf("--label=nerd-token=%s", task.ActivityToken),
+						fmt.Sprintf("-v=/in"), fmt.Sprintf("-v=/out"),
 						fmt.Sprintf("-e=NERD_PROJECT_ID=%s", task.ProjectID),
 						fmt.Sprintf("-e=NERD_TASK_ID=%s", task.TaskID),
 					}
@@ -319,7 +323,7 @@ func (cmd *Work) DoRun(args []string) (err error) {
 			args := []string{"ps", "-a",
 				"--no-trunc",
 				"--filter=label=nerd-token",
-				"--format={{.ID}}\t{{.Status}}\t{{.Label \"nerd-token\"}}\t{{.Label \"nerd-project\"}}\t{{.Label \"nerd-task\"}}",
+				"--format={{.ID}}\t{{.Status}}\t{{.Label \"nerd-token\"}}\t{{.Label \"nerd-project\"}}\t{{.Label \"nerd-task\"}}\t{{.Mounts}}",
 			}
 
 			cmd := exec.Command(exe, args...)
@@ -339,13 +343,13 @@ func (cmd *Work) DoRun(args []string) (err error) {
 	statusCh := make(chan TaskStatus)
 	go func() {
 		for scanner.Scan() {
-			fields := strings.SplitN(scanner.Text(), "\t", 5)
-			if len(fields) != 5 {
+			fields := strings.SplitN(scanner.Text(), "\t", 6)
+			if len(fields) != 6 {
 				// statusCh <- TaskStatus{TaskContainer{fields[0], fields[4], fields[3], fields[2]}, 255, errors.New("unexpected ps line")}
 				continue //less then 2 fields, shouldnt happen, and unable to scope error the o project/task/token
 			}
 
-			//fields: | cid | status | token | project | task |
+			//fields: | cid | status | token | project | task | mounts |
 			taskc := TaskContainer{fields[0], fields[4], fields[3], fields[2]}
 
 			//we would like to start routines that pipe log lines to cloudwatch
@@ -354,36 +358,36 @@ func (cmd *Work) DoRun(args []string) (err error) {
 			status := fields[1]
 			if strings.HasPrefix(status, "Up") || strings.HasPrefix(status, "Restarting") || status == "Removal In Progress" || status == "Created" {
 				//container is not yet "done": still in progress without statuscode, send heartbeat and continue to next tick
-				statusCh <- TaskStatus{taskc, -1, nil}
+				statusCh <- TaskStatus{taskc, -1, nil, strings.Split(fields[5], ",")}
 				continue
 			} else {
 				//container has "exited" or is "dead"
 				if status == "Dead" {
 					//@See https://github.com/docker/docker/issues/5684
 					// There is also a new(ish) container state called "dead", which is set when there were issues removing the container. This is of course a work around for this particular issue, which lets you go and investigate why there is the device or resource busy error (probably a race condition), in which case you can attempt to remove again, or attempt to manually fix (e.g. unmount any left-over mounts, and then remove).
-					statusCh <- TaskStatus{taskc, 255, errors.New("failed to remove container")}
+					statusCh <- TaskStatus{taskc, 255, errors.New("failed to remove container"), strings.Split(fields[5], ",")}
 					continue
 
 				} else if strings.HasPrefix(status, "Exited") {
 					right := strings.TrimPrefix(status, "Exited (")
 					lefts := strings.SplitN(right, ")", 2)
 					if len(lefts) != 2 {
-						statusCh <- TaskStatus{taskc, 255, errors.New("unexpected exited format: " + status)}
+						statusCh <- TaskStatus{taskc, 255, errors.New("unexpected exited format: " + status), strings.Split(fields[5], ",")}
 						continue
 					}
 
 					//write actual status code, can be zero in case of success
 					code, err := strconv.Atoi(lefts[0])
 					if err != nil {
-						statusCh <- TaskStatus{taskc, 255, errors.New("unexpected status code, not a number: " + status)}
+						statusCh <- TaskStatus{taskc, 255, errors.New("unexpected status code, not a number: " + status), strings.Split(fields[5], ",")}
 						continue
 					} else {
-						statusCh <- TaskStatus{taskc, code, nil}
+						statusCh <- TaskStatus{taskc, code, nil, strings.Split(fields[5], ",")}
 						continue
 					}
 
 				} else {
-					statusCh <- TaskStatus{taskc, 255, errors.New("unexpected status: " + status)}
+					statusCh <- TaskStatus{taskc, 255, errors.New("unexpected status: " + status), strings.Split(fields[5], ",")}
 					continue
 				}
 			}
@@ -413,16 +417,46 @@ func (cmd *Work) DoRun(args []string) (err error) {
 				})
 			} else if statusEv.code == 0 {
 
+				//we're gonna read the output id from a file inside the container using the `docker cp` command and trusting that when successfull an output dataset id was written in the correct location.
+				idbuf := bytes.NewBuffer(nil)
 				var outdata []byte
-				if outdata, err = json.Marshal(&payload.TaskResult{
-					ProjectID:  statusEv.pid,
-					TaskID:     statusEv.tid,
-					OutputID:   "d-ffffffff",
-					ExitStatus: fmt.Sprintf("Exit Status: %d", statusEv.code),
-				}); err != nil {
-					fmt.Println("failed to marshal task result: ", err)
-					continue
-				}
+				func() { //new scope to prevent err shadowing
+
+					tarbuf := bytes.NewBuffer(nil)
+					outcmd := exec.Command(exe, "cp", fmt.Sprintf("%s:/out/.dataset", statusEv.cid), "-")
+					outcmd.Stdout = tarbuf
+					err := outcmd.Run()
+					if err != nil {
+						fmt.Println("failed to run dataset cp", err)
+					}
+
+					tr := tar.NewReader(tarbuf)
+					for {
+						_, err := tr.Next()
+						if err == io.EOF {
+							break // end of tar archive
+						}
+
+						if _, err := io.Copy(idbuf, tr); err != nil {
+							log.Println("failed to read tar file")
+							continue
+						}
+					}
+
+					if idbuf.Len() == 0 {
+						fmt.Fprint(idbuf, "d-ffffffff")
+					}
+
+					if outdata, err = json.Marshal(&payload.TaskResult{
+						ProjectID:  statusEv.pid,
+						TaskID:     statusEv.tid,
+						OutputID:   strings.TrimSpace(idbuf.String()),
+						ExitStatus: fmt.Sprintf("Exit Status: %d", statusEv.code),
+					}); err != nil {
+						fmt.Println("failed to marshal task result: ", err)
+						return
+					}
+				}()
 
 				//success
 				fmt.Fprintln(os.Stderr, "success!")
