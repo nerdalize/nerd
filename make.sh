@@ -64,10 +64,15 @@ function run_publish { #publish cross compiled binaries
 			--file bin/nerd-$(cat VERSION)-win.zip || true
 }
 
+function run_docker { #build docker container
+	docker build -t nerd:`cat VERSION` .
+}
+
 case $1 in
 	"build") run_build ;;
 	"test") run_test ;;
 	"release") run_release ;;
 	"publish") run_publish ;;
+	"docker") run_docker ;;
 	*) print_help ;;
 esac
