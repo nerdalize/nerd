@@ -8,6 +8,7 @@ package conf
 import (
 	"encoding/json"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -92,6 +93,9 @@ func Read() (*Config, error) {
 		return nil, errors.Wrap(err, "failed to get config location")
 	}
 	content, err := ioutil.ReadFile(loc)
+	if err != nil && os.IsNotExist(err) {
+		return Defaults(), nil
+	}
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open config file")
 	}

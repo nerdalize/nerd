@@ -59,6 +59,7 @@ func UserPassProvider(ui cli.Ui) func() (string, string, error) {
 	}
 }
 
+//SetLogSettings sets log settings depending on json outputting and verbose settings.
 func SetLogSettings(json bool, verbose bool) {
 	if verbose {
 		logrus.SetFormatter(new(logrus.TextFormatter))

@@ -25,7 +25,7 @@ func NewChainCredentials(pub *ecdsa.PublicKey, providers ...credentials.Provider
 //
 // If a provider is found it will be cached and any calls to IsExpired()
 // will return the expired state of the cached provider.
-func (c *ChainProvider) Retrieve(pub *ecdsa.PublicKey) (*credentials.NerdAPIValue, error) {
+func (c *Chain) Retrieve(pub *ecdsa.PublicKey) (*credentials.NerdAPIValue, error) {
 	var provErr error
 	for _, p := range c.Providers {
 		creds, err := p.Retrieve(pub)

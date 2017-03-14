@@ -23,7 +23,6 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	naws "github.com/nerdalize/nerd/nerd/aws"
-	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/payload"
 	"github.com/pkg/errors"
 )
@@ -95,11 +94,10 @@ type TaskContainer struct {
 func (cmd *Work) DoRun(args []string) (err error) {
 	sigCh := make(chan os.Signal)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
-	conf.SetLocation(cmd.opts.ConfigFile)
 
 	client, err := NewClient(cmd.ui)
 	if err != nil {
-		return HandleError(HandleClientError(err, cmd.opts.VerboseOutput), cmd.opts.VerboseOutput)
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
 	var worker *payload.WorkerCreateOutput
