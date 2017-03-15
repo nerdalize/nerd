@@ -16,8 +16,10 @@ func (e HTTPError) Error() string {
 	switch e.StatusCode {
 	case http.StatusUnprocessableEntity:
 		if len(e.Err.Fields) > 0 {
-			return fmt.Sprintf("validation error: %v", e.Err.Fields)
+			return fmt.Sprintf("Validation error: %v", e.Err.Fields)
 		}
+	case http.StatusNotFound:
+		return fmt.Sprint("The specified resource does not exist")
 	}
 	return fmt.Sprintf("unknown server error (%v)", e.StatusCode)
 }
