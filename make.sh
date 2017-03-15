@@ -65,12 +65,13 @@ function run_publish { #publish cross compiled binaries
 }
 
 function run_docker { #build docker container
-	docker build -t nerdalize/nerd:`cat VERSION` .
+	docker build -t nerdalize/nerd .
+	docker tag nerdalize/nerd nerdalize/nerd:`cat VERSION`
 }
 
 function run_dockerpush { #build and push docker container
 	run_docker
-	docker push nerdalize/nerd:`cat VERSION`
+	docker push nerdalize/nerd
 }
 
 case $1 in
