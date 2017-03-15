@@ -1,7 +1,10 @@
 # Nerdalize Scientific Compute
 Your personal nerd that takes care of running scientific compute on the [Nerdalize cloud](http://nerdalize.com/cloud/).
 
-_NOTE: This project is currently experimental and not functional._
+__Currently the platform is not yet publicly available. If you would like to use the Nerdalize compute platform right now, please contact sales@nerdalize.com__
+
+## Getting Started
+
 
 ## Command Usage
 
