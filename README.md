@@ -7,7 +7,7 @@ _NOTE: This project is currently experimental and not functional._
 
 ```bash
 # log into the scientific compute platform
-$ nerd login                              
+$ nerd login
 username: my-user@my-organization.com
 password: ******
 
@@ -32,7 +32,7 @@ waiting for task ...
   received task 't-83dd21e' ... done!
   downloading input 'd-421a11f' ... done! (0KiB new, 120MiB total)
   running 't-83dd21e' (kubectl create t-83dd21e.yaml) ... done!
-  uploading output ... done!  
+  uploading output ... done!
 <- task 't-83dd21e' succeeded!
 waiting for task ...
 
@@ -40,3 +40,7 @@ waiting for task ...
 $ nerd download t-83dd21e ./my-project/my-task-output
 downloading output... done! (100MiB)
 ```
+
+## Examples
+
+* [Usage of docker container as base image](examples/docker-base-image)
