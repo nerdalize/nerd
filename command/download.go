@@ -13,6 +13,7 @@ import (
 //DownloadOpts describes command options
 type DownloadOpts struct {
 	NerdOpts
+	AlwaysOverwrite bool `long:"always-overwrite" default-mask:"false" description:"always overwrite files when they already exist"`
 }
 
 //Download command
@@ -84,10 +85,35 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		HandleError(errors.Wrap(err, "could not create data client"), cmd.opts.VerboseOutput)
 	}
 
-	err = client.DownloadFiles(ds.Root, outputDir, &stdoutkw{}, 64)
+	overwriteHandler := OverwriteHandlerUserPrompt(cmd.ui)
+	if cmd.opts.AlwaysOverwrite {
+		overwriteHandler = AlwaysOverwriteHandler
+	}
+	err = client.DownloadFiles(ds.Root, outputDir, &stdoutkw{}, 64, overwriteHandler)
 	if err != nil {
 		HandleError(errors.Wrap(err, "could not download files"), cmd.opts.VerboseOutput)
 	}
 
 	return nil
+}
+
+//OverwriteHandlerUserPrompt is a handler that checks wether a file should be overwritten by asking the user over Stdin.
+func OverwriteHandlerUserPrompt(ui cli.Ui) func(string) bool {
+	return func(file string) bool {
+		question := fmt.Sprintf("The file '%v' already exists. Do you want to overwrite it? [Y/n]", file)
+		ans, err := ui.Ask(question)
+		if err != nil {
+			ui.Info(fmt.Sprintf("Failed to read your answer, '%v' will be skipped", file))
+			return false
+		}
+		if ans == "n" {
+			return false
+		}
+		return true
+	}
+}
+
+//AlwaysOverwriteHandler is a handler that tells to always overwrite a file.
+func AlwaysOverwriteHandler(file string) bool {
+	return true
 }

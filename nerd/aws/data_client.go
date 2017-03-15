@@ -193,7 +193,7 @@ func (client *DataClient) ListObjects(root string) (keys []string, err error) {
 }
 
 //DownloadFiles concurrently downloads all files in a given s3 root path.
-func (client *DataClient) DownloadFiles(root string, outDir string, kw KeyWriter, concurrency int) error {
+func (client *DataClient) DownloadFiles(root string, outDir string, kw KeyWriter, concurrency int, overwriteHanlder func(string) bool) error {
 	keys, err := client.ListObjects(root)
 	if err != nil {
 		return err
@@ -206,6 +206,26 @@ func (client *DataClient) DownloadFiles(root string, outDir string, kw KeyWriter
 		err     error
 	}
 
+	// build list of items with checks for overwrites if files exist
+	items := make([]item, len(keys))
+	totalItems := 0
+	for i := 0; i < len(keys); i++ {
+		it := item{
+			key:     keys[i],
+			outFile: path.Join(outDir, strings.Replace(keys[i], root+"/", "", 1)),
+			resCh:   make(chan bool),
+		}
+		overwrite := true
+		_, err = os.Stat(it.outFile)
+		if err == nil || !os.IsNotExist(err) {
+			overwrite = overwriteHanlder(it.outFile)
+		}
+		if overwrite {
+			items[totalItems] = it
+			totalItems++
+		}
+	}
+
 	work := func(it *item) {
 		it.err = client.DownloadFile(it.key, it.outFile)
 		it.resCh <- true
@@ -214,15 +234,9 @@ func (client *DataClient) DownloadFiles(root string, outDir string, kw KeyWriter
 	itemCh := make(chan *item, concurrency)
 	go func() {
 		defer close(itemCh)
-		for i := 0; i < len(keys); i++ {
-			it := &item{
-				key:     keys[i],
-				outFile: path.Join(outDir, strings.Replace(keys[i], root+"/", "", 1)),
-				resCh:   make(chan bool),
-			}
-
-			go work(it)  //create work
-			itemCh <- it //send to fan-in thread for syncing results
+		for i := 0; i < totalItems; i++ {
+			go work(&items[i])  //create work
+			itemCh <- &items[i] //send to fan-in thread for syncing results
 		}
 	}()
 
