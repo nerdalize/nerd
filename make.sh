@@ -65,7 +65,12 @@ function run_publish { #publish cross compiled binaries
 }
 
 function run_docker { #build docker container
-	docker build -t nerd:`cat VERSION` .
+	docker build -t nerdalize/nerd:`cat VERSION` .
+}
+
+function run_dockerpush { #build and push docker container
+	run_docker
+	docker push nerdalize/nerd:`cat VERSION`
 }
 
 case $1 in
@@ -74,5 +79,6 @@ case $1 in
 	"release") run_release ;;
 	"publish") run_publish ;;
 	"docker") run_docker ;;
+	"dockerpush") run_dockerpush ;;
 	*) print_help ;;
 esac
