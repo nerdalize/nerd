@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -25,6 +26,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	homedir "github.com/mitchellh/go-homedir"
 	naws "github.com/nerdalize/nerd/nerd/aws"
 	"github.com/nerdalize/nerd/nerd/payload"
 	"github.com/pkg/errors"
@@ -275,6 +277,11 @@ func (cmd *Work) DoRun(args []string) (err error) {
 
 					//@TODO execute a pre-run heartbeat to prevent starting containers for delayed but outdated task tokens. if the heartbeat returns a timed out error don't attempt to start it: (dont forget to delete the message)
 
+					hdir, err := homedir.Dir()
+					if err != nil {
+						fmt.Println("failed to fetch homedir: ", err)
+					}
+
 					fmt.Fprintf(os.Stderr, "starting task: %s, token: %x\n", task.TaskID, sha1.Sum([]byte(task.ActivityToken)))
 					args := []string{
 						"run", "-d",
@@ -284,6 +291,7 @@ func (cmd *Work) DoRun(args []string) (err error) {
 						fmt.Sprintf("--label=nerd-task=%s", task.TaskID),
 						fmt.Sprintf("--label=nerd-token=%s", task.ActivityToken),
 						fmt.Sprintf("-v=/in"), fmt.Sprintf("-v=/out"),
+						fmt.Sprintf("-v=%s:%s", filepath.Join(hdir, ".nerd"), "/root/.nerd"),
 						fmt.Sprintf("-e=NERD_PROJECT_ID=%s", task.ProjectID),
 						fmt.Sprintf("-e=NERD_TASK_ID=%s", task.TaskID),
 					}
