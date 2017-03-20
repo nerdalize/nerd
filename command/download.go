@@ -10,6 +10,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	OutputDirPermissions = 0755
+)
+
 //DownloadOpts describes command options
 type DownloadOpts struct {
 	NerdOpts
@@ -61,10 +65,18 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	outputDir := args[1]
 
 	fi, err := os.Stat(outputDir)
+	// create directory if it does not exist yet.
+	if err != nil && os.IsNotExist(err) {
+		err = os.MkdirAll(outputDir, OutputDirPermissions)
+		if err != nil {
+			HandleError(errors.Errorf("The provided path '%s' does not exist and could not be created.", outputDir), cmd.opts.VerboseOutput)
+		}
+		fi, err = os.Stat(outputDir)
+	}
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	} else if !fi.IsDir() {
-		HandleError(errors.Errorf("provided path '%s' is not a directory", outputDir), cmd.opts.VerboseOutput)
+		HandleError(errors.Errorf("The provided path '%s' is not a directory", outputDir), cmd.opts.VerboseOutput)
 	}
 
 	nerdclient, err := NewClient(cmd.ui)
