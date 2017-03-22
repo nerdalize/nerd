@@ -20,6 +20,7 @@ var (
 
 type ConfOpts struct {
 	ConfigFile string `long:"config" default:"" default-mask:"" env:"CONFIG" description:"location of config file"`
+	command.OutputOpts
 }
 
 func init() {
@@ -28,7 +29,8 @@ func init() {
 	if err == nil {
 		conf.SetLocation(opts.ConfigFile)
 	}
-	nerd.SetupLogging()
+	nerd.SetupLogging(opts.VerboseOutput, opts.JSONOutput)
+	nerd.VersionMessage(version)
 }
 
 func main() {
