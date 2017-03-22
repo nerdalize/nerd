@@ -193,7 +193,7 @@ func (client *DataClient) ListObjects(root string) (keys []string, err error) {
 }
 
 //DownloadFiles concurrently downloads all files in a given s3 root path.
-func (client *DataClient) DownloadFiles(root string, outDir string, kw KeyWriter, concurrency int, overwriteHanlder func(string) bool) error {
+func (client *DataClient) DownloadFiles(root string, outDir string, kw KeyWriter, concurrency int, overwriteHandler func(string) bool) error {
 	keys, err := client.ListObjects(root)
 	if err != nil {
 		return err
@@ -218,7 +218,7 @@ func (client *DataClient) DownloadFiles(root string, outDir string, kw KeyWriter
 		overwrite := true
 		_, err = os.Stat(it.outFile)
 		if err == nil || !os.IsNotExist(err) {
-			overwrite = overwriteHanlder(it.outFile)
+			overwrite = overwriteHandler(it.outFile)
 		}
 		if overwrite {
 			items[totalItems] = it
