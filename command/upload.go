@@ -1,10 +1,15 @@
 package command
 
 import (
+	"archive/tar"
+	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
+	"sync"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
@@ -97,12 +102,123 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	err = client.UploadDir(dataPath, ds.Root, &stdoutkw{}, 64)
+	keyrw := KeyReadWriter()
+	doneCh := make(chan error)
+	pr, pw := io.Pipe()
+	go func() {
+		doneCh <- client.ChunkedUpload(pr, keyrw, 64, ds.Root)
+	}()
+
+	err = Tar(dataPath, pw)
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		return fmt.Errorf("failed to tar '%s': %v", dataPath, err)
+	}
+
+	pw.Close()
+	err = <-doneCh
+	if err != nil {
+		return fmt.Errorf("failed to upload: %v", err)
+	}
+	//push index file
+	buf := new(bytes.Buffer)
+	for k, e := keyrw.Read(); e == nil; k, e = keyrw.Read() {
+		logrus.Info(k)
+		buf.WriteString(k)
+		buf.WriteString("\n")
+	}
+	err = client.Upload(path.Join(ds.Root, "index"), bytes.NewReader(buf.Bytes()))
+	if err != nil {
+		return errors.Wrap(err, "failed to upload index file")
 	}
 
 	logrus.Infof("Uploaded data to dataset with ID: %v", ds.DatasetID)
 
 	return nil
+}
+
+//Tar archives the given directory and writes bytes to
+func Tar(dir string, w io.Writer) (err error) {
+	tw := tar.NewWriter(w)
+	err = filepath.Walk(dir, func(path string, fi os.FileInfo, err error) error {
+		if fi.Mode().IsDir() {
+			return nil
+		}
+
+		rel, err := filepath.Rel(dir, path)
+		if err != nil {
+			return fmt.Errorf("failed to determine path '%s' relative to '%s': %v", path, dir, err)
+		}
+
+		f, err := os.Open(path)
+		if err != nil {
+			return fmt.Errorf("failed to open file '%s': %v", rel, err)
+		}
+
+		err = tw.WriteHeader(&tar.Header{
+			Name:    rel,
+			Mode:    int64(fi.Mode()),
+			ModTime: fi.ModTime(),
+			Size:    fi.Size(),
+		})
+		if err != nil {
+			return fmt.Errorf("failed to write tar header for '%s': %v", rel, err)
+		}
+
+		defer f.Close()
+		n, err := io.Copy(tw, f)
+		if err != nil {
+			return fmt.Errorf("failed to write tar file for '%s': %v", rel, err)
+		}
+
+		if n != fi.Size() {
+			return fmt.Errorf("unexpected nr of bytes written to tar, saw '%d' on-disk but only wrote '%d', is directory '%s' in use?", fi.Size(), n, dir)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to walk dir '%s': %v", dir, err)
+	}
+
+	if err = tw.Close(); err != nil {
+		return fmt.Errorf("failed to write remaining data: %v", err)
+	}
+
+	return nil
+}
+
+type keys struct {
+	*sync.Mutex
+	pos int
+	M   map[string]struct{}
+	L   []string
+}
+
+func KeyReadWriter() *keys {
+	return &keys{Mutex: &sync.Mutex{}, M: map[string]struct{}{}}
+}
+
+func (kw *keys) Write(k string) error {
+	kw.Lock()
+	defer kw.Unlock()
+	if _, ok := kw.M[k]; ok {
+		return nil
+	}
+
+	kw.M[k] = struct{}{}
+	kw.L = append(kw.L, k)
+	return nil
+}
+
+func (kw *keys) Read() (k string, err error) {
+	kw.Lock()
+	defer kw.Unlock()
+	if kw.pos == len(kw.L) {
+		return "", io.EOF
+	}
+
+	k = kw.L[kw.pos]
+	kw.pos = kw.pos + 1
+	return k, nil
 }

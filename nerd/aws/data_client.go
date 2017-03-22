@@ -1,6 +1,8 @@
 package aws
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"os"
@@ -9,10 +11,14 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/nerdalize/nerd/nerd"
+	"github.com/pkg/errors"
+	"github.com/restic/chunker"
 )
 
 //DirectoryPermissions are the permissions when a new directory is created upon file download.
@@ -51,6 +57,21 @@ func NewDataClient(conf *DataClientConfig) (*DataClient, error) {
 	}, nil
 }
 
+//Upload uploads a piece of data.
+func (client *DataClient) Upload(key string, body io.ReadSeeker) error {
+	svc := s3.New(client.Session)
+	params := &s3.PutObjectInput{
+		Bucket: aws.String(client.Bucket), // Required
+		Key:    aws.String(key),           // Required
+		Body:   body,
+	}
+	_, err := svc.PutObject(params)
+	if err != nil {
+		return errors.Wrapf(err, "could not put key %v", key)
+	}
+	return nil
+}
+
 //UploadFile uploads a single file.
 func (client *DataClient) UploadFile(filePath string, key string, root string) error {
 	file, err := os.Open(filePath)
@@ -58,15 +79,9 @@ func (client *DataClient) UploadFile(filePath string, key string, root string) e
 	if err != nil {
 		return fmt.Errorf("could not open file '%v': %v", filePath, err)
 	}
-	svc := s3.New(client.Session)
-	params := &s3.PutObjectInput{
-		Bucket: aws.String(client.Bucket),        // Required
-		Key:    aws.String(path.Join(root, key)), // Required
-		Body:   file,
-	}
-	_, err = svc.PutObject(params)
+	err = client.Upload(path.Join(root, key), file)
 	if err != nil {
-		return fmt.Errorf("could not put file '%v': %v", filePath, err)
+		return errors.Wrapf(err, "failed to upload file %v", filePath)
 	}
 	return nil
 }
@@ -131,6 +146,85 @@ func (client *DataClient) UploadFiles(files []string, keys []string, root string
 		}
 
 		err := kw.Write(it.filePath)
+		if err != nil {
+			return fmt.Errorf("failed to write key: %v", err)
+		}
+	}
+
+	return nil
+}
+
+func (client *DataClient) ChunkedUpload(r io.Reader, kw KeyWriter, concurrency int, root string) (err error) {
+	cr := chunker.New(r, chunker.Pol(0x3DA3358B4DC173))
+	type result struct {
+		err error
+		k   string
+	}
+
+	type item struct {
+		chunk []byte
+		resCh chan *result
+		err   error
+	}
+
+	work := func(it *item) {
+		k := fmt.Sprintf("%x", sha256.Sum256(it.chunk)) //hash
+		key := path.Join(root, k)
+		exists, err := client.Has(key) //check existence
+		if err != nil {
+			it.resCh <- &result{fmt.Errorf("failed to check existence of '%x': %v", k, err), ""}
+			return
+		}
+
+		if !exists {
+			err = client.Upload(key, bytes.NewReader(it.chunk)) //if not exists put
+			if err != nil {
+				it.resCh <- &result{fmt.Errorf("failed to put chunk '%x': %v", k, err), ""}
+				return
+			}
+		}
+
+		it.resCh <- &result{nil, k}
+	}
+
+	//fan out
+	itemCh := make(chan *item, concurrency)
+	go func() {
+		defer close(itemCh)
+		buf := make([]byte, chunker.MaxSize)
+		for {
+			chunk, err := cr.Next(buf)
+			if err != nil {
+				if err != io.EOF {
+					itemCh <- &item{err: err}
+				}
+				break
+			}
+
+			it := &item{
+				chunk: make([]byte, chunk.Length),
+				resCh: make(chan *result),
+			}
+
+			copy(it.chunk, chunk.Data) //underlying buffer is switched out
+
+			go work(it)  //create work
+			itemCh <- it //send to fan-in thread for syncing results
+		}
+	}()
+
+	//fan-in
+	for it := range itemCh {
+		if it.err != nil {
+			return fmt.Errorf("failed to iterate: %v", it.err)
+		}
+
+		res := <-it.resCh
+		if res.err != nil {
+			return res.err
+		}
+
+		err = kw.Write(res.k)
 		if err != nil {
 			return fmt.Errorf("failed to write key: %v", err)
 		}
@@ -254,4 +348,21 @@ func (client *DataClient) DownloadFiles(root string, outDir string, kw KeyWriter
 	}
 
 	return nil
+}
+
+func (client *DataClient) Has(key string) (has bool, err error) {
+	svc := s3.New(client.Session)
+
+	params := &s3.HeadObjectInput{
+		Bucket: aws.String(client.Bucket), // Required
+		Key:    aws.String(key),
+	}
+	_, err = svc.HeadObject(params)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok && (aerr.Code() == s3.ErrCodeNoSuchKey || aerr.Code() == sns.ErrCodeNotFoundException) {
+			return false, nil
+		}
+		return false, errors.Wrapf(err, "failed to check if key %v exists", key)
+	}
+	return true, nil
 }
