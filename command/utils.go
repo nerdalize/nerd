@@ -59,17 +59,6 @@ func UserPassProvider(ui cli.Ui) func() (string, string, error) {
 	}
 }
 
-//SetLogSettings sets log settings depending on json outputting and verbose settings.
-func SetLogSettings(json bool, verbose bool) {
-	if verbose {
-		logrus.SetFormatter(new(logrus.TextFormatter))
-		logrus.SetLevel(logrus.DebugLevel)
-	}
-	if json {
-		logrus.SetFormatter(new(logrus.JSONFormatter))
-	}
-}
-
 //ErrorCauser returns the error that is one level up in the error chain.
 func ErrorCauser(err error) error {
 	type causer interface {

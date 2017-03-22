@@ -52,8 +52,6 @@ func StatusFactory() func() (cmd cli.Command, err error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *Status) DoRun(args []string) (err error) {
-	SetLogSettings(cmd.opts.JSONOutput, cmd.opts.VerboseOutput)
-
 	client, err := NewClient(cmd.ui)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)

@@ -19,10 +19,17 @@ func (f *PlainFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	return []byte(msg), nil
 }
 
-func SetupLogging() {
+func SetupLogging(verbose, json bool) {
 	logrus.SetLevel(logrus.InfoLevel)
 	logrus.SetFormatter(new(PlainFormatter))
 	addFSHook()
+	if verbose {
+		logrus.SetFormatter(new(logrus.TextFormatter))
+		logrus.SetLevel(logrus.DebugLevel)
+	}
+	if json {
+		logrus.SetFormatter(new(logrus.JSONFormatter))
+	}
 }
 
 //addFSHook adds a filesystem logging hook to Logrus
