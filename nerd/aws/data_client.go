@@ -240,23 +240,32 @@ func (client *DataClient) ChunkedUpload(r io.Reader, kw KeyWriter, concurrency i
 
 //Download downloads a single file.
 func (client *DataClient) Download(key string) ([]byte, error) {
-	svc := s3.New(client.Session)
-	params := &s3.GetObjectInput{
-		Bucket: aws.String(client.Bucket), // Required
-		Key:    aws.String(key),           // Required
-	}
-	resp, err := svc.GetObject(params)
+	var data []byte
+	NoOfRetries := 2
+	for i := 0; i <= NoOfRetries; i++ {
+		svc := s3.New(client.Session)
+		params := &s3.GetObjectInput{
+			Bucket: aws.String(client.Bucket), // Required
+			Key:    aws.String(key),           // Required
+		}
+		resp, err := svc.GetObject(params)
 
-	if err != nil {
-		// TODO: fmt should be errors
-		return nil, fmt.Errorf("failed to download '%v': %v", key, err)
-	}
+		if err != nil {
+			if i < NoOfRetries {
+				continue
+			}
+			// TODO: fmt should be errors
+			return nil, fmt.Errorf("failed to download '%v': %v", key, err)
+		}
 
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get read response body for '%s': %v", key, err)
+		data, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			if i < NoOfRetries {
+				continue
+			}
+			return nil, fmt.Errorf("failed to get read response body for '%s': %v", key, err)
+		}
 	}
-
 	return data, nil
 }
 
