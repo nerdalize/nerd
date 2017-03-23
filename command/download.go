@@ -1,9 +1,16 @@
 package command
 
 import (
+	"archive/tar"
 	"fmt"
+	"io"
 	"os"
+	"path"
+	"path/filepath"
+	"strings"
+	"time"
 
+	"github.com/dchest/safefile"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/aws"
@@ -95,13 +102,26 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		HandleError(errors.Wrap(err, "could not create data client"), cmd.opts.VerboseOutput)
 	}
 
-	overwriteHandler := OverwriteHandlerUserPrompt(cmd.ui)
-	if cmd.opts.AlwaysOverwrite {
-		overwriteHandler = AlwaysOverwriteHandler
+	// TODO: index magic word
+	data, err := client.Download(path.Join(ds.Root, "index"))
+	index := string(data[:])
+	lines := strings.Split(index, "\n")
+	keyrw := KeyReadWriter()
+	for _, line := range lines {
+		err = keyrw.Write(path.Join(ds.Root, line))
+		if err != nil {
+			HandleError(errors.Wrap(err, "failed to read chunk index file"), cmd.opts.VerboseOutput)
+		}
 	}
-	err = client.DownloadFiles(ds.Root, outputDir, &stdoutkw{}, 64, overwriteHandler)
+
+	doneCh := make(chan error)
+	pr, pw := io.Pipe()
+	go func() {
+		doneCh <- untardir(outputDir, pr)
+	}()
+	err = client.ChunkedDownload(keyrw, pw, 64)
 	if err != nil {
-		HandleError(errors.Wrap(err, "could not download files"), cmd.opts.VerboseOutput)
+		return fmt.Errorf("failed to download project: %v", err)
 	}
 
 	return nil
@@ -126,4 +146,51 @@ func OverwriteHandlerUserPrompt(ui cli.Ui) func(string) bool {
 //AlwaysOverwriteHandler is a handler that tells to always overwrite a file.
 func AlwaysOverwriteHandler(file string) bool {
 	return true
+}
+
+func untardir(dir string, r io.Reader) (err error) {
+	tr := tar.NewReader(r)
+	for {
+		hdr, err := tr.Next()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			return fmt.Errorf("failed to read next tar header: %v", err)
+		}
+
+		path := filepath.Join(dir, hdr.Name)
+		err = os.MkdirAll(filepath.Dir(path), 0777)
+		if err != nil {
+			return fmt.Errorf("failed to create dirs: %v", err)
+		}
+
+		f, err := safefile.Create(path, os.FileMode(hdr.Mode))
+		if err != nil {
+			return fmt.Errorf("failed to create tmp safe file: %v", err)
+		}
+
+		defer f.Close()
+		n, err := io.Copy(f, tr)
+		if err != nil {
+			return fmt.Errorf("failed to write file content to tmp file: %v", err)
+		}
+
+		if n != hdr.Size {
+			return fmt.Errorf("unexpected nr of bytes written, wrote '%d' saw '%d' in tar hdr", n, hdr.Size)
+		}
+
+		err = f.Commit()
+		if err != nil {
+			return fmt.Errorf("failed to swap old file for tmp file: %v", err)
+		}
+
+		err = os.Chtimes(path, time.Now(), hdr.ModTime)
+		if err != nil {
+			return fmt.Errorf("failed to change times of tmp file: %v", err)
+		}
+	}
+
+	return nil
 }

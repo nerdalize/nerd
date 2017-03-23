@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -27,6 +28,10 @@ const DirectoryPermissions = 0755
 //KeyWriter writes a given key.
 type KeyWriter interface {
 	Write(k string) error
+}
+
+type KeyReader interface {
+	Read() (k string, err error)
 }
 
 //DataClient holds a reference to an AWS session
@@ -233,6 +238,28 @@ func (client *DataClient) ChunkedUpload(r io.Reader, kw KeyWriter, concurrency i
 	return nil
 }
 
+//Download downloads a single file.
+func (client *DataClient) Download(key string) ([]byte, error) {
+	svc := s3.New(client.Session)
+	params := &s3.GetObjectInput{
+		Bucket: aws.String(client.Bucket), // Required
+		Key:    aws.String(key),           // Required
+	}
+	resp, err := svc.GetObject(params)
+
+	if err != nil {
+		// TODO: fmt should be errors
+		return nil, fmt.Errorf("failed to download '%v': %v", key, err)
+	}
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get read response body for '%s': %v", key, err)
+	}
+
+	return data, nil
+}
+
 //DownloadFile downloads a single file.
 func (client *DataClient) DownloadFile(key, outFile string) error {
 	base := filepath.Dir(outFile)
@@ -365,4 +392,70 @@ func (client *DataClient) Has(key string) (has bool, err error) {
 		return false, errors.Wrapf(err, "failed to check if key %v exists", key)
 	}
 	return true, nil
+}
+
+func (client *DataClient) ChunkedDownload(kr KeyReader, cw io.Writer, concurrency int) (err error) {
+	type result struct {
+		err   error
+		chunk []byte
+	}
+
+	type item struct {
+		k     string
+		resCh chan *result
+		err   error
+	}
+
+	work := func(it *item) {
+		chunk, err := client.Download(it.k)
+		if err != nil {
+			it.resCh <- &result{fmt.Errorf("failed to get key '%s': %v", it.k, err), nil}
+			return
+		}
+
+		it.resCh <- &result{nil, chunk}
+	}
+
+	//fan out
+	itemCh := make(chan *item, concurrency)
+	go func() {
+		defer close(itemCh)
+		for {
+			k, err := kr.Read()
+			if err != nil {
+				if err != io.EOF {
+					itemCh <- &item{err: err}
+				}
+
+				break
+			}
+
+			it := &item{
+				k:     k,
+				resCh: make(chan *result),
+			}
+
+			go work(it)  //create work
+			itemCh <- it //send to fan-in thread for syncing results
+		}
+	}()
+
+	//fan-in
+	for it := range itemCh {
+		if it.err != nil {
+			return fmt.Errorf("failed to iterate: %v", it.err)
+		}
+
+		res := <-it.resCh
+		if res.err != nil {
+			return res.err
+		}
+
+		_, err = cw.Write(res.chunk)
+		if err != nil {
+			return fmt.Errorf("failed to write key: %v", err)
+		}
+	}
+
+	return nil
 }

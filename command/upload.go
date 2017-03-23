@@ -2,14 +2,13 @@ package command
 
 import (
 	"archive/tar"
-	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
-	"sync"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
@@ -120,13 +119,12 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		return fmt.Errorf("failed to upload: %v", err)
 	}
 	//push index file
-	buf := new(bytes.Buffer)
+	var ks []string
 	for k, e := keyrw.Read(); e == nil; k, e = keyrw.Read() {
 		logrus.Info(k)
-		buf.WriteString(k)
-		buf.WriteString("\n")
+		ks = append(ks, k)
 	}
-	err = client.Upload(path.Join(ds.Root, "index"), bytes.NewReader(buf.Bytes()))
+	err = client.Upload(path.Join(ds.Root, "index"), strings.NewReader(strings.Join(ks, "\n")))
 	if err != nil {
 		return errors.Wrap(err, "failed to upload index file")
 	}
@@ -186,39 +184,4 @@ func Tar(dir string, w io.Writer) (err error) {
 	}
 
 	return nil
-}
-
-type keys struct {
-	*sync.Mutex
-	pos int
-	M   map[string]struct{}
-	L   []string
-}
-
-func KeyReadWriter() *keys {
-	return &keys{Mutex: &sync.Mutex{}, M: map[string]struct{}{}}
-}
-
-func (kw *keys) Write(k string) error {
-	kw.Lock()
-	defer kw.Unlock()
-	if _, ok := kw.M[k]; ok {
-		return nil
-	}
-
-	kw.M[k] = struct{}{}
-	kw.L = append(kw.L, k)
-	return nil
-}
-
-func (kw *keys) Read() (k string, err error) {
-	kw.Lock()
-	defer kw.Unlock()
-	if kw.pos == len(kw.L) {
-		return "", io.EOF
-	}
-
-	k = kw.L[kw.pos]
-	kw.pos = kw.pos + 1
-	return k, nil
 }
