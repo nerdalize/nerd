@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	pb "gopkg.in/cheggaaa/pb.v1"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
@@ -102,26 +104,74 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	}
 
 	keyrw := KeyReadWriter()
-	doneCh := make(chan error)
-	pr, pw := io.Pipe()
-	go func() {
-		doneCh <- client.ChunkedUpload(pr, keyrw, 64, ds.Root)
-	}()
+	if cmd.opts.JSONOutput {
+		doneCh := make(chan error)
+		progressCh := make(chan int64)
+		pr, pw := io.Pipe()
+		go func() {
+			doneCh <- client.ChunkedUpload(pr, keyrw, 64, ds.Root, progressCh)
+		}()
 
-	err = Tar(dataPath, pw)
-	if err != nil {
-		return fmt.Errorf("failed to tar '%s': %v", dataPath, err)
-	}
+		err = Tar(dataPath, pw)
+		if err != nil {
+			return fmt.Errorf("failed to tar '%s': %v", dataPath, err)
+		}
 
-	pw.Close()
-	err = <-doneCh
-	if err != nil {
-		return fmt.Errorf("failed to upload: %v", err)
+		pw.Close()
+		err = <-doneCh
+		if err != nil {
+			return fmt.Errorf("failed to upload: %v", err)
+		}
+	} else {
+		type countResult struct {
+			total int64
+			err   error
+		}
+		doneCh := make(chan countResult)
+		pr, pw := io.Pipe()
+		go func() {
+			total, err := countBytes(pr)
+			doneCh <- countResult{total, err}
+		}()
+
+		err = Tar(dataPath, pw)
+		if err != nil {
+			return fmt.Errorf("failed to tar '%s': %v", dataPath, err)
+		}
+
+		pw.Close()
+		cr := <-doneCh
+		if cr.err != nil {
+			return fmt.Errorf("failed to upload: %v", err)
+		}
+		bar := pb.New64(cr.total).Start()
+		doneCh2 := make(chan error)
+		progressCh := make(chan int64)
+		pr, pw = io.Pipe()
+		go func() {
+			doneCh2 <- client.ChunkedUpload(pr, keyrw, 64, ds.Root, progressCh)
+		}()
+
+		go func() {
+			for elem := range progressCh {
+				bar.Add64(elem)
+			}
+		}()
+
+		err = Tar(dataPath, pw)
+		if err != nil {
+			return fmt.Errorf("failed to tar '%s': %v", dataPath, err)
+		}
+
+		pw.Close()
+		err = <-doneCh2
+		if err != nil {
+			return fmt.Errorf("failed to upload: %v", err)
+		}
 	}
 	//push index file
 	var ks []string
 	for k, e := keyrw.Read(); e == nil; k, e = keyrw.Read() {
-		logrus.Info(k)
 		ks = append(ks, k)
 	}
 	err = client.Upload(path.Join(ds.Root, "index"), strings.NewReader(strings.Join(ks, "\n")))
@@ -184,4 +234,23 @@ func Tar(dir string, w io.Writer) (err error) {
 	}
 
 	return nil
+}
+
+func countBytes(r io.Reader) (int64, error) {
+	var total int64
+	buf := make([]byte, 512*1024)
+	for {
+		n, err := io.ReadFull(r, buf)
+		if err == io.ErrUnexpectedEOF {
+			err = nil
+		}
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return 0, errors.Wrap(err, "failed to read part of tar")
+		}
+		total = total + int64(n)
+	}
+	return total, nil
 }

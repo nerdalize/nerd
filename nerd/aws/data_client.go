@@ -159,7 +159,7 @@ func (client *DataClient) UploadFiles(files []string, keys []string, root string
 	return nil
 }
 
-func (client *DataClient) ChunkedUpload(r io.Reader, kw KeyWriter, concurrency int, root string) (err error) {
+func (client *DataClient) ChunkedUpload(r io.Reader, kw KeyWriter, concurrency int, root string, progressCh chan<- int64) (err error) {
 	cr := chunker.New(r, chunker.Pol(0x3DA3358B4DC173))
 	type result struct {
 		err error
@@ -213,7 +213,8 @@ func (client *DataClient) ChunkedUpload(r io.Reader, kw KeyWriter, concurrency i
 
 			copy(it.chunk, chunk.Data) //underlying buffer is switched out
 
-			go work(it)  //create work
+			go work(it) //create work
+			progressCh <- int64(chunk.Length)
 			itemCh <- it //send to fan-in thread for syncing results
 		}
 	}()
@@ -221,26 +222,30 @@ func (client *DataClient) ChunkedUpload(r io.Reader, kw KeyWriter, concurrency i
 	//fan-in
 	for it := range itemCh {
 		if it.err != nil {
+			close(progressCh)
 			return fmt.Errorf("failed to iterate: %v", it.err)
 		}
 
 		res := <-it.resCh
 		if res.err != nil {
+			close(progressCh)
 			return res.err
 		}
 
 		err = kw.Write(res.k)
 		if err != nil {
+			close(progressCh)
 			return fmt.Errorf("failed to write key: %v", err)
 		}
 	}
 
+	close(progressCh)
 	return nil
 }
 
 //Download downloads a single file.
-func (client *DataClient) Download(key string) ([]byte, error) {
-	var data []byte
+func (client *DataClient) Download(key string) (io.ReadCloser, error) {
+	var r io.ReadCloser
 	NoOfRetries := 2
 	for i := 0; i <= NoOfRetries; i++ {
 		svc := s3.New(client.Session)
@@ -257,16 +262,10 @@ func (client *DataClient) Download(key string) ([]byte, error) {
 			// TODO: fmt should be errors
 			return nil, fmt.Errorf("failed to download '%v': %v", key, err)
 		}
-
-		data, err = ioutil.ReadAll(resp.Body)
-		if err != nil {
-			if i < NoOfRetries {
-				continue
-			}
-			return nil, fmt.Errorf("failed to get read response body for '%s': %v", key, err)
-		}
+		r = resp.Body
+		break
 	}
-	return data, nil
+	return r, nil
 }
 
 //DownloadFile downloads a single file.
@@ -416,10 +415,16 @@ func (client *DataClient) ChunkedDownload(kr KeyReader, cw io.Writer, concurrenc
 	}
 
 	work := func(it *item) {
-		chunk, err := client.Download(it.k)
+		r, err := client.Download(it.k)
+		defer r.Close()
 		if err != nil {
 			it.resCh <- &result{fmt.Errorf("failed to get key '%s': %v", it.k, err), nil}
 			return
+		}
+
+		chunk, err := ioutil.ReadAll(r)
+		if err != nil {
+			it.resCh <- &result{errors.Wrap(err, "failed to copy chunk to byte buffer"), nil}
 		}
 
 		it.resCh <- &result{nil, chunk}

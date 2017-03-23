@@ -2,12 +2,14 @@ package command
 
 import (
 	"archive/tar"
+	"bufio"
 	"fmt"
 	"io"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/dchest/safefile"
@@ -103,16 +105,9 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	}
 
 	// TODO: index magic word
-	data, err := client.Download(path.Join(ds.Root, "index"))
-	index := string(data[:])
-	lines := strings.Split(index, "\n")
-	keyrw := KeyReadWriter()
-	for _, line := range lines {
-		err = keyrw.Write(path.Join(ds.Root, line))
-		if err != nil {
-			HandleError(errors.Wrap(err, "failed to read chunk index file"), cmd.opts.VerboseOutput)
-		}
-	}
+	r, err := client.Download(path.Join(ds.Root, "index"))
+	defer r.Close()
+	keyrw := NewlineKeyReader(r, ds.Root)
 
 	doneCh := make(chan error)
 	pr, pw := io.Pipe()
@@ -193,4 +188,29 @@ func untardir(dir string, r io.Reader) (err error) {
 	}
 
 	return nil
+}
+
+type newlineKeyReader struct {
+	*sync.Mutex
+	r    *bufio.Reader
+	root string
+}
+
+// TODO: Abstract root
+func NewlineKeyReader(r io.Reader, root string) *newlineKeyReader {
+	return &newlineKeyReader{
+		Mutex: new(sync.Mutex),
+		r:     bufio.NewReader(r),
+		root:  root,
+	}
+}
+
+func (kw *newlineKeyReader) Read() (k string, err error) {
+	kw.Lock()
+	defer kw.Unlock()
+	line, err := kw.r.ReadString('\n')
+	if err != nil {
+		return "", errors.Wrap(err, "failed to read key from input stream")
+	}
+	return path.Join(kw.root, strings.Replace(line, "\n", "", 1)), nil
 }
