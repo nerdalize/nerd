@@ -4,6 +4,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
@@ -13,6 +14,12 @@ import (
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
 )
+
+type DatasetHeader struct {
+	Created time.Time `json:"created_at"`
+	Updated time.Time `json:"updated_at"`
+	Size    int64     `json:"size"`
+}
 
 type stdoutkw struct{}
 

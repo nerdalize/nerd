@@ -64,6 +64,7 @@ func NewDataClient(conf *DataClientConfig) (*DataClient, error) {
 
 //Upload uploads a piece of data.
 func (client *DataClient) Upload(key string, body io.ReadSeeker) error {
+	// TODO: retries
 	svc := s3.New(client.Session)
 	params := &s3.PutObjectInput{
 		Bucket: aws.String(client.Bucket), // Required
@@ -168,6 +169,7 @@ func (client *DataClient) ChunkedUpload(r io.Reader, kw KeyWriter, concurrency i
 
 	type item struct {
 		chunk []byte
+		size  int64
 		resCh chan *result
 		err   error
 	}
@@ -188,6 +190,7 @@ func (client *DataClient) ChunkedUpload(r io.Reader, kw KeyWriter, concurrency i
 				return
 			}
 		}
+		progressCh <- int64(len(it.chunk))
 
 		it.resCh <- &result{nil, k}
 	}
@@ -213,8 +216,7 @@ func (client *DataClient) ChunkedUpload(r io.Reader, kw KeyWriter, concurrency i
 
 			copy(it.chunk, chunk.Data) //underlying buffer is switched out
 
-			go work(it) //create work
-			progressCh <- int64(chunk.Length)
+			go work(it)  //create work
 			itemCh <- it //send to fan-in thread for syncing results
 		}
 	}()
@@ -222,24 +224,20 @@ func (client *DataClient) ChunkedUpload(r io.Reader, kw KeyWriter, concurrency i
 	//fan-in
 	for it := range itemCh {
 		if it.err != nil {
-			close(progressCh)
 			return fmt.Errorf("failed to iterate: %v", it.err)
 		}
 
 		res := <-it.resCh
 		if res.err != nil {
-			close(progressCh)
 			return res.err
 		}
 
 		err = kw.Write(res.k)
 		if err != nil {
-			close(progressCh)
 			return fmt.Errorf("failed to write key: %v", err)
 		}
 	}
 
-	close(progressCh)
 	return nil
 }
 
@@ -402,7 +400,7 @@ func (client *DataClient) Has(key string) (has bool, err error) {
 	return true, nil
 }
 
-func (client *DataClient) ChunkedDownload(kr KeyReader, cw io.Writer, concurrency int) (err error) {
+func (client *DataClient) ChunkedDownload(kr KeyReader, cw io.Writer, concurrency int, progressCh chan<- int64) (err error) {
 	type result struct {
 		err   error
 		chunk []byte
@@ -426,6 +424,7 @@ func (client *DataClient) ChunkedDownload(kr KeyReader, cw io.Writer, concurrenc
 		if err != nil {
 			it.resCh <- &result{errors.Wrap(err, "failed to copy chunk to byte buffer"), nil}
 		}
+		progressCh <- int64(len(chunk))
 
 		it.resCh <- &result{nil, chunk}
 	}

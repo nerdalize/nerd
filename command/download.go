@@ -3,6 +3,7 @@ package command
 import (
 	"archive/tar"
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -11,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	pb "gopkg.in/cheggaaa/pb.v1"
 
 	"github.com/dchest/safefile"
 	"github.com/jessevdk/go-flags"
@@ -107,17 +110,41 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	// TODO: index magic word
 	r, err := client.Download(path.Join(ds.Root, "index"))
 	defer r.Close()
-	keyrw := NewlineKeyReader(r, ds.Root)
+	bufr := bufio.NewReader(r)
+	// TODO: \n magic char
+	headerData, err := bufr.ReadBytes('\n')
+	if err != nil {
+		return errors.Wrap(err, "failed to read dataset header")
+	}
+	header := new(DatasetHeader)
+	err = json.Unmarshal(headerData, header)
+	if err != nil {
+		return errors.Wrap(err, "failed to unmarshal dataset header")
+	}
+	keyrw := NewlineKeyReader(bufr, ds.Root)
 
 	doneCh := make(chan error)
+	progressCh := make(chan int64)
+	progressBarDoneCh := make(chan struct{})
 	pr, pw := io.Pipe()
+	bar := pb.New64(header.Size).Start()
 	go func() {
 		doneCh <- untardir(outputDir, pr)
 	}()
-	err = client.ChunkedDownload(keyrw, pw, 64)
+	go func() {
+		for elem := range progressCh {
+			bar.Add64(elem)
+		}
+		bar.Finish()
+		progressBarDoneCh <- struct{}{}
+	}()
+	err = client.ChunkedDownload(keyrw, pw, 64, progressCh)
+	close(progressCh)
 	if err != nil {
 		return fmt.Errorf("failed to download project: %v", err)
 	}
+
+	<-progressBarDoneCh
 
 	return nil
 }
@@ -197,10 +224,10 @@ type newlineKeyReader struct {
 }
 
 // TODO: Abstract root
-func NewlineKeyReader(r io.Reader, root string) *newlineKeyReader {
+func NewlineKeyReader(r *bufio.Reader, root string) *newlineKeyReader {
 	return &newlineKeyReader{
 		Mutex: new(sync.Mutex),
-		r:     bufio.NewReader(r),
+		r:     r,
 		root:  root,
 	}
 }
@@ -210,6 +237,9 @@ func (kw *newlineKeyReader) Read() (k string, err error) {
 	defer kw.Unlock()
 	line, err := kw.r.ReadString('\n')
 	if err != nil {
+		if err == io.EOF {
+			return "", io.EOF
+		}
 		return "", errors.Wrap(err, "failed to read key from input stream")
 	}
 	return path.Join(kw.root, strings.Replace(line, "\n", "", 1)), nil

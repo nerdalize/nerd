@@ -2,6 +2,7 @@ package command
 
 import (
 	"archive/tar"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -9,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	pb "gopkg.in/cheggaaa/pb.v1"
 
@@ -16,6 +18,7 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/aws"
+	"github.com/nerdalize/nerd/nerd/payload"
 	"github.com/pkg/errors"
 )
 
@@ -73,15 +76,31 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	}
 
 	dataPath := args[0]
+	datasetID := ""
+	if len(args) == 2 {
+		datasetID = args[1]
+	}
 
 	nerdclient, err := NewClient(cmd.ui)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
-	ds, err := nerdclient.CreateDataset()
-	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+	var ds payload.Dataset
+	if datasetID == "" {
+		dsc, err := nerdclient.CreateDataset()
+		if err != nil {
+			HandleError(err, cmd.opts.VerboseOutput)
+		}
+		ds = dsc.Dataset
+	} else {
+		dsg, err := nerdclient.GetDataset(datasetID)
+		if err != nil {
+			HandleError(err, cmd.opts.VerboseOutput)
+		}
+		ds = dsg.Dataset
 	}
+
+	logrus.Infof("Uploading dataset with ID '%v'", ds.DatasetID)
 
 	client, err := aws.NewDataClient(&aws.DataClientConfig{
 		Credentials: aws.NewNerdalizeCredentials(nerdclient),
@@ -104,73 +123,72 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	}
 
 	keyrw := KeyReadWriter()
-	if cmd.opts.JSONOutput {
-		doneCh := make(chan error)
-		progressCh := make(chan int64)
-		pr, pw := io.Pipe()
-		go func() {
-			doneCh <- client.ChunkedUpload(pr, keyrw, 64, ds.Root, progressCh)
-		}()
+	type countResult struct {
+		total int64
+		err   error
+	}
+	doneCh := make(chan countResult)
+	pr, pw := io.Pipe()
+	go func() {
+		total, err := countBytes(pr)
+		doneCh <- countResult{total, err}
+	}()
 
-		err = Tar(dataPath, pw)
-		if err != nil {
-			return fmt.Errorf("failed to tar '%s': %v", dataPath, err)
-		}
+	err = Tar(dataPath, pw)
+	if err != nil {
+		return fmt.Errorf("failed to tar '%s': %v", dataPath, err)
+	}
 
-		pw.Close()
-		err = <-doneCh
-		if err != nil {
-			return fmt.Errorf("failed to upload: %v", err)
-		}
-	} else {
-		type countResult struct {
-			total int64
-			err   error
-		}
-		doneCh := make(chan countResult)
-		pr, pw := io.Pipe()
-		go func() {
-			total, err := countBytes(pr)
-			doneCh <- countResult{total, err}
-		}()
+	pw.Close()
+	cr := <-doneCh
+	if cr.err != nil {
+		return fmt.Errorf("failed to upload: %v", err)
+	}
+	doneCh2 := make(chan error)
+	progressCh := make(chan int64)
+	progressBarDoneCh := make(chan struct{})
+	pr, pw = io.Pipe()
+	go func() {
+		defer close(progressCh)
+		doneCh2 <- client.ChunkedUpload(pr, keyrw, 64, ds.Root, progressCh)
+	}()
 
-		err = Tar(dataPath, pw)
-		if err != nil {
-			return fmt.Errorf("failed to tar '%s': %v", dataPath, err)
-		}
-
-		pw.Close()
-		cr := <-doneCh
-		if cr.err != nil {
-			return fmt.Errorf("failed to upload: %v", err)
-		}
+	if !cmd.opts.JSONOutput {
 		bar := pb.New64(cr.total).Start()
-		doneCh2 := make(chan error)
-		progressCh := make(chan int64)
-		pr, pw = io.Pipe()
-		go func() {
-			doneCh2 <- client.ChunkedUpload(pr, keyrw, 64, ds.Root, progressCh)
-		}()
-
 		go func() {
 			for elem := range progressCh {
 				bar.Add64(elem)
 			}
+			bar.Finish()
+			progressBarDoneCh <- struct{}{}
 		}()
-
-		err = Tar(dataPath, pw)
-		if err != nil {
-			return fmt.Errorf("failed to tar '%s': %v", dataPath, err)
-		}
-
-		pw.Close()
-		err = <-doneCh2
-		if err != nil {
-			return fmt.Errorf("failed to upload: %v", err)
-		}
+	} else {
+		progressBarDoneCh <- struct{}{}
 	}
+
+	err = Tar(dataPath, pw)
+	if err != nil {
+		return fmt.Errorf("failed to tar '%s': %v", dataPath, err)
+	}
+
+	pw.Close()
+	err = <-doneCh2
+	if err != nil {
+		return fmt.Errorf("failed to upload: %v", err)
+	}
+
 	//push index file
 	var ks []string
+	header := &DatasetHeader{
+		Size:    cr.total,
+		Created: time.Now(),
+		Updated: time.Now(),
+	}
+	b, err := json.Marshal(header)
+	if err != nil {
+		return errors.Wrap(err, "failed to convert dataset header to JSON")
+	}
+	ks = append(ks, string(b))
 	for k, e := keyrw.Read(); e == nil; k, e = keyrw.Read() {
 		ks = append(ks, k)
 	}
@@ -179,7 +197,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		return errors.Wrap(err, "failed to upload index file")
 	}
 
-	logrus.Infof("Uploaded data to dataset with ID: %v", ds.DatasetID)
+	<-progressBarDoneCh
 
 	return nil
 }
