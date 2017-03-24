@@ -149,27 +149,6 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	return nil
 }
 
-//OverwriteHandlerUserPrompt is a handler that checks wether a file should be overwritten by asking the user over Stdin.
-func OverwriteHandlerUserPrompt(ui cli.Ui) func(string) bool {
-	return func(file string) bool {
-		question := fmt.Sprintf("The file '%v' already exists. Do you want to overwrite it? [Y/n]", file)
-		ans, err := ui.Ask(question)
-		if err != nil {
-			ui.Info(fmt.Sprintf("Failed to read your answer, '%v' will be skipped", file))
-			return false
-		}
-		if ans == "n" {
-			return false
-		}
-		return true
-	}
-}
-
-//AlwaysOverwriteHandler is a handler that tells to always overwrite a file.
-func AlwaysOverwriteHandler(file string) bool {
-	return true
-}
-
 func untardir(dir string, r io.Reader) (err error) {
 	tr := tar.NewReader(r)
 	for {
