@@ -2,23 +2,19 @@ package command
 
 import (
 	"archive/tar"
-	"bufio"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
-	"sync"
 	"time"
 
-	pb "gopkg.in/cheggaaa/pb.v1"
-
+	"github.com/Sirupsen/logrus"
 	"github.com/dchest/safefile"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/aws"
+	"github.com/nerdalize/nerd/nerd/data"
 	"github.com/pkg/errors"
 )
 
@@ -109,41 +105,44 @@ func (cmd *Download) DoRun(args []string) (err error) {
 
 	// TODO: index magic word
 	r, err := client.Download(path.Join(ds.Root, "index"))
+	if err != nil {
+		HandleError(errors.Wrap(err, "failed to download metadata"), cmd.opts.VerboseOutput)
+	}
 	defer r.Close()
-	bufr := bufio.NewReader(r)
-	// TODO: \n magic char
-	headerData, err := bufr.ReadBytes('\n')
+	metadata, err := data.NewMetadataFromReader(r)
 	if err != nil {
-		return errors.Wrap(err, "failed to read dataset header")
+		HandleError(errors.Wrap(err, "failed to read metadata"), cmd.opts.VerboseOutput)
 	}
-	header := new(DatasetHeader)
-	err = json.Unmarshal(headerData, header)
-	if err != nil {
-		return errors.Wrap(err, "failed to unmarshal dataset header")
-	}
-	keyrw := NewlineKeyReader(bufr, ds.Root)
+
+	logrus.Infof("Downloading dataset with ID '%v'", ds.DatasetID)
 
 	doneCh := make(chan error)
 	progressCh := make(chan int64)
 	progressBarDoneCh := make(chan struct{})
 	pr, pw := io.Pipe()
-	bar := pb.New64(header.Size).Start()
 	go func() {
 		doneCh <- untardir(outputDir, pr)
 	}()
-	go func() {
-		for elem := range progressCh {
-			bar.Add64(elem)
-		}
-		bar.Finish()
-		progressBarDoneCh <- struct{}{}
-	}()
-	err = client.ChunkedDownload(keyrw, pw, 64, progressCh)
+	if !cmd.opts.JSONOutput {
+		go ProgressBar(metadata.Header.Size, progressCh, progressBarDoneCh)
+	} else {
+		go func() {
+			for _ = range progressCh {
+			}
+			progressBarDoneCh <- struct{}{}
+		}()
+	}
+	err = client.ChunkedDownload(metadata, pw, 64, ds.Root, progressCh)
 	close(progressCh)
 	if err != nil {
-		return fmt.Errorf("failed to download project: %v", err)
+		HandleError(errors.Wrapf(err, "failed to download project '%v'", dataset), cmd.opts.VerboseOutput)
 	}
 
+	pw.Close()
+	err = <-doneCh
+	if err != nil {
+		HandleError(errors.Wrapf(err, "failed to untar project '%v'", dataset), cmd.opts.VerboseOutput)
+	}
 	<-progressBarDoneCh
 
 	return nil
@@ -194,32 +193,4 @@ func untardir(dir string, r io.Reader) (err error) {
 	}
 
 	return nil
-}
-
-type newlineKeyReader struct {
-	*sync.Mutex
-	r    *bufio.Reader
-	root string
-}
-
-// TODO: Abstract root
-func NewlineKeyReader(r *bufio.Reader, root string) *newlineKeyReader {
-	return &newlineKeyReader{
-		Mutex: new(sync.Mutex),
-		r:     r,
-		root:  root,
-	}
-}
-
-func (kw *newlineKeyReader) Read() (k string, err error) {
-	kw.Lock()
-	defer kw.Unlock()
-	line, err := kw.r.ReadString('\n')
-	if err != nil {
-		if err == io.EOF {
-			return "", io.EOF
-		}
-		return "", errors.Wrap(err, "failed to read key from input stream")
-	}
-	return path.Join(kw.root, strings.Replace(line, "\n", "", 1)), nil
 }

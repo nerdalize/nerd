@@ -12,12 +12,12 @@ import (
 	"strings"
 	"time"
 
-	pb "gopkg.in/cheggaaa/pb.v1"
-
 	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/aws"
+	"github.com/nerdalize/nerd/nerd/client"
+	"github.com/nerdalize/nerd/nerd/data"
 	"github.com/nerdalize/nerd/nerd/payload"
 	"github.com/pkg/errors"
 )
@@ -85,19 +85,9 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
-	var ds payload.Dataset
-	if datasetID == "" {
-		dsc, err := nerdclient.CreateDataset()
-		if err != nil {
-			HandleError(err, cmd.opts.VerboseOutput)
-		}
-		ds = dsc.Dataset
-	} else {
-		dsg, err := nerdclient.GetDataset(datasetID)
-		if err != nil {
-			HandleError(err, cmd.opts.VerboseOutput)
-		}
-		ds = dsg.Dataset
+	ds, err := getDataset(nerdclient, datasetID)
+	if err != nil {
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
 	logrus.Infof("Uploading dataset with ID '%v'", ds.DatasetID)
@@ -122,77 +112,52 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	keyrw := KeyReadWriter()
-	type countResult struct {
-		total int64
-		err   error
-	}
-	doneCh := make(chan countResult)
-	pr, pw := io.Pipe()
-	go func() {
-		total, err := countBytes(pr)
-		doneCh <- countResult{total, err}
-	}()
-
-	err = Tar(dataPath, pw)
+	size, err := totalTarSize(dataPath)
 	if err != nil {
-		return fmt.Errorf("failed to tar '%s': %v", dataPath, err)
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	pw.Close()
-	cr := <-doneCh
-	if cr.err != nil {
-		return fmt.Errorf("failed to upload: %v", err)
-	}
-	doneCh2 := make(chan error)
-	progressCh := make(chan int64)
-	progressBarDoneCh := make(chan struct{})
-	pr, pw = io.Pipe()
-	go func() {
-		defer close(progressCh)
-		doneCh2 <- client.ChunkedUpload(pr, keyrw, 64, ds.Root, progressCh)
-	}()
-
-	if !cmd.opts.JSONOutput {
-		bar := pb.New64(cr.total).Start()
-		go func() {
-			for elem := range progressCh {
-				bar.Add64(elem)
-			}
-			bar.Finish()
-			progressBarDoneCh <- struct{}{}
-		}()
-	} else {
-		progressBarDoneCh <- struct{}{}
-	}
-
-	err = Tar(dataPath, pw)
-	if err != nil {
-		return fmt.Errorf("failed to tar '%s': %v", dataPath, err)
-	}
-
-	pw.Close()
-	err = <-doneCh2
-	if err != nil {
-		return fmt.Errorf("failed to upload: %v", err)
-	}
-
-	//push index file
-	var ks []string
-	header := &DatasetHeader{
-		Size:    cr.total,
+	header := &data.DatasetHeader{
+		Size:    size,
 		Created: time.Now(),
 		Updated: time.Now(),
 	}
-	b, err := json.Marshal(header)
+	metadata := data.NewMetadata(header, data.NewBufferedKeyReadWiter())
+	doneCh := make(chan error)
+	progressCh := make(chan int64)
+	progressBarDoneCh := make(chan struct{})
+	pr, pw := io.Pipe()
+
+	if !cmd.opts.JSONOutput {
+		go ProgressBar(size, progressCh, progressBarDoneCh)
+	} else {
+		go func() {
+			for _ = range progressCh {
+			}
+			progressBarDoneCh <- struct{}{}
+		}()
+	}
+	go func() {
+		defer close(progressCh)
+		doneCh <- client.ChunkedUpload(pr, metadata, 64, ds.Root, progressCh)
+	}()
+
+	err = Tar(dataPath, pw)
 	if err != nil {
-		return errors.Wrap(err, "failed to convert dataset header to JSON")
+		HandleError(errors.Wrapf(err, "failed to tar '%s'", dataPath), cmd.opts.VerboseOutput)
 	}
-	ks = append(ks, string(b))
-	for k, e := keyrw.Read(); e == nil; k, e = keyrw.Read() {
-		ks = append(ks, k)
+
+	pw.Close()
+	err = <-doneCh
+	if err != nil {
+		HandleError(errors.Wrapf(err, "failed to upload '%s'", dataPath), cmd.opts.VerboseOutput)
 	}
-	err = client.Upload(path.Join(ds.Root, "index"), strings.NewReader(strings.Join(ks, "\n")))
+
+	metastring, err := metadata.ToString()
+	if err != nil {
+		HandleError(errors.Wrap(err, "failed to convert metadata to string"), cmd.opts.VerboseOutput)
+	}
+	err = client.Upload(path.Join(ds.Root, "index"), strings.NewReader(metastring))
 	if err != nil {
 		return errors.Wrap(err, "failed to upload index file")
 	}
@@ -271,4 +236,61 @@ func countBytes(r io.Reader) (int64, error) {
 		total = total + int64(n)
 	}
 	return total, nil
+}
+
+func totalTarSize(dataPath string) (int64, error) {
+	type countResult struct {
+		total int64
+		err   error
+	}
+	doneCh := make(chan countResult)
+	pr, pw := io.Pipe()
+	go func() {
+		total, err := countBytes(pr)
+		doneCh <- countResult{total, err}
+	}()
+
+	err := Tar(dataPath, pw)
+	if err != nil {
+		return 0, errors.Wrapf(err, "failed to tar '%s'", dataPath)
+	}
+
+	pw.Close()
+	cr := <-doneCh
+	if cr.err != nil {
+		return 0, errors.Wrapf(err, "failed to count total disk size of '%v'", dataPath)
+	}
+	return cr.total, nil
+}
+
+func getDataset(nerdclient *client.NerdAPIClient, datasetID string) (*payload.Dataset, error) {
+	if datasetID == "" {
+		dsc, err := nerdclient.CreateDataset()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create dataset")
+		}
+		return &dsc.Dataset, nil
+	}
+	dsg, err := nerdclient.GetDataset(datasetID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to retrieve dataset")
+	}
+	return &dsg.Dataset, nil
+}
+
+func uploadMetadata(client *aws.DataClient, root string, header *data.DatasetHeader, kr data.KeyReadWriter) error {
+	var ks []string
+	b, err := json.Marshal(header)
+	if err != nil {
+		return errors.Wrap(err, "failed to convert dataset header to JSON")
+	}
+	ks = append(ks, string(b))
+	for k, e := kr.ReadKey(); e == nil; k, e = kr.ReadKey() {
+		ks = append(ks, k.ToString())
+	}
+	err = client.Upload(path.Join(root, "index"), strings.NewReader(strings.Join(ks, "\n")))
+	if err != nil {
+		return errors.Wrap(err, "failed to upload index file")
+	}
+	return nil
 }

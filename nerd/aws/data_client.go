@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/nerdalize/nerd/nerd"
+	"github.com/nerdalize/nerd/nerd/data"
 	"github.com/pkg/errors"
 	"github.com/restic/chunker"
 )
@@ -75,11 +76,11 @@ func (client *DataClient) Upload(key string, body io.ReadSeeker) error {
 	return nil
 }
 
-func (client *DataClient) ChunkedUpload(r io.Reader, kw KeyWriter, concurrency int, root string, progressCh chan<- int64) (err error) {
+func (client *DataClient) ChunkedUpload(r io.Reader, kw data.KeyReadWriter, concurrency int, root string, progressCh chan<- int64) (err error) {
 	cr := chunker.New(r, chunker.Pol(0x3DA3358B4DC173))
 	type result struct {
 		err error
-		k   string
+		k   data.Key
 	}
 
 	type item struct {
@@ -90,18 +91,18 @@ func (client *DataClient) ChunkedUpload(r io.Reader, kw KeyWriter, concurrency i
 	}
 
 	work := func(it *item) {
-		k := fmt.Sprintf("%x", sha256.Sum256(it.chunk)) //hash
-		key := path.Join(root, k)
+		k := data.Key(sha256.Sum256(it.chunk)) //hash
+		key := path.Join(root, k.ToString())
 		exists, err := client.Has(key) //check existence
 		if err != nil {
-			it.resCh <- &result{fmt.Errorf("failed to check existence of '%x': %v", k, err), ""}
+			it.resCh <- &result{fmt.Errorf("failed to check existence of '%x': %v", k, err), data.ZeroKey}
 			return
 		}
 
 		if !exists {
 			err = client.Upload(key, bytes.NewReader(it.chunk)) //if not exists put
 			if err != nil {
-				it.resCh <- &result{fmt.Errorf("failed to put chunk '%x': %v", k, err), ""}
+				it.resCh <- &result{fmt.Errorf("failed to put chunk '%x': %v", k, err), data.ZeroKey}
 				return
 			}
 		}
@@ -147,7 +148,7 @@ func (client *DataClient) ChunkedUpload(r io.Reader, kw KeyWriter, concurrency i
 			return res.err
 		}
 
-		err = kw.Write(res.k)
+		err = kw.WriteKey(res.k)
 		if err != nil {
 			return fmt.Errorf("failed to write key: %v", err)
 		}
@@ -198,20 +199,21 @@ func (client *DataClient) Has(key string) (has bool, err error) {
 	return true, nil
 }
 
-func (client *DataClient) ChunkedDownload(kr KeyReader, cw io.Writer, concurrency int, progressCh chan<- int64) (err error) {
+func (client *DataClient) ChunkedDownload(kr data.KeyReadWriter, cw io.Writer, concurrency int, root string, progressCh chan<- int64) (err error) {
 	type result struct {
 		err   error
 		chunk []byte
 	}
 
 	type item struct {
-		k     string
+		k     data.Key
 		resCh chan *result
 		err   error
 	}
 
 	work := func(it *item) {
-		r, err := client.Download(it.k)
+		// TODO: add root
+		r, err := client.Download(path.Join(root, it.k.ToString()))
 		defer r.Close()
 		if err != nil {
 			it.resCh <- &result{fmt.Errorf("failed to get key '%s': %v", it.k, err), nil}
@@ -222,6 +224,7 @@ func (client *DataClient) ChunkedDownload(kr KeyReader, cw io.Writer, concurrenc
 		if err != nil {
 			it.resCh <- &result{errors.Wrap(err, "failed to copy chunk to byte buffer"), nil}
 		}
+
 		progressCh <- int64(len(chunk))
 
 		it.resCh <- &result{nil, chunk}
@@ -232,12 +235,11 @@ func (client *DataClient) ChunkedDownload(kr KeyReader, cw io.Writer, concurrenc
 	go func() {
 		defer close(itemCh)
 		for {
-			k, err := kr.Read()
+			k, err := kr.ReadKey()
 			if err != nil {
 				if err != io.EOF {
 					itemCh <- &item{err: err}
 				}
-
 				break
 			}
 

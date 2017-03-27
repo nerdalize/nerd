@@ -1,10 +1,9 @@
 package command
 
 import (
-	"io"
 	"strings"
-	"sync"
-	"time"
+
+	pb "gopkg.in/cheggaaa/pb.v1"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
@@ -15,12 +14,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type DatasetHeader struct {
-	Created time.Time `json:"created_at"`
-	Updated time.Time `json:"updated_at"`
-	Size    int64     `json:"size"`
-}
-
 type stdoutkw struct{}
 
 //Write writes a key to stdout.
@@ -30,40 +23,40 @@ func (kw *stdoutkw) Write(k string) (err error) {
 	return nil
 }
 
-type keys struct {
-	*sync.Mutex
-	pos int
-	M   map[string]struct{}
-	L   []string
-}
-
-func KeyReadWriter() *keys {
-	return &keys{Mutex: &sync.Mutex{}, M: map[string]struct{}{}}
-}
-
-func (kw *keys) Write(k string) error {
-	kw.Lock()
-	defer kw.Unlock()
-	if _, ok := kw.M[k]; ok {
-		return nil
-	}
-
-	kw.M[k] = struct{}{}
-	kw.L = append(kw.L, k)
-	return nil
-}
-
-func (kw *keys) Read() (k string, err error) {
-	kw.Lock()
-	defer kw.Unlock()
-	if kw.pos == len(kw.L) {
-		return "", io.EOF
-	}
-
-	k = kw.L[kw.pos]
-	kw.pos = kw.pos + 1
-	return k, nil
-}
+// type keys struct {
+// 	*sync.Mutex
+// 	pos int
+// 	M   map[string]struct{}
+// 	L   []string
+// }
+//
+// func KeyReadWriter() *keys {
+// 	return &keys{Mutex: &sync.Mutex{}, M: map[string]struct{}{}}
+// }
+//
+// func (kw *keys) Write(k string) error {
+// 	kw.Lock()
+// 	defer kw.Unlock()
+// 	if _, ok := kw.M[k]; ok {
+// 		return nil
+// 	}
+//
+// 	kw.M[k] = struct{}{}
+// 	kw.L = append(kw.L, k)
+// 	return nil
+// }
+//
+// func (kw *keys) Read() (k string, err error) {
+// 	kw.Lock()
+// 	defer kw.Unlock()
+// 	if kw.pos == len(kw.L) {
+// 		return "", io.EOF
+// 	}
+//
+// 	k = kw.L[kw.pos]
+// 	kw.pos = kw.pos + 1
+// 	return k, nil
+// }
 
 //NewClient creates a new NerdAPIClient with two credential providers.
 func NewClient(ui cli.Ui) (*client.NerdAPIClient, error) {
@@ -137,4 +130,14 @@ func HandleError(err error, verbose bool) {
 	}
 	logrus.Debugf("Underlying error: %+v", err)
 	logrus.Exit(-1)
+}
+
+//ProgressBar creates a new CLI progess bar and adds input from the progressCh to the bar.
+func ProgressBar(total int64, progressCh <-chan int64, doneCh chan<- struct{}) {
+	bar := pb.New64(total).Start()
+	for elem := range progressCh {
+		bar.Add64(elem)
+	}
+	bar.Finish()
+	doneCh <- struct{}{}
 }
