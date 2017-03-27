@@ -24,7 +24,7 @@ type ConfOpts struct {
 
 func init() {
 	opts := new(ConfOpts)
-	_, err := flags.ParseArgs(opts, os.Args[1:])
+	_, err := flags.NewParser(opts, flags.IgnoreUnknown).ParseArgs(os.Args[1:])
 	if err == nil {
 		conf.SetLocation(opts.ConfigFile)
 	}
