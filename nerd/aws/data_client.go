@@ -3,7 +3,6 @@ package aws
 import (
 	"bytes"
 	"crypto/sha256"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"path"
@@ -23,6 +22,8 @@ import (
 const (
 	//uploadPolynomal is the polynomal that is used for chunked uploading.
 	uploadPolynomal = 0x3DA3358B4DC173
+	//NoOfRetries is the amount of retries when uploading or downloading to S3.
+	NoOfRetries = 2
 )
 
 //DataClient holds a reference to an AWS session
@@ -45,7 +46,7 @@ func NewDataClient(conf *DataClientConfig) (*DataClient, error) {
 		Region:      aws.String(nerd.GetCurrentUser().Region),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("could not create AWS sessions: %v", err)
+		return nil, errors.Wrap(err, "could not create AWS sessions")
 	}
 	return &DataClient{
 		Session:          sess,
@@ -55,16 +56,21 @@ func NewDataClient(conf *DataClientConfig) (*DataClient, error) {
 
 //Upload uploads a piece of data.
 func (client *DataClient) Upload(key string, body io.ReadSeeker) error {
-	// TODO: retries
-	svc := s3.New(client.Session)
-	params := &s3.PutObjectInput{
-		Bucket: aws.String(client.Bucket), // Required
-		Key:    aws.String(key),           // Required
-		Body:   body,
-	}
-	_, err := svc.PutObject(params)
-	if err != nil {
-		return errors.Wrapf(err, "could not put key %v", key)
+	for i := 0; i <= NoOfRetries; i++ {
+		svc := s3.New(client.Session)
+		params := &s3.PutObjectInput{
+			Bucket: aws.String(client.Bucket), // Required
+			Key:    aws.String(key),           // Required
+			Body:   body,
+		}
+		_, err := svc.PutObject(params)
+		if err != nil {
+			if i < NoOfRetries {
+				continue
+			}
+			return errors.Wrapf(err, "could not put key %v", key)
+		}
+		break
 	}
 	return nil
 }
@@ -92,14 +98,14 @@ func (client *DataClient) ChunkedUpload(r io.Reader, kw data.KeyReadWriter, conc
 		key := path.Join(root, k.ToString())
 		exists, err := client.Exists(key) //check existence
 		if err != nil {
-			it.resCh <- &result{fmt.Errorf("failed to check existence of '%x': %v", k, err), data.ZeroKey}
+			it.resCh <- &result{errors.Wrapf(err, "failed to check existence of '%x'", k), data.ZeroKey}
 			return
 		}
 
 		if !exists {
 			err = client.Upload(key, bytes.NewReader(it.chunk)) //if not exists put
 			if err != nil {
-				it.resCh <- &result{fmt.Errorf("failed to put chunk '%x': %v", k, err), data.ZeroKey}
+				it.resCh <- &result{errors.Wrapf(err, "failed to put chunk '%x'", k), data.ZeroKey}
 				return
 			}
 		}
@@ -137,7 +143,7 @@ func (client *DataClient) ChunkedUpload(r io.Reader, kw data.KeyReadWriter, conc
 	//fan-in
 	for it := range itemCh {
 		if it.err != nil {
-			return fmt.Errorf("failed to iterate: %v", it.err)
+			return errors.Wrapf(it.err, "failed to iterate")
 		}
 
 		res := <-it.resCh
@@ -147,7 +153,7 @@ func (client *DataClient) ChunkedUpload(r io.Reader, kw data.KeyReadWriter, conc
 
 		err = kw.WriteKey(res.k)
 		if err != nil {
-			return fmt.Errorf("failed to write key: %v", err)
+			return errors.Wrapf(err, "failed to write key")
 		}
 	}
 
@@ -157,7 +163,6 @@ func (client *DataClient) ChunkedUpload(r io.Reader, kw data.KeyReadWriter, conc
 //Download downloads a single object.
 func (client *DataClient) Download(key string) (io.ReadCloser, error) {
 	var r io.ReadCloser
-	NoOfRetries := 2
 	for i := 0; i <= NoOfRetries; i++ {
 		svc := s3.New(client.Session)
 		params := &s3.GetObjectInput{
@@ -170,8 +175,7 @@ func (client *DataClient) Download(key string) (io.ReadCloser, error) {
 			if i < NoOfRetries {
 				continue
 			}
-			// TODO: fmt should be errors
-			return nil, fmt.Errorf("failed to download '%v': %v", key, err)
+			return nil, errors.Wrapf(err, "failed to download '%v'", key)
 		}
 		r = resp.Body
 		break
@@ -214,11 +218,10 @@ func (client *DataClient) ChunkedDownload(kr data.KeyReadWriter, cw io.Writer, c
 	}
 
 	work := func(it *item) {
-		// TODO: add root
 		r, err := client.Download(path.Join(root, it.k.ToString()))
 		defer r.Close()
 		if err != nil {
-			it.resCh <- &result{fmt.Errorf("failed to get key '%s': %v", it.k, err), nil}
+			it.resCh <- &result{errors.Wrapf(err, "failed to get key '%s'", it.k), nil}
 			return
 		}
 
@@ -258,7 +261,7 @@ func (client *DataClient) ChunkedDownload(kr data.KeyReadWriter, cw io.Writer, c
 	//fan-in
 	for it := range itemCh {
 		if it.err != nil {
-			return fmt.Errorf("failed to iterate: %v", it.err)
+			return errors.Wrapf(it.err, "failed to iterate")
 		}
 
 		res := <-it.resCh
@@ -268,7 +271,7 @@ func (client *DataClient) ChunkedDownload(kr data.KeyReadWriter, cw io.Writer, c
 
 		_, err = cw.Write(res.chunk)
 		if err != nil {
-			return fmt.Errorf("failed to write key: %v", err)
+			return errors.Wrapf(err, "failed to write key")
 		}
 	}
 

@@ -158,38 +158,38 @@ func untardir(dir string, r io.Reader) (err error) {
 				break
 			}
 
-			return fmt.Errorf("failed to read next tar header: %v", err)
+			return errors.Wrap(err, "failed to read next tar header")
 		}
 
 		path := filepath.Join(dir, hdr.Name)
 		err = os.MkdirAll(filepath.Dir(path), 0777)
 		if err != nil {
-			return fmt.Errorf("failed to create dirs: %v", err)
+			return errors.Wrap(err, "failed to create dirs")
 		}
 
 		f, err := safefile.Create(path, os.FileMode(hdr.Mode))
 		if err != nil {
-			return fmt.Errorf("failed to create tmp safe file: %v", err)
+			return errors.Wrap(err, "failed to create tmp safe file")
 		}
 
 		defer f.Close()
 		n, err := io.Copy(f, tr)
 		if err != nil {
-			return fmt.Errorf("failed to write file content to tmp file: %v", err)
+			return errors.Wrap(err, "failed to write file content to tmp file")
 		}
 
 		if n != hdr.Size {
-			return fmt.Errorf("unexpected nr of bytes written, wrote '%d' saw '%d' in tar hdr", n, hdr.Size)
+			return errors.Errorf("unexpected nr of bytes written, wrote '%d' saw '%d' in tar hdr", n, hdr.Size)
 		}
 
 		err = f.Commit()
 		if err != nil {
-			return fmt.Errorf("failed to swap old file for tmp file: %v", err)
+			return errors.Wrap(err, "failed to swap old file for tmp file")
 		}
 
 		err = os.Chtimes(path, time.Now(), hdr.ModTime)
 		if err != nil {
-			return fmt.Errorf("failed to change times of tmp file: %v", err)
+			return errors.Wrap(err, "failed to change times of tmp file")
 		}
 	}
 

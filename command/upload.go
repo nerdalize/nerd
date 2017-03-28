@@ -176,12 +176,12 @@ func tardir(dir string, w io.Writer) (err error) {
 
 		rel, err := filepath.Rel(dir, path)
 		if err != nil {
-			return fmt.Errorf("failed to determine path '%s' relative to '%s': %v", path, dir, err)
+			return errors.Wrapf(err, "failed to determine path '%s' relative to '%s'", path, dir)
 		}
 
 		f, err := os.Open(path)
 		if err != nil {
-			return fmt.Errorf("failed to open file '%s': %v", rel, err)
+			return errors.Wrapf(err, "failed to open file '%s'", rel)
 		}
 
 		err = tw.WriteHeader(&tar.Header{
@@ -191,28 +191,28 @@ func tardir(dir string, w io.Writer) (err error) {
 			Size:    fi.Size(),
 		})
 		if err != nil {
-			return fmt.Errorf("failed to write tar header for '%s': %v", rel, err)
+			return errors.Wrapf(err, "failed to write tar header for '%s'", rel)
 		}
 
 		defer f.Close()
 		n, err := io.Copy(tw, f)
 		if err != nil {
-			return fmt.Errorf("failed to write tar file for '%s': %v", rel, err)
+			return errors.Wrapf(err, "failed to write tar file for '%s'", rel)
 		}
 
 		if n != fi.Size() {
-			return fmt.Errorf("unexpected nr of bytes written to tar, saw '%d' on-disk but only wrote '%d', is directory '%s' in use?", fi.Size(), n, dir)
+			return errors.Errorf("unexpected nr of bytes written to tar, saw '%d' on-disk but only wrote '%d', is directory '%s' in use?", fi.Size(), n, dir)
 		}
 
 		return nil
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to walk dir '%s': %v", dir, err)
+		return errors.Wrapf(err, "failed to walk dir '%s'", dir)
 	}
 
 	if err = tw.Close(); err != nil {
-		return fmt.Errorf("failed to write remaining data: %v", err)
+		return errors.Wrap(err, "failed to write remaining data")
 	}
 
 	return nil
