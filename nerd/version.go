@@ -13,6 +13,8 @@ import (
 const (
 	//GHReleasesURL is the GitHub API URL that lists all releases.
 	GHReleasesURL = "https://api.github.com/repos/nerdalize/nerd/releases"
+	//BuiltFromSourceVersion is the version when building form source (no real version).
+	BuiltFromSourceVersion = "built.from.src"
 )
 
 //GHRelease is a `release` object from the GitHub API.
@@ -29,6 +31,9 @@ type GHError struct {
 
 //VersionMessage shows a message to the user if a new CLI version is available.
 func VersionMessage(current string) {
+	if current == BuiltFromSourceVersion {
+		return
+	}
 	var releases []GHRelease
 	e := new(GHError)
 	s := sling.New().Get(GHReleasesURL)

@@ -14,7 +14,7 @@ import (
 
 var (
 	name    = "nerd"
-	version = "build.from.src"
+	version = nerd.BuiltFromSourceVersion
 	commit  = "0000000"
 )
 
