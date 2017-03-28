@@ -20,6 +20,11 @@ import (
 	"github.com/restic/chunker"
 )
 
+const (
+	//uploadPolynomal is the polynomal that is used for chunked uploading.
+	uploadPolynomal = 0x3DA3358B4DC173
+)
+
 //DataClient holds a reference to an AWS session
 type DataClient struct {
 	Session *session.Session
@@ -69,7 +74,7 @@ func (client *DataClient) Upload(key string, body io.ReadSeeker) error {
 //It will start a maximum of `concurrency` concurrent go routines to upload in paralllel.
 //`root` is used as the root path of the chunk in S3. Root will be concatenated with the key to make the full S3 object path.
 func (client *DataClient) ChunkedUpload(r io.Reader, kw data.KeyReadWriter, concurrency int, root string, progressCh chan<- int64) (err error) {
-	cr := chunker.New(r, chunker.Pol(0x3DA3358B4DC173))
+	cr := chunker.New(r, chunker.Pol(uploadPolynomal))
 	type result struct {
 		err error
 		k   data.Key
