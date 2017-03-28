@@ -253,12 +253,15 @@ func (cmd *Work) DoRun(args []string) (err error) {
 	}()
 
 	//receive tasks from the message queue and start the container run loop, it will attemp to create containers for tasks unconditionally if it keeps failing queue retry will backoff. If it succeeds, fails the feedback loop will notify
+	cap := 5
+	capCh := make(chan struct{}, cap)
 	go func() {
-		for {
+		for range capCh {
 			var out *sqs.ReceiveMessageOutput
 			if out, err = messages.ReceiveMessage(&sqs.ReceiveMessageInput{
-				QueueUrl:        aws.String(worker.QueueURL),
-				WaitTimeSeconds: aws.Int64(5),
+				QueueUrl:            aws.String(worker.QueueURL),
+				WaitTimeSeconds:     aws.Int64(0),
+				MaxNumberOfMessages: aws.Int64(1),
 			}); err != nil {
 				fmt.Fprintf(os.Stderr, "failed to receive message: %+v", err)
 				//@TODO report async errors
@@ -309,20 +312,22 @@ func (cmd *Work) DoRun(args []string) (err error) {
 						args = append(args, fmt.Sprintf("-e=%s=%s", key, val))
 					}
 
-					args = append(args, task.Image)
-					cmd := exec.Command(exe, args...)
-					cmd.Stderr = os.Stderr
-					_ = cmd.Run() //any result is ok
+					go func(msg *sqs.Message) {
+						args = append(args, task.Image)
+						cmd := exec.Command(exe, args...)
+						cmd.Stderr = os.Stderr
+						_ = cmd.Run() //any result is ok
 
-					//delete message, state is persisted in Docker, it is no longer relevant
-					if _, err := messages.DeleteMessage(&sqs.DeleteMessageInput{
-						QueueUrl:      aws.String(worker.QueueURL),
-						ReceiptHandle: msg.ReceiptHandle,
-					}); err != nil {
-						//@TODO error on return error
-						fmt.Fprintf(os.Stderr, "failed to delete message: %+v", err)
-						continue
-					}
+						//delete message, state is persisted in Docker, it is no longer relevant
+						if _, err := messages.DeleteMessage(&sqs.DeleteMessageInput{
+							QueueUrl:      aws.String(worker.QueueURL),
+							ReceiptHandle: msg.ReceiptHandle,
+						}); err != nil {
+							//@TODO error on return error
+							fmt.Fprintf(os.Stderr, "failed to delete message: %+v", err)
+							return
+						}
+					}(msg)
 				}
 			}
 		}
@@ -339,14 +344,20 @@ func (cmd *Work) DoRun(args []string) (err error) {
 				"--format={{.ID}}\t{{.Status}}\t{{.Label \"nerd-token\"}}\t{{.Label \"nerd-project\"}}\t{{.Label \"nerd-task\"}}\t{{.Mounts}}",
 			}
 
+			buf := bytes.NewBuffer(nil)
 			cmd := exec.Command(exe, args...)
-			cmd.Stdout = pw
+			cmd.Stdout = io.MultiWriter(pw, buf)
 			cmd.Stderr = os.Stderr
 			err = cmd.Run()
 			if err != nil {
 				//@TODO handle errors
 				fmt.Fprintln(os.Stderr, "failed to list containers: ", err)
 				continue
+			}
+
+			n := bytes.Count(buf.Bytes(), []byte{'\n'})
+			for i := (cap - n); i > 0; i-- {
+				capCh <- struct{}{}
 			}
 		}
 	}()
