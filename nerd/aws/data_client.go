@@ -32,6 +32,7 @@ const (
 //DataClient holds a reference to an AWS session
 type DataClient struct {
 	Session *session.Session
+	Service *s3.S3
 	*DataClientConfig
 }
 
@@ -53,6 +54,7 @@ func NewDataClient(conf *DataClientConfig) (*DataClient, error) {
 	}
 	return &DataClient{
 		Session:          sess,
+		Service:          s3.New(sess),
 		DataClientConfig: conf,
 	}, nil
 }
@@ -60,13 +62,12 @@ func NewDataClient(conf *DataClientConfig) (*DataClient, error) {
 //Upload uploads a piece of data.
 func (client *DataClient) Upload(key string, body io.ReadSeeker) error {
 	for i := 0; i <= NoOfRetries; i++ {
-		svc := s3.New(client.Session)
 		params := &s3.PutObjectInput{
 			Bucket: aws.String(client.Bucket), // Required
 			Key:    aws.String(key),           // Required
 			Body:   body,
 		}
-		_, err := svc.PutObject(params)
+		_, err := client.Service.PutObject(params)
 		if err != nil {
 			if i < NoOfRetries {
 				continue
@@ -172,12 +173,11 @@ func (client *DataClient) ChunkedUpload(r io.Reader, kw data.KeyReadWriter, conc
 func (client *DataClient) Download(key string) (io.ReadCloser, error) {
 	var r io.ReadCloser
 	for i := 0; i <= NoOfRetries; i++ {
-		svc := s3.New(client.Session)
 		params := &s3.GetObjectInput{
 			Bucket: aws.String(client.Bucket), // Required
 			Key:    aws.String(key),           // Required
 		}
-		resp, err := svc.GetObject(params)
+		resp, err := client.Service.GetObject(params)
 
 		if err != nil {
 			if i < NoOfRetries {
@@ -198,13 +198,11 @@ func (client *DataClient) Download(key string) (io.ReadCloser, error) {
 
 //Exists checks if a given object key exists on S3.
 func (client *DataClient) Exists(objectKey string) (has bool, err error) {
-	svc := s3.New(client.Session)
-
 	params := &s3.HeadObjectInput{
 		Bucket: aws.String(client.Bucket), // Required
 		Key:    aws.String(objectKey),
 	}
-	_, err = svc.HeadObject(params)
+	_, err = client.Service.HeadObject(params)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok && (aerr.Code() == s3.ErrCodeNoSuchKey || aerr.Code() == sns.ErrCodeNotFoundException) {
 			return false, nil
