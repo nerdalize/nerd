@@ -121,7 +121,9 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	progressBarDoneCh := make(chan struct{})
 	pr, pw := io.Pipe()
 	go func() {
-		doneCh <- untardir(outputDir, pr)
+		err := untardir(outputDir, pr)
+		pr.Close()
+		doneCh <- err
 	}()
 	if !cmd.opts.JSONOutput {
 		go ProgressBar(metadata.Header.Size, progressCh, progressBarDoneCh)
@@ -140,10 +142,10 @@ func (cmd *Download) DoRun(args []string) (err error) {
 
 	pw.Close()
 	err = <-doneCh
+	<-progressBarDoneCh
 	if err != nil {
 		HandleError(errors.Wrapf(err, "failed to untar project '%v'", dataset), cmd.opts.VerboseOutput)
 	}
-	<-progressBarDoneCh
 
 	return nil
 }

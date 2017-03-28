@@ -138,16 +138,19 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	}
 	go func() {
 		defer close(progressCh)
-		doneCh <- client.ChunkedUpload(pr, metadata, 64, ds.Root, progressCh)
+		err := client.ChunkedUpload(pr, metadata, 1, ds.Root, progressCh)
+		pr.Close()
+		doneCh <- err
 	}()
 
 	err = tardir(dataPath, pw)
-	if err != nil {
+	if err != nil && errors.Cause(err) != io.ErrClosedPipe {
 		HandleError(errors.Wrapf(err, "failed to tar '%s'", dataPath), cmd.opts.VerboseOutput)
 	}
 
 	pw.Close()
 	err = <-doneCh
+	<-progressBarDoneCh
 	if err != nil {
 		HandleError(errors.Wrapf(err, "failed to upload '%s'", dataPath), cmd.opts.VerboseOutput)
 	}
@@ -160,8 +163,6 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	if err != nil {
 		return errors.Wrap(err, "failed to upload index file")
 	}
-
-	<-progressBarDoneCh
 
 	return nil
 }

@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"path"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -23,7 +24,7 @@ const (
 	//uploadPolynomal is the polynomal that is used for chunked uploading.
 	uploadPolynomal = 0x3DA3358B4DC173
 	//NoOfRetries is the amount of retries when uploading or downloading to S3.
-	NoOfRetries = 2
+	NoOfRetries = 0
 )
 
 //DataClient holds a reference to an AWS session
@@ -104,6 +105,7 @@ func (client *DataClient) ChunkedUpload(r io.Reader, kw data.KeyReadWriter, conc
 
 		if !exists {
 			err = client.Upload(key, bytes.NewReader(it.chunk)) //if not exists put
+			logrus.Debugf("Uploaded %s", key)
 			if err != nil {
 				it.resCh <- &result{errors.Wrapf(err, "failed to put chunk '%x'", k), data.ZeroKey}
 				return
