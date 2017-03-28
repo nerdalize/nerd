@@ -21,6 +21,8 @@ import (
 )
 
 const (
+	//LogGroup is the group for each log statement.
+	LogGroup = "DataClient"
 	//uploadPolynomal is the polynomal that is used for chunked uploading.
 	uploadPolynomal = 0x3DA3358B4DC173
 	//NoOfRetries is the amount of retries when uploading or downloading to S3.
@@ -73,6 +75,11 @@ func (client *DataClient) Upload(key string, body io.ReadSeeker) error {
 		}
 		break
 	}
+	logrus.WithFields(logrus.Fields{
+		"group":  LogGroup,
+		"action": "upload",
+		"key":    key,
+	}).Debugf("Uploaded %s", key)
 	return nil
 }
 
@@ -105,7 +112,6 @@ func (client *DataClient) ChunkedUpload(r io.Reader, kw data.KeyReadWriter, conc
 
 		if !exists {
 			err = client.Upload(key, bytes.NewReader(it.chunk)) //if not exists put
-			logrus.Debugf("Uploaded %s", key)
 			if err != nil {
 				it.resCh <- &result{errors.Wrapf(err, "failed to put chunk '%x'", k), data.ZeroKey}
 				return
@@ -182,6 +188,11 @@ func (client *DataClient) Download(key string) (io.ReadCloser, error) {
 		r = resp.Body
 		break
 	}
+	logrus.WithFields(logrus.Fields{
+		"group":  LogGroup,
+		"action": "download",
+		"key":    key,
+	}).Debugf("Downloaded %s", key)
 	return r, nil
 }
 
