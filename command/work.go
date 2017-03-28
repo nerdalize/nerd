@@ -35,6 +35,7 @@ import (
 //WorkOpts describes command options
 type WorkOpts struct {
 	NerdOpts
+	Capacity uint `short:"c" long:"capacity" default-mask:"1" description:"maximum number of tasks to accept"`
 }
 
 //Work command
@@ -253,8 +254,8 @@ func (cmd *Work) DoRun(args []string) (err error) {
 	}()
 
 	//receive tasks from the message queue and start the container run loop, it will attemp to create containers for tasks unconditionally if it keeps failing queue retry will backoff. If it succeeds, fails the feedback loop will notify
-	cap := 5
-	capCh := make(chan struct{}, cap)
+	taskCap := 5
+	capCh := make(chan struct{}, taskCap)
 	go func() {
 		for range capCh {
 			var out *sqs.ReceiveMessageOutput
@@ -270,53 +271,76 @@ func (cmd *Work) DoRun(args []string) (err error) {
 
 			if len(out.Messages) > 0 {
 				for _, msg := range out.Messages {
-					task := &payload.Task{}
-					if err = json.Unmarshal([]byte(aws.StringValue(msg.Body)), task); err != nil {
+					func() {
+						task := &payload.Task{}
+						if err = json.Unmarshal([]byte(aws.StringValue(msg.Body)), task); err != nil {
 
-						//@TODO throw deserialization errors
-						fmt.Fprintf(os.Stderr, "failed to deserialize: %+v", err)
-						return
-					}
+							//@TODO throw deserialization errors
+							fmt.Fprintf(os.Stderr, "failed to deserialize: %+v", err)
+							return
+						}
 
-					if _, err = states.SendTaskHeartbeat(&sfn.SendTaskHeartbeatInput{
-						TaskToken: aws.String(task.ActivityToken),
-					}); err != nil {
-						fmt.Fprintf(os.Stderr, "task token has already expired, don't run it")
-						continue
-					}
+						hdir, err := homedir.Dir()
+						if err != nil {
+							fmt.Println("failed to fetch homedir: ", err)
+						}
 
-					hdir, err := homedir.Dir()
-					if err != nil {
-						fmt.Println("failed to fetch homedir: ", err)
-					}
+						fmt.Fprintf(os.Stderr, "starting task: %s, token: %x\n", task.TaskID, sha1.Sum([]byte(task.ActivityToken)))
+						args := []string{
+							"run", "-d",
+							//@TODO add logging to aws
+							fmt.Sprintf("--name=task-%x", sha1.Sum([]byte(task.ActivityToken))),
+							fmt.Sprintf("--label=nerd-project=%s", task.ProjectID),
+							fmt.Sprintf("--label=nerd-task=%s", task.TaskID),
+							fmt.Sprintf("--label=nerd-token=%s", task.ActivityToken),
+							fmt.Sprintf("-v=/in"), fmt.Sprintf("-v=/out"),
+							fmt.Sprintf("-v=%s:%s", filepath.Join(hdir, ".nerd"), "/root/.nerd"),
+							fmt.Sprintf("-e=NERD_PROJECT_ID=%s", task.ProjectID),
+							fmt.Sprintf("-e=NERD_TASK_ID=%s", task.TaskID),
+						}
 
-					fmt.Fprintf(os.Stderr, "starting task: %s, token: %x\n", task.TaskID, sha1.Sum([]byte(task.ActivityToken)))
-					args := []string{
-						"run", "-d",
-						//@TODO add logging to aws
-						fmt.Sprintf("--name=task-%x", sha1.Sum([]byte(task.ActivityToken))),
-						fmt.Sprintf("--label=nerd-project=%s", task.ProjectID),
-						fmt.Sprintf("--label=nerd-task=%s", task.TaskID),
-						fmt.Sprintf("--label=nerd-token=%s", task.ActivityToken),
-						fmt.Sprintf("-v=/in"), fmt.Sprintf("-v=/out"),
-						fmt.Sprintf("-v=%s:%s", filepath.Join(hdir, ".nerd"), "/root/.nerd"),
-						fmt.Sprintf("-e=NERD_PROJECT_ID=%s", task.ProjectID),
-						fmt.Sprintf("-e=NERD_TASK_ID=%s", task.TaskID),
-					}
+						if task.InputID != "" {
+							args = append(args, fmt.Sprintf("-e=NERD_DATASET_INPUT=%s", task.InputID))
+						}
 
-					if task.InputID != "" {
-						args = append(args, fmt.Sprintf("-e=NERD_DATASET_INPUT=%s", task.InputID))
-					}
+						for key, val := range task.Environment {
+							args = append(args, fmt.Sprintf("-e=%s=%s", key, val))
+						}
 
-					for key, val := range task.Environment {
-						args = append(args, fmt.Sprintf("-e=%s=%s", key, val))
-					}
+						//this is a routine that will keep sending heartbeats during setup of the container run; specifically when pulling containers takes long time
+						runDoneCh := make(chan struct{})
+						go func() {
+							defer func() {
+								fmt.Fprintf(os.Stderr, "container started, stateless heartbeat takes over\n")
+							}()
+							runToCh := time.After(time.Minute * 60)
+							runTickCh := time.Tick(time.Second * 30)
+							for {
+								if _, err = states.SendTaskHeartbeat(&sfn.SendTaskHeartbeatInput{
+									TaskToken: aws.String(task.ActivityToken),
+								}); err != nil {
+									fmt.Fprintf(os.Stderr, "task token has already expired, don't run it\n")
+									continue
+								}
 
-					go func(msg *sqs.Message) {
+								select {
+								case <-runTickCh:
+									continue
+								case <-runDoneCh:
+									return
+								case <-runToCh:
+									return
+								}
+							}
+						}()
+
+						//this routine will do the run and allow the pull msg routine to continue
 						args = append(args, task.Image)
 						cmd := exec.Command(exe, args...)
 						cmd.Stderr = os.Stderr
 						_ = cmd.Run() //any result is ok
+
+						runDoneCh <- struct{}{}
 
 						//delete message, state is persisted in Docker, it is no longer relevant
 						if _, err := messages.DeleteMessage(&sqs.DeleteMessageInput{
@@ -327,7 +351,8 @@ func (cmd *Work) DoRun(args []string) (err error) {
 							fmt.Fprintf(os.Stderr, "failed to delete message: %+v", err)
 							return
 						}
-					}(msg)
+
+					}()
 				}
 			}
 		}
@@ -356,8 +381,36 @@ func (cmd *Work) DoRun(args []string) (err error) {
 			}
 
 			n := bytes.Count(buf.Bytes(), []byte{'\n'})
-			for i := (cap - n); i > 0; i-- {
+			for i := (cap(capCh) - n); i > 0; i-- {
 				capCh <- struct{}{}
+			}
+
+			//kill containers that somehow exceeded the nodes capacity
+			killscan := bufio.NewScanner(buf)
+			idx := 0
+			for killscan.Scan() {
+				idx++
+				fields := strings.SplitN(killscan.Text(), "\t", 6)
+				if len(fields) != 6 {
+					continue
+				}
+
+				if idx > taskCap {
+					cid := fields[0]
+					cmd := exec.Command(exe, "kill", cid)
+					err = cmd.Run()
+					if err != nil {
+						fmt.Println("failed to stop capacity exceeding task container:", cid, err)
+						//@TODO report error
+					}
+
+					cmd = exec.Command(exe, "rm", cid)
+					err = cmd.Run()
+					if err != nil {
+						fmt.Println("failed to remove capacity exceeding timed out task container:", cid, err)
+						//@TODO report error
+					}
+				}
 			}
 		}
 	}()
@@ -509,7 +562,7 @@ func (cmd *Work) DoRun(args []string) (err error) {
 				}
 
 				if aerr.Code() == sfn.ErrCodeTaskTimedOut {
-					fmt.Println("aws err:", aerr)
+					fmt.Printf("container %s no longer relevant, removing gracefully", statusEv.cid)
 					cmd := exec.Command(exe, "stop", statusEv.cid)
 					err = cmd.Run()
 					if err != nil {
