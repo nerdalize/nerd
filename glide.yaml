@@ -21,5 +21,11 @@ import:
   version: febf2d34b54a69ce7530036c7503b1c9fbfdf0bb
 - package: github.com/dustin/go-humanize      #humanize time format (x secs ago)
   version: 259d2a102b871d17f30e3cd9881a642961a1e486
-- package: github.com/Sirupsen/logrus                 #Logging
+- package: github.com/Sirupsen/logrus         #Logging
   version: v0.11.4
+- package: github.com/restic/chunker          #content-defined-chunking
+  version: v0.1.0
+- package: gopkg.in/cheggaaa/pb.v1            #progress bar ui
+  version: v1.0.11
+- package: github.com/dchest/safefile         #atomic file writes
+  version: 855e8d98f1852d48dde521e0522408d1fe7e836a
