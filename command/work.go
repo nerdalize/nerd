@@ -101,6 +101,11 @@ func (cmd *Work) DoRun(args []string) (err error) {
 	sigCh := make(chan os.Signal)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 
+	taskCap := cmd.opts.Capacity
+	if taskCap < 1 {
+		taskCap = 1
+	}
+
 	client, err := NewClient(cmd.ui)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
@@ -119,7 +124,7 @@ func (cmd *Work) DoRun(args []string) (err error) {
 		}
 	}()
 
-	fmt.Printf("registered as worker '%s' (project: %s)\n", worker.WorkerID, worker.ProjectID)
+	fmt.Printf("registered as worker '%s' (project: %s, capacity: %d)\n", worker.WorkerID, worker.ProjectID, taskCap)
 
 	awscreds := naws.NewNerdalizeCredentials(client)
 	awssess := session.New(
@@ -254,7 +259,6 @@ func (cmd *Work) DoRun(args []string) (err error) {
 	}()
 
 	//receive tasks from the message queue and start the container run loop, it will attemp to create containers for tasks unconditionally if it keeps failing queue retry will backoff. If it succeeds, fails the feedback loop will notify
-	taskCap := 5
 	capCh := make(chan struct{}, taskCap)
 	go func() {
 		for range capCh {
@@ -387,7 +391,7 @@ func (cmd *Work) DoRun(args []string) (err error) {
 
 			//kill containers that somehow exceeded the nodes capacity
 			killscan := bufio.NewScanner(buf)
-			idx := 0
+			idx := uint(0)
 			for killscan.Scan() {
 				idx++
 				fields := strings.SplitN(killscan.Text(), "\t", 6)
@@ -562,7 +566,7 @@ func (cmd *Work) DoRun(args []string) (err error) {
 				}
 
 				if aerr.Code() == sfn.ErrCodeTaskTimedOut {
-					fmt.Printf("container %s no longer relevant, removing gracefully", statusEv.cid)
+					fmt.Printf("container %s no longer relevant, removing gracefully\n", statusEv.cid)
 					cmd := exec.Command(exe, "stop", statusEv.cid)
 					err = cmd.Run()
 					if err != nil {
