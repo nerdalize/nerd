@@ -24,7 +24,7 @@ const (
 	//uploadPolynomal is the polynomal that is used for chunked uploading.
 	uploadPolynomal = 0x3DA3358B4DC173
 	//NoOfRetries is the amount of retries when uploading or downloading to S3.
-	NoOfRetries = 0
+	NoOfRetries = 2
 )
 
 //DataClient holds a reference to an AWS session

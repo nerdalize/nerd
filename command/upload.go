@@ -26,6 +26,8 @@ const (
 	DatasetFilename = ".dataset"
 	//DatasetPermissions are the permissions for DatasetFilename
 	DatasetPermissions = 0644
+	//UploadConcurrency is the amount of concurrent upload threads.
+	UploadConcurrency = 64
 )
 
 //UploadOpts describes command options
@@ -138,7 +140,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	}
 	go func() {
 		defer close(progressCh)
-		err := client.ChunkedUpload(pr, metadata, 1, ds.Root, progressCh)
+		err := client.ChunkedUpload(pr, metadata, UploadConcurrency, ds.Root, progressCh)
 		pr.Close()
 		doneCh <- err
 	}()

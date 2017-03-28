@@ -20,6 +20,8 @@ import (
 
 const (
 	OutputDirPermissions = 0755
+	//DownloadConcurrency is the amount of concurrent download threads.
+	DownloadConcurrency = 64
 )
 
 //DownloadOpts describes command options
@@ -134,7 +136,7 @@ func (cmd *Download) DoRun(args []string) (err error) {
 			progressBarDoneCh <- struct{}{}
 		}()
 	}
-	err = client.ChunkedDownload(metadata, pw, 64, ds.Root, progressCh)
+	err = client.ChunkedDownload(metadata, pw, DownloadConcurrency, ds.Root, progressCh)
 	close(progressCh)
 	if err != nil {
 		HandleError(errors.Wrapf(err, "failed to download project '%v'", dataset), cmd.opts.VerboseOutput)
