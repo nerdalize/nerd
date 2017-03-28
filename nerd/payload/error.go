@@ -2,7 +2,6 @@ package payload
 
 //Error struct is returned by the API if anything goes wrong
 type Error struct {
-	HTTPRespCode int
 
 	//Retry indicates if the client can retry the request as is, this is mostly false on validation/encoding errors and true in other cases
 	Retry bool `json:"retry"`
