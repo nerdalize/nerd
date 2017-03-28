@@ -20,18 +20,6 @@ import (
 	"github.com/restic/chunker"
 )
 
-//DirectoryPermissions are the permissions when a new directory is created upon file download.
-const DirectoryPermissions = 0755
-
-//KeyWriter writes a given key.
-type KeyWriter interface {
-	Write(k string) error
-}
-
-type KeyReader interface {
-	Read() (k string, err error)
-}
-
 //DataClient holds a reference to an AWS session
 type DataClient struct {
 	Session *session.Session
@@ -76,6 +64,10 @@ func (client *DataClient) Upload(key string, body io.ReadSeeker) error {
 	return nil
 }
 
+//ChunkedUpload uploads data from a io.Reader (`r`) as a list of chunks. The Key of every chunk uploaded will be written to the KeyReadWriter (`kw`).
+//ChunkedDownload reports its progress (the amount of bytes uploaded) to the progressCh.
+//It will start a maximum of `concurrency` concurrent go routines to upload in paralllel.
+//`root` is used as the root path of the chunk in S3. Root will be concatenated with the key to make the full S3 object path.
 func (client *DataClient) ChunkedUpload(r io.Reader, kw data.KeyReadWriter, concurrency int, root string, progressCh chan<- int64) (err error) {
 	cr := chunker.New(r, chunker.Pol(0x3DA3358B4DC173))
 	type result struct {
@@ -93,7 +85,7 @@ func (client *DataClient) ChunkedUpload(r io.Reader, kw data.KeyReadWriter, conc
 	work := func(it *item) {
 		k := data.Key(sha256.Sum256(it.chunk)) //hash
 		key := path.Join(root, k.ToString())
-		exists, err := client.Has(key) //check existence
+		exists, err := client.Exists(key) //check existence
 		if err != nil {
 			it.resCh <- &result{fmt.Errorf("failed to check existence of '%x': %v", k, err), data.ZeroKey}
 			return
@@ -157,7 +149,7 @@ func (client *DataClient) ChunkedUpload(r io.Reader, kw data.KeyReadWriter, conc
 	return nil
 }
 
-//Download downloads a single file.
+//Download downloads a single object.
 func (client *DataClient) Download(key string) (io.ReadCloser, error) {
 	var r io.ReadCloser
 	NoOfRetries := 2
@@ -182,23 +174,28 @@ func (client *DataClient) Download(key string) (io.ReadCloser, error) {
 	return r, nil
 }
 
-func (client *DataClient) Has(key string) (has bool, err error) {
+//Exists checks if a given object key exists on S3.
+func (client *DataClient) Exists(objectKey string) (has bool, err error) {
 	svc := s3.New(client.Session)
 
 	params := &s3.HeadObjectInput{
 		Bucket: aws.String(client.Bucket), // Required
-		Key:    aws.String(key),
+		Key:    aws.String(objectKey),
 	}
 	_, err = svc.HeadObject(params)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok && (aerr.Code() == s3.ErrCodeNoSuchKey || aerr.Code() == sns.ErrCodeNotFoundException) {
 			return false, nil
 		}
-		return false, errors.Wrapf(err, "failed to check if key %v exists", key)
+		return false, errors.Wrapf(err, "failed to check if key %v exists", objectKey)
 	}
 	return true, nil
 }
 
+//ChunkedDownload downloads a list of chunks and writes them to a io.Writer.
+//ChunkedDownload reports its progress (the amount of bytes downloaded) to the progressCh.
+//It will start a maximum of `concurrency` concurrent go routines to download in paralllel.
+//`root` is used as the root path of the chunk in S3. Root will be concatenated with the Key read from `kr` to make the full S3 object path.
 func (client *DataClient) ChunkedDownload(kr data.KeyReadWriter, cw io.Writer, concurrency int, root string, progressCh chan<- int64) (err error) {
 	type result struct {
 		err   error

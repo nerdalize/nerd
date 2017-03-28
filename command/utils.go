@@ -23,41 +23,6 @@ func (kw *stdoutkw) Write(k string) (err error) {
 	return nil
 }
 
-// type keys struct {
-// 	*sync.Mutex
-// 	pos int
-// 	M   map[string]struct{}
-// 	L   []string
-// }
-//
-// func KeyReadWriter() *keys {
-// 	return &keys{Mutex: &sync.Mutex{}, M: map[string]struct{}{}}
-// }
-//
-// func (kw *keys) Write(k string) error {
-// 	kw.Lock()
-// 	defer kw.Unlock()
-// 	if _, ok := kw.M[k]; ok {
-// 		return nil
-// 	}
-//
-// 	kw.M[k] = struct{}{}
-// 	kw.L = append(kw.L, k)
-// 	return nil
-// }
-//
-// func (kw *keys) Read() (k string, err error) {
-// 	kw.Lock()
-// 	defer kw.Unlock()
-// 	if kw.pos == len(kw.L) {
-// 		return "", io.EOF
-// 	}
-//
-// 	k = kw.L[kw.pos]
-// 	kw.pos = kw.pos + 1
-// 	return k, nil
-// }
-
 //NewClient creates a new NerdAPIClient with two credential providers.
 func NewClient(ui cli.Ui) (*client.NerdAPIClient, error) {
 	c, err := conf.Read()
@@ -108,6 +73,7 @@ func ErrorCauser(err error) error {
 	return err
 }
 
+//printUserFacing will try to get the user facing error message from the error chain and print it.
 func printUserFacing(err error, verbose bool) {
 	cause := errors.Cause(err)
 	type userFacing interface {

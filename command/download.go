@@ -148,6 +148,7 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	return nil
 }
 
+//untardir untars an archive from the reader to a directory on disk.
 func untardir(dir string, r io.Reader) (err error) {
 	tr := tar.NewReader(r)
 	for {

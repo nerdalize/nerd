@@ -2,7 +2,6 @@ package command
 
 import (
 	"archive/tar"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -117,7 +116,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	header := &data.DatasetHeader{
+	header := &data.MetadataHeader{
 		Size:    size,
 		Created: time.Now(),
 		Updated: time.Now(),
@@ -142,7 +141,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		doneCh <- client.ChunkedUpload(pr, metadata, 64, ds.Root, progressCh)
 	}()
 
-	err = Tar(dataPath, pw)
+	err = tardir(dataPath, pw)
 	if err != nil {
 		HandleError(errors.Wrapf(err, "failed to tar '%s'", dataPath), cmd.opts.VerboseOutput)
 	}
@@ -167,8 +166,8 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	return nil
 }
 
-//Tar archives the given directory and writes bytes to
-func Tar(dir string, w io.Writer) (err error) {
+//tar archives the given directory and writes bytes to w.
+func tardir(dir string, w io.Writer) (err error) {
 	tw := tar.NewWriter(w)
 	err = filepath.Walk(dir, func(path string, fi os.FileInfo, err error) error {
 		if fi.Mode().IsDir() {
@@ -219,6 +218,7 @@ func Tar(dir string, w io.Writer) (err error) {
 	return nil
 }
 
+//countBytes counts all bytes from a reader.
 func countBytes(r io.Reader) (int64, error) {
 	var total int64
 	buf := make([]byte, 512*1024)
@@ -238,6 +238,7 @@ func countBytes(r io.Reader) (int64, error) {
 	return total, nil
 }
 
+//totalTarSize calculates the total size in bytes of the archived version of a directory on disk.
 func totalTarSize(dataPath string) (int64, error) {
 	type countResult struct {
 		total int64
@@ -250,7 +251,7 @@ func totalTarSize(dataPath string) (int64, error) {
 		doneCh <- countResult{total, err}
 	}()
 
-	err := Tar(dataPath, pw)
+	err := tardir(dataPath, pw)
 	if err != nil {
 		return 0, errors.Wrapf(err, "failed to tar '%s'", dataPath)
 	}
@@ -263,6 +264,7 @@ func totalTarSize(dataPath string) (int64, error) {
 	return cr.total, nil
 }
 
+//getDataset returns a payload.Dataset object. If datasetID is set it will try to read an existing dataset, if datasetID is empty a new dataset will be created.
 func getDataset(nerdclient *client.NerdAPIClient, datasetID string) (*payload.Dataset, error) {
 	if datasetID == "" {
 		dsc, err := nerdclient.CreateDataset()
@@ -276,21 +278,4 @@ func getDataset(nerdclient *client.NerdAPIClient, datasetID string) (*payload.Da
 		return nil, errors.Wrap(err, "failed to retrieve dataset")
 	}
 	return &dsg.Dataset, nil
-}
-
-func uploadMetadata(client *aws.DataClient, root string, header *data.DatasetHeader, kr data.KeyReadWriter) error {
-	var ks []string
-	b, err := json.Marshal(header)
-	if err != nil {
-		return errors.Wrap(err, "failed to convert dataset header to JSON")
-	}
-	ks = append(ks, string(b))
-	for k, e := kr.ReadKey(); e == nil; k, e = kr.ReadKey() {
-		ks = append(ks, k.ToString())
-	}
-	err = client.Upload(path.Join(root, "index"), strings.NewReader(strings.Join(ks, "\n")))
-	if err != nil {
-		return errors.Wrap(err, "failed to upload index file")
-	}
-	return nil
 }
