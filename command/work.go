@@ -275,7 +275,12 @@ func (cmd *Work) DoRun(args []string) (err error) {
 						return
 					}
 
-					//@TODO execute a pre-run heartbeat to prevent starting containers for delayed but outdated task tokens. if the heartbeat returns a timed out error don't attempt to start it: (dont forget to delete the message)
+					if _, err = states.SendTaskHeartbeat(&sfn.SendTaskHeartbeatInput{
+						TaskToken: aws.String(task.ActivityToken),
+					}); err != nil {
+						fmt.Fprintf(os.Stderr, "task token has already expired, don't run it")
+						continue
+					}
 
 					hdir, err := homedir.Dir()
 					if err != nil {
