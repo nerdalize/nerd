@@ -33,7 +33,7 @@ func DownloadFactory() func() (cmd cli.Command, err error) {
 	cmd := &Download{
 		command: &command{
 			help:     "",
-			synopsis: "Download a dataset from cloud storage",
+			synopsis: "Download a dataset from cloud storage.",
 			parser:   flags.NewNamedParser("nerd download <dataset> <output-dir>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,

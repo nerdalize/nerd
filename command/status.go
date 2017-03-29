@@ -28,7 +28,7 @@ func StatusFactory() func() (cmd cli.Command, err error) {
 	cmd := &Status{
 		command: &command{
 			help:     "",
-			synopsis: "show the status of all queued tasks",
+			synopsis: "Show the status of all tasks.",
 			parser:   flags.NewNamedParser("nerd status", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
