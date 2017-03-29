@@ -2,9 +2,11 @@ package aws
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"io/ioutil"
 	"math/rand"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -49,11 +51,11 @@ func randb(size int64, seed int64) []byte {
 	return b
 }
 
-type ClosingBuffer struct {
+type closingBuffer struct {
 	*bytes.Reader
 }
 
-func (cb *ClosingBuffer) Close() error {
+func (cb *closingBuffer) Close() error {
 	//we don't actually have to do anything here, since the buffer is just some data in memory
 	return nil
 }
@@ -72,7 +74,38 @@ func newMetadata() *data.Metadata {
 	return data.NewMetadata(header, data.NewBufferedKeyReadWiter())
 }
 
+//TestDownload tests Upload and its retry mechanism.
 func TestUpload(t *testing.T) {
+	counter := 0
+	cl := newClient(t, func(r *request.Request) {
+		if counter == 0 {
+			r.Error = errors.New("test")
+		}
+		counter += 1
+	})
+	err := cl.Upload("test", strings.NewReader(""))
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+}
+
+//TestDownload tests Download and its retry mechanism.
+func TestDownload(t *testing.T) {
+	counter := 0
+	cl := newClient(t, func(r *request.Request) {
+		if counter == 0 {
+			r.Error = errors.New("test")
+		}
+		counter += 1
+	})
+	_, err := cl.Download("test")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+}
+
+//TestUpDown tests up/download end-to-end with a mocked S3 interface.
+func TestUpDown(t *testing.T) {
 	progressCh := make(chan int64)
 	go func() {
 		for _ = range progressCh {
@@ -135,7 +168,7 @@ func download(t *testing.T, metadata *data.Metadata, output io.Writer, ds *dataS
 		params := r.Params.(*s3.GetObjectInput)
 		d := ds.M[aws.StringValue(params.Key)]
 		data := r.Data.(*s3.GetObjectOutput)
-		data.Body = &ClosingBuffer{bytes.NewReader(d)}
+		data.Body = &closingBuffer{bytes.NewReader(d)}
 	})
 	err := cl.ChunkedDownload(metadata, output, 10, "", progressCh)
 	if err != nil {
