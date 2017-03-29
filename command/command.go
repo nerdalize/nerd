@@ -28,7 +28,7 @@ func (c *command) Help() string {
 	}
 
 	return fmt.Sprintf(`
-  %s
+%s
 
 %s`, txt, buf.String())
 }

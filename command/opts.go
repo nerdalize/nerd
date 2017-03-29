@@ -8,5 +8,10 @@ type OutputOpts struct {
 
 //NerdOpts are the options that are applicable to all nerd commands.
 type NerdOpts struct {
+	ConfOpts
+}
+
+type ConfOpts struct {
+	ConfigFile string `long:"config" default:"" default-mask:"" env:"CONFIG" description:"location of config file"`
 	OutputOpts
 }
