@@ -66,8 +66,6 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	SetLogSettings(cmd.opts.JSONOutput, cmd.opts.VerboseOutput)
-
 	dataPath := args[0]
 
 	nerdclient, err := NewClient(cmd.ui)

@@ -60,8 +60,6 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	if len(args) < 2 {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
-	SetLogSettings(cmd.opts.JSONOutput, cmd.opts.VerboseOutput)
-
 	dataset := args[0]
 	outputDir := args[1]
 

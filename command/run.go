@@ -58,7 +58,6 @@ func (cmd *Run) DoRun(args []string) error {
 	if len(args) < 2 {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
-	SetLogSettings(cmd.opts.JSONOutput, cmd.opts.VerboseOutput)
 
 	env := make(map[string]string)
 	for i, e := range cmd.opts.Environment {
