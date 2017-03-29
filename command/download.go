@@ -105,8 +105,7 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		HandleError(errors.Wrap(err, "could not create data client"), cmd.opts.VerboseOutput)
 	}
 
-	// TODO: index magic word
-	r, err := client.Download(path.Join(ds.Root, "index"))
+	r, err := client.Download(path.Join(ds.Root, data.MetadataObjectKey))
 	if err != nil {
 		HandleError(errors.Wrap(err, "failed to download metadata"), cmd.opts.VerboseOutput)
 	}

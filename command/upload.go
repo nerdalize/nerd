@@ -161,7 +161,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	if err != nil {
 		HandleError(errors.Wrap(err, "failed to convert metadata to string"), cmd.opts.VerboseOutput)
 	}
-	err = client.Upload(path.Join(ds.Root, "index"), strings.NewReader(metastring))
+	err = client.Upload(path.Join(ds.Root, data.MetadataObjectKey), strings.NewReader(metastring))
 	if err != nil {
 		return errors.Wrap(err, "failed to upload index file")
 	}

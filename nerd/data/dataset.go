@@ -18,6 +18,9 @@ const (
 	//newline is the separator for Keys in the metadata file.
 	newline  = '\n'
 	newlineS = "\n"
+
+	//MetadataObjectKey is the key of the S3 object that holds the metadata of a dataset.
+	MetadataObjectKey = "metadata"
 )
 
 //Key is the identifier of a chunk of data.
@@ -121,6 +124,7 @@ func (kw *streamingKeyReader) ReadKey() (Key, error) {
 	kw.Lock()
 	defer kw.Unlock()
 	line, err := kw.r.ReadString(newline)
+	line = strings.Replace(line, newlineS, "", 1)
 	if err != nil {
 		if err != io.EOF {
 			return ZeroKey, errors.Wrap(err, "failed to read key from input stream")
