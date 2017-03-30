@@ -18,19 +18,14 @@ var (
 	commit  = "0000000"
 )
 
-type ConfOpts struct {
-	ConfigFile string `long:"config" default:"" default-mask:"" env:"CONFIG" description:"location of config file"`
-	command.OutputOpts
-}
-
 func init() {
-	opts := new(ConfOpts)
-	_, err := flags.NewParser(opts, flags.IgnoreUnknown).ParseArgs(os.Args[1:])
+	opts := new(command.ConfOpts)
+	_, err := flags.NewParser(opts, flags.None).ParseArgs(os.Args[1:])
 	if err == nil {
 		conf.SetLocation(opts.ConfigFile)
+		nerd.SetupLogging(opts.VerboseOutput, opts.JSONOutput)
+		nerd.VersionMessage(version)
 	}
-	nerd.SetupLogging(opts.VerboseOutput, opts.JSONOutput)
-	nerd.VersionMessage(version)
 }
 
 func main() {

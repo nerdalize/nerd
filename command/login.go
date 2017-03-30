@@ -31,7 +31,7 @@ func LoginFactory() func() (cmd cli.Command, err error) {
 	cmd := &Login{
 		command: &command{
 			help:     "",
-			synopsis: "setup an authorized session for the cloud",
+			synopsis: "Setup an authorized session.",
 			parser:   flags.NewNamedParser("nerd login", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,

@@ -31,8 +31,8 @@ func RunFactory() func() (cmd cli.Command, err error) {
 	cmd := &Run{
 		command: &command{
 			help:     "",
-			synopsis: "create a new compute task for a dataset",
-			parser:   flags.NewNamedParser("nerd run <image> <dataset>", flags.Default),
+			synopsis: "Run a new compute task.\nOptionally you can give a dataset-ID as the second argument. This dataset-ID will be available as the NERD_DATASET_INPUT env variable inside the container.",
+			parser:   flags.NewNamedParser("nerd run <image> [dataset-ID]", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
 				Writer: os.Stderr,
@@ -55,8 +55,13 @@ func RunFactory() func() (cmd cli.Command, err error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *Run) DoRun(args []string) error {
-	if len(args) < 2 {
+	if len(args) < 1 {
 		return fmt.Errorf("not enough arguments, see --help")
+	}
+
+	dataset := ""
+	if len(args) == 2 {
+		dataset = args[1]
 	}
 
 	env := make(map[string]string)
@@ -73,7 +78,7 @@ func (cmd *Run) DoRun(args []string) error {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	task, err := client.CreateTask(args[0], args[1], env)
+	task, err := client.CreateTask(args[0], dataset, env)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}

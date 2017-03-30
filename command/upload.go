@@ -38,8 +38,8 @@ func UploadFactory() func() (cmd cli.Command, err error) {
 	cmd := &Upload{
 		command: &command{
 			help:     "",
-			synopsis: "push task data as input to cloud storage",
-			parser:   flags.NewNamedParser("nerd upload <path>", flags.Default),
+			synopsis: "Upload a dataset to cloud storage.\nOptionally you can specify a dataset-ID to append files to that dataset. This is also useful to continue an upload in case a previous try failed.",
+			parser:   flags.NewNamedParser("nerd upload <path> [dataset-ID]", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
 				Writer: os.Stderr,
