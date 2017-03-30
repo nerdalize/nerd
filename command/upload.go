@@ -169,7 +169,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	return nil
 }
 
-//tar archives the given directory and writes bytes to w.
+//tardir archives the given directory and writes bytes to w.
 func tardir(dir string, w io.Writer) (err error) {
 	tw := tar.NewWriter(w)
 	err = filepath.Walk(dir, func(path string, fi os.FileInfo, err error) error {
@@ -183,6 +183,7 @@ func tardir(dir string, w io.Writer) (err error) {
 		}
 
 		f, err := os.Open(path)
+		defer f.Close()
 		if err != nil {
 			return errors.Wrapf(err, "failed to open file '%s'", rel)
 		}
@@ -197,7 +198,6 @@ func tardir(dir string, w io.Writer) (err error) {
 			return errors.Wrapf(err, "failed to write tar header for '%s'", rel)
 		}
 
-		defer f.Close()
 		n, err := io.Copy(tw, f)
 		if err != nil {
 			return errors.Wrapf(err, "failed to write tar file for '%s'", rel)
