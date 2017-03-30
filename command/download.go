@@ -1,17 +1,27 @@
 package command
 
 import (
+	"archive/tar"
 	"fmt"
+	"io"
 	"os"
+	"path"
+	"path/filepath"
+	"time"
 
+	"github.com/Sirupsen/logrus"
+	"github.com/dchest/safefile"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/aws"
+	"github.com/nerdalize/nerd/nerd/data"
 	"github.com/pkg/errors"
 )
 
 const (
 	OutputDirPermissions = 0755
+	//DownloadConcurrency is the amount of concurrent download threads.
+	DownloadConcurrency = 64
 )
 
 //DownloadOpts describes command options
@@ -95,35 +105,96 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		HandleError(errors.Wrap(err, "could not create data client"), cmd.opts.VerboseOutput)
 	}
 
-	overwriteHandler := OverwriteHandlerUserPrompt(cmd.ui)
-	if cmd.opts.AlwaysOverwrite {
-		overwriteHandler = AlwaysOverwriteHandler
-	}
-	err = client.DownloadFiles(ds.Root, outputDir, &stdoutkw{}, 64, overwriteHandler)
+	r, err := client.Download(path.Join(ds.Root, data.MetadataObjectKey))
 	if err != nil {
-		HandleError(errors.Wrap(err, "could not download files"), cmd.opts.VerboseOutput)
+		HandleError(errors.Wrap(err, "failed to download metadata"), cmd.opts.VerboseOutput)
+	}
+	defer r.Close()
+	metadata, err := data.NewMetadataFromReader(r)
+	if err != nil {
+		HandleError(errors.Wrap(err, "failed to read metadata"), cmd.opts.VerboseOutput)
+	}
+
+	logrus.Infof("Downloading dataset with ID '%v'", ds.DatasetID)
+
+	doneCh := make(chan error)
+	progressCh := make(chan int64)
+	progressBarDoneCh := make(chan struct{})
+	pr, pw := io.Pipe()
+	go func() {
+		err := untardir(outputDir, pr)
+		pr.Close()
+		doneCh <- err
+	}()
+	if !cmd.opts.JSONOutput {
+		go ProgressBar(metadata.Header.Size, progressCh, progressBarDoneCh)
+	} else {
+		go func() {
+			for _ = range progressCh {
+			}
+			progressBarDoneCh <- struct{}{}
+		}()
+	}
+	err = client.ChunkedDownload(metadata, pw, DownloadConcurrency, ds.Root, progressCh)
+	close(progressCh)
+	if err != nil {
+		HandleError(errors.Wrapf(err, "failed to download project '%v'", dataset), cmd.opts.VerboseOutput)
+	}
+
+	pw.Close()
+	err = <-doneCh
+	<-progressBarDoneCh
+	if err != nil {
+		HandleError(errors.Wrapf(err, "failed to untar project '%v'", dataset), cmd.opts.VerboseOutput)
 	}
 
 	return nil
 }
 
-//OverwriteHandlerUserPrompt is a handler that checks wether a file should be overwritten by asking the user over Stdin.
-func OverwriteHandlerUserPrompt(ui cli.Ui) func(string) bool {
-	return func(file string) bool {
-		question := fmt.Sprintf("The file '%v' already exists. Do you want to overwrite it? [Y/n]", file)
-		ans, err := ui.Ask(question)
+//untardir untars an archive from the reader to a directory on disk.
+func untardir(dir string, r io.Reader) (err error) {
+	tr := tar.NewReader(r)
+	for {
+		hdr, err := tr.Next()
 		if err != nil {
-			ui.Info(fmt.Sprintf("Failed to read your answer, '%v' will be skipped", file))
-			return false
-		}
-		if ans == "n" {
-			return false
-		}
-		return true
-	}
-}
+			if err == io.EOF {
+				break
+			}
 
-//AlwaysOverwriteHandler is a handler that tells to always overwrite a file.
-func AlwaysOverwriteHandler(file string) bool {
-	return true
+			return errors.Wrap(err, "failed to read next tar header")
+		}
+
+		path := filepath.Join(dir, hdr.Name)
+		err = os.MkdirAll(filepath.Dir(path), 0777)
+		if err != nil {
+			return errors.Wrap(err, "failed to create dirs")
+		}
+
+		f, err := safefile.Create(path, os.FileMode(hdr.Mode))
+		if err != nil {
+			return errors.Wrap(err, "failed to create tmp safe file")
+		}
+
+		defer f.Close()
+		n, err := io.Copy(f, tr)
+		if err != nil {
+			return errors.Wrap(err, "failed to write file content to tmp file")
+		}
+
+		if n != hdr.Size {
+			return errors.Errorf("unexpected nr of bytes written, wrote '%d' saw '%d' in tar hdr", n, hdr.Size)
+		}
+
+		err = f.Commit()
+		if err != nil {
+			return errors.Wrap(err, "failed to swap old file for tmp file")
+		}
+
+		err = os.Chtimes(path, time.Now(), hdr.ModTime)
+		if err != nil {
+			return errors.Wrap(err, "failed to change times of tmp file")
+		}
+	}
+
+	return nil
 }

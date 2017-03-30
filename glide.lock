@@ -1,10 +1,10 @@
-hash: 40957cbe2b17386789bd99030ac9fe070445f5defe7a87c812b3c75cc37825e6
-updated: 2017-03-14T14:29:06.401656664+01:00
+hash: e51375e2185c8932d46c4201281bb110695cf13701312ea7dae06f5a42ae7edc
+updated: 2017-03-28T12:12:42.160104116+02:00
 imports:
 - name: github.com/armon/go-radix
   version: 4239b77079c7b5d1243b7b4736304ce8ddb6f0f2
 - name: github.com/aws/aws-sdk-go
-  version: 695fe24acaf9afe80b0ce261d4637f42ba0b4c7d
+  version: 7111a70b8bea15081468f11bc1450ac2fec2406b
   subpackages:
   - aws
   - aws/awserr
@@ -23,16 +23,23 @@ imports:
   - aws/session
   - aws/signer/v4
   - private/protocol
+  - private/protocol/json/jsonutil
+  - private/protocol/jsonrpc
   - private/protocol/query
   - private/protocol/query/queryutil
   - private/protocol/rest
   - private/protocol/restxml
   - private/protocol/xml/xmlutil
-  - private/waiter
+  - service/cloudwatchlogs
   - service/s3
+  - service/sfn
+  - service/sns
+  - service/sqs
   - service/sts
 - name: github.com/bgentry/speakeasy
   version: 675b82c74c0ed12283ee81ba8a534c8982c07b85
+- name: github.com/dchest/safefile
+  version: 855e8d98f1852d48dde521e0522408d1fe7e836a
 - name: github.com/dghubble/sling
   version: eb56e89ac5088bebb12eef3cb4b293300f43608b
 - name: github.com/dgrijalva/jwt-go
@@ -59,6 +66,10 @@ imports:
   version: febf2d34b54a69ce7530036c7503b1c9fbfdf0bb
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
+- name: github.com/restic/chunker
+  version: bb2ecf9a98e35a0b336ffc23fc515fb6e7961577
 - name: github.com/Sirupsen/logrus
   version: 0208149b40d863d2c1a2f8fe5753096a9cf2cc8b
+- name: gopkg.in/cheggaaa/pb.v1
+  version: 0817e3a1f8de9e3c78b159699b3c07d53e24a963
 testImports: []

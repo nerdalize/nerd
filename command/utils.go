@@ -3,6 +3,8 @@ package command
 import (
 	"strings"
 
+	pb "gopkg.in/cheggaaa/pb.v1"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/client"
@@ -71,6 +73,7 @@ func ErrorCauser(err error) error {
 	return err
 }
 
+//printUserFacing will try to get the user facing error message from the error chain and print it.
 func printUserFacing(err error, verbose bool) {
 	cause := errors.Cause(err)
 	type userFacing interface {
@@ -93,4 +96,15 @@ func HandleError(err error, verbose bool) {
 	}
 	logrus.Debugf("Underlying error: %+v", err)
 	logrus.Exit(-1)
+}
+
+//ProgressBar creates a new CLI progess bar and adds input from the progressCh to the bar.
+func ProgressBar(total int64, progressCh <-chan int64, doneCh chan<- struct{}) {
+	bar := pb.New64(total).Start()
+	bar.SetUnits(pb.U_BYTES)
+	for elem := range progressCh {
+		bar.Add64(elem)
+	}
+	bar.Finish()
+	doneCh <- struct{}{}
 }
