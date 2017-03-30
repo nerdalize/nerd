@@ -26,16 +26,6 @@ $ nerd logs t-afb5cb16
 20170122.1111 [INFO] Started program
 20170122.2111 [INFO] Doing awesome science!
 
-# start working the started item(s)
-$ nerd work
-waiting for task ...
-  received task 't-83dd21e' ... done!
-  downloading input 'd-421a11f' ... done! (0KiB new, 120MiB total)
-  running 't-83dd21e' (kubectl create t-83dd21e.yaml) ... done!
-  uploading output ... done!
-<- task 't-83dd21e' succeeded!
-waiting for task ...
-
 # get each task's status
 $ nerd status
 |   TASKID   | OUTPUT DATASET |    CREATED     |
@@ -57,6 +47,9 @@ Each command accepts at least the following options:
 ```
 
 ## Power users
+
+### Config
+
 The `nerd` command uses a config file located at `~/.nerd/config.json` (location can be changed with the `--config` option) which can be used to customize nerd's behaviour.
 The structure of the config and the defaults are show below:
 ```bash
@@ -70,6 +63,20 @@ The structure of the config and the defaults are show below:
         "nerd_token": "", # Nerdalize JWT (can be set manually or it will be set by `nerd login`)
         "nerd_api_endpoint": "https://batch.nerdalize.com" # URL of nerdalize API (NCE)
 }
+```
+
+### Workers (local task execution)
+
+When `nerd run` is used, the specified task is executed on one of Nerdalize's servers. It is also possible to test the execution of a task on a local machine first. To do this run the `nerd work` command. For this you will need to have Docker installed on your local machine.
+```bash
+$ nerd work
+waiting for task ...
+  received task 't-83dd21e' ... done!
+  downloading input 'd-421a11f' ... done! (0KiB new, 120MiB total)
+  running 't-83dd21e' (kubectl create t-83dd21e.yaml) ... done!
+  uploading output ... done!
+<- task 't-83dd21e' succeeded!
+waiting for task ...
 ```
 
 ## Examples
