@@ -117,13 +117,15 @@ func Write() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to read config")
 	}
-	data, err := json.Marshal(c)
+	f, err := os.Create(loc)
+	if err != nil {
+		return errors.Wrap(err, "failed to create/open config file")
+	}
+	enc := json.NewEncoder(f)
+	enc.SetIndent("", "\t")
+	err = enc.Encode(c)
 	if err != nil {
 		return errors.Wrap(err, "failed to encode json")
-	}
-	err = ioutil.WriteFile(loc, data, 0644)
-	if err != nil {
-		return errors.Wrap(err, "failed to write to config file")
 	}
 	return nil
 }
