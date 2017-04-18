@@ -27,3 +27,11 @@ type AuthError struct {
 func (e AuthError) Error() string {
 	return e.Detail
 }
+
+type OAuthError struct {
+	OAuthError string `json:"error"`
+}
+
+func (e OAuthError) Error() string {
+	return e.OAuthError
+}

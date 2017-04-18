@@ -53,7 +53,7 @@ func (p *AuthAPI) Retrieve(pub *ecdsa.PublicKey) (*credentials.NerdAPIValue, err
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retreive claims from nerd token '%v'", token)
 	}
-	err = conf.WriteNerdToken(token)
+	err = conf.WriteNerdTokens(token)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to write nerd token to config")
 	}
