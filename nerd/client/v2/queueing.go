@@ -4,12 +4,12 @@ import (
 	"path"
 
 	"github.com/dghubble/sling"
-	"github.com/nerdalize/nerd/nerd/payload"
+	v2payload "github.com/nerdalize/nerd/nerd/payload/v2"
 )
 
-//CreateWorker creates registers this client as workable capacity
-func (nerdapi *NerdAPIClient) CreateWorker() (worker *payload.WorkerCreateOutput, err error) {
-	worker = &payload.WorkerCreateOutput{}
+//CreateQueue creates registers this client as workable capacity
+func (nerdapi *NerdAPIClient) CreateQueue() (worker *v2payload.CreateQueueOutput, err error) {
+	worker = &v2payload.CreateQueueOutput{}
 	url := nerdapi.url(path.Join(queuesEndpoint))
 	s := sling.New().Post(url)
 	err = nerdapi.doRequest(s, worker)
