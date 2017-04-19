@@ -24,12 +24,13 @@ var conf *Config
 
 //Config is the structure that describes how the config file looks.
 type Config struct {
-	Auth             AuthConfig `json:"auth"`
-	EnableLogging    bool       `json:"enable_logging"`
-	CurrentProject   string     `json:"current_project"`
-	NerdToken        string     `json:"nerd_access_token"`
-	NerdRefreshToken string     `json:"nerd_refresh_token"`
-	NerdAPIEndpoint  string     `json:"nerd_api_endpoint"`
+	Auth             AuthConfig          `json:"auth"`
+	EnableLogging    bool                `json:"enable_logging"`
+	CurrentProject   string              `json:"current_project"`
+	AuthTokens       payload.OAuthTokens `json:"auth_tokens"`
+	NerdToken        string              `json:"nerd_access_token"`
+	NerdRefreshToken string              `json:"nerd_refresh_token"`
+	NerdAPIEndpoint  string              `json:"nerd_api_endpoint"`
 }
 
 //AuthConfig contains config details with respect to authentication.
@@ -134,12 +135,11 @@ func Write() error {
 }
 
 //WriteNerdTokens sets the nerd token and calls Write() to write to disk.
-func WriteNerdTokens(token *payload.OAuthTokens) error {
+func WriteNerdTokens(tokens *payload.OAuthTokens) error {
 	c, err := Read()
 	if err != nil {
 		return errors.Wrap(err, "failed to read config")
 	}
-	c.NerdToken = token.AccessToken
-	c.NerdRefreshToken = token.RefreshToken
+	c.AuthTokens = *tokens
 	return Write()
 }

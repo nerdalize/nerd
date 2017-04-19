@@ -7,6 +7,7 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/client"
+	"github.com/nerdalize/nerd/nerd/client/credentials/provider"
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
 )
@@ -59,45 +60,14 @@ func (cmd *Login) DoRun(args []string) error {
 	if errRead != nil {
 		return errors.Wrap(errRead, "failed to read nerd config file")
 	}
-	cl := client.NewAuthAPI(config.Auth)
 
-	code, err := client.OAuthLogin()
+	oauthAPI := provider.NewOAuthAPI(client.NewAuthAPI(config.Auth))
+
+	_, err := oauthAPI.RetrieveWithoutKey()
 	if err != nil {
 		return errors.Wrap(err, "failed to fetch oauth tokens")
 	}
 
-	logrus.WithFields(logrus.Fields{
-		"code": code,
-	}).Info("Going to fetch tokens")
-
-	// Doing the oauth flow
-	tokens, err := cl.GetOAuthToken(code)
-
-	if err != nil {
-		return errors.Wrap(err, "unable to retrieve the oauth tokens")
-	}
-
-	// user := cmd.opts.User
-	// pass := cmd.opts.Pass
-	// if cmd.opts.User == "" || cmd.opts.Pass == "" {
-	// 	var err error
-	// 	user, pass, err = UserPassProvider(cmd.ui)()
-	// 	if err != nil {
-	// 		return errors.Wrap(err, "failed to retrieve username and password")
-	// 	}
-	// }
-
-	// token, err := cl.GetToken(user, pass)
-	// if err != nil {
-	// 	return errors.Wrap(err, "failed to get nerd token for username and password")
-	// }
-	// if token == "" {
-	// 	return errors.New("failed to get nerd token for username and password")
-	// }
-	err = conf.WriteNerdTokens(tokens)
-	if err != nil {
-		return errors.Wrap(err, "failed to write nerd token to disk")
-	}
 	logrus.Info("Successful login")
 	return nil
 }

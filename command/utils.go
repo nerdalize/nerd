@@ -38,7 +38,7 @@ func NewClient(ui cli.Ui) (*client.NerdAPIClient, error) {
 			key,
 			provider.NewEnv(),
 			provider.NewConfig(),
-			provider.NewAuthAPI(UserPassProvider(ui), client.NewAuthAPI(c.Auth)),
+			provider.NewOAuthAPI(client.NewAuthAPI(c.Auth)),
 		),
 		URL:       c.NerdAPIEndpoint,
 		ProjectID: c.CurrentProject,
