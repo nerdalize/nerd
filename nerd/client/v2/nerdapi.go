@@ -66,12 +66,15 @@ func (nerdapi *NerdAPIClient) doRequest(s *sling.Sling, result interface{}) erro
 	if err != nil {
 		return errors.Wrap(err, "failed to get credentials")
 	}
+
+	s.Add(AuthHeader, "Bearer "+value.NerdToken)
+
 	e := &payload.Error{}
 	req, err := s.Request()
 	if err != nil {
 		return errors.Wrap(err, "could not create request")
 	}
-	req.Header.Add(AuthHeader, "Bearer "+value.NerdToken)
+
 	// logRequest(req) @TODO inject a logger into the client
 	res, err := s.Receive(result, e)
 	if err != nil {

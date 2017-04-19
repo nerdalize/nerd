@@ -8,10 +8,10 @@ import (
 )
 
 //CreateQueue creates registers this client as workable capacity
-func (nerdapi *NerdAPIClient) CreateQueue() (worker *v2payload.CreateQueueOutput, err error) {
-	worker = &v2payload.CreateQueueOutput{}
+func (nerdapi *NerdAPIClient) CreateQueue() (queue *v2payload.CreateQueueOutput, err error) {
+	queue = &v2payload.CreateQueueOutput{}
 	url := nerdapi.url(path.Join(queuesEndpoint))
 	s := sling.New().Post(url)
-	err = nerdapi.doRequest(s, worker)
+	err = nerdapi.doRequest(s, queue)
 	return
 }
