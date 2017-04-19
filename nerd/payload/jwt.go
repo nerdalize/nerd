@@ -12,7 +12,7 @@ type NerdClaims struct {
 type OAuthTokens struct {
   AccessToken  string `json:"access_token"`
   RefreshToken string `json:"refresh_token"`
-  ExpiresIn    string `json:"expires_in"`
+  ExpiresIn    int    `json:"expires_in"`
   Scope        string `json:"scope,omitempty"`
   TokenType    string `json:"token_type,omitempty"`
 }
