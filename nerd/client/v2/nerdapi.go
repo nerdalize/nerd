@@ -15,6 +15,8 @@ const (
 	AuthHeader = "Authorization"
 
 	projectsPrefix = "projects"
+
+	queuesEndpoint = "queues"
 )
 
 //NerdAPIClient is a client for the Nerdalize API.
