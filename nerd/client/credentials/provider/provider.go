@@ -22,7 +22,7 @@ func (b *Basis) IsExpired() bool {
 	if b.CurrentTime == nil {
 		b.CurrentTime = time.Now
 	}
-	return b.AlwaysValid || b.expiration.Before(b.CurrentTime())
+	return !(b.AlwaysValid || b.expiration.Before(b.CurrentTime()))
 }
 
 //SetExpiration sets the expiration field and takes the ExpireWindow into account.

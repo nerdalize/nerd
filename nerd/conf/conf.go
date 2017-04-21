@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/nerdalize/nerd/nerd/payload"
 	"github.com/pkg/errors"
 )
 
@@ -23,24 +24,31 @@ var conf *Config
 
 //Config is the structure that describes how the config file looks.
 type Config struct {
-	Auth            AuthConfig `json:"auth"`
-	EnableLogging   bool       `json:"enable_logging"`
-	CurrentProject  string     `json:"current_project"`
-	NerdToken       string     `json:"nerd_token"`
-	NerdAPIEndpoint string     `json:"nerd_api_endpoint"`
+	Auth             AuthConfig          `json:"auth"`
+	EnableLogging    bool                `json:"enable_logging"`
+	CurrentProject   string              `json:"current_project"`
+	AuthTokens       payload.OAuthTokens `json:"auth_tokens"`
+	NerdToken        string              `json:"nerd_access_token"`
+	NerdRefreshToken string              `json:"nerd_refresh_token"`
+	NerdAPIEndpoint  string              `json:"nerd_api_endpoint"`
 }
 
 //AuthConfig contains config details with respect to authentication.
 type AuthConfig struct {
-	APIEndpoint string `json:"api_endpoint"`
-	PublicKey   string `json:"public_key"`
+	APIEndpoint      string `json:"api_endpoint"`
+	PublicKey        string `json:"public_key"`
+	ClientID         string `json:"client_id"`
+	OAuthSuccessUrl  string `json:"oauth_success_url"`
+	OAuthLocalserver string `json:"nerd_oauth_localserver"`
 }
 
 //Defaults provides the default for when the config file misses certain fields.
 func Defaults() *Config {
 	return &Config{
 		Auth: AuthConfig{
-			APIEndpoint: "http://auth.nerdalize.com",
+			APIEndpoint:      "http://auth.nerdalize.com",
+			OAuthLocalserver: "localhost:9876",
+			OAuthSuccessUrl:  "https://cloud.nerdalize.com",
 			PublicKey: `-----BEGIN PUBLIC KEY-----
 MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEAkYbLnam4wo+heLlTZEeh1ZWsfruz9nk
 kyvc4LwKZ8pez5KYY76H1ox+AfUlWOEq+bExypcFfEIrJkf/JXa7jpzkOWBDF9Sa
@@ -130,12 +138,12 @@ func Write() error {
 	return nil
 }
 
-//WriteNerdToken sets the nerd token and calls Write() to write to disk.
-func WriteNerdToken(token string) error {
+//WriteNerdTokens sets the nerd token and calls Write() to write to disk.
+func WriteNerdTokens(tokens *payload.OAuthTokens) error {
 	c, err := Read()
 	if err != nil {
 		return errors.Wrap(err, "failed to read config")
 	}
-	c.NerdToken = token
+	c.AuthTokens = *tokens
 	return Write()
 }

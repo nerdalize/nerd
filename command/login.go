@@ -7,6 +7,7 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/client"
+	"github.com/nerdalize/nerd/nerd/client/credentials/provider"
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
 )
@@ -55,31 +56,18 @@ func LoginFactory() func() (cmd cli.Command, err error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *Login) DoRun(args []string) error {
-	user := cmd.opts.User
-	pass := cmd.opts.Pass
-	if cmd.opts.User == "" || cmd.opts.Pass == "" {
-		var err error
-		user, pass, err = UserPassProvider(cmd.ui)()
-		if err != nil {
-			return errors.Wrap(err, "failed to retreive username and password")
-		}
+	config, errRead := conf.Read()
+	if errRead != nil {
+		return errors.Wrap(errRead, "failed to read nerd config file")
 	}
-	config, err := conf.Read()
+
+	oauthAPI := provider.NewOAuthAPI(client.NewAuthAPI(config.Auth))
+
+	_, err := oauthAPI.RetrieveWithoutKey()
 	if err != nil {
-		return errors.Wrap(err, "failed to read nerd config file")
+		return errors.Wrap(err, "failed to fetch oauth tokens")
 	}
-	cl := client.NewAuthAPI(config.Auth.APIEndpoint)
-	token, err := cl.GetToken(user, pass)
-	if err != nil {
-		return errors.Wrap(err, "failed to get nerd token for username and password")
-	}
-	if token == "" {
-		return errors.New("failed to get nerd token for username and password")
-	}
-	err = conf.WriteNerdToken(token)
-	if err != nil {
-		return errors.Wrap(err, "failed to write nerd token to disk")
-	}
+
 	logrus.Info("Successful login")
 	return nil
 }
