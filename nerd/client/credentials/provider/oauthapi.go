@@ -3,7 +3,6 @@ package provider
 import (
   "crypto/ecdsa"
   "fmt"
-  "html"
   "log"
   "net/http"
   "net/url"
@@ -45,7 +44,8 @@ func (p *OAuthAPI) RetrieveWithoutKey() (*credentials.NerdAPIValue, error) {
     return nil, errors.Wrap(err, "failed to read nerd config file")
   }
 
-  serverChan, err := spawnLocalServer(config)
+  randomState := client.GenerateRandomString(32)
+  serverChan, err := spawnLocalServer(config, randomState)
 
   if err != nil {
     return nil, errors.Wrap(err, "failed to spawn local server")
@@ -53,10 +53,10 @@ func (p *OAuthAPI) RetrieveWithoutKey() (*credentials.NerdAPIValue, error) {
 
   logrus.Info("Opening browser...")
 
-  // TODO: Generate a random key to send back and forth
-  errOpen := open.Run("http://localhost:9876/oauth?state=bla") // TODO: Make configurable
+  errOpen := open.Run(fmt.Sprintf("http://%s/oauth?state=%s", config.Auth.OAuthLocalserver, randomState))
   if errOpen != nil {
-    panic(errOpen)
+    logrus.Info(`We couldn't open the browser window, please login using (Unimplemented) Application Tokens`)
+    return nil, errors.Wrap(err, "Couldn't open browser window.")
   }
 
   oauthResponse := <-serverChan
@@ -93,7 +93,7 @@ type response struct {
 }
 
 // spawnLocalServer returns a http server to guide the login flow
-func spawnLocalServer(config *conf.Config) (chan response, error) {
+func spawnLocalServer(config *conf.Config, randomState string) (chan response, error) {
   serverDone := make(chan response)
 
   logrus.WithFields(logrus.Fields{
@@ -103,8 +103,19 @@ func spawnLocalServer(config *conf.Config) (chan response, error) {
   go func() {
     http.HandleFunc("/oauth/callback", func(w http.ResponseWriter, r *http.Request) {
       // Should verify received state here. r.URL.Query().Get("state") === stored_state
+      if randomState != r.URL.Query().Get("state") {
+        logrus.Fatal("Error in OAuth flow, state does not match provided state")
+        return
+      }
 
-      fmt.Fprintf(w, "Hello, %q %q", html.EscapeString(r.URL.Path), r.URL.RawQuery)
+      u, err := url.Parse(config.Auth.OAuthSuccessUrl)
+      if err != nil {
+        log.Fatal(err)
+      }
+
+      w.Header().Set("Location", u.String())
+      w.WriteHeader(http.StatusFound)
+
       serverDone <- response{
         code: r.URL.Query().Get("code"),
         err:  nil,
@@ -112,7 +123,6 @@ func spawnLocalServer(config *conf.Config) (chan response, error) {
     })
 
     http.HandleFunc("/oauth", func(w http.ResponseWriter, r *http.Request) {
-
       u, err := url.Parse(config.Auth.APIEndpoint)
       if err != nil {
         log.Fatal(err)
@@ -122,7 +132,7 @@ func spawnLocalServer(config *conf.Config) (chan response, error) {
       q.Set("state", r.URL.Query().Get("state"))
       q.Set("client_id", config.Auth.ClientID)
       q.Set("response_type", "code")
-      q.Set("redirect_uri", "http://"+config.Auth.OAuthLocalserver+"/oauth/callback") // TODO: Make configurable
+      q.Set("redirect_uri", fmt.Sprintf("http://%s/oauth/callback", config.Auth.OAuthLocalserver))
       u.RawQuery = q.Encode()
 
       w.Header().Set("Location", u.String())

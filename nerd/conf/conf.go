@@ -38,6 +38,7 @@ type AuthConfig struct {
 	APIEndpoint      string `json:"api_endpoint"`
 	PublicKey        string `json:"public_key"`
 	ClientID         string `json:"client_id"`
+	OAuthSuccessUrl  string `json:"oauth_success_url"`
 	OAuthLocalserver string `json:"nerd_oauth_localserver"`
 }
 
@@ -45,7 +46,9 @@ type AuthConfig struct {
 func Defaults() *Config {
 	return &Config{
 		Auth: AuthConfig{
-			APIEndpoint: "http://auth.nerdalize.com",
+			APIEndpoint:      "http://auth.nerdalize.com",
+			OAuthLocalserver: "localhost:9876",
+			OAuthSuccessUrl:  "https://cloud.nerdalize.com",
 			PublicKey: `-----BEGIN PUBLIC KEY-----
 MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEAkYbLnam4wo+heLlTZEeh1ZWsfruz9nk
 kyvc4LwKZ8pez5KYY76H1ox+AfUlWOEq+bExypcFfEIrJkf/JXa7jpzkOWBDF9Sa
