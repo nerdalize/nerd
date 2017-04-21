@@ -35,9 +35,10 @@ type Config struct {
 
 //AuthConfig contains config details with respect to authentication.
 type AuthConfig struct {
-	APIEndpoint string `json:"api_endpoint"`
-	PublicKey   string `json:"public_key"`
-	ClientID    string `json:"client_id"`
+	APIEndpoint      string `json:"api_endpoint"`
+	PublicKey        string `json:"public_key"`
+	ClientID         string `json:"client_id"`
+	OAuthLocalserver string `json:"nerd_oauth_localserver"`
 }
 
 //Defaults provides the default for when the config file misses certain fields.

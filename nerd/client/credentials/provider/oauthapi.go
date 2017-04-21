@@ -53,7 +53,8 @@ func (p *OAuthAPI) RetrieveWithoutKey() (*credentials.NerdAPIValue, error) {
 
   logrus.Info("Opening browser...")
 
-  errOpen := open.Run("http://localhost:9876/oauth?state=bla")
+  // TODO: Generate a random key to send back and forth
+  errOpen := open.Run("http://localhost:9876/oauth?state=bla") // TODO: Make configurable
   if errOpen != nil {
     panic(errOpen)
   }
@@ -121,7 +122,7 @@ func spawnLocalServer(config *conf.Config) (chan response, error) {
       q.Set("state", r.URL.Query().Get("state"))
       q.Set("client_id", config.Auth.ClientID)
       q.Set("response_type", "code")
-      q.Set("redirect_uri", "http://localhost:9876/oauth/callback")
+      q.Set("redirect_uri", "http://"+config.Auth.OAuthLocalserver+"/oauth/callback") // TODO: Make configurable
       u.RawQuery = q.Encode()
 
       w.Header().Set("Location", u.String())

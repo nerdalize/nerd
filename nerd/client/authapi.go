@@ -9,7 +9,7 @@ import (
 
 const (
 	//TokenEndpoint is the endpoint from where to fetch the JWT.
-	TokenEndpoint = "token/?service=nce.nerdalize.com"
+	TokenEndpoint = "token/?service=nce.nerdalize.com" // TODO: Make configurable
 )
 
 //AuthAPIClient is the client for the nerdalize authentication server.
@@ -37,7 +37,7 @@ func (auth *AuthAPIClient) GetOAuthToken(code string) (*payload.OAuthTokens, err
 		Code:        code,
 		ClientID:    auth.Config.ClientID,
 		GrantType:   "authorization_code",
-		RedirectURI: "http://localhost:9876/oauth/callback",
+		RedirectURI: "http://" + auth.Config.OAuthLocalserver + "/oauth/callback",
 	}
 	s := sling.New().Post(auth.Config.APIEndpoint + "/o/token/").BodyForm(tokenParams)
 	s = s.Set("Content-Type", "application/x-www-form-urlencoded")
