@@ -6,7 +6,18 @@ type Client struct {
 	AWS  AWSClient
 }
 
-type NerdClient struct{}
+type NerdClient struct {
+	Config NerdClientConfig
+}
+
+type NerdClientConfig struct {
+	Credentials NerdClientCredentials
+}
+
+type NerdClientCredentialProvider interface {
+	GetToken() (JWT string)
+	IsExpired() bool
+}
 
 type AuthClient struct{}
 
