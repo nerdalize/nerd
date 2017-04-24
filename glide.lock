@@ -1,10 +1,10 @@
 hash: e51375e2185c8932d46c4201281bb110695cf13701312ea7dae06f5a42ae7edc
-updated: 2017-03-28T12:12:42.160104116+02:00
+updated: 2017-04-19T14:27:00.286596307+02:00
 imports:
 - name: github.com/armon/go-radix
   version: 4239b77079c7b5d1243b7b4736304ce8ddb6f0f2
 - name: github.com/aws/aws-sdk-go
-  version: 7111a70b8bea15081468f11bc1450ac2fec2406b
+  version: 4bbd6fa3fdede4c68e941248f974b8951c17de89
   subpackages:
   - aws
   - aws/awserr
