@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/nerdalize/nerd/nerd/client"
+	v1batch "github.com/nerdalize/nerd/nerd/client/batch/v1"
 	"github.com/pkg/errors"
 )
 
@@ -16,13 +16,15 @@ const ProviderName = `NerdalizeProvider`
 type Provider struct {
 	credentials.Expiry
 	ExpiryWindow time.Duration
-	Client       *client.NerdAPIClient
+	Client       *v1batch.Client
+	NlzProjectID string
 }
 
 //NewNerdalizeCredentials creates a new credentials object with the NerdalizeProvider as provider.
-func NewNerdalizeCredentials(c *client.NerdAPIClient) *credentials.Credentials {
+func NewNerdalizeCredentials(c *v1batch.Client, nlzProjectID string) *credentials.Credentials {
 	return credentials.NewCredentials(&Provider{
-		Client: c,
+		Client:       c,
+		NlzProjectID: nlzProjectID,
 	})
 }
 
@@ -34,17 +36,17 @@ func (p *Provider) IsExpired() bool {
 // Retrieve will attempt to request the credentials from the nerdalize api.
 // And error will be returned if the retrieval fails.
 func (p *Provider) Retrieve() (credentials.Value, error) {
-	sess, err := p.Client.CreateSession()
+	token, err := p.Client.CreateToken(p.NlzProjectID)
 	if err != nil {
 		return credentials.Value{ProviderName: ProviderName}, errors.Wrap(err, "failed to get AWS credentials")
 	}
 
-	p.SetExpiration(sess.AWSExpiration, p.ExpiryWindow)
+	p.SetExpiration(token.AWSExpiration, p.ExpiryWindow)
 
 	return credentials.Value{
-		AccessKeyID:     sess.AWSAccessKeyID,
-		SecretAccessKey: sess.AWSSecretAccessKey,
-		SessionToken:    sess.AWSSessionToken,
+		AccessKeyID:     token.AWSAccessKeyID,
+		SecretAccessKey: token.AWSSecretAccessKey,
+		SessionToken:    token.AWSSessionToken,
 		ProviderName:    ProviderName,
 	}, nil
 }

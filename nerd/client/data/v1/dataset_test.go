@@ -1,4 +1,4 @@
-package data
+package v1data
 
 import (
 	"crypto/sha256"

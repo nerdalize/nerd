@@ -1,12 +1,10 @@
 package v1data
 
 import (
+	"fmt"
 	"io"
 
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/sns"
-	"github.com/pkg/errors"
+	"github.com/nerdalize/nerd/nerd/client"
 )
 
 const (
@@ -24,9 +22,9 @@ type Client struct {
 }
 
 type DataOps interface {
-	PutObject(bucket, key string, body io.ReadSeeker) error
-	GetObject(bucket, key string) (body io.ReadCloser, err error)
-	HeadObject(bucket, key string) error
+	Upload(bucket, key string, body io.ReadSeeker) error
+	Download(bucket, key string) (body io.ReadCloser, err error)
+	Exists(bucket, key string) (exists bool, err error)
 }
 
 //NewDataClient creates a new data client that is capable of uploading and downloading (multiple) files.
@@ -37,12 +35,12 @@ func NewDataClient(ops DataOps) *Client {
 //Upload uploads a piece of data.
 func (c *Client) Upload(bucket, key string, body io.ReadSeeker) error {
 	for i := 0; i <= NoOfRetries; i++ {
-		err := c.DataOps.PutObject(bucket, key, body)
+		err := c.DataOps.Upload(bucket, key, body)
 		if err != nil {
 			if i < NoOfRetries {
 				continue
 			}
-			return errors.Wrapf(err, "could not put key %v", key)
+			return &client.Error{fmt.Sprintf("failed to put '%v'", key), err}
 		}
 		break
 	}
@@ -58,12 +56,12 @@ func (c *Client) Upload(bucket, key string, body io.ReadSeeker) error {
 func (c *Client) Download(bucket, key string) (io.ReadCloser, error) {
 	var r io.ReadCloser
 	for i := 0; i <= NoOfRetries; i++ {
-		resp, err := c.DataOps.GetObject(bucket, key)
+		resp, err := c.DataOps.Download(bucket, key)
 		if err != nil {
 			if i < NoOfRetries {
 				continue
 			}
-			return nil, errors.Wrapf(err, "failed to download '%v'", key)
+			return nil, &client.Error{fmt.Sprintf("failed to download '%v'", key), err}
 		}
 		r = resp
 		break
@@ -78,12 +76,5 @@ func (c *Client) Download(bucket, key string) (io.ReadCloser, error) {
 
 //Exists checks if a given object key exists on S3.
 func (c *Client) Exists(bucket, key string) (has bool, err error) {
-	err = c.DataOps.HeadObject(bucket, key)
-	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok && (aerr.Code() == s3.ErrCodeNoSuchKey || aerr.Code() == sns.ErrCodeNotFoundException) {
-			return false, nil
-		}
-		return false, errors.Wrapf(err, "failed to check if key %v exists", key)
-	}
-	return true, nil
+	return c.DataOps.Exists(bucket, key)
 }

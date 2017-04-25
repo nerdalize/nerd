@@ -7,20 +7,22 @@ import (
 	"io/ioutil"
 	"path"
 
-	"github.com/nerdalize/nerd/nerd/data"
 	"github.com/pkg/errors"
-	"github.com/restic/chunker"
 )
+
+type Chunker interface {
+	Next() (data []byte, length int, err error)
+}
 
 //ChunkedUpload uploads data from a io.Reader (`r`) as a list of chunks. The Key of every chunk uploaded will be written to the KeyReadWriter (`kw`).
 //ChunkedDownload reports its progress (the amount of bytes uploaded) to the progressCh.
 //It will start a maximum of `concurrency` concurrent go routines to upload in paralllel.
 //`root` is used as the root path of the chunk in S3. Root will be concatenated with the key to make the full S3 object path.
-func (c *Client) ChunkedUpload(r io.Reader, kw data.KeyReadWriter, concurrency int, bucket, root string, progressCh chan<- int64) (err error) {
-	cr := chunker.New(r, chunker.Pol(uploadPolynomal))
+func (c *Client) ChunkedUpload(chunker Chunker, w KeyWriter, concurrency int, bucket, root string, progressCh chan<- int64) (err error) {
+	// func (c *Client) ChunkedUpload(r io.Reader, kw data.KeyReadWriter, concurrency int, bucket, root string, progressCh chan<- int64) (err error) {
 	type result struct {
 		err error
-		k   data.Key
+		k   Key
 	}
 
 	type item struct {
@@ -31,18 +33,18 @@ func (c *Client) ChunkedUpload(r io.Reader, kw data.KeyReadWriter, concurrency i
 	}
 
 	work := func(it *item) {
-		k := data.Key(sha256.Sum256(it.chunk)) //hash
+		k := Key(sha256.Sum256(it.chunk)) //hash
 		key := path.Join(root, k.ToString())
 		exists, err := c.Exists(bucket, key) //check existence
 		if err != nil {
-			it.resCh <- &result{errors.Wrapf(err, "failed to check existence of '%x'", k), data.ZeroKey}
+			it.resCh <- &result{errors.Wrapf(err, "failed to check existence of '%x'", k), ZeroKey}
 			return
 		}
 
 		if !exists {
 			err = c.Upload(bucket, key, bytes.NewReader(it.chunk)) //if not exists put
 			if err != nil {
-				it.resCh <- &result{errors.Wrapf(err, "failed to put chunk '%x'", k), data.ZeroKey}
+				it.resCh <- &result{errors.Wrapf(err, "failed to put chunk '%x'", k), ZeroKey}
 				return
 			}
 		}
@@ -55,9 +57,8 @@ func (c *Client) ChunkedUpload(r io.Reader, kw data.KeyReadWriter, concurrency i
 	itemCh := make(chan *item, concurrency)
 	go func() {
 		defer close(itemCh)
-		buf := make([]byte, chunker.MaxSize)
 		for {
-			chunk, err := cr.Next(buf)
+			data, len, err := chunker.Next()
 			if err != nil {
 				if err != io.EOF {
 					itemCh <- &item{err: err}
@@ -66,11 +67,11 @@ func (c *Client) ChunkedUpload(r io.Reader, kw data.KeyReadWriter, concurrency i
 			}
 
 			it := &item{
-				chunk: make([]byte, chunk.Length),
+				chunk: make([]byte, len),
 				resCh: make(chan *result),
 			}
 
-			copy(it.chunk, chunk.Data) //underlying buffer is switched out
+			copy(it.chunk, data) //underlying buffer is switched out
 
 			go work(it)  //create work
 			itemCh <- it //send to fan-in thread for syncing results
@@ -88,7 +89,7 @@ func (c *Client) ChunkedUpload(r io.Reader, kw data.KeyReadWriter, concurrency i
 			return res.err
 		}
 
-		err = kw.WriteKey(res.k)
+		err = w.WriteKey(res.k)
 		if err != nil {
 			return errors.Wrapf(err, "failed to write key")
 		}
@@ -101,14 +102,14 @@ func (c *Client) ChunkedUpload(r io.Reader, kw data.KeyReadWriter, concurrency i
 //ChunkedDownload reports its progress (the amount of bytes downloaded) to the progressCh.
 //It will start a maximum of `concurrency` concurrent go routines to download in paralllel.
 //`root` is used as the root path of the chunk in S3. Root will be concatenated with the Key read from `kr` to make the full S3 object path.
-func (c *Client) ChunkedDownload(kr data.KeyReadWriter, cw io.Writer, concurrency int, bucket, root string, progressCh chan<- int64) (err error) {
+func (c *Client) ChunkedDownload(kr KeyReader, cw io.Writer, concurrency int, bucket, root string, progressCh chan<- int64) (err error) {
 	type result struct {
 		err   error
 		chunk []byte
 	}
 
 	type item struct {
-		k     data.Key
+		k     Key
 		resCh chan *result
 		err   error
 	}

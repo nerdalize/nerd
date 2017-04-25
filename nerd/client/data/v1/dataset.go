@@ -1,4 +1,4 @@
-package data
+package v1data
 
 import (
 	"bufio"
@@ -39,7 +39,15 @@ var ZeroKey = Key{}
 //Read always returns a Key unless no more keys are available. In this case Read returns ZeroKey and an io.EOF error.
 //Write writes a Key and returns an error if something goes wrong.
 type KeyReadWriter interface {
+	KeyReader
+	KeyWriter
+}
+
+type KeyReader interface {
 	ReadKey() (Key, error)
+}
+
+type KeyWriter interface {
 	WriteKey(Key) error
 }
 

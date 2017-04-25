@@ -2,43 +2,10 @@ package v1batch
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 
 	v2payload "github.com/nerdalize/nerd/nerd/payload/v2"
 )
-
-type Error struct {
-	msg        string
-	underlying error
-}
-
-func (e Error) Error() string {
-	if e.underlying != nil {
-		return e.msg + ": " + e.underlying.Error()
-	}
-	return e.msg
-}
-
-func (e Error) Cause() error {
-	return e.underlying
-}
-
-func (e Error) Format(s fmt.State, verb rune) {
-	switch verb {
-	case 'v':
-		if s.Flag('+') {
-			if e.underlying != nil {
-				fmt.Fprintf(s, "%+v\n", e.underlying)
-			}
-			io.WriteString(s, e.msg)
-			return
-		}
-		fallthrough
-	case 's', 'q':
-		io.WriteString(s, e.Error())
-	}
-}
 
 type HTTPError struct {
 	StatusCode int
