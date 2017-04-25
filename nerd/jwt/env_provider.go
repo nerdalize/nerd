@@ -1,12 +1,16 @@
-package credentials
+package jwt
 
 import (
 	"crypto/ecdsa"
 	"os"
 	"time"
 
-	v2client "github.com/nerdalize/nerd/nerd/client/v2"
 	"github.com/pkg/errors"
+)
+
+const (
+	//NerdTokenEnvVar is the environment variable used to set the JWT.
+	NerdTokenEnvVar = "NERD_TOKEN"
 )
 
 //EnvProvider provides nerdalize credentials from the `credentials.NerdTokenEnvVar` environment variable.
@@ -24,21 +28,21 @@ func NewEnvProvider(pub *ecdsa.PublicKey) *EnvProvider {
 	}
 }
 
-//Retrieve retrieves the token from the env variable.
-func (e *EnvProvider) Retrieve() (*v2client.Credentials, error) {
-	token := os.Getenv(NerdTokenEnvVar)
-	if token == "" {
-		return nil, errors.Errorf("environment variable %v is not set", NerdTokenEnvVar)
+//Retrieve retrieves the jwt from the env variable.
+func (e *EnvProvider) Retrieve() (string, error) {
+	jwt := os.Getenv(NerdTokenEnvVar)
+	if jwt == "" {
+		return "", errors.Errorf("environment variable %v is not set", NerdTokenEnvVar)
 	}
-	claims, err := DecodeTokenWithKey(token, e.Pub)
+	claims, err := DecodeTokenWithKey(jwt, e.Pub)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to decode token '%v'", token)
+		return "", errors.Wrapf(err, "failed to decode jwt '%v'", jwt)
 	}
 	e.AlwaysValid = claims.ExpiresAt == 0 // if unset
 	e.SetExpiration(time.Unix(claims.ExpiresAt, 0))
 	err = claims.Valid()
 	if err != nil {
-		return nil, errors.Wrapf(err, "nerd token '%v' is invalid", token)
+		return "", errors.Wrapf(err, "nerd jwt '%v' is invalid", jwt)
 	}
-	return &v2client.Credentials{JWT: token}, nil
+	return jwt, nil
 }

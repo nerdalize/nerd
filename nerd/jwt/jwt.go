@@ -1,4 +1,4 @@
-package credentials
+package jwt
 
 import (
 	"crypto/ecdsa"
@@ -8,10 +8,6 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/nerdalize/nerd/nerd/payload"
 	"github.com/pkg/errors"
-)
-
-const (
-	NerdTokenEnvVar = "NERD_TOKEN"
 )
 
 //DecodeTokenWithKey decodes a nerd token (JWT) and verifies it with the given public key.

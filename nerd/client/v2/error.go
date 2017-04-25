@@ -2,14 +2,47 @@ package v2client
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 
-	"github.com/nerdalize/nerd/nerd/payload"
+	v2payload "github.com/nerdalize/nerd/nerd/payload/v2"
 )
+
+type Error struct {
+	msg        string
+	underlying error
+}
+
+func (e Error) Error() string {
+	if e.underlying != nil {
+		return e.msg + ": " + e.underlying.Error()
+	}
+	return e.msg
+}
+
+func (e Error) Cause() error {
+	return e.underlying
+}
+
+func (e Error) Format(s fmt.State, verb rune) {
+	switch verb {
+	case 'v':
+		if s.Flag('+') {
+			if e.underlying != nil {
+				fmt.Fprintf(s, "%+v\n", e.underlying)
+			}
+			io.WriteString(s, e.msg)
+			return
+		}
+		fallthrough
+	case 's', 'q':
+		io.WriteString(s, e.Error())
+	}
+}
 
 type HTTPError struct {
 	StatusCode int
-	Err        *payload.Error
+	Err        *v2payload.Error
 }
 
 func (e HTTPError) Error() string {
@@ -29,5 +62,9 @@ func (e HTTPError) UserFacingMsg() string {
 }
 
 func (e HTTPError) Underlying() error {
+	return nil
+}
+
+func (e HTTPError) Cause() error {
 	return nil
 }

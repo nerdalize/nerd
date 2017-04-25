@@ -6,15 +6,6 @@ import (
 	"testing"
 )
 
-type staticProvider struct{}
-
-func (s *staticProvider) IsExpired() bool {
-	return false
-}
-func (s *staticProvider) Retrieve() (*Credentials, error) {
-	return &Credentials{"abcdef"}, nil
-}
-
 type logger struct{}
 
 func (l *logger) Error(args ...interface{}) {
@@ -31,9 +22,9 @@ func TestDataset(t *testing.T) {
 		panic(err)
 	}
 	_ = NewNerdClient(NerdConfig{
-		Base:                base,
-		Logger:              &logger{},
-		CredentialsProvider: &staticProvider{},
+		Base:        base,
+		Logger:      &logger{},
+		JWTProvider: NewStaticJWTProvider("abcd"),
 	})
 	// cl.CreateDataset("6de308f4-face-11e6-bc64-92361f002671")
 }

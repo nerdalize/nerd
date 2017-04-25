@@ -1,4 +1,4 @@
-package credentials
+package jwt
 
 import (
 	"strings"
