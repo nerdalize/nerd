@@ -1,4 +1,4 @@
-package v2client
+package v1batch
 
 import (
 	"fmt"
@@ -21,7 +21,7 @@ func TestDataset(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	_ = NewNerdClient(NerdConfig{
+	_ = NewClient(ClientConfig{
 		Base:        base,
 		Logger:      &logger{},
 		JWTProvider: NewStaticJWTProvider("abcd"),

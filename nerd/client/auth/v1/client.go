@@ -1,4 +1,4 @@
-package client
+package v1auth
 
 import (
 	"github.com/dghubble/sling"
@@ -11,20 +11,20 @@ const (
 	TokenEndpoint = "token/?service=nce.nerdalize.com"
 )
 
-//AuthAPIClient is the client for the nerdalize authentication server.
-type AuthAPIClient struct {
+//Auth is the client for the nerdalize authentication server.
+type Client struct {
 	URL string
 }
 
-//NewAuthAPI creates a new AuthAPIClient.
-func NewAuthAPI(url string) *AuthAPIClient {
-	return &AuthAPIClient{
+//NewAuthAPI creates a new Auth.
+func NewClient(url string) *Client {
+	return &Client{
 		URL: url,
 	}
 }
 
 //GetToken gets a JWT for a given user.
-func (auth *AuthAPIClient) GetToken(user, pass string) (string, error) {
+func (auth *Client) GetToken(user, pass string) (string, error) {
 	type body struct {
 		Token string `json:"token"`
 	}

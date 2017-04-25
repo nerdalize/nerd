@@ -1,4 +1,4 @@
-package v2client
+package v1batch
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 )
 
 //StartTask will create an execute a new task
-func (c *Nerd) StartTask(projectID, queueID, payload string) (output *v2payload.StartTaskOutput, err error) {
+func (c *Client) StartTask(projectID, queueID, payload string) (output *v2payload.StartTaskOutput, err error) {
 	output = &v2payload.StartTaskOutput{}
 	input := &v2payload.StartTaskInput{
 		QueueID:   queueID,
@@ -21,7 +21,7 @@ func (c *Nerd) StartTask(projectID, queueID, payload string) (output *v2payload.
 }
 
 //StopTask will create queue
-func (c *Nerd) StopTask(projectID, queueID, taskID string) (output *v2payload.StopTaskOutput, err error) {
+func (c *Client) StopTask(projectID, queueID, taskID string) (output *v2payload.StopTaskOutput, err error) {
 	output = &v2payload.StopTaskOutput{}
 	input := &v2payload.StopTaskInput{
 		ProjectID: projectID,
@@ -33,7 +33,7 @@ func (c *Nerd) StopTask(projectID, queueID, taskID string) (output *v2payload.St
 }
 
 // ListTasks will return all tasks in a queue
-func (c *Nerd) ListTasks(projectID, queueID string) (output *v2payload.ListTasksOutput, err error) {
+func (c *Client) ListTasks(projectID, queueID string) (output *v2payload.ListTasksOutput, err error) {
 	output = &v2payload.ListTasksOutput{}
 	input := &v2payload.ListTasksInput{
 		ProjectID: projectID,
@@ -44,7 +44,7 @@ func (c *Nerd) ListTasks(projectID, queueID string) (output *v2payload.ListTasks
 }
 
 // KeepTask will send a heartbeat
-func (c *Nerd) KeepTask(projectID, queueID, taskID, runToken string) (output *v2payload.KeepTaskOutput, err error) {
+func (c *Client) KeepTask(projectID, queueID, taskID, runToken string) (output *v2payload.KeepTaskOutput, err error) {
 	output = &v2payload.KeepTaskOutput{}
 	input := &v2payload.KeepTaskInput{
 		TaskID:    taskID,
@@ -57,7 +57,7 @@ func (c *Nerd) KeepTask(projectID, queueID, taskID, runToken string) (output *v2
 }
 
 //ReceiveTaskRuns will long poll the aws sqs queue for the availability of new runs. It will receive and delete messages once decoded
-func (c *Nerd) ReceiveTaskRuns(projectID, queueID string, timeout time.Duration) (output []*v2payload.Run, err error) {
+func (c *Client) ReceiveTaskRuns(projectID, queueID string, timeout time.Duration) (output []*v2payload.Run, err error) {
 	queue, err := c.DescribeQueue(projectID, queueID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to describe queue: %+v", err)

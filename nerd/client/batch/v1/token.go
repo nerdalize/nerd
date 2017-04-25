@@ -1,4 +1,4 @@
-package v2client
+package v1batch
 
 import (
 	"net/http"
@@ -7,7 +7,7 @@ import (
 )
 
 //CreateToken will create queue
-func (c *Nerd) CreateToken(projectID string) (output *v2payload.CreateTokenOutput, err error) {
+func (c *Client) CreateToken(projectID string) (output *v2payload.CreateTokenOutput, err error) {
 	output = &v2payload.CreateTokenOutput{}
 	input := &v2payload.CreateTokenInput{
 		ProjectID: projectID,

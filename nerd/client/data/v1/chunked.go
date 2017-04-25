@@ -1,0 +1,175 @@
+package v1data
+
+import (
+	"bytes"
+	"crypto/sha256"
+	"io"
+	"io/ioutil"
+	"path"
+
+	"github.com/nerdalize/nerd/nerd/data"
+	"github.com/pkg/errors"
+	"github.com/restic/chunker"
+)
+
+//ChunkedUpload uploads data from a io.Reader (`r`) as a list of chunks. The Key of every chunk uploaded will be written to the KeyReadWriter (`kw`).
+//ChunkedDownload reports its progress (the amount of bytes uploaded) to the progressCh.
+//It will start a maximum of `concurrency` concurrent go routines to upload in paralllel.
+//`root` is used as the root path of the chunk in S3. Root will be concatenated with the key to make the full S3 object path.
+func (c *Client) ChunkedUpload(r io.Reader, kw data.KeyReadWriter, concurrency int, bucket, root string, progressCh chan<- int64) (err error) {
+	cr := chunker.New(r, chunker.Pol(uploadPolynomal))
+	type result struct {
+		err error
+		k   data.Key
+	}
+
+	type item struct {
+		chunk []byte
+		size  int64
+		resCh chan *result
+		err   error
+	}
+
+	work := func(it *item) {
+		k := data.Key(sha256.Sum256(it.chunk)) //hash
+		key := path.Join(root, k.ToString())
+		exists, err := c.Exists(bucket, key) //check existence
+		if err != nil {
+			it.resCh <- &result{errors.Wrapf(err, "failed to check existence of '%x'", k), data.ZeroKey}
+			return
+		}
+
+		if !exists {
+			err = c.Upload(bucket, key, bytes.NewReader(it.chunk)) //if not exists put
+			if err != nil {
+				it.resCh <- &result{errors.Wrapf(err, "failed to put chunk '%x'", k), data.ZeroKey}
+				return
+			}
+		}
+		progressCh <- int64(len(it.chunk))
+
+		it.resCh <- &result{nil, k}
+	}
+
+	//fan out
+	itemCh := make(chan *item, concurrency)
+	go func() {
+		defer close(itemCh)
+		buf := make([]byte, chunker.MaxSize)
+		for {
+			chunk, err := cr.Next(buf)
+			if err != nil {
+				if err != io.EOF {
+					itemCh <- &item{err: err}
+				}
+				break
+			}
+
+			it := &item{
+				chunk: make([]byte, chunk.Length),
+				resCh: make(chan *result),
+			}
+
+			copy(it.chunk, chunk.Data) //underlying buffer is switched out
+
+			go work(it)  //create work
+			itemCh <- it //send to fan-in thread for syncing results
+		}
+	}()
+
+	//fan-in
+	for it := range itemCh {
+		if it.err != nil {
+			return errors.Wrapf(it.err, "failed to iterate")
+		}
+
+		res := <-it.resCh
+		if res.err != nil {
+			return res.err
+		}
+
+		err = kw.WriteKey(res.k)
+		if err != nil {
+			return errors.Wrapf(err, "failed to write key")
+		}
+	}
+
+	return nil
+}
+
+//ChunkedDownload downloads a list of chunks and writes them to a io.Writer.
+//ChunkedDownload reports its progress (the amount of bytes downloaded) to the progressCh.
+//It will start a maximum of `concurrency` concurrent go routines to download in paralllel.
+//`root` is used as the root path of the chunk in S3. Root will be concatenated with the Key read from `kr` to make the full S3 object path.
+func (c *Client) ChunkedDownload(kr data.KeyReadWriter, cw io.Writer, concurrency int, bucket, root string, progressCh chan<- int64) (err error) {
+	type result struct {
+		err   error
+		chunk []byte
+	}
+
+	type item struct {
+		k     data.Key
+		resCh chan *result
+		err   error
+	}
+
+	work := func(it *item) {
+		r, err := c.Download(bucket, path.Join(root, it.k.ToString()))
+		defer r.Close()
+		if err != nil {
+			it.resCh <- &result{errors.Wrapf(err, "failed to get key '%s'", it.k), nil}
+			return
+		}
+
+		chunk, err := ioutil.ReadAll(r)
+		if err != nil {
+			it.resCh <- &result{errors.Wrap(err, "failed to copy chunk to byte buffer"), nil}
+		}
+
+		progressCh <- int64(len(chunk))
+
+		it.resCh <- &result{nil, chunk}
+	}
+
+	//fan out
+	itemCh := make(chan *item, concurrency)
+	go func() {
+		defer close(itemCh)
+		for {
+			k, err := kr.ReadKey()
+			if err != nil {
+				if err != io.EOF {
+					itemCh <- &item{err: err}
+				}
+				break
+			}
+
+			it := &item{
+				k:     k,
+				resCh: make(chan *result),
+			}
+
+			go work(it)  //create work
+			itemCh <- it //send to fan-in thread for syncing results
+		}
+	}()
+
+	//fan-in
+	for it := range itemCh {
+		if it.err != nil {
+			return errors.Wrapf(it.err, "failed to iterate")
+		}
+
+		res := <-it.resCh
+		if res.err != nil {
+			return res.err
+		}
+
+		_, err = cw.Write(res.chunk)
+		if err != nil {
+			return errors.Wrapf(err, "failed to write key")
+		}
+	}
+
+	return nil
+}

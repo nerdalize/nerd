@@ -1,4 +1,4 @@
-package v2client
+package v1batch
 
 import (
 	"github.com/pkg/errors"
