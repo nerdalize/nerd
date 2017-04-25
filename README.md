@@ -12,29 +12,45 @@ Please enter your Nerdalize username and password.
 Username: my-user@my-organization.com
 Password: ******
 
+# list projects that you have access to
+$ nerd project list
+1. ItsGettingHotInHere
+2. NerdsBeCrunching
+
+# set the current project to be working on
+$ nerd project set ItsGettingHotInHere
+
+# create a queue that will be used as input to a workload
+$ nerd queue create
+Created queue with ID 'c-27bb24ae'
+
+# add a task to the queue
+$ nerd queue add c-27bb24ae nerdpowerrrr
+Added task 'nerdpowerrrr' to queue 'c-27bb24ae'
+
+$ create an empty dataset
+$ nerd dataset create
+Dataset created with ID 'd-96fac377'
+
 # upload a piece of data that will acts as input to the program
-$ nerd upload ./my-project/my-task-input
-Uploading dataset with ID 'd-96fac377'
+$ nerd dataset append d-96fac377 ~/my-data
+Uploading to dataset with ID 'd-96fac377'
 314.38 MiB / 314.38 MiB [=============================] 100.00%
 
-# create a new task that takes the uploaded dataset as input
-$ nerd run nlz.io/my-org/my-program:v1.2 d-96fac377
-Created task with ID t-afb5cb16
+# start a new workload
+$ nerd workload start nlz.io/my-org/my-program:v1.2 --queue c-27bb24ae --dataset d-96fac377 --no-of-workers 5
+Started workload with ID 'w-321be912'
+Output data will be available at dataset 'd-d1093e88f'
 
-# read task output to get feedback
-$ nerd logs t-afb5cb16
-20170122.1111 [INFO] Started program
-20170122.2111 [INFO] Doing awesome science!
+# get the workload status
+$ nerd workload status w-321be912
+Output dataset: d-d1093e88f
+Queues: 
+- c-27bb24ae: 1/1 processed
 
-# get each task's status
-$ nerd status
-|   TASKID   | OUTPUT DATASET |    CREATED     |
-|------------|----------------|----------------|
-| t-afb5cb16 | d-615f2d56     | 22 minutes ago |
-
-# download results of running the task
-$ nerd download t-615f2d56 ./my-project/my-task-output
-Downloading dataset with ID 'd-615f2d56'
+# download output of workload w-321be912
+$ nerd dataset download d-d1093e88f
+Downloading dataset with ID 'd-d1093e88f'
 12.31 MiB / 12.31 MiB [=============================] 100.00%
 ```
 
