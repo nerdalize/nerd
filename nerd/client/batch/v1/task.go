@@ -5,13 +5,20 @@ import (
 	"net/http"
 	"time"
 
-	v2payload "github.com/nerdalize/nerd/nerd/payload/v2"
+	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
 )
 
+// QueueOps is an interface that includes queue operations.
+type QueueOps interface {
+	ReceiveMessages(queueURL string, maxNoOfMessages, waitTimeSeconds int64) (messages []interface{}, err error)
+	UnmarshalMessage(message interface{}, v interface{}) error
+	DeleteMessage(queueURL string, message interface{}) error
+}
+
 //StartTask will create an execute a new task
-func (c *Client) StartTask(projectID, queueID, payload string) (output *v2payload.StartTaskOutput, err error) {
-	output = &v2payload.StartTaskOutput{}
-	input := &v2payload.StartTaskInput{
+func (c *Client) StartTask(projectID, queueID, payload string) (output *v1payload.StartTaskOutput, err error) {
+	output = &v1payload.StartTaskOutput{}
+	input := &v1payload.StartTaskInput{
 		QueueID:   queueID,
 		ProjectID: projectID,
 		Payload:   payload,
@@ -21,9 +28,9 @@ func (c *Client) StartTask(projectID, queueID, payload string) (output *v2payloa
 }
 
 //StopTask will create queue
-func (c *Client) StopTask(projectID, queueID, taskID string) (output *v2payload.StopTaskOutput, err error) {
-	output = &v2payload.StopTaskOutput{}
-	input := &v2payload.StopTaskInput{
+func (c *Client) StopTask(projectID, queueID, taskID string) (output *v1payload.StopTaskOutput, err error) {
+	output = &v1payload.StopTaskOutput{}
+	input := &v1payload.StopTaskInput{
 		ProjectID: projectID,
 		QueueID:   queueID,
 		TaskID:    taskID,
@@ -33,9 +40,9 @@ func (c *Client) StopTask(projectID, queueID, taskID string) (output *v2payload.
 }
 
 // ListTasks will return all tasks in a queue
-func (c *Client) ListTasks(projectID, queueID string) (output *v2payload.ListTasksOutput, err error) {
-	output = &v2payload.ListTasksOutput{}
-	input := &v2payload.ListTasksInput{
+func (c *Client) ListTasks(projectID, queueID string) (output *v1payload.ListTasksOutput, err error) {
+	output = &v1payload.ListTasksOutput{}
+	input := &v1payload.ListTasksInput{
 		ProjectID: projectID,
 		QueueID:   queueID,
 	}
@@ -44,9 +51,9 @@ func (c *Client) ListTasks(projectID, queueID string) (output *v2payload.ListTas
 }
 
 // KeepTask will send a heartbeat
-func (c *Client) KeepTask(projectID, queueID, taskID, runToken string) (output *v2payload.KeepTaskOutput, err error) {
-	output = &v2payload.KeepTaskOutput{}
-	input := &v2payload.KeepTaskInput{
+func (c *Client) KeepTask(projectID, queueID, taskID, runToken string) (output *v1payload.KeepTaskOutput, err error) {
+	output = &v1payload.KeepTaskOutput{}
+	input := &v1payload.KeepTaskInput{
 		TaskID:    taskID,
 		ProjectID: projectID,
 		QueueID:   queueID,
@@ -57,7 +64,7 @@ func (c *Client) KeepTask(projectID, queueID, taskID, runToken string) (output *
 }
 
 //ReceiveTaskRuns will long poll the aws sqs queue for the availability of new runs. It will receive and delete messages once decoded
-func (c *Client) ReceiveTaskRuns(projectID, queueID string, timeout time.Duration) (output []*v2payload.Run, err error) {
+func (c *Client) ReceiveTaskRuns(projectID, queueID string, timeout time.Duration, queueOps QueueOps) (output []*v1payload.Run, err error) {
 	queue, err := c.DescribeQueue(projectID, queueID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to describe queue: %+v", err)
@@ -72,19 +79,19 @@ func (c *Client) ReceiveTaskRuns(projectID, queueID string, timeout time.Duratio
 		}
 
 		// var out *sqs.ReceiveMessageOutput
-		out, err := c.QueueOps.ReceiveMessages(queue.QueueURL, 1, 5)
+		out, err := queueOps.ReceiveMessages(queue.QueueURL, 1, 5)
 		if err != nil {
 			return nil, fmt.Errorf("failed to receive runs: %+v", err)
 		}
 
 		for _, msg := range out {
-			r := &v2payload.Run{}
-			err = c.QueueOps.UnmarshalMessage(msg, r)
+			r := &v1payload.Run{}
+			err = queueOps.UnmarshalMessage(msg, r)
 			if err != nil {
 				return nil, fmt.Errorf("failed to decode message: %+v", err)
 			}
 
-			if err = c.QueueOps.DeleteMessage(queue.QueueURL, msg); err != nil {
+			if err = queueOps.DeleteMessage(queue.QueueURL, msg); err != nil {
 				return nil, fmt.Errorf("failed to receive runs: %+v", err)
 			}
 

@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"net/http"
 
-	v2payload "github.com/nerdalize/nerd/nerd/payload/v2"
+	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
 )
 
 type HTTPError struct {
 	StatusCode int
-	Err        *v2payload.Error
+	Err        *v1payload.Error
 }
 
 func (e HTTPError) Error() string {

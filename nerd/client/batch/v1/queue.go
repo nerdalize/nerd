@@ -3,13 +3,13 @@ package v1batch
 import (
 	"net/http"
 
-	v2payload "github.com/nerdalize/nerd/nerd/payload/v2"
+	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
 )
 
 //CreateQueue will create queue
-func (c *Client) CreateQueue(projectID string) (output *v2payload.CreateQueueOutput, err error) {
-	output = &v2payload.CreateQueueOutput{}
-	input := &v2payload.CreateQueueInput{
+func (c *Client) CreateQueue(projectID string) (output *v1payload.CreateQueueOutput, err error) {
+	output = &v1payload.CreateQueueOutput{}
+	input := &v1payload.CreateQueueInput{
 		ProjectID: projectID,
 	}
 
@@ -17,9 +17,9 @@ func (c *Client) CreateQueue(projectID string) (output *v2payload.CreateQueueOut
 }
 
 //DeleteQueue will delete queue a queue with the provided id
-func (c *Client) DeleteQueue(projectID, queueID string) (output *v2payload.DeleteQueueOutput, err error) {
-	output = &v2payload.DeleteQueueOutput{}
-	input := &v2payload.DeleteQueueInput{
+func (c *Client) DeleteQueue(projectID, queueID string) (output *v1payload.DeleteQueueOutput, err error) {
+	output = &v1payload.DeleteQueueOutput{}
+	input := &v1payload.DeleteQueueInput{
 		ProjectID: projectID,
 		QueueID:   queueID,
 	}
@@ -28,9 +28,9 @@ func (c *Client) DeleteQueue(projectID, queueID string) (output *v2payload.Delet
 }
 
 //DescribeQueue returns detailed information of a queue
-func (c *Client) DescribeQueue(projectID, queueID string) (output *v2payload.DescribeQueueOutput, err error) {
-	output = &v2payload.DescribeQueueOutput{}
-	input := &v2payload.DescribeQueueInput{
+func (c *Client) DescribeQueue(projectID, queueID string) (output *v1payload.DescribeQueueOutput, err error) {
+	output = &v1payload.DescribeQueueOutput{}
+	input := &v1payload.DescribeQueueInput{
 		ProjectID: projectID,
 		QueueID:   queueID,
 	}

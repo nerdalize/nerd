@@ -10,8 +10,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	//uploadPolynomal is the polynomal that is used for chunked uploading.
+	UploadPolynomal = 0x3DA3358B4DC173
+)
+
 type Chunker interface {
-	Next() (data []byte, length int, err error)
+	Next() (data []byte, length uint, err error)
 }
 
 //ChunkedUpload uploads data from a io.Reader (`r`) as a list of chunks. The Key of every chunk uploaded will be written to the KeyReadWriter (`kw`).

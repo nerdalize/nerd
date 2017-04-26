@@ -10,8 +10,6 @@ import (
 const (
 	//LogGroup is the group for each log statement.
 	LogGroup = "DataClient"
-	//uploadPolynomal is the polynomal that is used for chunked uploading.
-	uploadPolynomal = 0x3DA3358B4DC173
 	//NoOfRetries is the amount of retries when uploading or downloading to S3.
 	NoOfRetries = 2
 )
@@ -28,7 +26,7 @@ type DataOps interface {
 }
 
 //NewDataClient creates a new data client that is capable of uploading and downloading (multiple) files.
-func NewDataClient(ops DataOps) *Client {
+func NewClient(ops DataOps) *Client {
 	return &Client{ops}
 }
 

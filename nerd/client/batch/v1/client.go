@@ -10,7 +10,7 @@ import (
 	"path"
 
 	"github.com/nerdalize/nerd/nerd/client"
-	v2payload "github.com/nerdalize/nerd/nerd/payload/v2"
+	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
 )
 
 const (
@@ -38,19 +38,11 @@ type ClientConfig struct {
 	JWTProvider JWTProvider
 	Base        *url.URL
 	Logger      Logger
-	QueueOps    QueueOps
 }
 
 // Doer executes http requests.  It is implemented by *http.Client.
 type Doer interface {
 	Do(req *http.Request) (*http.Response, error)
-}
-
-// QueueOps is an interface that includes queue operations.
-type QueueOps interface {
-	ReceiveMessages(queueURL string, maxNoOfMessages, waitTimeSeconds int) (messages []interface{}, err error)
-	UnmarshalMessage(message interface{}, v interface{}) error
-	DeleteMessage(queueURL string, message interface{}) error
 }
 
 //NewNerdClient creates a new Nerd client from a config object. The http.DefaultClient
@@ -88,14 +80,6 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 	if err != nil {
 		return err
 	}
-	buf := bytes.NewBuffer(nil)
-	if input != nil {
-		enc := json.NewEncoder(buf)
-		err = enc.Encode(input)
-		if err != nil {
-			return &client.Error{"failed to encode the request body", err}
-		}
-	}
 
 	path, err := url.Parse(urlPath)
 	if err != nil {
@@ -103,13 +87,37 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 	}
 
 	resolved := c.Base.ResolveReference(path)
-	req, err := http.NewRequest(method, resolved.String(), buf)
-	logRequest(req, c.Logger)
-	if err != nil {
-		return &client.Error{"failed to create HTTP request", err}
+
+	var req *http.Request
+	if input != nil {
+		buf := bytes.NewBuffer(nil)
+		enc := json.NewEncoder(buf)
+		err = enc.Encode(input)
+		if err != nil {
+			return &client.Error{"failed to encode the request body", err}
+		}
+		req, err = http.NewRequest(method, resolved.String(), buf)
+		if err != nil {
+			return &client.Error{"failed to create HTTP request", err}
+		}
+	} else {
+		req, err = http.NewRequest(method, resolved.String(), nil)
+		if err != nil {
+			return &client.Error{"failed to create HTTP request", err}
+		}
 	}
 
 	req.Header.Set(AuthHeader, "Bearer "+cred)
+	// req.Header.Set("Accept", "*/*")
+	// req.Header.Set("User-Agent", "curl/7.49.1")
+
+	// 	accept:text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+	// accept-encoding:gzip, deflate, sdch, br
+	// accept-language:nl-NL,nl;q=0.8,en-US;q=0.6,en;q=0.4
+	// cache-control:max-age=0
+	// upgrade-insecure-requests:1
+	// user-agent:Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36
+	// logRequest(req, c.Logger)
 	resp, err := c.Doer.Do(req)
 	if err != nil {
 		return &client.Error{"failed to perform HTTP request", err}
@@ -119,7 +127,7 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 	dec := json.NewDecoder(resp.Body)
 	defer resp.Body.Close()
 	if resp.StatusCode > 399 {
-		errv := &v2payload.Error{}
+		errv := &v1payload.Error{}
 		err = dec.Decode(errv)
 		if err != nil {
 			return &client.Error{fmt.Sprintf("failed to decode unexpected HTTP response (%s)", resp.Status), err}
