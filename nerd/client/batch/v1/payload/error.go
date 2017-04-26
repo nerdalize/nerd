@@ -1,4 +1,4 @@
-package payload
+package v1payload
 
 //Error struct is returned by the API if anything goes wrong
 type Error struct {

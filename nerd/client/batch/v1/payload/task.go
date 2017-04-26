@@ -1,4 +1,4 @@
-package v2payload
+package v1payload
 
 //StopTaskInput is input for queue creation
 type StopTaskInput struct {

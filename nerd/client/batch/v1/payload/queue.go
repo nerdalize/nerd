@@ -1,4 +1,4 @@
-package v2payload
+package v1payload
 
 //QueueSummary is a smaller representation of a queue
 type QueueSummary struct {

@@ -1,4 +1,4 @@
-package v2payload
+package v1payload
 
 //DatasetCreateInput is used as input to dataset creation
 type DatasetCreateInput struct{}
