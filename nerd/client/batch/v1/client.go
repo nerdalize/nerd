@@ -8,6 +8,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"path"
+	"sync"
 
 	"github.com/nerdalize/nerd/nerd/client"
 	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
@@ -30,6 +31,7 @@ const (
 type Client struct {
 	ClientConfig
 	cred string
+	m    sync.Mutex
 }
 
 //NerdConfig provides config details to create a Nerd client.
@@ -57,11 +59,14 @@ func NewClient(conf ClientConfig) *Client {
 	cl := &Client{
 		ClientConfig: conf,
 		cred:         "",
+		m:            sync.Mutex{},
 	}
 	return cl
 }
 
 func (c *Client) getCredentials() (string, error) {
+	c.m.Lock()
+	defer c.m.Unlock()
 	if c.JWTProvider == nil {
 		return "", fmt.Errorf("No JWT provider found")
 	}
@@ -108,16 +113,6 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 	}
 
 	req.Header.Set(AuthHeader, "Bearer "+cred)
-	// req.Header.Set("Accept", "*/*")
-	// req.Header.Set("User-Agent", "curl/7.49.1")
-
-	// 	accept:text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
-	// accept-encoding:gzip, deflate, sdch, br
-	// accept-language:nl-NL,nl;q=0.8,en-US;q=0.6,en;q=0.4
-	// cache-control:max-age=0
-	// upgrade-insecure-requests:1
-	// user-agent:Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36
-	// logRequest(req, c.Logger)
 	resp, err := c.Doer.Do(req)
 	if err != nil {
 		return &client.Error{"failed to perform HTTP request", err}
