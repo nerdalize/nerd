@@ -6,7 +6,6 @@ import (
 	"encoding/pem"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/nerdalize/nerd/nerd/payload"
 	"github.com/pkg/errors"
 )
 
@@ -17,12 +16,12 @@ type NerdClaims struct {
 }
 
 //DecodeTokenWithKey decodes a nerd token (JWT) and verifies it with the given public key.
-func DecodeTokenWithKey(nerdToken string, key *ecdsa.PublicKey) (*payload.NerdClaims, error) {
+func DecodeTokenWithKey(nerdToken string, key *ecdsa.PublicKey) (*NerdClaims, error) {
 	return decodeToken(nerdToken, key)
 }
 
 //DecodeTokenWithPEM decodes a nerd token (JWT) and verifies it with the given public key in PEM format.
-func DecodeTokenWithPEM(nerdToken, pem string) (*payload.NerdClaims, error) {
+func DecodeTokenWithPEM(nerdToken, pem string) (*NerdClaims, error) {
 	key, err := ParseECDSAPublicKeyFromPemBytes([]byte(pem))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse public key PEM to ecdsa key")
@@ -31,11 +30,11 @@ func DecodeTokenWithPEM(nerdToken, pem string) (*payload.NerdClaims, error) {
 }
 
 //decodeToken decodes a nerd token (JWT) given the public key to check if the signature is valid.
-func decodeToken(nerdToken string, key *ecdsa.PublicKey) (*payload.NerdClaims, error) {
+func decodeToken(nerdToken string, key *ecdsa.PublicKey) (*NerdClaims, error) {
 	p := &jwt.Parser{
 		SkipClaimsValidation: true,
 	}
-	token, err := p.ParseWithClaims(nerdToken, &payload.NerdClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := p.ParseWithClaims(nerdToken, &NerdClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
 			return nil, errors.Errorf("Unexpected signing method: %v, expected ECDSA", token.Header["alg"])
 		}
@@ -48,7 +47,7 @@ func decodeToken(nerdToken string, key *ecdsa.PublicKey) (*payload.NerdClaims, e
 	if !token.Valid {
 		return nil, errors.Errorf("nerd token '%v' signature is invalid", nerdToken)
 	}
-	if claims, ok := token.Claims.(*payload.NerdClaims); ok {
+	if claims, ok := token.Claims.(*NerdClaims); ok {
 		return claims, nil
 	}
 

@@ -10,10 +10,9 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/nerdalize/nerd/nerd/payload"
 )
 
-var EmptyClaims = &payload.NerdClaims{}
+var EmptyClaims = &NerdClaims{}
 
 //testkey creates a new ecdsa keypair.
 func testkey(t *testing.T) *ecdsa.PrivateKey {
@@ -25,7 +24,7 @@ func testkey(t *testing.T) *ecdsa.PrivateKey {
 }
 
 //tokenAndPub returns a token string and public key.
-func tokenAndPub(claims *payload.NerdClaims, t *testing.T) (string, *ecdsa.PublicKey) {
+func tokenAndPub(claims *NerdClaims, t *testing.T) (string, *ecdsa.PublicKey) {
 	key := testkey(t)
 	pub, ok := key.Public().(*ecdsa.PublicKey)
 	if !ok {
@@ -51,17 +50,17 @@ func newEnvProvider(pub *ecdsa.PublicKey) *EnvProvider {
 func TestEnvProviderRetrieve(t *testing.T) {
 	// Success cases
 	successCases := map[string]struct {
-		claims *payload.NerdClaims
+		claims *NerdClaims
 	}{
 		"valid": {
-			claims: &payload.NerdClaims{
+			claims: &NerdClaims{
 				StandardClaims: &jwt.StandardClaims{
 					Audience: "nlz.com",
 				},
 			},
 		},
 		"valid expired": {
-			claims: &payload.NerdClaims{
+			claims: &NerdClaims{
 				StandardClaims: &jwt.StandardClaims{
 					Audience:  "nlz.com",
 					ExpiresAt: time.Now().Unix() + 300,
@@ -87,11 +86,11 @@ func TestEnvProviderRetrieve(t *testing.T) {
 
 	// Error cases
 	errorCases := map[string]struct {
-		claims   *payload.NerdClaims
+		claims   *NerdClaims
 		errorMsg string
 	}{
 		"invalid expired": {
-			claims: &payload.NerdClaims{
+			claims: &NerdClaims{
 				StandardClaims: &jwt.StandardClaims{
 					Audience:  "nlz.com",
 					ExpiresAt: time.Now().Unix() - 300,

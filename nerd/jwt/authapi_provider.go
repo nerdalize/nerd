@@ -5,8 +5,8 @@ import (
 	"time"
 
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
+	v1payload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
 	"github.com/nerdalize/nerd/nerd/conf"
-	"github.com/nerdalize/nerd/nerd/payload"
 	"github.com/pkg/errors"
 )
 
@@ -41,7 +41,7 @@ func (p *AuthAPIProvider) Retrieve() (string, error) {
 	}
 	jwt, err := p.Client.GetToken(user, pass)
 	if err != nil {
-		if aerr, ok := err.(*payload.AuthError); ok {
+		if aerr, ok := err.(*v1payload.AuthError); ok {
 			// TODO: Make user facing
 			return "", aerr
 		}
