@@ -1,17 +1,20 @@
 package command
 
 import (
+	"io"
+	"net/url"
 	"strings"
 
 	pb "gopkg.in/cheggaaa/pb.v1"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/client"
-	"github.com/nerdalize/nerd/nerd/client/credentials"
-	"github.com/nerdalize/nerd/nerd/client/credentials/provider"
+	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
+	v1batch "github.com/nerdalize/nerd/nerd/client/batch/v1"
 	"github.com/nerdalize/nerd/nerd/conf"
+	"github.com/nerdalize/nerd/nerd/jwt"
 	"github.com/pkg/errors"
+	"github.com/restic/chunker"
 )
 
 type stdoutkw struct{}
@@ -24,25 +27,28 @@ func (kw *stdoutkw) Write(k string) (err error) {
 }
 
 //NewClient creates a new NerdAPIClient with two credential providers.
-func NewClient(ui cli.Ui) (*client.NerdAPIClient, error) {
+func NewClient(ui cli.Ui) (*v1batch.Client, error) {
 	c, err := conf.Read()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read config")
 	}
-	key, err := credentials.ParseECDSAPublicKeyFromPemBytes([]byte(c.Auth.PublicKey))
+	key, err := jwt.ParseECDSAPublicKeyFromPemBytes([]byte(c.Auth.PublicKey))
 	if err != nil {
 		return nil, errors.Wrap(err, "ECDSA Public Key is invalid")
 	}
-	return client.NewNerdAPI(client.NerdAPIConfig{
-		Credentials: provider.NewChainCredentials(
-			key,
-			provider.NewEnv(),
-			provider.NewConfig(),
-			provider.NewAuthAPI(UserPassProvider(ui), client.NewAuthAPI(c.Auth.APIEndpoint)),
+	base, err := url.Parse(c.NerdAPIEndpoint)
+	if err != nil {
+		return nil, errors.Wrapf(err, "nerd endpoint '%v' is not a valid URL", c.NerdAPIEndpoint)
+	}
+	return v1batch.NewClient(v1batch.ClientConfig{
+		JWTProvider: v1batch.NewChainedJWTProvider(
+			jwt.NewEnvProvider(key),
+			jwt.NewConfigProvider(key),
+			jwt.NewAuthAPIProvider(key, UserPassProvider(ui), v1auth.NewClient(c.Auth.APIEndpoint)),
 		),
-		URL:       c.NerdAPIEndpoint,
-		ProjectID: c.CurrentProject,
-	})
+		Base:   base,
+		Logger: logrus.StandardLogger(),
+	}), nil
 }
 
 //UserPassProvider prompts the username and password on stdin.
@@ -107,4 +113,23 @@ func ProgressBar(total int64, progressCh <-chan int64, doneCh chan<- struct{}) {
 	}
 	bar.Finish()
 	doneCh <- struct{}{}
+}
+
+type Chunker struct {
+	cr *chunker.Chunker
+}
+
+func NewChunker(pol uint64, r io.Reader) *Chunker {
+	return &Chunker{
+		cr: chunker.New(r, chunker.Pol(pol)),
+	}
+}
+
+func (c *Chunker) Next() (data []byte, length uint, err error) {
+	buf := make([]byte, chunker.MaxSize)
+	chunk, err := c.cr.Next(buf)
+	if err != nil {
+		return []byte{}, 0, err
+	}
+	return chunk.Data, chunk.Length, nil
 }

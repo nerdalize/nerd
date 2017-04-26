@@ -2,6 +2,7 @@ package command
 
 import (
 	"archive/tar"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -13,8 +14,10 @@ import (
 	"github.com/dchest/safefile"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/nerd"
 	"github.com/nerdalize/nerd/nerd/aws"
-	"github.com/nerdalize/nerd/nerd/data"
+	v1data "github.com/nerdalize/nerd/nerd/client/data/v1"
+	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
 )
 
@@ -70,6 +73,12 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	if len(args) < 2 {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
+
+	config, err := conf.Read()
+	if err != nil {
+		HandleError(err, cmd.opts.VerboseOutput)
+	}
+
 	dataset := args[0]
 	outputDir := args[1]
 
@@ -88,31 +97,38 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		HandleError(errors.Errorf("The provided path '%s' is not a directory", outputDir), cmd.opts.VerboseOutput)
 	}
 
-	nerdclient, err := NewClient(cmd.ui)
+	batchclient, err := NewClient(cmd.ui)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
-	ds, err := nerdclient.GetDataset(dataset)
+	ds, err := batchclient.GetDataset(config.CurrentProject, dataset)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	client, err := aws.NewDataClient(&aws.DataClientConfig{
-		Credentials: aws.NewNerdalizeCredentials(nerdclient),
-		Bucket:      ds.Bucket,
-	})
+	dataOps, err := aws.NewDataClient(
+		aws.NewNerdalizeCredentials(batchclient, config.CurrentProject),
+		nerd.GetCurrentUser().Region,
+	)
 	if err != nil {
-		HandleError(errors.Wrap(err, "could not create data client"), cmd.opts.VerboseOutput)
+		HandleError(errors.Wrap(err, "could not create aws dataops client"), cmd.opts.VerboseOutput)
 	}
+	dataclient := v1data.NewClient(dataOps)
 
-	r, err := client.Download(path.Join(ds.Root, data.MetadataObjectKey))
+	r, err := dataclient.Download(ds.Bucket, path.Join(ds.Root, v1data.MetadataObjectKey))
 	if err != nil {
 		HandleError(errors.Wrap(err, "failed to download metadata"), cmd.opts.VerboseOutput)
 	}
-	defer r.Close()
-	metadata, err := data.NewMetadataFromReader(r)
+	dec := json.NewDecoder(r)
+	metadata := &v1data.Metadata{}
+	err = dec.Decode(metadata)
 	if err != nil {
-		HandleError(errors.Wrap(err, "failed to read metadata"), cmd.opts.VerboseOutput)
+		HandleError(errors.Wrap(err, "failed to decode metadata"), cmd.opts.VerboseOutput)
+	}
+
+	r, err = dataclient.Download(ds.Bucket, path.Join(ds.Root, v1data.IndexObjectKey))
+	if err != nil {
+		HandleError(errors.Wrap(err, "failed to download chunk index"), cmd.opts.VerboseOutput)
 	}
 
 	logrus.Infof("Downloading dataset with ID '%v'", ds.DatasetID)
@@ -127,7 +143,7 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		doneCh <- err
 	}()
 	if !cmd.opts.JSONOutput {
-		go ProgressBar(metadata.Header.Size, progressCh, progressBarDoneCh)
+		go ProgressBar(metadata.Size, progressCh, progressBarDoneCh)
 	} else {
 		go func() {
 			for _ = range progressCh {
@@ -135,18 +151,21 @@ func (cmd *Download) DoRun(args []string) (err error) {
 			progressBarDoneCh <- struct{}{}
 		}()
 	}
-	err = client.ChunkedDownload(metadata, pw, DownloadConcurrency, ds.Root, progressCh)
-	close(progressCh)
+	err = dataclient.ChunkedDownload(v1data.NewIndexReader(r), pw, DownloadConcurrency, ds.Bucket, ds.Root, progressCh)
 	if err != nil {
 		HandleError(errors.Wrapf(err, "failed to download project '%v'", dataset), cmd.opts.VerboseOutput)
 	}
+	close(progressCh)
 
-	pw.Close()
+	err = pw.Close()
+	if err != nil {
+		HandleError(errors.Wrap(err, "failed to close chunked download pipe writer"), cmd.opts.VerboseOutput)
+	}
 	err = <-doneCh
-	<-progressBarDoneCh
 	if err != nil {
 		HandleError(errors.Wrapf(err, "failed to untar project '%v'", dataset), cmd.opts.VerboseOutput)
 	}
+	<-progressBarDoneCh
 
 	return nil
 }
