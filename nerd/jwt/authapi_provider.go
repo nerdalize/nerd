@@ -4,8 +4,7 @@ import (
 	"crypto/ecdsa"
 	"time"
 
-	"github.com/nerdalize/nerd/nerd/client/credentials"
-	v2client "github.com/nerdalize/nerd/nerd/client/v2"
+	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/payload"
 	"github.com/pkg/errors"
@@ -16,14 +15,14 @@ import (
 type AuthAPIProvider struct {
 	*ProviderBasis
 
-	Client *v2client.Auth
+	Client *v1auth.Client
 	//UserPassProvider is a function that provides the AuthAPIProvider provider with a username and password. This could for example be a function
 	//that reads from stdin.
 	UserPassProvider func() (string, string, error)
 }
 
 //NewAuthAPIProvider creates a new AuthAPIProvider provider.
-func NewAuthAPIProvider(pub *ecdsa.PublicKey, userPassProvider func() (string, string, error), c *v2client.Auth) *AuthAPIProvider {
+func NewAuthAPIProvider(pub *ecdsa.PublicKey, userPassProvider func() (string, string, error), c *v1auth.Client) *AuthAPIProvider {
 	return &AuthAPIProvider{
 		ProviderBasis: &ProviderBasis{
 			ExpireWindow: DefaultExpireWindow,
@@ -48,7 +47,7 @@ func (p *AuthAPIProvider) Retrieve() (string, error) {
 		}
 		return "", errors.Wrap(err, "failed to get nerd jwt for username and password")
 	}
-	claims, err := credentials.DecodeTokenWithKey(jwt, p.Pub)
+	claims, err := DecodeTokenWithKey(jwt, p.Pub)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to retreive claims from nerd jwt '%v'", jwt)
 	}

@@ -10,6 +10,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+//NerdClaims hold nerdalize specific jwt claims
+type NerdClaims struct {
+	*jwt.StandardClaims
+	ProjectID string `json:"proj,omitempty"`
+}
+
 //DecodeTokenWithKey decodes a nerd token (JWT) and verifies it with the given public key.
 func DecodeTokenWithKey(nerdToken string, key *ecdsa.PublicKey) (*payload.NerdClaims, error) {
 	return decodeToken(nerdToken, key)

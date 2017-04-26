@@ -4,7 +4,6 @@ import (
 	"crypto/ecdsa"
 	"time"
 
-	"github.com/nerdalize/nerd/nerd/client/credentials"
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
 )
@@ -34,7 +33,7 @@ func (e *ConfigProvider) Retrieve() (string, error) {
 	if jwt == "" {
 		return "", errors.New("nerd_token is not set in config")
 	}
-	claims, err := credentials.DecodeTokenWithKey(jwt, e.Pub)
+	claims, err := DecodeTokenWithKey(jwt, e.Pub)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to decode jwt '%v'", jwt)
 	}
