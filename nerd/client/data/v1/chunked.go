@@ -3,6 +3,7 @@ package v1data
 import (
 	"bytes"
 	"crypto/sha256"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"path"
@@ -14,6 +15,25 @@ const (
 	//uploadPolynomal is the polynomal that is used for chunked uploading.
 	UploadPolynomal = 0x3DA3358B4DC173
 )
+
+//Key is the identifier of a chunk of data.
+type Key [sha256.Size]byte
+
+//ToString returns the string representation of a key.
+func (k Key) ToString() string {
+	return fmt.Sprintf("%x", k)
+}
+
+//ZeroKey is an empty key.
+var ZeroKey = Key{}
+
+type KeyReader interface {
+	ReadKey() (Key, error)
+}
+
+type KeyWriter interface {
+	WriteKey(Key) error
+}
 
 type Chunker interface {
 	Next() (data []byte, length uint, err error)

@@ -3,7 +3,6 @@ package command
 import (
 	"archive/tar"
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -20,6 +19,7 @@ import (
 	v1batch "github.com/nerdalize/nerd/nerd/client/batch/v1"
 	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
 	v1data "github.com/nerdalize/nerd/nerd/client/data/v1"
+	v1datapayload "github.com/nerdalize/nerd/nerd/client/data/v1/payload"
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
 )
@@ -79,28 +79,30 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	config, err := conf.Read()
-	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
-	}
-
 	dataPath := args[0]
 	datasetID := ""
 	if len(args) == 2 {
 		datasetID = args[1]
 	}
 
+	fi, err := os.Stat(dataPath)
+	if err != nil {
+		HandleError(errors.Errorf("argument '%v' is not a valid file or directory", dataPath), cmd.opts.VerboseOutput)
+	} else if !fi.IsDir() {
+		HandleError(errors.Errorf("provided path '%s' is not a directory", dataPath), cmd.opts.VerboseOutput)
+	}
+
+	// Config
+	config, err := conf.Read()
+	if err != nil {
+		HandleError(err, cmd.opts.VerboseOutput)
+	}
+
+	// Clients
 	batchclient, err := NewClient(cmd.ui)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
-	ds, err := getDataset(batchclient, config.CurrentProject, datasetID)
-	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
-	}
-
-	logrus.Infof("Uploading dataset with ID '%v'", ds.DatasetID)
-
 	dataOps, err := aws.NewDataClient(
 		aws.NewNerdalizeCredentials(batchclient, config.CurrentProject),
 		nerd.GetCurrentUser().Region,
@@ -110,23 +112,18 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	}
 	dataclient := v1data.NewClient(dataOps)
 
-	fi, err := os.Stat(dataPath)
+	// Dataset
+	ds, err := getDataset(batchclient, config.CurrentProject, datasetID)
 	if err != nil {
-		HandleError(errors.Errorf("argument '%v' is not a valid file or directory", dataPath), cmd.opts.VerboseOutput)
-	} else if !fi.IsDir() {
-		HandleError(errors.Errorf("provided path '%s' is not a directory", dataPath), cmd.opts.VerboseOutput)
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
-
+	logrus.Infof("Uploading dataset with ID '%v'", ds.DatasetID)
 	err = ioutil.WriteFile(path.Join(dataPath, DatasetFilename), []byte(ds.DatasetID), DatasetPermissions)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	size, err := totalTarSize(dataPath)
-	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
-	}
-
+	// Index
 	indexr, indexw := io.Pipe()
 	indexDoneCh := make(chan error)
 	go func() {
@@ -139,16 +136,13 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	}()
 	iw := v1data.NewIndexWriter(indexw)
 
-	metadata := &v1data.Metadata{
-		Size:    size,
-		Created: time.Now(),
-		Updated: time.Now(),
+	// Progress
+	size, err := totalTarSize(dataPath)
+	if err != nil {
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
-	doneCh := make(chan error)
 	progressCh := make(chan int64)
 	progressBarDoneCh := make(chan struct{})
-	pr, pw := io.Pipe()
-
 	if !cmd.opts.JSONOutput {
 		go ProgressBar(size, progressCh, progressBarDoneCh)
 	} else {
@@ -158,6 +152,10 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 			progressBarDoneCh <- struct{}{}
 		}()
 	}
+
+	// Uploading
+	doneCh := make(chan error)
+	pr, pw := io.Pipe()
 	go func() {
 		defer close(progressCh)
 		err := dataclient.ChunkedUpload(NewChunker(v1data.UploadPolynomal, pr), iw, UploadConcurrency, ds.Bucket, ds.Root, progressCh)
@@ -165,11 +163,13 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		doneCh <- err
 	}()
 
+	// Tarring
 	err = tardir(dataPath, pw)
 	if err != nil && errors.Cause(err) != io.ErrClosedPipe {
 		HandleError(errors.Wrapf(err, "failed to tar '%s'", dataPath), cmd.opts.VerboseOutput)
 	}
 
+	// Finish uploading
 	err = pw.Close()
 	if err != nil {
 		HandleError(errors.Wrap(err, "failed to close chunked upload pipe writer"), cmd.opts.VerboseOutput)
@@ -178,6 +178,8 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	if err != nil {
 		HandleError(errors.Wrapf(err, "failed to upload '%s'", dataPath), cmd.opts.VerboseOutput)
 	}
+
+	// Finish uploading index
 	err = iw.Close()
 	if err != nil {
 		HandleError(errors.Wrap(err, "failed to close index pipe writer"), cmd.opts.VerboseOutput)
@@ -187,15 +189,17 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		HandleError(errors.Wrap(err, "failed to upload index file"), cmd.opts.VerboseOutput)
 	}
 
+	// Wait for progress bar to be flushed to screen
 	<-progressBarDoneCh
 
-	dat, err := json.Marshal(metadata)
+	// Metadata
+	metadata, err := getMetadata(dataclient, ds.Bucket, ds.Root, size)
 	if err != nil {
-		HandleError(errors.Wrap(err, "failed to convert marshal metadata"), cmd.opts.VerboseOutput)
+		HandleError(errors.Wrapf(err, "failed to get metadata for dataset '%v'", datasetID), cmd.opts.VerboseOutput)
 	}
-	err = dataclient.Upload(ds.Bucket, path.Join(ds.Root, v1data.MetadataObjectKey), bytes.NewReader(dat))
+	err = dataclient.MetadataUpload(ds.Bucket, ds.Root, metadata)
 	if err != nil {
-		return errors.Wrap(err, "failed to upload index file")
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
 	return nil
@@ -313,4 +317,22 @@ func getDataset(client *v1batch.Client, projectID, datasetID string) (*v1payload
 		return nil, errors.Wrap(err, "failed to retrieve dataset")
 	}
 	return &dsg.Dataset, nil
+}
+
+func getMetadata(client *v1data.Client, bucket, root string, size int64) (*v1datapayload.Metadata, error) {
+	exists, err := client.MetadataExists(bucket, root)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if metadata exists")
+	}
+	if !exists {
+		return &v1datapayload.Metadata{
+			Size:    size,
+			Created: time.Now(),
+			Updated: time.Now(),
+		}, nil
+	}
+	metadata, err := client.MetadataDownload(bucket, root)
+	metadata.Size = size
+	metadata.Updated = time.Now()
+	return metadata, nil
 }
