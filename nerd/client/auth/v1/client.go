@@ -2,7 +2,7 @@ package v1auth
 
 import (
 	"github.com/dghubble/sling"
-	"github.com/nerdalize/nerd/nerd/payload"
+	v1payload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
 	"github.com/pkg/errors"
 )
 
@@ -35,7 +35,7 @@ func (auth *Client) GetToken(user, pass string) (string, error) {
 		return "", errors.Wrapf(err, "failed to create request (%v)", auth.URL)
 	}
 	req.SetBasicAuth(user, pass)
-	e := &payload.AuthError{}
+	e := &v1payload.AuthError{}
 	_, err = s.Do(req, b, e)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to do request (%v)", auth.URL)

@@ -19,11 +19,3 @@ type Error struct {
 func (e Error) Error() string {
 	return e.Message
 }
-
-type AuthError struct {
-	Detail string `json:"detail"`
-}
-
-func (e AuthError) Error() string {
-	return e.Detail
-}
