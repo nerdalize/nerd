@@ -39,7 +39,7 @@ func (c *Client) Upload(bucket, key string, body io.ReadSeeker) error {
 			if i < NoOfRetries {
 				continue
 			}
-			return &client.Error{fmt.Sprintf("failed to put '%v'", key), err}
+			return client.NewError(fmt.Sprintf("failed to put '%v'", key), err)
 		}
 		break
 	}
@@ -56,7 +56,7 @@ func (c *Client) Download(bucket, key string) (io.ReadCloser, error) {
 			if i < NoOfRetries {
 				continue
 			}
-			return nil, &client.Error{fmt.Sprintf("failed to download '%v'", key), err}
+			return nil, client.NewError(fmt.Sprintf("failed to download '%v'", key), err)
 		}
 		r = resp
 		break

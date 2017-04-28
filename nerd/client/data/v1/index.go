@@ -34,7 +34,7 @@ func (r *IndexReader) ReadKey() (Key, error) {
 	line := r.s.Text()
 	bytes, err := hex.DecodeString(line)
 	if err != nil {
-		return ZeroKey, &client.Error{fmt.Sprintf("could not decode key string '%v'", line), err}
+		return ZeroKey, client.NewError(fmt.Sprintf("could not decode key string '%v'", line), err)
 	}
 	var k Key
 	copy(k[:], bytes)
@@ -57,7 +57,7 @@ func NewIndexWriter(w io.Writer) *IndexWriter {
 func (w *IndexWriter) WriteKey(k Key) error {
 	_, err := w.w.Write([]byte(fmt.Sprintf("%v\n", k.ToString())))
 	if err != nil {
-		return &client.Error{fmt.Sprintf("failed to write key '%v' to writer", k.ToString()), err}
+		return client.NewError(fmt.Sprintf("failed to write key '%v' to writer", k.ToString()), err)
 	}
 	return nil
 }

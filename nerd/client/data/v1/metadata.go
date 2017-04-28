@@ -23,11 +23,11 @@ func (c *Client) MetadataExists(bucket, root string) (bool, error) {
 func (c *Client) MetadataUpload(bucket, root string, m *v1payload.Metadata) error {
 	dat, err := json.Marshal(m)
 	if err != nil {
-		return &client.Error{"failed to encode metadata", err}
+		return client.NewError("failed to encode metadata", err)
 	}
 	err = c.Upload(bucket, path.Join(root, MetadataObjectKey), bytes.NewReader(dat))
 	if err != nil {
-		return &client.Error{"failed to upload index file", err}
+		return client.NewError("failed to upload index file", err)
 	}
 	return nil
 }
@@ -36,13 +36,13 @@ func (c *Client) MetadataUpload(bucket, root string, m *v1payload.Metadata) erro
 func (c *Client) MetadataDownload(bucket, root string) (*v1payload.Metadata, error) {
 	r, err := c.Download(bucket, path.Join(root, MetadataObjectKey))
 	if err != nil {
-		return nil, &client.Error{"failed to download metadata", err}
+		return nil, client.NewError("failed to download metadata", err)
 	}
 	dec := json.NewDecoder(r)
 	metadata := &v1payload.Metadata{}
 	err = dec.Decode(metadata)
 	if err != nil {
-		return nil, &client.Error{"failed to decode metadata", err}
+		return nil, client.NewError("failed to decode metadata", err)
 	}
 	return metadata, nil
 }

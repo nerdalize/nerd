@@ -14,6 +14,14 @@ type Error struct {
 	Underlying error
 }
 
+//NewError creates a new Error
+func NewError(msg string, underlying error) *Error {
+	return &Error{
+		Msg:        msg,
+		Underlying: underlying,
+	}
+}
+
 //Error returns the error message.
 func (e Error) Error() string {
 	if e.Underlying != nil {

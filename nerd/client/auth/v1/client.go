@@ -47,19 +47,19 @@ func NewClient(c ClientConfig) *Client {
 func (c *Client) GetToken(user, pass string) (string, error) {
 	path, err := url.Parse(TokenEndpoint)
 	if err != nil {
-		return "", &client.Error{"invalid url path provided", err}
+		return "", client.NewError("invalid url path provided", err)
 	}
 	resolved := c.Base.ResolveReference(path)
 
 	req, err := http.NewRequest(http.MethodGet, resolved.String(), nil)
 	if err != nil {
-		return "", &client.Error{"failed to create HTTP request", err}
+		return "", client.NewError("invalid url path provided", err)
 	}
 	req.SetBasicAuth(user, pass)
 	client.LogRequest(req, c.Logger)
 	resp, err := c.Doer.Do(req)
 	if err != nil {
-		return "", &client.Error{"failed to perform HTTP request", err}
+		return "", client.NewError("failed to perform HTTP request", err)
 	}
 	client.LogResponse(resp, c.Logger)
 
@@ -70,7 +70,7 @@ func (c *Client) GetToken(user, pass string) (string, error) {
 		errv := &v1payload.Error{}
 		err = dec.Decode(errv)
 		if err != nil {
-			return "", &client.Error{fmt.Sprintf("failed to decode unexpected HTTP response (%s)", resp.Status), err}
+			return "", client.NewError(fmt.Sprintf("failed to decode unexpected HTTP response (%s)", resp.Status), err)
 		}
 
 		return "", errv
@@ -82,7 +82,7 @@ func (c *Client) GetToken(user, pass string) (string, error) {
 	b := &body{}
 	err = dec.Decode(b)
 	if err != nil {
-		return "", &client.Error{fmt.Sprintf("failed to decode successfull HTTP response (%s)", resp.Status), err}
+		return "", client.NewError(fmt.Sprintf("failed to decode successfull HTTP response (%s)", resp.Status), err)
 	}
 	return b.Token, nil
 }

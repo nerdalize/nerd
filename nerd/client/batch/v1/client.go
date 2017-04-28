@@ -101,7 +101,7 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 
 	path, err := url.Parse(urlPath)
 	if err != nil {
-		return &client.Error{"invalid url path provided", err}
+		return client.NewError("invalid url path provided", err)
 	}
 
 	resolved := c.Base.ResolveReference(path)
@@ -112,16 +112,16 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 		enc := json.NewEncoder(buf)
 		err = enc.Encode(input)
 		if err != nil {
-			return &client.Error{"failed to encode the request body", err}
+			return client.NewError("failed to encode the request body", err)
 		}
 		req, err = http.NewRequest(method, resolved.String(), buf)
 		if err != nil {
-			return &client.Error{"failed to create HTTP request", err}
+			return client.NewError("failed to create HTTP request", err)
 		}
 	} else {
 		req, err = http.NewRequest(method, resolved.String(), nil)
 		if err != nil {
-			return &client.Error{"failed to create HTTP request", err}
+			return client.NewError("failed to create HTTP request", err)
 		}
 	}
 
@@ -129,7 +129,7 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 	client.LogRequest(req, c.Logger)
 	resp, err := c.Doer.Do(req)
 	if err != nil {
-		return &client.Error{"failed to perform HTTP request", err}
+		return client.NewError("failed to create HTTP request", err)
 	}
 	client.LogResponse(resp, c.Logger)
 
@@ -139,7 +139,7 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 		errv := &v1payload.Error{}
 		err = dec.Decode(errv)
 		if err != nil {
-			return &client.Error{fmt.Sprintf("failed to decode unexpected HTTP response (%s)", resp.Status), err}
+			return client.NewError(fmt.Sprintf("failed to decode unexpected HTTP response (%s)", resp.Status), err)
 		}
 
 		return &HTTPError{
@@ -151,7 +151,7 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 	if output != nil {
 		err = dec.Decode(output)
 		if err != nil {
-			return &client.Error{fmt.Sprintf("failed to decode successfull HTTP response (%s)", resp.Status), err}
+			return client.NewError(fmt.Sprintf("failed to decode successfull HTTP response (%s)", resp.Status), err)
 		}
 	}
 
