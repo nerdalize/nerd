@@ -2,7 +2,6 @@ package jwt
 
 import (
 	"crypto/ecdsa"
-	"time"
 
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
 	v1payload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
@@ -46,15 +45,13 @@ func (p *AuthAPIProvider) Retrieve() (string, error) {
 		}
 		return "", errors.Wrap(err, "failed to get nerd jwt for username and password")
 	}
-	claims, err := DecodeTokenWithKey(jwt, p.Pub)
+	err = p.SetExpirationFromJWT(jwt)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to retreive claims from nerd jwt '%v'", jwt)
+		return "", errors.Wrap(err, "failed to set expiration")
 	}
 	err = conf.WriteNerdToken(jwt)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to write nerd jwt to config")
 	}
-	p.AlwaysValid = claims.ExpiresAt == 0 // if unset
-	p.SetExpiration(time.Unix(claims.ExpiresAt, 0))
 	return jwt, nil
 }

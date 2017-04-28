@@ -3,7 +3,6 @@ package jwt
 import (
 	"crypto/ecdsa"
 	"os"
-	"time"
 
 	"github.com/pkg/errors"
 )
@@ -34,15 +33,9 @@ func (e *EnvProvider) Retrieve() (string, error) {
 	if jwt == "" {
 		return "", errors.Errorf("environment variable %v is not set", NerdTokenEnvVar)
 	}
-	claims, err := DecodeTokenWithKey(jwt, e.Pub)
+	err := e.SetExpirationFromJWT(jwt)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to decode jwt '%v'", jwt)
-	}
-	e.AlwaysValid = claims.ExpiresAt == 0 // if unset
-	e.SetExpiration(time.Unix(claims.ExpiresAt, 0))
-	err = claims.Valid()
-	if err != nil {
-		return "", errors.Wrapf(err, "nerd jwt '%v' is invalid", jwt)
+		return "", errors.Wrap(err, "failed to set expiration")
 	}
 	return jwt, nil
 }

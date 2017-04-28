@@ -1,11 +1,14 @@
 package jwt
 
 import (
+	"crypto/ecdsa"
 	"testing"
 	"time"
+
+	jwt "github.com/dgrijalva/jwt-go"
 )
 
-func TestBasisProvider(t *testing.T) {
+func TestExpiration(t *testing.T) {
 	cases := []struct {
 		alwaysValid bool
 		window      time.Duration
@@ -49,5 +52,28 @@ func TestBasisProvider(t *testing.T) {
 		if basis.IsExpired() != c.expected {
 			t.Errorf("Expected %v but got %v for case %v", c.expected, basis.IsExpired(), c)
 		}
+	}
+}
+
+func TestExpirationFromJWT(t *testing.T) {
+	key := testkey(t)
+	exp := time.Unix(time.Now().Add(time.Minute).Unix(), 0) // we need a little hack to make sure we round to seconds
+	token := jwt.NewWithClaims(jwt.SigningMethodES384, &jwt.StandardClaims{
+		ExpiresAt: exp.Unix(),
+	})
+	ss, err := token.SignedString(key)
+	if err != nil {
+		t.Fatalf("failed to sign test token: %v", err)
+	}
+	pub, _ := key.Public().(*ecdsa.PublicKey)
+	basis := &ProviderBasis{
+		Pub: pub,
+	}
+	err = basis.SetExpirationFromJWT(ss)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if basis.expiration != exp {
+		t.Errorf("expected expiration %v but got %v", exp, basis.expiration)
 	}
 }

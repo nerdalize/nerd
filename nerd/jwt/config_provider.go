@@ -2,7 +2,6 @@ package jwt
 
 import (
 	"crypto/ecdsa"
-	"time"
 
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
@@ -29,19 +28,12 @@ func (e *ConfigProvider) Retrieve() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "failed to read config")
 	}
-	jwt := c.NerdToken
-	if jwt == "" {
+	if c.NerdToken == "" {
 		return "", errors.New("nerd_token is not set in config")
 	}
-	claims, err := DecodeTokenWithKey(jwt, e.Pub)
+	err = e.SetExpirationFromJWT(c.NerdToken)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to decode jwt '%v'", jwt)
+		return "", errors.Wrap(err, "failed to set expiration")
 	}
-	e.AlwaysValid = claims.ExpiresAt == 0 // if unset
-	e.SetExpiration(time.Unix(claims.ExpiresAt, 0))
-	err = claims.Valid()
-	if err != nil {
-		return "", errors.Wrapf(err, "nerd jwt '%v' is invalid", jwt)
-	}
-	return jwt, nil
+	return c.NerdToken, nil
 }
