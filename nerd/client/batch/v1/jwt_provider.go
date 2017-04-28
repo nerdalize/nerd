@@ -4,8 +4,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//JWTProvider provides the client with a JWT. An implementation of this interface
-//is capable of providing a JWT string to the client. When IsExpired return false
+//JWTProvider is capable of providing a JWT.  When IsExpired return false
 //the in-memory JWT will be used to prevent from calling Retrieve for each API call.
 type JWTProvider interface {
 	IsExpired() bool
@@ -32,7 +31,7 @@ func (s *StaticJWTProvider) Retrieve() (string, error) {
 	return s.JWT, nil
 }
 
-//ChainedJWTProvider provides nerdalize credentials based on multiple providers. The given providers are tried in sequential order.
+//ChainedJWTProvider provides a JWT based on multiple providers. The given providers are tried in sequential order.
 type ChainedJWTProvider struct {
 	Providers []JWTProvider
 	curr      JWTProvider
@@ -45,7 +44,7 @@ func NewChainedJWTProvider(providers ...JWTProvider) *ChainedJWTProvider {
 	}
 }
 
-// Retrieve returns the credentials value or error if no provider returned
+// Retrieve returns the jwt or error if no provider returned
 // without error.
 //
 // If a provider is found it will be cached and any calls to IsExpired()

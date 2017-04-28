@@ -6,6 +6,13 @@ import (
 	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
 )
 
+//ClientQueueInterface is an interface so client queue calls can be mocked.
+type ClientQueueInterface interface {
+	CreateQueue(projectID string) (output *v1payload.CreateQueueOutput, err error)
+	DeleteQueue(projectID, queueID string) (output *v1payload.DeleteQueueOutput, err error)
+	DescribeQueue(projectID, queueID string) (output *v1payload.DescribeQueueOutput, err error)
+}
+
 //CreateQueue will create queue
 func (c *Client) CreateQueue(projectID string) (output *v1payload.CreateQueueOutput, err error) {
 	output = &v1payload.CreateQueueOutput{}

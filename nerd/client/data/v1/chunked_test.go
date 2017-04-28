@@ -33,6 +33,8 @@ func (f *fakeDataOps) Download(bucket, key string) (body io.ReadCloser, err erro
 	return ioutil.NopCloser(bytes.NewReader(f.data[bucket+"/"+key])), nil
 }
 func (f *fakeDataOps) Exists(bucket, key string) (exists bool, err error) {
+	f.m.Lock()
+	defer f.m.Unlock()
 	_, ok := f.data[bucket+"/"+key]
 	return ok, nil
 }
@@ -102,7 +104,7 @@ func (kw *BufferedKeyReadWriter) ReadKey() (k Key, err error) {
 	return k, nil
 }
 
-//TestUpDown tests up/download end-to-end with a mocked S3 interface.
+//TestUpDown tests up/download end-to-end with a mocked S3 backend.
 func TestUpDown(t *testing.T) {
 	chunks := [][]byte{
 		[]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},

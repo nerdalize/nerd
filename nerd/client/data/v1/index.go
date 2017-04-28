@@ -10,20 +10,23 @@ import (
 )
 
 const (
-	//IndexObjectKey is the key of the S3 object that contains an index of all the chunks of a dataset.
+	//IndexObjectKey is the key of the object that contains an index of all the chunks of a dataset.
 	IndexObjectKey = "index"
 )
 
+//IndexReader can be used to read keys from the "index" object.
 type IndexReader struct {
 	s *bufio.Scanner
 }
 
+//NewIndexReader creates a new IndexReader.
 func NewIndexReader(r io.Reader) *IndexReader {
 	return &IndexReader{
 		s: bufio.NewScanner(r),
 	}
 }
 
+//ReadKey reads Keys from the provided io.Reader.
 func (r *IndexReader) ReadKey() (Key, error) {
 	if !r.s.Scan() {
 		return ZeroKey, io.EOF
@@ -38,16 +41,19 @@ func (r *IndexReader) ReadKey() (Key, error) {
 	return k, nil
 }
 
+//IndexWriter can be used to write keys to the "index" object.
 type IndexWriter struct {
 	w io.WriteCloser
 }
 
+//NewIndexWriter creates a new IndexWriter.
 func NewIndexWriter(w io.WriteCloser) *IndexWriter {
 	return &IndexWriter{
 		w: w,
 	}
 }
 
+//WriteKey writes a Key to the io.WriteCloser.
 func (w *IndexWriter) WriteKey(k Key) error {
 	_, err := w.w.Write([]byte(fmt.Sprintf("%v\n", k.ToString())))
 	if err != nil {
@@ -56,6 +62,7 @@ func (w *IndexWriter) WriteKey(k Key) error {
 	return nil
 }
 
+//Close the writer.
 func (w *IndexWriter) Close() error {
 	err := w.w.Close()
 	if err != nil {

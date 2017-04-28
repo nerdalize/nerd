@@ -10,12 +10,16 @@ import (
 )
 
 const (
+	//MetadataObjectKey is the key of the object that contains an a dataset's metadata.
 	MetadataObjectKey = "metadata"
 )
 
+//MetadataExists checks if the metadata object exists.
 func (c *Client) MetadataExists(bucket, root string) (bool, error) {
 	return c.Exists(bucket, path.Join(root, MetadataObjectKey))
 }
+
+//MetadataUpload uploads a dataset's metadata.
 func (c *Client) MetadataUpload(bucket, root string, m *v1payload.Metadata) error {
 	dat, err := json.Marshal(m)
 	if err != nil {
@@ -28,6 +32,7 @@ func (c *Client) MetadataUpload(bucket, root string, m *v1payload.Metadata) erro
 	return nil
 }
 
+//MetadataDownload downloads a dataset's metadata.
 func (c *Client) MetadataDownload(bucket, root string) (*v1payload.Metadata, error) {
 	r, err := c.Download(bucket, path.Join(root, MetadataObjectKey))
 	if err != nil {

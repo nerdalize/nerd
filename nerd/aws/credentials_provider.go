@@ -11,20 +11,25 @@ import (
 // ProviderName is the name of the credentials provider.
 const ProviderName = `NerdalizeProvider`
 
+//DefaultExpireWindow is the default amount of seconds that the credentials are assumed to be expired, before they are actually expired.
+//This will prevent the server from rejecting the credentials because they were just expired.
+const DefaultExpireWindow = 20
+
 // Provider satisfies the credentials.Provider interface, and is a client to
 // retrieve credentials from the nerdalize api.
 type Provider struct {
 	credentials.Expiry
 	ExpiryWindow time.Duration
-	Client       *v1batch.Client
+	Client       v1batch.ClientTokenInterface
 	NlzProjectID string
 }
 
 //NewNerdalizeCredentials creates a new credentials object with the NerdalizeProvider as provider.
-func NewNerdalizeCredentials(c *v1batch.Client, nlzProjectID string) *credentials.Credentials {
+func NewNerdalizeCredentials(c v1batch.ClientTokenInterface, nlzProjectID string) *credentials.Credentials {
 	return credentials.NewCredentials(&Provider{
 		Client:       c,
 		NlzProjectID: nlzProjectID,
+		ExpiryWindow: DefaultExpireWindow,
 	})
 }
 

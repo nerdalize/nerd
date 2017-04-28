@@ -8,6 +8,15 @@ import (
 	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
 )
 
+//ClientTaskInterface is an interface so client task calls can be mocked.
+type ClientTaskInterface interface {
+	StartTask(projectID, queueID, payload string) (output *v1payload.StartTaskOutput, err error)
+	StopTask(projectID, queueID, taskID string) (output *v1payload.StopTaskOutput, err error)
+	ListTasks(projectID, queueID string) (output *v1payload.ListTasksOutput, err error)
+	KeepTask(projectID, queueID, taskID, runToken string) (output *v1payload.KeepTaskOutput, err error)
+	ReceiveTaskRuns(projectID, queueID string, timeout time.Duration, queueOps QueueOps) (output []*v1payload.Run, err error)
+}
+
 // QueueOps is an interface that includes queue operations.
 type QueueOps interface {
 	ReceiveMessages(queueURL string, maxNoOfMessages, waitTimeSeconds int64) (messages []interface{}, err error)

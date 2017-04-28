@@ -21,6 +21,7 @@ import (
 )
 
 const (
+	//OutputDirPermissions are the output directory's permissions.
 	OutputDirPermissions = 0755
 	//DownloadConcurrency is the amount of concurrent download threads.
 	DownloadConcurrency = 64

@@ -16,6 +16,7 @@ type Error struct {
 	Fields map[string]string `json:"fields,omitempty"`
 }
 
+//Error returns the error message.
 func (e Error) Error() string {
 	return e.Message
 }

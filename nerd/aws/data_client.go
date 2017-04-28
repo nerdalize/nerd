@@ -12,10 +12,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+//DataClient is a client to AWS' S3 service. The client implements the v1data.DataOps interface.
 type DataClient struct {
 	Service *s3.S3
 }
 
+//NewDataClient creates a new DataClient.
 func NewDataClient(c *credentials.Credentials, region string) (*DataClient, error) {
 	sess, err := session.NewSession(&aws.Config{
 		Credentials: c,
@@ -29,6 +31,7 @@ func NewDataClient(c *credentials.Credentials, region string) (*DataClient, erro
 	}, nil
 }
 
+//Upload uploads an object to S3.
 func (c *DataClient) Upload(bucket, key string, body io.ReadSeeker) error {
 	input := &s3.PutObjectInput{
 		Bucket: aws.String(bucket), // Required
@@ -39,6 +42,7 @@ func (c *DataClient) Upload(bucket, key string, body io.ReadSeeker) error {
 	return err
 }
 
+//Download downloads an object to S3.
 func (c *DataClient) Download(bucket, key string) (body io.ReadCloser, err error) {
 	input := &s3.GetObjectInput{
 		Bucket: aws.String(bucket), // Required
@@ -52,6 +56,7 @@ func (c *DataClient) Download(bucket, key string) (body io.ReadCloser, err error
 	return resp.Body, nil
 }
 
+//Exists checks whether an object exists on S3.
 func (c *DataClient) Exists(bucket, key string) (exists bool, err error) {
 	input := &s3.HeadObjectInput{
 		Bucket: aws.String(bucket), // Required

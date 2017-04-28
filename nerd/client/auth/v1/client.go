@@ -43,7 +43,7 @@ func NewClient(c ClientConfig) *Client {
 	return &Client{c}
 }
 
-//GetToken gets a JWT for a given user.
+//GetToken fetches a JWT for a given user.
 func (c *Client) GetToken(user, pass string) (string, error) {
 	path, err := url.Parse(TokenEndpoint)
 	if err != nil {

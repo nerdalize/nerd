@@ -41,12 +41,21 @@ type ClientConfig struct {
 	Logger      client.Logger
 }
 
+//ClientInterface is an interface so client calls can be mocked.
+type ClientInterface interface {
+	ClientDatasetInterface
+	ClientPingInterface
+	ClientQueueInterface
+	ClientTaskInterface
+	ClientTokenInterface
+}
+
 // Doer executes http requests.  It is implemented by *http.Client.
 type Doer interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-//NewNerdClient creates a new Nerd client from a config object. The http.DefaultClient
+//NewClient creates a new Nerd client from a config object. The http.DefaultClient
 //will be used as default Doer.
 func NewClient(conf ClientConfig) *Client {
 	if conf.Doer == nil {
@@ -63,7 +72,8 @@ func NewClient(conf ClientConfig) *Client {
 	return cl
 }
 
-func (c *Client) getCredentials() (string, error) {
+//getJWT atomically gets the JWT from the JWT provider.
+func (c *Client) getJWT() (string, error) {
 	c.m.Lock()
 	defer c.m.Unlock()
 	if c.JWTProvider == nil {
@@ -79,8 +89,12 @@ func (c *Client) getCredentials() (string, error) {
 	return c.cred, nil
 }
 
+//doRequest requests the server and decodes the output into the `output` field.
+//
+//doRequest will set the Authentication header with the JWT provided by the JWTProvider.
+//When a status code >= 400 is returned by the server the returned error will be of type HTTPError.
 func (c *Client) doRequest(method, urlPath string, input, output interface{}) (err error) {
-	cred, err := c.getCredentials()
+	cred, err := c.getJWT()
 	if err != nil {
 		return err
 	}
@@ -144,6 +158,7 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 	return nil
 }
 
+//createPath is a convienent wrapper for creating a resource path prefixed by the project namespace.
 func createPath(projectID string, elem ...string) string {
 	return path.Join(projectsPrefix, projectID, path.Join(elem...))
 }

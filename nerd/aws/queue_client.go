@@ -10,11 +10,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-//DataClient holds a reference to an AWS session
+//QueueClient is a client to AWS' SQS queueing service. The client implements the v1batch.QueueOps interface.
 type QueueClient struct {
 	Service *sqs.SQS
 }
 
+//NewQueueClient creates a new QueueClient
 func NewQueueClient(c *credentials.Credentials, region string) (*QueueClient, error) {
 	sess, err := session.NewSession(&aws.Config{
 		Credentials: c,
@@ -28,6 +29,7 @@ func NewQueueClient(c *credentials.Credentials, region string) (*QueueClient, er
 	}, nil
 }
 
+//ReceiveMessages receives messages from the queue.
 func (c *QueueClient) ReceiveMessages(queueURL string, maxNoOfMessages, waitTimeSeconds int64) (messages []interface{}, err error) {
 	out, err := c.Service.ReceiveMessage(&sqs.ReceiveMessageInput{
 		QueueUrl:            aws.String(queueURL),
@@ -44,6 +46,7 @@ func (c *QueueClient) ReceiveMessages(queueURL string, maxNoOfMessages, waitTime
 	return ret, nil
 }
 
+//UnmarshalMessage decodes a message.
 func (c *QueueClient) UnmarshalMessage(message interface{}, v interface{}) error {
 	msg, ok := message.(*sqs.Message)
 	if !ok {
@@ -52,6 +55,7 @@ func (c *QueueClient) UnmarshalMessage(message interface{}, v interface{}) error
 	return json.Unmarshal([]byte(aws.StringValue(msg.Body)), v)
 }
 
+//DeleteMessage deletes a message from the queue.
 func (c *QueueClient) DeleteMessage(queueURL string, message interface{}) error {
 	msg, ok := message.(*sqs.Message)
 	if !ok {

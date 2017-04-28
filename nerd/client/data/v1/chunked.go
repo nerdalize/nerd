@@ -27,24 +27,26 @@ func (k Key) ToString() string {
 //ZeroKey is an empty key.
 var ZeroKey = Key{}
 
+//KeyReader can be implemented by objects capable of reading Keys.
 type KeyReader interface {
 	ReadKey() (Key, error)
 }
 
+//KeyReader can be implemented by objects capable of writing Keys.
 type KeyWriter interface {
 	WriteKey(Key) error
 }
 
+//Chunker is used to split a stream of data up into chunks.
 type Chunker interface {
 	Next() (data []byte, length uint, err error)
 }
 
-//ChunkedUpload uploads data from a io.Reader (`r`) as a list of chunks. The Key of every chunk uploaded will be written to the KeyReadWriter (`kw`).
+//ChunkedUpload uploads a dataset as a set of chunks. The Key of every chunk uploaded will be written to the KeyWriter (`kw`).
 //ChunkedDownload reports its progress (the amount of bytes uploaded) to the progressCh.
 //It will start a maximum of `concurrency` concurrent go routines to upload in paralllel.
 //`root` is used as the root path of the chunk in S3. Root will be concatenated with the key to make the full S3 object path.
 func (c *Client) ChunkedUpload(chunker Chunker, w KeyWriter, concurrency int, bucket, root string, progressCh chan<- int64) (err error) {
-	// func (c *Client) ChunkedUpload(r io.Reader, kw data.KeyReadWriter, concurrency int, bucket, root string, progressCh chan<- int64) (err error) {
 	type result struct {
 		err error
 		k   Key
@@ -123,7 +125,7 @@ func (c *Client) ChunkedUpload(chunker Chunker, w KeyWriter, concurrency int, bu
 	return nil
 }
 
-//ChunkedDownload downloads a list of chunks and writes them to a io.Writer.
+//ChunkedDownload downloads a list of chunks and writes them to an io.Writer.
 //ChunkedDownload reports its progress (the amount of bytes downloaded) to the progressCh.
 //It will start a maximum of `concurrency` concurrent go routines to download in paralllel.
 //`root` is used as the root path of the chunk in S3. Root will be concatenated with the Key read from `kr` to make the full S3 object path.
