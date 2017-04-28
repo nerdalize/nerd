@@ -41,8 +41,7 @@ func (p *AuthAPIProvider) Retrieve() (string, error) {
 	}
 	jwt, err := p.Client.GetToken(user, pass)
 	if err != nil {
-		if aerr, ok := err.(*v1payload.AuthError); ok {
-			// TODO: Make user facing
+		if aerr, ok := err.(*v1payload.Error); ok {
 			return "", aerr
 		}
 		return "", errors.Wrap(err, "failed to get nerd jwt for username and password")

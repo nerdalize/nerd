@@ -1,9 +1,13 @@
 package v1auth
 
 import (
-	"github.com/dghubble/sling"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/url"
+
+	"github.com/nerdalize/nerd/nerd/client"
 	v1payload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -13,35 +17,72 @@ const (
 
 //Auth is the client for the nerdalize authentication server.
 type Client struct {
-	URL string
+	ClientConfig
+}
+
+//NerdConfig provides config details to create a Nerd client.
+type ClientConfig struct {
+	Doer   Doer
+	Base   *url.URL
+	Logger client.Logger
+}
+
+// Doer executes http requests.  It is implemented by *http.Client.
+type Doer interface {
+	Do(req *http.Request) (*http.Response, error)
 }
 
 //NewAuthAPI creates a new Auth.
-func NewClient(url string) *Client {
-	return &Client{
-		URL: url,
+func NewClient(c ClientConfig) *Client {
+	if c.Doer == nil {
+		c.Doer = http.DefaultClient
 	}
+	if c.Base.Path != "" && c.Base.Path[len(c.Base.Path)-1] != '/' {
+		c.Base.Path = c.Base.Path + "/"
+	}
+	return &Client{c}
 }
 
 //GetToken gets a JWT for a given user.
-func (auth *Client) GetToken(user, pass string) (string, error) {
+func (c *Client) GetToken(user, pass string) (string, error) {
+	path, err := url.Parse(TokenEndpoint)
+	if err != nil {
+		return "", &client.Error{"invalid url path provided", err}
+	}
+	resolved := c.Base.ResolveReference(path)
+
+	req, err := http.NewRequest(http.MethodGet, resolved.String(), nil)
+	if err != nil {
+		return "", &client.Error{"failed to create HTTP request", err}
+	}
+	req.SetBasicAuth(user, pass)
+	client.LogRequest(req, c.Logger)
+	resp, err := c.Doer.Do(req)
+	if err != nil {
+		return "", &client.Error{"failed to perform HTTP request", err}
+	}
+	client.LogResponse(resp, c.Logger)
+
+	dec := json.NewDecoder(resp.Body)
+	defer resp.Body.Close()
+
+	if resp.StatusCode > 399 {
+		errv := &v1payload.Error{}
+		err = dec.Decode(errv)
+		if err != nil {
+			return "", &client.Error{fmt.Sprintf("failed to decode unexpected HTTP response (%s)", resp.Status), err}
+		}
+
+		return "", errv
+	}
+
 	type body struct {
 		Token string `json:"token"`
 	}
 	b := &body{}
-	s := sling.New().Get(auth.URL + "/" + TokenEndpoint)
-	req, err := s.Request()
+	err = dec.Decode(b)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to create request (%v)", auth.URL)
-	}
-	req.SetBasicAuth(user, pass)
-	e := &v1payload.AuthError{}
-	_, err = s.Do(req, b, e)
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to do request (%v)", auth.URL)
-	}
-	if e.Detail != "" {
-		return "", e
+		return "", &client.Error{fmt.Sprintf("failed to decode successfull HTTP response (%s)", resp.Status), err}
 	}
 	return b.Token, nil
 }
