@@ -26,7 +26,7 @@ func (kw *stdoutkw) Write(k string) (err error) {
 	return nil
 }
 
-//NewClient creates a new NerdAPIClient with two credential providers.
+//NewClient creates a new batch Client.
 func NewClient(ui cli.Ui) (*v1batch.Client, error) {
 	c, err := conf.Read()
 	if err != nil {
@@ -40,11 +40,18 @@ func NewClient(ui cli.Ui) (*v1batch.Client, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "nerd endpoint '%v' is not a valid URL", c.NerdAPIEndpoint)
 	}
+	authbase, err := url.Parse(c.Auth.APIEndpoint)
+	if err != nil {
+		return nil, errors.Wrapf(err, "auth endpoint '%v' is not a valid URL", c.Auth.APIEndpoint)
+	}
 	return v1batch.NewClient(v1batch.ClientConfig{
 		JWTProvider: v1batch.NewChainedJWTProvider(
 			jwt.NewEnvProvider(key),
 			jwt.NewConfigProvider(key),
-			jwt.NewAuthAPIProvider(key, UserPassProvider(ui), v1auth.NewClient(c.Auth.APIEndpoint)),
+			jwt.NewAuthAPIProvider(key, UserPassProvider(ui), v1auth.NewClient(v1auth.ClientConfig{
+				Base:   authbase,
+				Logger: logrus.StandardLogger(),
+			})),
 		),
 		Base:   base,
 		Logger: logrus.StandardLogger(),
@@ -115,16 +122,19 @@ func ProgressBar(total int64, progressCh <-chan int64, doneCh chan<- struct{}) {
 	doneCh <- struct{}{}
 }
 
+//Chunker is a wrapper of the restic/chunker library, to make it compatible with the v1data.Chunker interface.
 type Chunker struct {
 	cr *chunker.Chunker
 }
 
+//NewChunker returns a new Chunker
 func NewChunker(pol uint64, r io.Reader) *Chunker {
 	return &Chunker{
 		cr: chunker.New(r, chunker.Pol(pol)),
 	}
 }
 
+//Next wraps the restic/chunker Next call.
 func (c *Chunker) Next() (data []byte, length uint, err error) {
 	buf := make([]byte, chunker.MaxSize)
 	chunk, err := c.cr.Next(buf)

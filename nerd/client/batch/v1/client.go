@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"path"
 	"sync"
@@ -39,7 +38,7 @@ type ClientConfig struct {
 	Doer        Doer
 	JWTProvider JWTProvider
 	Base        *url.URL
-	Logger      Logger
+	Logger      client.Logger
 }
 
 // Doer executes http requests.  It is implemented by *http.Client.
@@ -113,11 +112,12 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 	}
 
 	req.Header.Set(AuthHeader, "Bearer "+cred)
+	client.LogRequest(req, c.Logger)
 	resp, err := c.Doer.Do(req)
 	if err != nil {
 		return &client.Error{"failed to perform HTTP request", err}
 	}
-	logResponse(resp, c.Logger)
+	client.LogResponse(resp, c.Logger)
 
 	dec := json.NewDecoder(resp.Body)
 	defer resp.Body.Close()
@@ -146,35 +146,4 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 
 func createPath(projectID string, elem ...string) string {
 	return path.Join(projectsPrefix, projectID, path.Join(elem...))
-}
-
-type Logger interface {
-	Debugf(format string, args ...interface{})
-	Error(args ...interface{})
-}
-
-func logRequest(req *http.Request, logger Logger) {
-	txt, err := httputil.DumpRequest(req, true)
-	// retry without printing the body
-	if err != nil {
-		txt, err = httputil.DumpRequest(req, false)
-	}
-	if err == nil {
-		logger.Debugf("HTTP Request:\n%s", txt)
-	} else {
-		logger.Error("Failed to log HTTP request")
-	}
-}
-
-func logResponse(res *http.Response, logger Logger) {
-	txt, err := httputil.DumpResponse(res, true)
-	// retry without printing the body
-	if err != nil {
-		txt, err = httputil.DumpResponse(res, false)
-	}
-	if err == nil {
-		logger.Debugf("HTTP Response:\n%s", txt)
-	} else {
-		logger.Error("Failed to log HTTP response")
-	}
 }

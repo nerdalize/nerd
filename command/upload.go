@@ -319,6 +319,7 @@ func getDataset(client *v1batch.Client, projectID, datasetID string) (*v1payload
 	return &dsg.Dataset, nil
 }
 
+//getMetadata gets the metadata of an exists dataset or creates a new one when the dataset does not have metadata yet.
 func getMetadata(client *v1data.Client, bucket, root string, size int64) (*v1datapayload.Metadata, error) {
 	exists, err := client.MetadataExists(bucket, root)
 	if err != nil {

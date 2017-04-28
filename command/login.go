@@ -1,6 +1,7 @@
 package command
 
 import (
+	"net/url"
 	"os"
 
 	"github.com/Sirupsen/logrus"
@@ -68,7 +69,14 @@ func (cmd *Login) DoRun(args []string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to read nerd config file")
 	}
-	cl := v1auth.NewClient(config.Auth.APIEndpoint)
+	base, err := url.Parse(config.Auth.APIEndpoint)
+	if err != nil {
+		return errors.Wrapf(err, "auth endpoint '%v' is not a valid URL", config.Auth.APIEndpoint)
+	}
+	cl := v1auth.NewClient(v1auth.ClientConfig{
+		Base:   base,
+		Logger: logrus.StandardLogger(),
+	})
 	token, err := cl.GetToken(user, pass)
 	if err != nil {
 		return errors.Wrap(err, "failed to get nerd token for username and password")
