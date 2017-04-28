@@ -43,11 +43,11 @@ func (r *IndexReader) ReadKey() (Key, error) {
 
 //IndexWriter can be used to write keys to the "index" object.
 type IndexWriter struct {
-	w io.WriteCloser
+	w io.Writer
 }
 
 //NewIndexWriter creates a new IndexWriter.
-func NewIndexWriter(w io.WriteCloser) *IndexWriter {
+func NewIndexWriter(w io.Writer) *IndexWriter {
 	return &IndexWriter{
 		w: w,
 	}
@@ -58,15 +58,6 @@ func (w *IndexWriter) WriteKey(k Key) error {
 	_, err := w.w.Write([]byte(fmt.Sprintf("%v\n", k.ToString())))
 	if err != nil {
 		return &client.Error{fmt.Sprintf("failed to write key '%v' to writer", k.ToString()), err}
-	}
-	return nil
-}
-
-//Close the writer.
-func (w *IndexWriter) Close() error {
-	err := w.w.Close()
-	if err != nil {
-		return &client.Error{"failed to close index writer", err}
 	}
 	return nil
 }

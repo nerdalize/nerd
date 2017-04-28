@@ -180,7 +180,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	}
 
 	// Finish uploading index
-	err = iw.Close()
+	err = indexw.Close()
 	if err != nil {
 		HandleError(errors.Wrap(err, "failed to close index pipe writer"), cmd.opts.VerboseOutput)
 	}
