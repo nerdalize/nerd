@@ -2,7 +2,6 @@ package v1batch
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -14,11 +13,9 @@ import (
 type logger struct{}
 
 func (l *logger) Error(args ...interface{}) {
-	fmt.Println(args)
 }
 
 func (l *logger) Debugf(a string, args ...interface{}) {
-	fmt.Printf(a, args)
 }
 
 type input struct {

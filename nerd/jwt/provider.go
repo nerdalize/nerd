@@ -25,7 +25,7 @@ func (b *ProviderBasis) IsExpired() bool {
 	if b.CurrentTime == nil {
 		b.CurrentTime = time.Now
 	}
-	return !b.AlwaysValid && b.expiration.Before(b.CurrentTime())
+	return !b.AlwaysValid && !b.CurrentTime().Before(b.expiration)
 }
 
 //SetExpiration sets the expiration field and takes the ExpireWindow into account.
