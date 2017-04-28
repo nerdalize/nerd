@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	//uploadPolynomal is the polynomal that is used for chunked uploading.
+	//UploadPolynomal is the polynomal that is used for chunked uploading.
 	UploadPolynomal = 0x3DA3358B4DC173
 )
 
@@ -32,7 +32,7 @@ type KeyReader interface {
 	ReadKey() (Key, error)
 }
 
-//KeyReader can be implemented by objects capable of writing Keys.
+//KeyWriter can be implemented by objects capable of writing Keys.
 type KeyWriter interface {
 	WriteKey(Key) error
 }

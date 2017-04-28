@@ -26,14 +26,14 @@ const (
 	queuesEndpoint  = "queues"
 )
 
-//Nerd is a client for the Nerdalize API.
+//Client is a client for the Nerdalize API.
 type Client struct {
 	ClientConfig
 	cred string
 	m    sync.Mutex
 }
 
-//NerdConfig provides config details to create a Nerd client.
+//ClientConfig provides config details to create a Nerd client.
 type ClientConfig struct {
 	Doer        Doer
 	JWTProvider JWTProvider

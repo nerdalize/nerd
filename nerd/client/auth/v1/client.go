@@ -15,12 +15,12 @@ const (
 	TokenEndpoint = "token/?service=nce.nerdalize.com"
 )
 
-//Auth is the client for the nerdalize authentication server.
+//Client is the client for the nerdalize authentication server.
 type Client struct {
 	ClientConfig
 }
 
-//NerdConfig provides config details to create a Nerd client.
+//ClientConfig provides config details to create an Auth client.
 type ClientConfig struct {
 	Doer   Doer
 	Base   *url.URL
@@ -32,7 +32,7 @@ type Doer interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-//NewAuthAPI creates a new Auth.
+//NewClient creates a new Auth.
 func NewClient(c ClientConfig) *Client {
 	if c.Doer == nil {
 		c.Doer = http.DefaultClient

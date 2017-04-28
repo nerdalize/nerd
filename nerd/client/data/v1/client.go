@@ -14,7 +14,7 @@ const (
 	NoOfRetries = 2
 )
 
-//DataClient holds a reference to an AWS session
+//Client holds a reference to an AWS session
 type Client struct {
 	DataOps DataOps
 }
