@@ -56,7 +56,7 @@ The structure of the config and the defaults are show below:
 
 ## Nerdalize SDK
 
-Code in this repository can also be used as a Software Development Kit (SDK) to communicate with Nerdalize services. The SDK is located in the `nerd/client` package. It is devided up into three different clients:
+Code in this repository can also be used as a Software Development Kit (SDK) to communicate with Nerdalize services. The SDK is located in the `nerd/client` package. It is devided into three different clients:
 
 * `auth` is a client to the Nerdalize authentication backend. It can be used to fetch new JWTs.
 * `batch` is a client to batch.nerdalize.com. It can be used to work with resources like `queues`, `workers`, and `datasets`.
