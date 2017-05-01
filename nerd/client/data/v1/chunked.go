@@ -62,16 +62,16 @@ func (c *Client) ChunkedUpload(chunker Chunker, w KeyWriter, concurrency int, bu
 	work := func(it *item) {
 		k := Key(sha256.Sum256(it.chunk)) //hash
 		key := path.Join(root, k.ToString())
-		exists, err := c.Exists(bucket, key) //check existence
-		if err != nil {
-			it.resCh <- &result{errors.Wrapf(err, "failed to check existence of '%x'", k), ZeroKey}
+		exists, erro := c.Exists(bucket, key) //check existence
+		if erro != nil {
+			it.resCh <- &result{errors.Wrapf(erro, "failed to check existence of '%x'", k), ZeroKey}
 			return
 		}
 
 		if !exists {
-			err = c.Upload(bucket, key, bytes.NewReader(it.chunk)) //if not exists put
-			if err != nil {
-				it.resCh <- &result{errors.Wrapf(err, "failed to put chunk '%x'", k), ZeroKey}
+			erro = c.Upload(bucket, key, bytes.NewReader(it.chunk)) //if not exists put
+			if erro != nil {
+				it.resCh <- &result{errors.Wrapf(erro, "failed to put chunk '%x'", k), ZeroKey}
 				return
 			}
 		}
@@ -85,10 +85,10 @@ func (c *Client) ChunkedUpload(chunker Chunker, w KeyWriter, concurrency int, bu
 	go func() {
 		defer close(itemCh)
 		for {
-			data, len, err := chunker.Next()
-			if err != nil {
-				if err != io.EOF {
-					itemCh <- &item{err: err}
+			data, len, erro := chunker.Next()
+			if erro != nil {
+				if erro != io.EOF {
+					itemCh <- &item{err: erro}
 				}
 				break
 			}
@@ -142,16 +142,16 @@ func (c *Client) ChunkedDownload(kr KeyReader, cw io.Writer, concurrency int, bu
 	}
 
 	work := func(it *item) {
-		r, err := c.Download(bucket, path.Join(root, it.k.ToString()))
+		r, erro := c.Download(bucket, path.Join(root, it.k.ToString()))
 		defer r.Close()
-		if err != nil {
-			it.resCh <- &result{errors.Wrapf(err, "failed to get key '%s'", it.k), nil}
+		if erro != nil {
+			it.resCh <- &result{errors.Wrapf(erro, "failed to get key '%s'", it.k), nil}
 			return
 		}
 
-		chunk, err := ioutil.ReadAll(r)
-		if err != nil {
-			it.resCh <- &result{errors.Wrap(err, "failed to copy chunk to byte buffer"), nil}
+		chunk, erro := ioutil.ReadAll(r)
+		if erro != nil {
+			it.resCh <- &result{errors.Wrap(erro, "failed to copy chunk to byte buffer"), nil}
 		}
 
 		progressCh <- int64(len(chunk))
@@ -164,10 +164,10 @@ func (c *Client) ChunkedDownload(kr KeyReader, cw io.Writer, concurrency int, bu
 	go func() {
 		defer close(itemCh)
 		for {
-			k, err := kr.ReadKey()
-			if err != nil {
-				if err != io.EOF {
-					itemCh <- &item{err: err}
+			k, erro := kr.ReadKey()
+			if erro != nil {
+				if erro != io.EOF {
+					itemCh <- &item{err: erro}
 				}
 				break
 			}

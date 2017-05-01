@@ -127,9 +127,9 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	indexr, indexw := io.Pipe()
 	indexDoneCh := make(chan error)
 	go func() {
-		b, err := ioutil.ReadAll(indexr)
-		if err != nil {
-			indexDoneCh <- errors.Wrap(err, "failed to read keys")
+		b, rerr := ioutil.ReadAll(indexr)
+		if rerr != nil {
+			indexDoneCh <- errors.Wrap(rerr, "failed to read keys")
 			return
 		}
 		indexDoneCh <- dataclient.Upload(ds.Bucket, path.Join(ds.Root, v1data.IndexObjectKey), bytes.NewReader(b))
@@ -158,9 +158,9 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	pr, pw := io.Pipe()
 	go func() {
 		defer close(progressCh)
-		err := dataclient.ChunkedUpload(NewChunker(v1data.UploadPolynomal, pr), iw, UploadConcurrency, ds.Bucket, ds.Root, progressCh)
+		uerr := dataclient.ChunkedUpload(NewChunker(v1data.UploadPolynomal, pr), iw, UploadConcurrency, ds.Bucket, ds.Root, progressCh)
 		pr.Close()
-		doneCh <- err
+		doneCh <- uerr
 	}()
 
 	// Tarring
@@ -333,6 +333,9 @@ func getMetadata(client *v1data.Client, bucket, root string, size int64) (*v1dat
 		}, nil
 	}
 	metadata, err := client.MetadataDownload(bucket, root)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to download metadata")
+	}
 	metadata.Size = size
 	metadata.Updated = time.Now()
 	return metadata, nil

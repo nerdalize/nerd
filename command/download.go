@@ -147,9 +147,9 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	doneCh := make(chan error)
 	pr, pw := io.Pipe()
 	go func() {
-		err := untardir(outputDir, pr)
+		uerr := untardir(outputDir, pr)
 		pr.Close()
-		doneCh <- err
+		doneCh <- uerr
 	}()
 
 	// Download
