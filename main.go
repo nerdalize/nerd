@@ -34,10 +34,6 @@ func main() {
 	c.Commands = map[string]cli.CommandFactory{
 		"login":    command.LoginFactory(),
 		"upload":   command.UploadFactory(),
-		"run":      command.RunFactory(),
-		"logs":     command.LogsFactory(),
-		"work":     command.WorkFactory(),
-		"status":   command.StatusFactory(),
 		"download": command.DownloadFactory(),
 	}
 

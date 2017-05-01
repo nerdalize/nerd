@@ -11,6 +11,7 @@ type NerdOpts struct {
 	ConfOpts
 }
 
+//ConfOpts are the options related to config file and the way output is handled.
 type ConfOpts struct {
 	ConfigFile string `long:"config" default:"" default-mask:"" env:"CONFIG" description:"location of config file"`
 	OutputOpts

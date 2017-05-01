@@ -2,22 +2,25 @@ package command
 
 import (
 	"archive/tar"
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/nerd"
 	"github.com/nerdalize/nerd/nerd/aws"
-	"github.com/nerdalize/nerd/nerd/client"
-	"github.com/nerdalize/nerd/nerd/data"
-	"github.com/nerdalize/nerd/nerd/payload"
+	v1batch "github.com/nerdalize/nerd/nerd/client/batch/v1"
+	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
+	v1data "github.com/nerdalize/nerd/nerd/client/data/v1"
+	v1datapayload "github.com/nerdalize/nerd/nerd/client/data/v1/payload"
+	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
 )
 
@@ -82,25 +85,6 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		datasetID = args[1]
 	}
 
-	nerdclient, err := NewClient(cmd.ui)
-	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
-	}
-	ds, err := getDataset(nerdclient, datasetID)
-	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
-	}
-
-	logrus.Infof("Uploading dataset with ID '%v'", ds.DatasetID)
-
-	client, err := aws.NewDataClient(&aws.DataClientConfig{
-		Credentials: aws.NewNerdalizeCredentials(nerdclient),
-		Bucket:      ds.Bucket,
-	})
-	if err != nil {
-		HandleError(errors.Wrap(err, "could not create data client"), cmd.opts.VerboseOutput)
-	}
-
 	fi, err := os.Stat(dataPath)
 	if err != nil {
 		HandleError(errors.Errorf("argument '%v' is not a valid file or directory", dataPath), cmd.opts.VerboseOutput)
@@ -108,27 +92,57 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		HandleError(errors.Errorf("provided path '%s' is not a directory", dataPath), cmd.opts.VerboseOutput)
 	}
 
+	// Config
+	config, err := conf.Read()
+	if err != nil {
+		HandleError(err, cmd.opts.VerboseOutput)
+	}
+
+	// Clients
+	batchclient, err := NewClient(cmd.ui)
+	if err != nil {
+		HandleError(err, cmd.opts.VerboseOutput)
+	}
+	dataOps, err := aws.NewDataClient(
+		aws.NewNerdalizeCredentials(batchclient, config.CurrentProject),
+		nerd.GetCurrentUser().Region,
+	)
+	if err != nil {
+		HandleError(errors.Wrap(err, "could not create aws dataops client"), cmd.opts.VerboseOutput)
+	}
+	dataclient := v1data.NewClient(dataOps)
+
+	// Dataset
+	ds, err := getDataset(batchclient, config.CurrentProject, datasetID)
+	if err != nil {
+		HandleError(err, cmd.opts.VerboseOutput)
+	}
+	logrus.Infof("Uploading dataset with ID '%v'", ds.DatasetID)
 	err = ioutil.WriteFile(path.Join(dataPath, DatasetFilename), []byte(ds.DatasetID), DatasetPermissions)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
+	// Index
+	indexr, indexw := io.Pipe()
+	indexDoneCh := make(chan error)
+	go func() {
+		b, rerr := ioutil.ReadAll(indexr)
+		if rerr != nil {
+			indexDoneCh <- errors.Wrap(rerr, "failed to read keys")
+			return
+		}
+		indexDoneCh <- dataclient.Upload(ds.Bucket, path.Join(ds.Root, v1data.IndexObjectKey), bytes.NewReader(b))
+	}()
+	iw := v1data.NewIndexWriter(indexw)
+
+	// Progress
 	size, err := totalTarSize(dataPath)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
-
-	header := &data.MetadataHeader{
-		Size:    size,
-		Created: time.Now(),
-		Updated: time.Now(),
-	}
-	metadata := data.NewMetadata(header, data.NewBufferedKeyReadWiter())
-	doneCh := make(chan error)
 	progressCh := make(chan int64)
 	progressBarDoneCh := make(chan struct{})
-	pr, pw := io.Pipe()
-
 	if !cmd.opts.JSONOutput {
 		go ProgressBar(size, progressCh, progressBarDoneCh)
 	} else {
@@ -138,32 +152,54 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 			progressBarDoneCh <- struct{}{}
 		}()
 	}
+
+	// Uploading
+	doneCh := make(chan error)
+	pr, pw := io.Pipe()
 	go func() {
 		defer close(progressCh)
-		err := client.ChunkedUpload(pr, metadata, UploadConcurrency, ds.Root, progressCh)
+		uerr := dataclient.ChunkedUpload(NewChunker(v1data.UploadPolynomal, pr), iw, UploadConcurrency, ds.Bucket, ds.Root, progressCh)
 		pr.Close()
-		doneCh <- err
+		doneCh <- uerr
 	}()
 
+	// Tarring
 	err = tardir(dataPath, pw)
 	if err != nil && errors.Cause(err) != io.ErrClosedPipe {
 		HandleError(errors.Wrapf(err, "failed to tar '%s'", dataPath), cmd.opts.VerboseOutput)
 	}
 
-	pw.Close()
+	// Finish uploading
+	err = pw.Close()
+	if err != nil {
+		HandleError(errors.Wrap(err, "failed to close chunked upload pipe writer"), cmd.opts.VerboseOutput)
+	}
 	err = <-doneCh
-	<-progressBarDoneCh
 	if err != nil {
 		HandleError(errors.Wrapf(err, "failed to upload '%s'", dataPath), cmd.opts.VerboseOutput)
 	}
 
-	metastring, err := metadata.ToString()
+	// Finish uploading index
+	err = indexw.Close()
 	if err != nil {
-		HandleError(errors.Wrap(err, "failed to convert metadata to string"), cmd.opts.VerboseOutput)
+		HandleError(errors.Wrap(err, "failed to close index pipe writer"), cmd.opts.VerboseOutput)
 	}
-	err = client.Upload(path.Join(ds.Root, data.MetadataObjectKey), strings.NewReader(metastring))
+	err = <-indexDoneCh
 	if err != nil {
-		return errors.Wrap(err, "failed to upload index file")
+		HandleError(errors.Wrap(err, "failed to upload index file"), cmd.opts.VerboseOutput)
+	}
+
+	// Wait for progress bar to be flushed to screen
+	<-progressBarDoneCh
+
+	// Metadata
+	metadata, err := getMetadata(dataclient, ds.Bucket, ds.Root, size)
+	if err != nil {
+		HandleError(errors.Wrapf(err, "failed to get metadata for dataset '%v'", datasetID), cmd.opts.VerboseOutput)
+	}
+	err = dataclient.MetadataUpload(ds.Bucket, ds.Root, metadata)
+	if err != nil {
+		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
 	return nil
@@ -268,17 +304,39 @@ func totalTarSize(dataPath string) (int64, error) {
 }
 
 //getDataset returns a payload.Dataset object. If datasetID is set it will try to read an existing dataset, if datasetID is empty a new dataset will be created.
-func getDataset(nerdclient *client.NerdAPIClient, datasetID string) (*payload.Dataset, error) {
+func getDataset(client *v1batch.Client, projectID, datasetID string) (*v1payload.Dataset, error) {
 	if datasetID == "" {
-		dsc, err := nerdclient.CreateDataset()
+		dsc, err := client.CreateDataset(projectID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create dataset")
 		}
 		return &dsc.Dataset, nil
 	}
-	dsg, err := nerdclient.GetDataset(datasetID)
+	dsg, err := client.GetDataset(projectID, datasetID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve dataset")
 	}
 	return &dsg.Dataset, nil
+}
+
+//getMetadata gets the metadata of an exists dataset or creates a new one when the dataset does not have metadata yet.
+func getMetadata(client *v1data.Client, bucket, root string, size int64) (*v1datapayload.Metadata, error) {
+	exists, err := client.MetadataExists(bucket, root)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if metadata exists")
+	}
+	if !exists {
+		return &v1datapayload.Metadata{
+			Size:    size,
+			Created: time.Now(),
+			Updated: time.Now(),
+		}, nil
+	}
+	metadata, err := client.MetadataDownload(bucket, root)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to download metadata")
+	}
+	metadata.Size = size
+	metadata.Updated = time.Now()
+	return metadata, nil
 }

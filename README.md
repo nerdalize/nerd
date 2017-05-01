@@ -17,21 +17,6 @@ $ nerd upload ./my-project/my-task-input
 Uploading dataset with ID 'd-96fac377'
 314.38 MiB / 314.38 MiB [=============================] 100.00%
 
-# create a new task that takes the uploaded dataset as input
-$ nerd run nlz.io/my-org/my-program:v1.2 d-96fac377
-Created task with ID t-afb5cb16
-
-# read task output to get feedback
-$ nerd logs t-afb5cb16
-20170122.1111 [INFO] Started program
-20170122.2111 [INFO] Doing awesome science!
-
-# get each task's status
-$ nerd status
-|   TASKID   | OUTPUT DATASET |    CREATED     |
-|------------|----------------|----------------|
-| t-afb5cb16 | d-615f2d56     | 22 minutes ago |
-
 # download results of running the task
 $ nerd download t-615f2d56 ./my-project/my-task-output
 Downloading dataset with ID 'd-615f2d56'
@@ -65,20 +50,14 @@ The structure of the config and the defaults are show below:
 }
 ```
 
-### Workers (local task execution)
-
-When `nerd run` is used, the specified task is executed on one of Nerdalize's servers. It is also possible to test the execution of a task on a local machine first. To do this run the `nerd work` command. For this you will need to have Docker installed on your local machine.
-```bash
-$ nerd work
-waiting for task ...
-  received task 't-83dd21e' ... done!
-  downloading input 'd-421a11f' ... done! (0KiB new, 120MiB total)
-  running 't-83dd21e' (kubectl create t-83dd21e.yaml) ... done!
-  uploading output ... done!
-<- task 't-83dd21e' succeeded!
-waiting for task ...
-```
-
 ## Examples
 
 * [Usage of docker container as base image](examples/docker-base-image)
+
+## Nerdalize SDK
+
+Code in this repository can also be used as a Software Development Kit (SDK) to communicate with Nerdalize services. The SDK is located in the `nerd/client` package. It is devided into three different clients:
+
+* `auth` is a client to the Nerdalize authentication backend. It can be used to fetch new JWTs.
+* `batch` is a client to batch.nerdalize.com. It can be used to work with resources like `queues`, `workers`, and `datasets`.
+* `data` is a client to Nerdalize storage. It can be used to upload and download datasets.

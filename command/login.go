@@ -1,12 +1,13 @@
 package command
 
 import (
+	"net/url"
 	"os"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/client"
+	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
 )
@@ -68,7 +69,14 @@ func (cmd *Login) DoRun(args []string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to read nerd config file")
 	}
-	cl := client.NewAuthAPI(config.Auth.APIEndpoint)
+	base, err := url.Parse(config.Auth.APIEndpoint)
+	if err != nil {
+		return errors.Wrapf(err, "auth endpoint '%v' is not a valid URL", config.Auth.APIEndpoint)
+	}
+	cl := v1auth.NewClient(v1auth.ClientConfig{
+		Base:   base,
+		Logger: logrus.StandardLogger(),
+	})
 	token, err := cl.GetToken(user, pass)
 	if err != nil {
 		return errors.Wrap(err, "failed to get nerd token for username and password")

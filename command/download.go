@@ -13,12 +13,15 @@ import (
 	"github.com/dchest/safefile"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/nerd"
 	"github.com/nerdalize/nerd/nerd/aws"
-	"github.com/nerdalize/nerd/nerd/data"
+	v1data "github.com/nerdalize/nerd/nerd/client/data/v1"
+	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
 )
 
 const (
+	//OutputDirPermissions are the output directory's permissions.
 	OutputDirPermissions = 0755
 	//DownloadConcurrency is the amount of concurrent download threads.
 	DownloadConcurrency = 64
@@ -70,11 +73,17 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	if len(args) < 2 {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
+
+	config, err := conf.Read()
+	if err != nil {
+		HandleError(err, cmd.opts.VerboseOutput)
+	}
+
 	dataset := args[0]
 	outputDir := args[1]
 
+	// Folder create and check
 	fi, err := os.Stat(outputDir)
-	// create directory if it does not exist yet.
 	if err != nil && os.IsNotExist(err) {
 		err = os.MkdirAll(outputDir, OutputDirPermissions)
 		if err != nil {
@@ -88,46 +97,44 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		HandleError(errors.Errorf("The provided path '%s' is not a directory", outputDir), cmd.opts.VerboseOutput)
 	}
 
-	nerdclient, err := NewClient(cmd.ui)
+	// Clients
+	batchclient, err := NewClient(cmd.ui)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
-	ds, err := nerdclient.GetDataset(dataset)
+	dataOps, err := aws.NewDataClient(
+		aws.NewNerdalizeCredentials(batchclient, config.CurrentProject),
+		nerd.GetCurrentUser().Region,
+	)
+	if err != nil {
+		HandleError(errors.Wrap(err, "could not create aws dataops client"), cmd.opts.VerboseOutput)
+	}
+	dataclient := v1data.NewClient(dataOps)
+
+	// Dataset
+	ds, err := batchclient.GetDataset(config.CurrentProject, dataset)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
-
-	client, err := aws.NewDataClient(&aws.DataClientConfig{
-		Credentials: aws.NewNerdalizeCredentials(nerdclient),
-		Bucket:      ds.Bucket,
-	})
-	if err != nil {
-		HandleError(errors.Wrap(err, "could not create data client"), cmd.opts.VerboseOutput)
-	}
-
-	r, err := client.Download(path.Join(ds.Root, data.MetadataObjectKey))
-	if err != nil {
-		HandleError(errors.Wrap(err, "failed to download metadata"), cmd.opts.VerboseOutput)
-	}
-	defer r.Close()
-	metadata, err := data.NewMetadataFromReader(r)
-	if err != nil {
-		HandleError(errors.Wrap(err, "failed to read metadata"), cmd.opts.VerboseOutput)
-	}
-
 	logrus.Infof("Downloading dataset with ID '%v'", ds.DatasetID)
 
-	doneCh := make(chan error)
+	// Metadata
+	metadata, err := dataclient.MetadataDownload(ds.Bucket, ds.Root)
+	if err != nil {
+		HandleError(err, cmd.opts.VerboseOutput)
+	}
+
+	// Index
+	r, err := dataclient.Download(ds.Bucket, path.Join(ds.Root, v1data.IndexObjectKey))
+	if err != nil {
+		HandleError(errors.Wrap(err, "failed to download chunk index"), cmd.opts.VerboseOutput)
+	}
+
+	// Progress bar
 	progressCh := make(chan int64)
 	progressBarDoneCh := make(chan struct{})
-	pr, pw := io.Pipe()
-	go func() {
-		err := untardir(outputDir, pr)
-		pr.Close()
-		doneCh <- err
-	}()
 	if !cmd.opts.JSONOutput {
-		go ProgressBar(metadata.Header.Size, progressCh, progressBarDoneCh)
+		go ProgressBar(metadata.Size, progressCh, progressBarDoneCh)
 	} else {
 		go func() {
 			for _ = range progressCh {
@@ -135,18 +142,35 @@ func (cmd *Download) DoRun(args []string) (err error) {
 			progressBarDoneCh <- struct{}{}
 		}()
 	}
-	err = client.ChunkedDownload(metadata, pw, DownloadConcurrency, ds.Root, progressCh)
-	close(progressCh)
+
+	// Untar
+	doneCh := make(chan error)
+	pr, pw := io.Pipe()
+	go func() {
+		uerr := untardir(outputDir, pr)
+		pr.Close()
+		doneCh <- uerr
+	}()
+
+	// Download
+	err = dataclient.ChunkedDownload(v1data.NewIndexReader(r), pw, DownloadConcurrency, ds.Bucket, ds.Root, progressCh)
 	if err != nil {
 		HandleError(errors.Wrapf(err, "failed to download project '%v'", dataset), cmd.opts.VerboseOutput)
 	}
+	close(progressCh)
 
-	pw.Close()
+	// Finish downloading
+	err = pw.Close()
+	if err != nil {
+		HandleError(errors.Wrap(err, "failed to close chunked download pipe writer"), cmd.opts.VerboseOutput)
+	}
 	err = <-doneCh
-	<-progressBarDoneCh
 	if err != nil {
 		HandleError(errors.Wrapf(err, "failed to untar project '%v'", dataset), cmd.opts.VerboseOutput)
 	}
+
+	// Wait for progress bar to be flushed to screen
+	<-progressBarDoneCh
 
 	return nil
 }

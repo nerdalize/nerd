@@ -14,11 +14,13 @@ import (
 type PlainFormatter struct {
 }
 
+//Format removes all formatting for the PlainFormatter.
 func (f *PlainFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	msg := fmt.Sprintf("%s\n", entry.Message)
 	return []byte(msg), nil
 }
 
+//SetupLogging sets up logrus.
 func SetupLogging(verbose, json bool) {
 	logrus.SetLevel(logrus.InfoLevel)
 	logrus.SetFormatter(new(PlainFormatter))
