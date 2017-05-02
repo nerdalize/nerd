@@ -4,7 +4,7 @@ package v1payload
 type StopTaskInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
 	QueueID   string `json:"queue_id" valid:"required"`
-	TaskID    string `json:"task_id" valid:"required"`
+	TaskID    int64  `json:"task_id" valid:"required"`
 }
 
 //StopTaskOutput is output for queue creation
@@ -30,7 +30,7 @@ type ListTasksInput struct {
 
 //TaskSummary is a small version of
 type TaskSummary struct {
-	TaskID  string `json:"task_id"`
+	TaskID  int64  `json:"task_id"`
 	QueueID string `json:"queue_id"`
 	Status  string `json:"status,omitempty"`
 }
@@ -40,22 +40,19 @@ type ListTasksOutput struct {
 	Tasks []*TaskSummary
 }
 
-//An Run acts as an reference to a task instance
-type Run struct {
-	ProjectID string `json:"project_id"`
-	QueueID   string `json:"queue_id"`
-	TaskID    string `json:"task_id"`
-	Token     string `json:"token"`
-	Payload   string `json:"payload"`
-}
-
-//KeepTaskInput is input for queue creation
-type KeepTaskInput struct {
+//DescribeTaskInput is input for queue creation
+type DescribeTaskInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
 	QueueID   string `json:"queue_id" valid:"required"`
-	TaskID    string `json:"task_id" valid:"required"`
-	RunToken  string `json:"run_token" valid:"required"`
+	TaskID    int64  `json:"task_id" valid:"required"`
 }
 
-//KeepTaskOutput is output for queue creation
-type KeepTaskOutput struct{}
+//DescribeTaskOutput is output for queue creation
+type DescribeTaskOutput struct {
+	TaskSummary
+	ExecutionARN   string `json:"execution_arn"`
+	NumDispatches  int64  `json:"num_dispatches"`
+	Result         string `json:"result,omitempty"`
+	LastErrCode    string `json:"last_err_code,omitempty"`
+	LastErrMessage string `json:"last_err_message,omitempty"`
+}
