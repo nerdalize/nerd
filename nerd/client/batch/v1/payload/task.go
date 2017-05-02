@@ -4,7 +4,7 @@ package v1payload
 type StopTaskInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
 	QueueID   string `json:"queue_id" valid:"required"`
-	TaskID    string `json:"task_id" valid:"required"`
+	TaskID    int64  `json:"task_id" valid:"required"`
 }
 
 //StopTaskOutput is output for queue creation
@@ -30,7 +30,7 @@ type ListTasksInput struct {
 
 //TaskSummary is a small version of
 type TaskSummary struct {
-	TaskID  string `json:"task_id"`
+	TaskID  int64  `json:"task_id"`
 	QueueID string `json:"queue_id"`
 	Status  string `json:"status,omitempty"`
 }
@@ -44,7 +44,7 @@ type ListTasksOutput struct {
 type KeepTaskInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
 	QueueID   string `json:"queue_id" valid:"required"`
-	TaskID    string `json:"task_id" valid:"required"`
+	TaskID    int64  `json:"task_id" valid:"required"`
 	RunToken  string `json:"run_token" valid:"required"`
 }
 

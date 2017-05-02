@@ -11,7 +11,7 @@ import (
 //ClientTaskInterface is an interface so client task calls can be mocked.
 type ClientTaskInterface interface {
 	StartTask(projectID, queueID, payload string) (output *v1payload.StartTaskOutput, err error)
-	StopTask(projectID, queueID, taskID string) (output *v1payload.StopTaskOutput, err error)
+	StopTask(projectID, queueID string, taskID int64) (output *v1payload.StopTaskOutput, err error)
 	ListTasks(projectID, queueID string) (output *v1payload.ListTasksOutput, err error)
 	ReceiveTaskRuns(projectID, queueID string, timeout time.Duration, queueOps QueueOps) (output []*v1payload.Run, err error)
 }
@@ -36,7 +36,7 @@ func (c *Client) StartTask(projectID, queueID, payload string) (output *v1payloa
 }
 
 //StopTask will create queue
-func (c *Client) StopTask(projectID, queueID, taskID string) (output *v1payload.StopTaskOutput, err error) {
+func (c *Client) StopTask(projectID, queueID string, taskID int64) (output *v1payload.StopTaskOutput, err error) {
 	output = &v1payload.StopTaskOutput{}
 	input := &v1payload.StopTaskInput{
 		ProjectID: projectID,
