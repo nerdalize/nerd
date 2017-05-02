@@ -50,6 +50,9 @@ type ClientInterface interface {
 	ClientTokenInterface
 }
 
+// Force compile errors when Client doesn't implement ClientInterface.
+var _ ClientInterface = &Client{}
+
 // Doer executes http requests.  It is implemented by *http.Client.
 type Doer interface {
 	Do(req *http.Request) (*http.Response, error)
