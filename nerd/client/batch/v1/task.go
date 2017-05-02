@@ -58,7 +58,7 @@ func (c *Client) StopTask(projectID, queueID string, taskID int64) (output *v1pa
 		TaskID:    taskID,
 	}
 
-	return output, c.doRequest(http.MethodDelete, createPath(projectID, queuesEndpoint, queueID, "tasks"), input, output)
+	return output, c.doRequest(http.MethodDelete, createPath(projectID, queuesEndpoint, queueID, "tasks", strconv.FormatInt(taskID, 10)), input, output)
 }
 
 // ListTasks will return all tasks in a queue
