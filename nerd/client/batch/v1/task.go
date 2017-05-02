@@ -59,19 +59,6 @@ func (c *Client) ListTasks(projectID, queueID string) (output *v1payload.ListTas
 	return output, c.doRequest(http.MethodGet, createPath(projectID, queuesEndpoint, queueID, "tasks"), input, output)
 }
 
-// KeepTask will send a heartbeat
-func (c *Client) KeepTask(projectID, queueID, taskID, runToken string) (output *v1payload.KeepTaskOutput, err error) {
-	output = &v1payload.KeepTaskOutput{}
-	input := &v1payload.KeepTaskInput{
-		TaskID:    taskID,
-		ProjectID: projectID,
-		QueueID:   queueID,
-		RunToken:  runToken,
-	}
-
-	return output, c.doRequest(http.MethodPost, createPath(projectID, queuesEndpoint, queueID, "tasks", taskID, "heartbeats"), input, output)
-}
-
 //ReceiveTaskRuns will long poll the aws sqs queue for the availability of new runs. It will receive and delete messages once decoded
 func (c *Client) ReceiveTaskRuns(projectID, queueID string, timeout time.Duration, queueOps QueueOps) (output []*v1payload.Run, err error) {
 	queue, err := c.DescribeQueue(projectID, queueID)
@@ -104,7 +91,7 @@ func (c *Client) ReceiveTaskRuns(projectID, queueID string, timeout time.Duratio
 				return nil, fmt.Errorf("failed to receive runs: %+v", err)
 			}
 
-			_, err = c.KeepTask(r.ProjectID, r.QueueID, r.TaskID, r.Token)
+			_, err = c.SendRunHeartbeat(r.ProjectID, r.QueueID, r.TaskID, r.Token)
 			if err != nil {
 				continue //we will not consider this run at all, it must be expired
 			}
