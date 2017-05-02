@@ -3,6 +3,7 @@ package v1batch
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
@@ -13,6 +14,7 @@ type ClientTaskInterface interface {
 	StartTask(projectID, queueID, payload string) (output *v1payload.StartTaskOutput, err error)
 	StopTask(projectID, queueID string, taskID int64) (output *v1payload.StopTaskOutput, err error)
 	ListTasks(projectID, queueID string) (output *v1payload.ListTasksOutput, err error)
+	DescribeTask(projectID, queueID string, taskID int64) (output *v1payload.DescribeTaskOutput, err error)
 	ReceiveTaskRuns(projectID, queueID string, timeout time.Duration, queueOps QueueOps) (output []*v1payload.Run, err error)
 }
 
@@ -21,6 +23,18 @@ type QueueOps interface {
 	ReceiveMessages(queueURL string, maxNoOfMessages, waitTimeSeconds int64) (messages []interface{}, err error)
 	UnmarshalMessage(message interface{}, v interface{}) error
 	DeleteMessage(queueURL string, message interface{}) error
+}
+
+//DescribeTask will create an execute a new task
+func (c *Client) DescribeTask(projectID, queueID string, taskID int64) (output *v1payload.DescribeTaskOutput, err error) {
+	output = &v1payload.DescribeTaskOutput{}
+	input := &v1payload.DescribeTaskInput{
+		ProjectID: projectID,
+		QueueID:   queueID,
+		TaskID:    taskID,
+	}
+
+	return output, c.doRequest(http.MethodGet, createPath(projectID, queuesEndpoint, queueID, "tasks", strconv.FormatInt(taskID, 10)), input, output)
 }
 
 //StartTask will create an execute a new task

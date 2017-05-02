@@ -40,13 +40,19 @@ type ListTasksOutput struct {
 	Tasks []*TaskSummary
 }
 
-//KeepTaskInput is input for queue creation
-type KeepTaskInput struct {
+//DescribeTaskInput is input for queue creation
+type DescribeTaskInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
 	QueueID   string `json:"queue_id" valid:"required"`
 	TaskID    int64  `json:"task_id" valid:"required"`
-	RunToken  string `json:"run_token" valid:"required"`
 }
 
-//KeepTaskOutput is output for queue creation
-type KeepTaskOutput struct{}
+//DescribeTaskOutput is output for queue creation
+type DescribeTaskOutput struct {
+	TaskSummary
+	ExecutionARN   string `json:"execution_arn"`
+	NumDispatches  int64  `json:"num_dispatches"`
+	Result         string `json:"result,omitempty"`
+	LastErrCode    string `json:"last_err_code,omitempty"`
+	LastErrMessage string `json:"last_err_message,omitempty"`
+}
