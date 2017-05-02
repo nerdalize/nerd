@@ -9,6 +9,7 @@ type CreateTokenInput struct {
 
 //CreateTokenOutput is output for token creation
 type CreateTokenOutput struct {
+	AWSRegion          string    `json:"aws_region"`
 	AWSAccessKeyID     string    `json:"aws_access_key_id"`
 	AWSExpiration      time.Time `json:"aws_expiration"`
 	AWSSecretAccessKey string    `json:"aws_secret_access_key"`
