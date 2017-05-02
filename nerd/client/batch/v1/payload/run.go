@@ -18,7 +18,9 @@ type SendRunHeartbeatInput struct {
 }
 
 //SendRunHeartbeatOutput is output for queue creation
-type SendRunHeartbeatOutput struct{}
+type SendRunHeartbeatOutput struct {
+	HasExpired bool `json:"has_expired"`
+}
 
 //SendRunFailureInput is input for marking a run as failed
 type SendRunFailureInput struct {
