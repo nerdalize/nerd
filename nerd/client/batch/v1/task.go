@@ -13,7 +13,6 @@ type ClientTaskInterface interface {
 	StartTask(projectID, queueID, payload string) (output *v1payload.StartTaskOutput, err error)
 	StopTask(projectID, queueID, taskID string) (output *v1payload.StopTaskOutput, err error)
 	ListTasks(projectID, queueID string) (output *v1payload.ListTasksOutput, err error)
-	KeepTask(projectID, queueID, taskID, runToken string) (output *v1payload.KeepTaskOutput, err error)
 	ReceiveTaskRuns(projectID, queueID string, timeout time.Duration, queueOps QueueOps) (output []*v1payload.Run, err error)
 }
 
@@ -74,7 +73,6 @@ func (c *Client) ReceiveTaskRuns(projectID, queueID string, timeout time.Duratio
 		default:
 		}
 
-		// var out *sqs.ReceiveMessageOutput
 		out, err := queueOps.ReceiveMessages(queue.QueueURL, 1, 5)
 		if err != nil {
 			return nil, fmt.Errorf("failed to receive runs: %+v", err)

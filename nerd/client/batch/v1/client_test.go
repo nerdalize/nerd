@@ -12,11 +12,8 @@ import (
 
 type logger struct{}
 
-func (l *logger) Error(args ...interface{}) {
-}
-
-func (l *logger) Debugf(a string, args ...interface{}) {
-}
+func (l *logger) Error(args ...interface{})            {}
+func (l *logger) Debugf(a string, args ...interface{}) {}
 
 type input struct {
 	Field string `json:"field"`
@@ -36,6 +33,12 @@ type testCaseFields struct {
 	path   string
 	input  interface{}
 	output interface{}
+}
+
+func TestInterfaceImplementation(t *testing.T) {
+	var v1 ClientInterface
+	v1 = &Client{}
+	_ = v1
 }
 
 func TestDataset(t *testing.T) {

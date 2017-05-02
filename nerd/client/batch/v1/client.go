@@ -47,6 +47,7 @@ type ClientInterface interface {
 	ClientPingInterface
 	ClientQueueInterface
 	ClientTaskInterface
+	ClientRunInterface
 	ClientTokenInterface
 }
 

@@ -7,6 +7,13 @@ import (
 	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
 )
 
+//ClientRunInterface is an interface so client task calls can be mocked.
+type ClientRunInterface interface {
+	SendRunHeartbeat(projectID, queueID string, taskID int64, runToken string) (output *v1payload.SendRunHeartbeatOutput, err error)
+	SendRunSuccess(projectID, queueID string, taskID int64, runToken, result string) (output *v1payload.SendRunSuccessOutput, err error)
+	SendRunFailure(projectID, queueID string, taskID int64, runToken, errCode, errMessage string) (output *v1payload.SendRunFailureOutput, err error)
+}
+
 //SendRunHeartbeat will send a heartbeat for a task run
 func (c *Client) SendRunHeartbeat(projectID, queueID string, taskID int64, runToken string) (output *v1payload.SendRunHeartbeatOutput, err error) {
 	output = &v1payload.SendRunHeartbeatOutput{}
