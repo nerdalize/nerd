@@ -103,8 +103,8 @@ func (c *Client) ReceiveTaskRuns(projectID, queueID string, timeout time.Duratio
 				return nil, fmt.Errorf("failed to receive runs: %+v", err)
 			}
 
-			_, err = c.SendRunHeartbeat(r.ProjectID, r.QueueID, r.TaskID, r.Token)
-			if err != nil {
+			hb, err := c.SendRunHeartbeat(r.ProjectID, r.QueueID, r.TaskID, r.Token)
+			if err != nil || hb.HasExpired {
 				continue //we will not consider this run at all, it must be expired
 			}
 
