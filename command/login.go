@@ -28,11 +28,11 @@ type Login struct {
 }
 
 //LoginFactory returns a factory method for the join command
-func LoginFactory() func() (cmd cli.Command, err error) {
+func LoginFactory() (cli.Command, error) {
 	cmd := &Login{
 		command: &command{
 			help:     "",
-			synopsis: "Setup an authorized session.",
+			synopsis: "Setup an authorized session",
 			parser:   flags.NewNamedParser("nerd login", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
@@ -49,9 +49,7 @@ func LoginFactory() func() (cmd cli.Command, err error) {
 		panic(err)
 	}
 
-	return func() (cli.Command, error) {
-		return cmd, nil
-	}
+	return cmd, nil
 }
 
 //DoRun is called by run and allows an error to be returned
