@@ -28,10 +28,11 @@ type ListDatasetsInput struct {
 
 //DatasetSummary is a small version of
 type DatasetSummary struct {
-	ProjectID string `json:"project_id"`
-	DatasetID string `json:"dataset_id"`
-	Bucket    string `json:"bucket"`
-	Root      string `json:"root"`
+	ProjectID   string `json:"project_id"`
+	DatasetID   string `json:"dataset_id"`
+	Bucket      string `json:"bucket"`
+	DatasetRoot string `json:"dataset_root"`
+	ProjectRoot string `json:"project_root"`
 }
 
 //ListDatasetsOutput is output for queue creation

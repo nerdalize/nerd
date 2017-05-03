@@ -132,7 +132,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 			indexDoneCh <- errors.Wrap(rerr, "failed to read keys")
 			return
 		}
-		indexDoneCh <- dataclient.Upload(ds.Bucket, path.Join(ds.Root, v1data.IndexObjectKey), bytes.NewReader(b))
+		indexDoneCh <- dataclient.Upload(ds.Bucket, path.Join(ds.DatasetRoot, v1data.IndexObjectKey), bytes.NewReader(b))
 	}()
 	iw := v1data.NewIndexWriter(indexw)
 
@@ -158,7 +158,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	pr, pw := io.Pipe()
 	go func() {
 		defer close(progressCh)
-		uerr := dataclient.ChunkedUpload(NewChunker(v1data.UploadPolynomal, pr), iw, UploadConcurrency, ds.Bucket, ds.Root, progressCh)
+		uerr := dataclient.ChunkedUpload(NewChunker(v1data.UploadPolynomal, pr), iw, UploadConcurrency, ds.Bucket, ds.DatasetRoot, progressCh)
 		pr.Close()
 		doneCh <- uerr
 	}()
@@ -193,11 +193,11 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	<-progressBarDoneCh
 
 	// Metadata
-	metadata, err := getMetadata(dataclient, ds.Bucket, ds.Root, size)
+	metadata, err := getMetadata(dataclient, ds.Bucket, ds.DatasetRoot, size)
 	if err != nil {
 		HandleError(errors.Wrapf(err, "failed to get metadata for dataset '%v'", datasetID), cmd.opts.VerboseOutput)
 	}
-	err = dataclient.MetadataUpload(ds.Bucket, ds.Root, metadata)
+	err = dataclient.MetadataUpload(ds.Bucket, ds.DatasetRoot, metadata)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
