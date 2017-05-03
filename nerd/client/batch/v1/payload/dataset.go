@@ -1,7 +1,9 @@
 package v1payload
 
 //CreateDatasetInput is used as input to dataset creation
-type CreateDatasetInput struct{}
+type CreateDatasetInput struct {
+	ProjectID string `json:"project_id" valid:"required"`
+}
 
 //CreateDatasetOutput is returned from creating a dataset
 type CreateDatasetOutput struct {
@@ -11,7 +13,6 @@ type CreateDatasetOutput struct {
 //DescribeDatasetInput is input for queue creation
 type DescribeDatasetInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
-	QueueID   string `json:"queue_id" valid:"required"`
 	DatasetID int64  `json:"dataset_id" valid:"required"`
 }
 
@@ -23,13 +24,11 @@ type DescribeDatasetOutput struct {
 //ListDatasetsInput is input for queue creation
 type ListDatasetsInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
-	QueueID   string `json:"queue_id" valid:"required"`
 }
 
 //DatasetSummary is a small version of
 type DatasetSummary struct {
 	DatasetID string `json:"dataset_id"`
-	QueueID   string `json:"queue_id"`
 	Bucket    string `json:"bucket"`
 	Root      string `json:"root"`
 }
