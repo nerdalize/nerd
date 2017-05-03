@@ -3,6 +3,7 @@ package v1payload
 //CreateDatasetInput is used as input to dataset creation
 type CreateDatasetInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
+	Tag       string `json:"tag" valid:"noDatasetPrefix"`
 }
 
 //CreateDatasetOutput is returned from creating a dataset
@@ -24,6 +25,7 @@ type DescribeDatasetOutput struct {
 //ListDatasetsInput is input for queue creation
 type ListDatasetsInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
+	Tag       string `json:"tag,omitempty"`
 }
 
 //DatasetSummary is a small version of
@@ -35,6 +37,7 @@ type DatasetSummary struct {
 	ProjectRoot  string `json:"project_root"`
 	UploadExpire int64  `json:"upload_expire"`
 	UploadStatus string `json:"upload_status"`
+	Tag          string `json:"tag,omitempty"`
 }
 
 //ListDatasetsOutput is output for queue creation
