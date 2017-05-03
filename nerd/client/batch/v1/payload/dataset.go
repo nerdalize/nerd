@@ -1,27 +1,38 @@
 package v1payload
 
-//DatasetCreateInput is used as input to dataset creation
-type DatasetCreateInput struct{}
+//CreateDatasetInput is used as input to dataset creation
+type CreateDatasetInput struct{}
 
-//DatasetCreateOutput is returned from creating a dataset
-type DatasetCreateOutput struct {
-	Dataset
+//CreateDatasetOutput is returned from creating a dataset
+type CreateDatasetOutput struct {
+	DatasetSummary
 }
 
-//DatasetDescribeOutput is returned from a specific dataset
-type DatasetDescribeOutput struct {
-	Dataset
+//DescribeDatasetInput is input for queue creation
+type DescribeDatasetInput struct {
+	ProjectID string `json:"project_id" valid:"required"`
+	QueueID   string `json:"queue_id" valid:"required"`
+	DatasetID int64  `json:"dataset_id" valid:"required"`
 }
 
-//DatasetListOutput is returned from the dataset listing
-type DatasetListOutput struct {
-	Datasets []*Dataset `json:"datasets"`
+//DescribeDatasetOutput is output for queue creation
+type DescribeDatasetOutput struct {
+	TaskSummary
 }
 
-//Dataset is a dataset in the list output
-type Dataset struct {
-	ProjectID string `json:"project_id"`
+//ListDatasetsInput is input for queue creation
+type ListDatasetsInput struct {
+	ProjectID string `json:"project_id" valid:"required"`
+	QueueID   string `json:"queue_id" valid:"required"`
+}
+
+//DatasetSummary is a small version of
+type DatasetSummary struct {
 	DatasetID string `json:"dataset_id"`
-	Bucket    string `json:"bucket"`
-	Root      string `json:"root"`
+	QueueID   string `json:"queue_id"`
+}
+
+//ListDatasetsOutput is output for queue creation
+type ListDatasetsOutput struct {
+	Datasets []*DatasetSummary
 }
