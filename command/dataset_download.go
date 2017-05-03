@@ -69,8 +69,7 @@ func DatasetDownloadFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *Download) DoRun(args []string) (err error) {
 	if len(args) < 2 {
-		fmt.Println("not enough arguments, see --help")
-		return showHelpError
+		return fmt.Errorf("not enough arguments, see --help")
 	}
 
 	config, err := conf.Read()
@@ -111,20 +110,20 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	dataclient := v1data.NewClient(dataOps)
 
 	// Dataset
-	ds, err := batchclient.GetDataset(config.CurrentProject, dataset)
+	ds, err := batchclient.DescribeDataset(config.CurrentProject, dataset)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 	logrus.Infof("Downloading dataset with ID '%v'", ds.DatasetID)
 
 	// Metadata
-	metadata, err := dataclient.MetadataDownload(ds.Bucket, ds.Root)
+	metadata, err := dataclient.MetadataDownload(ds.Bucket, ds.DatasetRoot)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
 	// Index
-	r, err := dataclient.Download(ds.Bucket, path.Join(ds.Root, v1data.IndexObjectKey))
+	r, err := dataclient.Download(ds.Bucket, path.Join(ds.DatasetRoot, v1data.IndexObjectKey))
 	if err != nil {
 		HandleError(errors.Wrap(err, "failed to download chunk index"), cmd.opts.VerboseOutput)
 	}
@@ -152,7 +151,7 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	}()
 
 	// Download
-	err = dataclient.ChunkedDownload(v1data.NewIndexReader(r), pw, DownloadConcurrency, ds.Bucket, ds.Root, progressCh)
+	err = dataclient.ChunkedDownload(v1data.NewIndexReader(r), pw, DownloadConcurrency, ds.Bucket, ds.DatasetRoot, progressCh)
 	if err != nil {
 		HandleError(errors.Wrapf(err, "failed to download project '%v'", dataset), cmd.opts.VerboseOutput)
 	}

@@ -74,8 +74,7 @@ func DatasetUploadFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *Upload) DoRun(args []string) (err error) {
 	if len(args) < 1 {
-		fmt.Println("not enough arguments, see --help")
-		return showHelpError
+		return fmt.Errorf("not enough arguments, see --help")
 	}
 
 	dataPath := args[0]
@@ -131,7 +130,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 			indexDoneCh <- errors.Wrap(rerr, "failed to read keys")
 			return
 		}
-		indexDoneCh <- dataclient.Upload(ds.Bucket, path.Join(ds.Root, v1data.IndexObjectKey), bytes.NewReader(b))
+		indexDoneCh <- dataclient.Upload(ds.Bucket, path.Join(ds.DatasetRoot, v1data.IndexObjectKey), bytes.NewReader(b))
 	}()
 	iw := v1data.NewIndexWriter(indexw)
 
@@ -157,7 +156,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	pr, pw := io.Pipe()
 	go func() {
 		defer close(progressCh)
-		uerr := dataclient.ChunkedUpload(NewChunker(v1data.UploadPolynomal, pr), iw, UploadConcurrency, ds.Bucket, ds.Root, progressCh)
+		uerr := dataclient.ChunkedUpload(NewChunker(v1data.UploadPolynomal, pr), iw, UploadConcurrency, ds.Bucket, ds.DatasetRoot, progressCh)
 		pr.Close()
 		doneCh <- uerr
 	}()
@@ -192,11 +191,11 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	<-progressBarDoneCh
 
 	// Metadata
-	metadata, err := getMetadata(dataclient, ds.Bucket, ds.Root, size)
+	metadata, err := getMetadata(dataclient, ds.Bucket, ds.DatasetRoot, size)
 	if err != nil {
 		HandleError(errors.Wrapf(err, "failed to get metadata for dataset '%v'", datasetID), cmd.opts.VerboseOutput)
 	}
-	err = dataclient.MetadataUpload(ds.Bucket, ds.Root, metadata)
+	err = dataclient.MetadataUpload(ds.Bucket, ds.DatasetRoot, metadata)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
@@ -303,19 +302,19 @@ func totalTarSize(dataPath string) (int64, error) {
 }
 
 //getDataset returns a payload.Dataset object. If datasetID is set it will try to read an existing dataset, if datasetID is empty a new dataset will be created.
-func getDataset(client *v1batch.Client, projectID, datasetID string) (*v1payload.Dataset, error) {
+func getDataset(client *v1batch.Client, projectID, datasetID string) (*v1payload.DatasetSummary, error) {
 	if datasetID == "" {
 		dsc, err := client.CreateDataset(projectID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create dataset")
 		}
-		return &dsc.Dataset, nil
+		return &dsc.DatasetSummary, nil
 	}
-	dsg, err := client.GetDataset(projectID, datasetID)
+	dsg, err := client.DescribeDataset(projectID, datasetID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve dataset")
 	}
-	return &dsg.Dataset, nil
+	return &dsg.DatasetSummary, nil
 }
 
 //getMetadata gets the metadata of an exists dataset or creates a new one when the dataset does not have metadata yet.
