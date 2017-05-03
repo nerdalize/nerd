@@ -29,7 +29,6 @@ func (c *Client) DescribeDataset(projectID, id string) (output *v1payload.Descri
 
 //ListDatasets gets a dataset by ID.
 func (c *Client) ListDatasets(projectID, tag string) (output *v1payload.ListDatasetsOutput, err error) {
-	input := &v1payload.ListDatasetsInput{Tag: tag}
 	output = &v1payload.ListDatasetsOutput{}
-	return output, c.doRequest(http.MethodGet, createPath(projectID, datasetEndpoint), input, output)
+	return output, c.doRequest(http.MethodGet, createPath(projectID, datasetEndpoint)+"?tag="+tag, nil, output)
 }
