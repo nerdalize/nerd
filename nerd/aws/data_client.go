@@ -12,6 +12,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	//StatusCodeForbidden is returned by AWS when a user does not have access to perform a given operation
+	StatusCodeForbidden = "Forbidden"
+)
+
 //DataClient is a client to AWS' S3 service. The client implements the v1data.DataOps interface.
 type DataClient struct {
 	Service *s3.S3
@@ -64,7 +69,7 @@ func (c *DataClient) Exists(bucket, key string) (exists bool, err error) {
 	}
 	_, err = c.Service.HeadObject(input)
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok && (aerr.Code() == s3.ErrCodeNoSuchKey || aerr.Code() == sns.ErrCodeNotFoundException) {
+		if aerr, ok := err.(awserr.Error); ok && (aerr.Code() == s3.ErrCodeNoSuchKey || aerr.Code() == sns.ErrCodeNotFoundException || aerr.Code() == StatusCodeForbidden) {
 			return false, nil
 		}
 		return false, errors.Wrapf(err, "failed to check if key %v exists", key)

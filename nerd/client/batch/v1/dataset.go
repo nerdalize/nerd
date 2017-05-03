@@ -22,9 +22,8 @@ func (c *Client) CreateDataset(projectID string) (output *v1payload.CreateDatase
 
 //DescribeDataset gets a dataset by ID.
 func (c *Client) DescribeDataset(projectID, id string) (output *v1payload.DescribeDatasetOutput, err error) {
-	input := &v1payload.DescribeDatasetInput{}
 	output = &v1payload.DescribeDatasetOutput{}
-	return output, c.doRequest(http.MethodGet, createPath(projectID, datasetEndpoint, id), input, output)
+	return output, c.doRequest(http.MethodGet, createPath(projectID, datasetEndpoint, id), nil, output)
 }
 
 //ListDatasets gets a dataset by ID.
