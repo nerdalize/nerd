@@ -7,12 +7,12 @@ import (
 	"github.com/mitchellh/cli"
 )
 
-//Upload command
+//Dataset command
 type Dataset struct {
 	*command
 }
 
-//DatasetUploadFactory returns a factory method for the join command
+//DatasetFactory returns a factory method for the join command
 func DatasetFactory() (cli.Command, error) {
 	cmd := &Dataset{
 		command: &command{
@@ -33,5 +33,5 @@ func DatasetFactory() (cli.Command, error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *Dataset) DoRun(args []string) (err error) {
-	return showHelpError
+	return errShowHelp
 }
