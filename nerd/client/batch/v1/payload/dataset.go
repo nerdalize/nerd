@@ -1,5 +1,7 @@
 package v1payload
 
+import "time"
+
 //CreateDatasetInput is used as input to dataset creation
 type CreateDatasetInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
@@ -9,6 +11,7 @@ type CreateDatasetInput struct {
 //CreateDatasetOutput is returned from creating a dataset
 type CreateDatasetOutput struct {
 	DatasetSummary
+	HeartbeatInterval time.Duration `json:"heartbeat_interval"`
 }
 
 //DescribeDatasetInput is input for queue creation
