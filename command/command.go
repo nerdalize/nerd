@@ -2,11 +2,14 @@ package command
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 )
+
+var showHelpError = errors.New("show error")
 
 //command is an abstract implementation for embedding in concrete commands and allows basic command functionality to be reused.
 type command struct {
@@ -40,12 +43,18 @@ func (c *command) Synopsis() string {
 
 //Run wraps a signature that allows returning an error type and parses the arguments for the flags package. If flag parsing fails it sets the exit code to 127, if the command implementation returns a non-nil error the exit code is 1
 func (c *command) Run(args []string) int {
-	a, err := c.parser.ParseArgs(args)
-	if err != nil {
-		return 127
+	if c.parser != nil {
+		var err error
+		args, err = c.parser.ParseArgs(args)
+		if err != nil {
+			return 127
+		}
 	}
 
-	if err := c.runFunc(a); err != nil {
+	if err := c.runFunc(args); err != nil {
+		if err == showHelpError {
+			return cli.RunResultHelp
+		}
 		c.ui.Error(err.Error())
 		return 1
 	}

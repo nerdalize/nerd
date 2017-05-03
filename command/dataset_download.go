@@ -41,13 +41,13 @@ type Download struct {
 	parser *flags.Parser
 }
 
-//DownloadFactory returns a factory method for the join command
-func DownloadFactory() func() (cmd cli.Command, err error) {
+//DatasetDownloadFactory returns a factory method for the join command
+func DatasetDownloadFactory() (cli.Command, error) {
 	cmd := &Download{
 		command: &command{
 			help:     "",
-			synopsis: "Download a dataset from cloud storage.",
-			parser:   flags.NewNamedParser("nerd download <dataset> <output-dir>", flags.Default),
+			synopsis: "Download a dataset from cloud storage",
+			parser:   flags.NewNamedParser("nerd dataset download <dataset> <output-dir>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
 				Writer: os.Stderr,
@@ -63,9 +63,7 @@ func DownloadFactory() func() (cmd cli.Command, err error) {
 		panic(err)
 	}
 
-	return func() (cli.Command, error) {
-		return cmd, nil
-	}
+	return cmd, nil
 }
 
 //DoRun is called by run and allows an error to be returned

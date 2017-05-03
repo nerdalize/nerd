@@ -32,9 +32,10 @@ func main() {
 	c := cli.NewCLI(name, fmt.Sprintf("%s (%s)", version, commit))
 	c.Args = os.Args[1:]
 	c.Commands = map[string]cli.CommandFactory{
-		"login":    command.LoginFactory(),
-		"upload":   command.UploadFactory(),
-		"download": command.DownloadFactory(),
+		"login":            command.LoginFactory,
+		"dataset":          command.DatasetFactory,
+		"dataset upload":   command.DatasetUploadFactory,
+		"dataset download": command.DatasetDownloadFactory,
 	}
 
 	status, err := c.Run()

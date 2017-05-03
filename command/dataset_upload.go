@@ -46,13 +46,13 @@ type Upload struct {
 	parser *flags.Parser
 }
 
-//UploadFactory returns a factory method for the join command
-func UploadFactory() func() (cmd cli.Command, err error) {
+//DatasetUploadFactory returns a factory method for the join command
+func DatasetUploadFactory() (cli.Command, error) {
 	cmd := &Upload{
 		command: &command{
-			help:     "",
-			synopsis: "Upload a dataset to cloud storage.\nOptionally you can specify a dataset-ID to append files to that dataset. This is also useful to continue an upload in case a previous try failed.",
-			parser:   flags.NewNamedParser("nerd upload <path> [dataset-ID]", flags.Default),
+			help:     "Upload a dataset to cloud storage\nOptionally you can specify a dataset-ID to append files to that dataset. This is also useful to continue an upload in case a previous try failed.",
+			synopsis: "Upload a dataset to cloud storage",
+			parser:   flags.NewNamedParser("nerd dataset upload <path> [dataset-ID]", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
 				Writer: os.Stderr,
@@ -68,9 +68,7 @@ func UploadFactory() func() (cmd cli.Command, err error) {
 		panic(err)
 	}
 
-	return func() (cli.Command, error) {
-		return cmd, nil
-	}
+	return cmd, nil
 }
 
 //DoRun is called by run and allows an error to be returned
