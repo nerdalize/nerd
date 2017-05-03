@@ -13,7 +13,7 @@ type CreateDatasetOutput struct {
 //DescribeDatasetInput is input for queue creation
 type DescribeDatasetInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
-	DatasetID int64  `json:"dataset_id" valid:"required"`
+	DatasetID string `json:"dataset_id" valid:"required"`
 }
 
 //DescribeDatasetOutput is output for queue creation
