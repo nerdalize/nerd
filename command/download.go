@@ -112,7 +112,7 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	dataclient := v1data.NewClient(dataOps)
 
 	// Dataset
-	ds, err := batchclient.GetDataset(config.CurrentProject, dataset)
+	ds, err := batchclient.DescribeDataset(config.CurrentProject, dataset)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}

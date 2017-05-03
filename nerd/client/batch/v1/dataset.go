@@ -8,18 +8,18 @@ import (
 
 //ClientDatasetInterface is an interface so client dataset calls can be mocked.
 type ClientDatasetInterface interface {
-	CreateDataset(projectID string) (output *v1payload.DatasetCreateOutput, err error)
-	GetDataset(projectID, id string) (output *v1payload.DatasetDescribeOutput, err error)
+	CreateDataset(projectID string) (output *v1payload.CreateDatasetOutput, err error)
+	DescribeDataset(projectID, id string) (output *v1payload.DescribeDatasetOutput, err error)
 }
 
 //CreateDataset creates a new dataset.
-func (c *Client) CreateDataset(projectID string) (output *v1payload.DatasetCreateOutput, err error) {
-	output = &v1payload.DatasetCreateOutput{}
+func (c *Client) CreateDataset(projectID string) (output *v1payload.CreateDatasetOutput, err error) {
+	output = &v1payload.CreateDatasetOutput{}
 	return output, c.doRequest(http.MethodPost, createPath(projectID, datasetEndpoint), nil, output)
 }
 
-//GetDataset gets a dataset by ID.
-func (c *Client) GetDataset(projectID, id string) (output *v1payload.DatasetDescribeOutput, err error) {
-	output = &v1payload.DatasetDescribeOutput{}
+//DescribeDataset gets a dataset by ID.
+func (c *Client) DescribeDataset(projectID, id string) (output *v1payload.DescribeDatasetOutput, err error) {
+	output = &v1payload.DescribeDatasetOutput{}
 	return output, c.doRequest(http.MethodGet, createPath(projectID, datasetEndpoint, id), nil, output)
 }

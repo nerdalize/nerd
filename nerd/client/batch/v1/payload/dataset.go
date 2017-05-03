@@ -17,7 +17,7 @@ type DescribeDatasetInput struct {
 
 //DescribeDatasetOutput is output for queue creation
 type DescribeDatasetOutput struct {
-	TaskSummary
+	DatasetSummary
 }
 
 //ListDatasetsInput is input for queue creation
@@ -30,6 +30,8 @@ type ListDatasetsInput struct {
 type DatasetSummary struct {
 	DatasetID string `json:"dataset_id"`
 	QueueID   string `json:"queue_id"`
+	Bucket    string `json:"bucket"`
+	Root      string `json:"root"`
 }
 
 //ListDatasetsOutput is output for queue creation

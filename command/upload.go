@@ -304,19 +304,19 @@ func totalTarSize(dataPath string) (int64, error) {
 }
 
 //getDataset returns a payload.Dataset object. If datasetID is set it will try to read an existing dataset, if datasetID is empty a new dataset will be created.
-func getDataset(client *v1batch.Client, projectID, datasetID string) (*v1payload.Dataset, error) {
+func getDataset(client *v1batch.Client, projectID, datasetID string) (*v1payload.DatasetSummary, error) {
 	if datasetID == "" {
 		dsc, err := client.CreateDataset(projectID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create dataset")
 		}
-		return &dsc.Dataset, nil
+		return &dsc.DatasetSummary, nil
 	}
-	dsg, err := client.GetDataset(projectID, datasetID)
+	dsg, err := client.DescribeDataset(projectID, datasetID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve dataset")
 	}
-	return &dsg.Dataset, nil
+	return &dsg.DatasetSummary, nil
 }
 
 //getMetadata gets the metadata of an exists dataset or creates a new one when the dataset does not have metadata yet.
