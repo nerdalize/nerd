@@ -45,6 +45,7 @@ func main() {
 		"task start":       command.TaskStartFactory,
 		"task stop":        command.TaskStopFactory,
 		"task describe":    command.TaskDescribeFactory,
+		"task receive":     command.TaskReceiveFactory,
 	}
 
 	status, err := c.Run()

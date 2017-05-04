@@ -40,8 +40,8 @@ func (c *QueueClient) ReceiveMessages(queueURL string, maxNoOfMessages, waitTime
 		return nil, err
 	}
 	ret := make([]interface{}, len(out.Messages))
-	for _, msg := range out.Messages {
-		ret = append(ret, msg)
+	for i, msg := range out.Messages {
+		ret[i] = msg
 	}
 	return ret, nil
 }
