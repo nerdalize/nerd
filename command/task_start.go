@@ -63,7 +63,7 @@ func (cmd *TaskStart) DoRun(args []string) (err error) {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	out, err := bclient.StartTask(config.CurrentProject, args[0], args[1])
+	out, err := bclient.StartTask(config.CurrentProject.Name, args[0], args[1])
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}

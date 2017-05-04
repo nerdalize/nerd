@@ -16,7 +16,6 @@ import (
 	"github.com/dchest/safefile"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd"
 	"github.com/nerdalize/nerd/nerd/aws"
 	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
 	v1data "github.com/nerdalize/nerd/nerd/client/data/v1"
@@ -108,8 +107,8 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 	dataOps, err := aws.NewDataClient(
-		aws.NewNerdalizeCredentials(batchclient, config.CurrentProject),
-		nerd.GetCurrentUser().Region,
+		aws.NewNerdalizeCredentials(batchclient, config.CurrentProject.Name),
+		config.CurrentProject.AWSRegion,
 	)
 	if err != nil {
 		HandleError(errors.Wrap(err, "could not create aws dataops client"), cmd.opts.VerboseOutput)
@@ -121,7 +120,7 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	if !strings.HasPrefix(downloadObject, TagPrefix) {
 		datasetIDs = append(datasetIDs, downloadObject)
 	} else {
-		datasets, err := batchclient.ListDatasets(config.CurrentProject, downloadObject)
+		datasets, err := batchclient.ListDatasets(config.CurrentProject.Name, downloadObject)
 		if err != nil {
 			HandleError(err, cmd.opts.VerboseOutput)
 		}
@@ -135,7 +134,7 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		// Dataset
 		var ds v1payload.DatasetSummary
 		for {
-			out, rerr := batchclient.DescribeDataset(config.CurrentProject, datasetID)
+			out, rerr := batchclient.DescribeDataset(config.CurrentProject.Name, datasetID)
 			ds = out.DatasetSummary
 			if rerr != nil {
 				HandleError(rerr, cmd.opts.VerboseOutput)
