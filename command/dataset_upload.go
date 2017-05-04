@@ -16,8 +16,6 @@ import (
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd"
 	"github.com/nerdalize/nerd/nerd/aws"
-	v1batch "github.com/nerdalize/nerd/nerd/client/batch/v1"
-	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
 	v1data "github.com/nerdalize/nerd/nerd/client/data/v1"
 	v1datapayload "github.com/nerdalize/nerd/nerd/client/data/v1/payload"
 	"github.com/nerdalize/nerd/nerd/conf"
@@ -50,9 +48,9 @@ type Upload struct {
 func DatasetUploadFactory() (cli.Command, error) {
 	cmd := &Upload{
 		command: &command{
-			help:     "Upload a dataset to cloud storage\nOptionally you can specify a dataset-ID to append files to that dataset. This is also useful to continue an upload in case a previous try failed.",
+			help:     "",
 			synopsis: "Upload a dataset to cloud storage",
-			parser:   flags.NewNamedParser("nerd dataset upload <path> [dataset-ID]", flags.Default),
+			parser:   flags.NewNamedParser("nerd upload <path>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
 				Writer: os.Stderr,
@@ -78,10 +76,6 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	}
 
 	dataPath := args[0]
-	datasetID := ""
-	if len(args) == 2 {
-		datasetID = args[1]
-	}
 
 	fi, err := os.Stat(dataPath)
 	if err != nil {
@@ -111,11 +105,23 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	dataclient := v1data.NewClient(dataOps)
 
 	// Dataset
-	ds, err := getDataset(batchclient, config.CurrentProject, datasetID)
+	ds, err := batchclient.CreateDataset(config.CurrentProject)
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(errors.Wrap(err, "failed to create dataset"), cmd.opts.VerboseOutput)
 	}
 	logrus.Infof("Uploading dataset with ID '%v'", ds.DatasetID)
+	go func() {
+		for {
+			time.Sleep(ds.HeartbeatInterval)
+			out, rerr := batchclient.SendUploadHeartbeat(ds.ProjectID, ds.DatasetID)
+			if rerr != nil {
+				continue
+			}
+			if out.HasExpired {
+				HandleError(errors.New("Upload failed because the server could not be reached for too long"), cmd.opts.VerboseOutput)
+			}
+		}
+	}()
 	err = ioutil.WriteFile(path.Join(dataPath, DatasetFilename), []byte(ds.DatasetID), DatasetPermissions)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
@@ -156,7 +162,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	pr, pw := io.Pipe()
 	go func() {
 		defer close(progressCh)
-		uerr := dataclient.ChunkedUpload(NewChunker(v1data.UploadPolynomal, pr), iw, UploadConcurrency, ds.Bucket, ds.DatasetRoot, progressCh)
+		uerr := dataclient.ChunkedUpload(NewChunker(v1data.UploadPolynomal, pr), iw, UploadConcurrency, ds.Bucket, ds.ProjectRoot, progressCh)
 		pr.Close()
 		doneCh <- uerr
 	}()
@@ -187,18 +193,23 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		HandleError(errors.Wrap(err, "failed to upload index file"), cmd.opts.VerboseOutput)
 	}
 
-	// Wait for progress bar to be flushed to screen
-	<-progressBarDoneCh
-
 	// Metadata
 	metadata, err := getMetadata(dataclient, ds.Bucket, ds.DatasetRoot, size)
 	if err != nil {
-		HandleError(errors.Wrapf(err, "failed to get metadata for dataset '%v'", datasetID), cmd.opts.VerboseOutput)
+		HandleError(errors.Wrapf(err, "failed to get metadata for dataset '%v'", ds.DatasetID), cmd.opts.VerboseOutput)
 	}
 	err = dataclient.MetadataUpload(ds.Bucket, ds.DatasetRoot, metadata)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
+
+	_, err = batchclient.SendUploadSuccess(ds.ProjectID, ds.DatasetID)
+	if err != nil {
+		HandleError(errors.Wrap(err, "Upload failed"), cmd.opts.VerboseOutput)
+	}
+
+	// Wait for progress bar to be flushed to screen
+	<-progressBarDoneCh
 
 	return nil
 }
@@ -217,10 +228,10 @@ func tardir(dir string, w io.Writer) (err error) {
 		}
 
 		f, err := os.Open(path)
-		defer f.Close()
 		if err != nil {
 			return errors.Wrapf(err, "failed to open file '%s'", rel)
 		}
+		defer f.Close()
 
 		err = tw.WriteHeader(&tar.Header{
 			Name:    rel,
@@ -299,22 +310,6 @@ func totalTarSize(dataPath string) (int64, error) {
 		return 0, errors.Wrapf(err, "failed to count total disk size of '%v'", dataPath)
 	}
 	return cr.total, nil
-}
-
-//getDataset returns a payload.Dataset object. If datasetID is set it will try to read an existing dataset, if datasetID is empty a new dataset will be created.
-func getDataset(client *v1batch.Client, projectID, datasetID string) (*v1payload.DatasetSummary, error) {
-	if datasetID == "" {
-		dsc, err := client.CreateDataset(projectID)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create dataset")
-		}
-		return &dsc.DatasetSummary, nil
-	}
-	dsg, err := client.DescribeDataset(projectID, datasetID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to retrieve dataset")
-	}
-	return &dsg.DatasetSummary, nil
 }
 
 //getMetadata gets the metadata of an exists dataset or creates a new one when the dataset does not have metadata yet.
