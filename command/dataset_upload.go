@@ -34,6 +34,7 @@ const (
 //UploadOpts describes command options
 type UploadOpts struct {
 	NerdOpts
+	Tag string `long:"tag" default:"" default-mask:"" description:"use a tag to logically group datasets"`
 }
 
 //Upload command
@@ -105,7 +106,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	dataclient := v1data.NewClient(dataOps)
 
 	// Dataset
-	ds, err := batchclient.CreateDataset(config.CurrentProject)
+	ds, err := batchclient.CreateDataset(config.CurrentProject, cmd.opts.Tag)
 	if err != nil {
 		HandleError(errors.Wrap(err, "failed to create dataset"), cmd.opts.VerboseOutput)
 	}
