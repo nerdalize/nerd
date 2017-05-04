@@ -11,7 +11,7 @@ import (
 
 //NerdClaims hold nerdalize specific jwt claims
 type NerdClaims struct {
-	*jwt.StandardClaims
+	jwt.StandardClaims
 	ProjectID string `json:"proj,omitempty"`
 }
 

@@ -54,14 +54,14 @@ func TestEnvProviderRetrieve(t *testing.T) {
 	}{
 		"valid": {
 			claims: &NerdClaims{
-				StandardClaims: &jwt.StandardClaims{
+				StandardClaims: jwt.StandardClaims{
 					Audience: "nlz.com",
 				},
 			},
 		},
 		"valid expired": {
 			claims: &NerdClaims{
-				StandardClaims: &jwt.StandardClaims{
+				StandardClaims: jwt.StandardClaims{
 					Audience:  "nlz.com",
 					ExpiresAt: time.Now().Unix() + 300,
 				},
@@ -91,7 +91,7 @@ func TestEnvProviderRetrieve(t *testing.T) {
 	}{
 		"invalid expired": {
 			claims: &NerdClaims{
-				StandardClaims: &jwt.StandardClaims{
+				StandardClaims: jwt.StandardClaims{
 					Audience:  "nlz.com",
 					ExpiresAt: time.Now().Unix() - 300,
 				},
