@@ -65,13 +65,13 @@ func (cmd *TaskReceive) DoRun(args []string) (err error) {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	creds := nerdaws.NewNerdalizeCredentials(bclient, config.CurrentProject)
-	qops, err := nerdaws.NewQueueClient(creds, "eu-west-1") //@TODO get region from credentials provider
+	creds := nerdaws.NewNerdalizeCredentials(bclient, config.CurrentProject.Name)
+	qops, err := nerdaws.NewQueueClient(creds, config.CurrentProject.AWSRegion) //@TODO get region from credentials provider
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	out, err := bclient.ReceiveTaskRuns(config.CurrentProject, args[0], time.Minute*3, qops)
+	out, err := bclient.ReceiveTaskRuns(config.CurrentProject.Name, args[0], time.Minute*3, qops)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}

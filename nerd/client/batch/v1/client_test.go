@@ -41,7 +41,7 @@ func TestInterfaceImplementation(t *testing.T) {
 	_ = v1
 }
 
-func TestDataset(t *testing.T) {
+func TestDoRequest(t *testing.T) {
 	cases := map[string]struct {
 		fields      *testCaseFields
 		httpHandler func(*testing.T, *testCaseFields) http.Handler
@@ -50,7 +50,7 @@ func TestDataset(t *testing.T) {
 		"input": {
 			fields: &testCaseFields{
 				jwt:    "",
-				method: http.MethodGet,
+				method: http.MethodPost,
 				path:   "/path",
 				input:  &input{"InputField"},
 				output: nil,
