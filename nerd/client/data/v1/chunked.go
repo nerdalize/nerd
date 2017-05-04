@@ -143,11 +143,11 @@ func (c *Client) ChunkedDownload(kr KeyReader, cw io.Writer, concurrency int, bu
 
 	work := func(it *item) {
 		r, erro := c.Download(bucket, path.Join(root, it.k.ToString()))
-		defer r.Close()
 		if erro != nil {
 			it.resCh <- &result{errors.Wrapf(erro, "failed to get key '%s'", it.k), nil}
 			return
 		}
+		defer r.Close()
 
 		chunk, erro := ioutil.ReadAll(r)
 		if erro != nil {

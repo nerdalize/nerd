@@ -2,7 +2,6 @@ package jwt
 
 import (
 	"crypto/ecdsa"
-	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -45,7 +44,6 @@ func (b *ProviderBasis) SetExpirationFromJWT(jwt string) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to decode jwt '%v'", jwt)
 	}
-	fmt.Printf("%+v\n", claims)
 	b.AlwaysValid = claims.ExpiresAt == 0 // if unset
 	b.SetExpiration(time.Unix(claims.ExpiresAt, 0))
 	err = claims.Valid()

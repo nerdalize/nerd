@@ -2,6 +2,15 @@ package v1payload
 
 import "time"
 
+const (
+	//DatasetUploadStatusCreated is the created upload status
+	DatasetUploadStatusCreated = "CREATED"
+	//DatasetUploadStatusCreated is the uploading upload status
+	DatasetUploadStatusUploading = "UPLOADING"
+	//DatasetUploadStatusCreated is the success upload status
+	DatasetUploadStatusSuccess = "SUCCESS"
+)
+
 //CreateDatasetInput is used as input to dataset creation
 type CreateDatasetInput struct {
 	ProjectID string `json:"project_id" valid:"required"`

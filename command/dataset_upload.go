@@ -162,7 +162,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	pr, pw := io.Pipe()
 	go func() {
 		defer close(progressCh)
-		uerr := dataclient.ChunkedUpload(NewChunker(v1data.UploadPolynomal, pr), iw, UploadConcurrency, ds.Bucket, ds.DatasetRoot, progressCh)
+		uerr := dataclient.ChunkedUpload(NewChunker(v1data.UploadPolynomal, pr), iw, UploadConcurrency, ds.Bucket, ds.ProjectRoot, progressCh)
 		pr.Close()
 		doneCh <- uerr
 	}()
@@ -228,10 +228,10 @@ func tardir(dir string, w io.Writer) (err error) {
 		}
 
 		f, err := os.Open(path)
-		defer f.Close()
 		if err != nil {
 			return errors.Wrapf(err, "failed to open file '%s'", rel)
 		}
+		defer f.Close()
 
 		err = tw.WriteHeader(&tar.Header{
 			Name:    rel,

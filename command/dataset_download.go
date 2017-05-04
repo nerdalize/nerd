@@ -15,6 +15,7 @@ import (
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd"
 	"github.com/nerdalize/nerd/nerd/aws"
+	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
 	v1data "github.com/nerdalize/nerd/nerd/client/data/v1"
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
@@ -110,9 +111,22 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	dataclient := v1data.NewClient(dataOps)
 
 	// Dataset
-	ds, err := batchclient.DescribeDataset(config.CurrentProject, dataset)
-	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+	var ds v1payload.DatasetSummary
+	for {
+		out, rerr := batchclient.DescribeDataset(config.CurrentProject, dataset)
+		ds = out.DatasetSummary
+		if rerr != nil {
+			HandleError(rerr, cmd.opts.VerboseOutput)
+		}
+		if ds.UploadStatus == v1payload.DatasetUploadStatusSuccess {
+			break
+		}
+		if ds.UploadStatus == v1payload.DatasetUploadStatusUploading && ds.UploadExpire < time.Now().Unix() {
+			HandleError(errors.Errorf("Stopped downloading because the upload process of dataset %v timed out", ds.DatasetID), cmd.opts.VerboseOutput)
+		}
+		wait := ds.UploadExpire - time.Now().Unix()
+		logrus.Infof("Waiting for dataset %v to be uploaded (sleeping for %v seconds)", ds.DatasetID, wait)
+		time.Sleep(time.Second * time.Duration(wait))
 	}
 	logrus.Infof("Downloading dataset with ID '%v'", ds.DatasetID)
 
@@ -151,7 +165,7 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	}()
 
 	// Download
-	err = dataclient.ChunkedDownload(v1data.NewIndexReader(r), pw, DownloadConcurrency, ds.Bucket, ds.DatasetRoot, progressCh)
+	err = dataclient.ChunkedDownload(v1data.NewIndexReader(r), pw, DownloadConcurrency, ds.Bucket, ds.ProjectRoot, progressCh)
 	if err != nil {
 		HandleError(errors.Wrapf(err, "failed to download project '%v'", dataset), cmd.opts.VerboseOutput)
 	}
