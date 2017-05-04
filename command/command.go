@@ -9,7 +9,7 @@ import (
 	"github.com/mitchellh/cli"
 )
 
-var showHelpError = errors.New("show error")
+var errShowHelp = errors.New("show error")
 
 //command is an abstract implementation for embedding in concrete commands and allows basic command functionality to be reused.
 type command struct {
@@ -52,7 +52,7 @@ func (c *command) Run(args []string) int {
 	}
 
 	if err := c.runFunc(args); err != nil {
-		if err == showHelpError {
+		if err == errShowHelp {
 			return cli.RunResultHelp
 		}
 		c.ui.Error(err.Error())
