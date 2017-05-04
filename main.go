@@ -36,6 +36,16 @@ func main() {
 		"dataset":          command.DatasetFactory,
 		"dataset upload":   command.DatasetUploadFactory,
 		"dataset download": command.DatasetDownloadFactory,
+		"queue":            command.QueueFactory,
+		"queue describe":   command.QueueDescribeFactory,
+		"queue create":     command.QueueCreateFactory,
+		"queue delete":     command.QueueDeleteFactory,
+		"task":             command.QueueFactory,
+		"task list":        command.TaskListFactory,
+		"task start":       command.TaskStartFactory,
+		"task stop":        command.TaskStopFactory,
+		"task describe":    command.TaskDescribeFactory,
+		"task receive":     command.TaskReceiveFactory,
 	}
 
 	status, err := c.Run()

@@ -112,7 +112,7 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 	resolved := c.Base.ResolveReference(path)
 
 	var req *http.Request
-	if input != nil {
+	if input != nil && method != http.MethodGet {
 		buf := bytes.NewBuffer(nil)
 		enc := json.NewEncoder(buf)
 		err = enc.Encode(input)
