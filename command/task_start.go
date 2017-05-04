@@ -1,6 +1,7 @@
 package command
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/conf"
+	"github.com/pkg/errors"
 )
 
 //TaskStartOpts describes command options
@@ -61,6 +63,12 @@ func (cmd *TaskStart) DoRun(args []string) (err error) {
 	bclient, err := NewClient(cmd.ui)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
+	}
+
+	v := map[string]interface{}{}
+	err = json.Unmarshal([]byte(args[1]), &v)
+	if err != nil {
+		HandleError(errors.Errorf("payload must a valid JSON map, received: '%s'", args[1]), cmd.opts.VerboseOutput)
 	}
 
 	out, err := bclient.StartTask(config.CurrentProject, args[0], args[1])
