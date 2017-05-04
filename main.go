@@ -33,6 +33,10 @@ func main() {
 	c.Args = os.Args[1:]
 	c.Commands = map[string]cli.CommandFactory{
 		"login":            command.LoginFactory,
+		"worker":           command.WorkerFactory,
+		"worker start":     command.WorkerStartFactory,
+		"worker stop":      command.WorkerStopFactory,
+		"worker work":      command.WorkerWorkFactory,
 		"dataset":          command.DatasetFactory,
 		"dataset upload":   command.DatasetUploadFactory,
 		"dataset download": command.DatasetDownloadFactory,
