@@ -16,8 +16,8 @@ type Queue struct {
 func QueueFactory() (cli.Command, error) {
 	cmd := &Queue{
 		command: &command{
-			help:     `...`,
-			synopsis: "...",
+			help:     `setup queues that transport tasks to workers`,
+			synopsis: "setup queues that transport tasks to workers",
 			parser:   flags.NewNamedParser("nerd queue", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,

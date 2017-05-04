@@ -16,8 +16,8 @@ type Task struct {
 func TaskFactory() (cli.Command, error) {
 	cmd := &Task{
 		command: &command{
-			help:     `...`,
-			synopsis: "...",
+			help:     `manage the lifecycle of compute tasks`,
+			synopsis: "manage the lifecycle of compute tasks",
 			parser:   flags.NewNamedParser("nerd task", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,

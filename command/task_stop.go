@@ -29,7 +29,7 @@ func TaskStopFactory() (cli.Command, error) {
 	cmd := &TaskStop{
 		command: &command{
 			help:     "",
-			synopsis: "...",
+			synopsis: "abort any run(s) of the specified task on a queue",
 			parser:   flags.NewNamedParser("nerd task stop <queue-id> <task-id>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,

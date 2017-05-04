@@ -27,7 +27,7 @@ func QueueDeleteFactory() (cli.Command, error) {
 	cmd := &QueueDelete{
 		command: &command{
 			help:     "",
-			synopsis: "...",
+			synopsis: "remove a queue and all tasks currently in it",
 			parser:   flags.NewNamedParser("nerd queue delete", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,

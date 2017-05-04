@@ -27,7 +27,7 @@ func TaskListFactory() (cli.Command, error) {
 	cmd := &TaskList{
 		command: &command{
 			help:     "",
-			synopsis: "...",
+			synopsis: "show a list of all task currently in a queue",
 			parser:   flags.NewNamedParser("nerd task list <queue-id>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,

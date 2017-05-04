@@ -40,7 +40,7 @@ func main() {
 		"queue describe":   command.QueueDescribeFactory,
 		"queue create":     command.QueueCreateFactory,
 		"queue delete":     command.QueueDeleteFactory,
-		"task":             command.QueueFactory,
+		"task":             command.TaskFactory,
 		"task list":        command.TaskListFactory,
 		"task start":       command.TaskStartFactory,
 		"task stop":        command.TaskStopFactory,

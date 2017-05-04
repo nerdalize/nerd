@@ -29,7 +29,7 @@ func TaskHeartbeatFactory() (cli.Command, error) {
 	cmd := &TaskHeartbeat{
 		command: &command{
 			help:     "",
-			synopsis: "...",
+			synopsis: "indicate that a task run is still in progress",
 			parser:   flags.NewNamedParser("nerd task heartbeat <queue-id> <task-id> <run-token>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,

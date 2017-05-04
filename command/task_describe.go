@@ -29,7 +29,7 @@ func TaskDescribeFactory() (cli.Command, error) {
 	cmd := &TaskDescribe{
 		command: &command{
 			help:     "",
-			synopsis: "...",
+			synopsis: "return more information about a specific task",
 			parser:   flags.NewNamedParser("nerd task describe <queue-id> <task-id>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,

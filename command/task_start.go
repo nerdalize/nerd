@@ -27,7 +27,7 @@ func TaskStartFactory() (cli.Command, error) {
 	cmd := &TaskStart{
 		command: &command{
 			help:     "",
-			synopsis: "...",
+			synopsis: "schedule a new task for workers to consume from a queue",
 			parser:   flags.NewNamedParser("nerd task start <queue-id> <payload>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,

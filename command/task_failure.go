@@ -29,7 +29,7 @@ func TaskFailureFactory() (cli.Command, error) {
 	cmd := &TaskFailure{
 		command: &command{
 			help:     "",
-			synopsis: "...",
+			synopsis: "mark a task run as being failed",
 			parser:   flags.NewNamedParser("nerd task failure <queue-id> <task-id> <run-token> <error-code> <err-message>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,

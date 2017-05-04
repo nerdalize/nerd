@@ -29,7 +29,7 @@ func TaskSuccessFactory() (cli.Command, error) {
 	cmd := &TaskSuccess{
 		command: &command{
 			help:     "",
-			synopsis: "...",
+			synopsis: "mark a task run as having succeeded",
 			parser:   flags.NewNamedParser("nerd task success <queue-id> <task-id> <run-token> <result>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
