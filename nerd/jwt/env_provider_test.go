@@ -12,7 +12,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
-var EmptyClaims = &NerdClaims{}
+var EmptyClaims = &jwt.StandardClaims{}
 
 //testkey creates a new ecdsa keypair.
 func testkey(t *testing.T) *ecdsa.PrivateKey {
@@ -24,7 +24,7 @@ func testkey(t *testing.T) *ecdsa.PrivateKey {
 }
 
 //tokenAndPub returns a token string and public key.
-func tokenAndPub(claims *NerdClaims, t *testing.T) (string, *ecdsa.PublicKey) {
+func tokenAndPub(claims *jwt.StandardClaims, t *testing.T) (string, *ecdsa.PublicKey) {
 	key := testkey(t)
 	pub, ok := key.Public().(*ecdsa.PublicKey)
 	if !ok {
@@ -50,21 +50,17 @@ func newEnvProvider(pub *ecdsa.PublicKey) *EnvProvider {
 func TestEnvProviderRetrieve(t *testing.T) {
 	// Success cases
 	successCases := map[string]struct {
-		claims *NerdClaims
+		claims *jwt.StandardClaims
 	}{
 		"valid": {
-			claims: &NerdClaims{
-				StandardClaims: jwt.StandardClaims{
-					Audience: "nlz.com",
-				},
+			claims: &jwt.StandardClaims{
+				Audience: "nlz.com",
 			},
 		},
 		"valid expired": {
-			claims: &NerdClaims{
-				StandardClaims: jwt.StandardClaims{
-					Audience:  "nlz.com",
-					ExpiresAt: time.Now().Unix() + 300,
-				},
+			claims: &jwt.StandardClaims{
+				Audience:  "nlz.com",
+				ExpiresAt: time.Now().Unix() + 300,
 			},
 		},
 	}
@@ -86,15 +82,13 @@ func TestEnvProviderRetrieve(t *testing.T) {
 
 	// Error cases
 	errorCases := map[string]struct {
-		claims   *NerdClaims
+		claims   *jwt.StandardClaims
 		errorMsg string
 	}{
 		"invalid expired": {
-			claims: &NerdClaims{
-				StandardClaims: jwt.StandardClaims{
-					Audience:  "nlz.com",
-					ExpiresAt: time.Now().Unix() - 300,
-				},
+			claims: &jwt.StandardClaims{
+				Audience:  "nlz.com",
+				ExpiresAt: time.Now().Unix() - 300,
 			},
 			errorMsg: "is invalid",
 		},

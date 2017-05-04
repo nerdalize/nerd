@@ -9,19 +9,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-//NerdClaims hold nerdalize specific jwt claims
-type NerdClaims struct {
-	jwt.StandardClaims
-	ProjectID string `json:"proj,omitempty"`
-}
-
 //DecodeTokenWithKey decodes a nerd token (JWT) and verifies it with the given public key.
-func DecodeTokenWithKey(nerdToken string, key *ecdsa.PublicKey) (*NerdClaims, error) {
+func DecodeTokenWithKey(nerdToken string, key *ecdsa.PublicKey) (*jwt.StandardClaims, error) {
 	return decodeToken(nerdToken, key)
 }
 
 //DecodeTokenWithPEM decodes a nerd token (JWT) and verifies it with the given public key in PEM format.
-func DecodeTokenWithPEM(nerdToken, pem string) (*NerdClaims, error) {
+func DecodeTokenWithPEM(nerdToken, pem string) (*jwt.StandardClaims, error) {
 	key, err := ParseECDSAPublicKeyFromPemBytes([]byte(pem))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse public key PEM to ecdsa key")
@@ -30,11 +24,11 @@ func DecodeTokenWithPEM(nerdToken, pem string) (*NerdClaims, error) {
 }
 
 //decodeToken decodes a nerd token (JWT) given the public key to check if the signature is valid.
-func decodeToken(nerdToken string, key *ecdsa.PublicKey) (*NerdClaims, error) {
+func decodeToken(nerdToken string, key *ecdsa.PublicKey) (*jwt.StandardClaims, error) {
 	p := &jwt.Parser{
 		SkipClaimsValidation: true,
 	}
-	token, err := p.ParseWithClaims(nerdToken, &NerdClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := p.ParseWithClaims(nerdToken, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
 			return nil, errors.Errorf("Unexpected signing method: %v, expected ECDSA", token.Header["alg"])
 		}
@@ -47,7 +41,7 @@ func decodeToken(nerdToken string, key *ecdsa.PublicKey) (*NerdClaims, error) {
 	if !token.Valid {
 		return nil, errors.Errorf("nerd token '%v' signature is invalid", nerdToken)
 	}
-	if claims, ok := token.Claims.(*NerdClaims); ok {
+	if claims, ok := token.Claims.(*jwt.StandardClaims); ok {
 		return claims, nil
 	}
 
