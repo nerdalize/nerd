@@ -68,6 +68,6 @@ func (cmd *QueueDescribe) DoRun(args []string) (err error) {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	logrus.Infof("Queue Description: %v", out)
+	logrus.Infof("Queue Describe: %v", out)
 	return nil
 }

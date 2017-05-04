@@ -1,10 +1,13 @@
 package command
 
 import (
+	"fmt"
 	"os"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/nerd/conf"
 )
 
 //QueueDeleteOpts describes command options
@@ -46,5 +49,25 @@ func QueueDeleteFactory() (cli.Command, error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *QueueDelete) DoRun(args []string) (err error) {
+	if len(args) < 1 {
+		return fmt.Errorf("not enough arguments, see --help")
+	}
+
+	config, err := conf.Read()
+	if err != nil {
+		HandleError(err, cmd.opts.VerboseOutput)
+	}
+
+	bclient, err := NewClient(cmd.ui)
+	if err != nil {
+		HandleError(err, cmd.opts.VerboseOutput)
+	}
+
+	out, err := bclient.DeleteQueue(config.CurrentProject, args[0])
+	if err != nil {
+		HandleError(err, cmd.opts.VerboseOutput)
+	}
+
+	logrus.Infof("Queue Deletion: %v", out)
 	return nil
 }
