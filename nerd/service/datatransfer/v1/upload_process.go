@@ -175,18 +175,13 @@ func (p *uploadProcess) uploadChunks(r io.Reader, w *io.PipeWriter) {
 	}
 }
 
-func (p *uploadProcess) uploadMetadata() error {
-	size, err := totalTarSize(p.localDir)
-	if err != nil {
-		//TODO: wrap error
-		return err
-	}
+func (p *uploadProcess) uploadMetadata(total int64) error {
 	metadata := &v1datapayload.Metadata{
-		Size:    size,
+		Size:    total,
 		Created: time.Now(),
 		Updated: time.Now(),
 	}
-	err = p.dataClient.MetadataUpload(p.dataset.Bucket, p.dataset.DatasetRoot, metadata)
+	err := p.dataClient.MetadataUpload(p.dataset.Bucket, p.dataset.DatasetRoot, metadata)
 	if err != nil {
 		// TODO: wrap error
 		return err
@@ -194,16 +189,20 @@ func (p *uploadProcess) uploadMetadata() error {
 	return nil
 }
 
-func (p *uploadProcess) upload() error {
-	tar_chunks := newPipe()
+func (p *uploadProcess) start() error {
+	tar_count := newPipe()
+	count_chunks := newPipe()
 	chunks_index := newPipe()
+	countReader := io.TeeReader(tar_count.r, count_chunks.w)
 
 	doneCh := make(chan error)
+	countCh := make(chan countResult)
 
 	go p.uploadIndex(chunks_index.r, doneCh)
-	go p.uploadChunks(tar_chunks.r, chunks_index.w)
-	go p.sendHeartbeats(tar_chunks.w)
-	err := tardir(p.localDir, tar_chunks.w)
+	go p.uploadChunks(count_chunks.r, chunks_index.w)
+	go countBytes(countReader, countCh)
+	go p.sendHeartbeats(tar_count.w)
+	err := tardir(p.localDir, tar_count.w)
 
 	if err != nil && errors.Cause(err) != io.ErrClosedPipe {
 		return errors.Wrapf(err, "failed to tar '%s'", p.localDir)
@@ -213,16 +212,13 @@ func (p *uploadProcess) upload() error {
 	if err != nil {
 		return err
 	}
-	return nil
-}
 
-func (p *uploadProcess) start() error {
-	err := p.upload()
-	if err != nil {
+	cres := <-countCh
+	if cres.err != nil {
 		return err
 	}
 
-	err = p.uploadMetadata()
+	err = p.uploadMetadata(cres.total)
 	if err != nil {
 		return err
 	}
@@ -234,4 +230,38 @@ func (p *uploadProcess) start() error {
 	}
 
 	return nil
+}
+
+type countResult struct {
+	total int64
+	err   error
+}
+
+//countBytes counts all bytes from a reader.
+func countBytes(r io.Reader, resultCh chan countResult) {
+	var total int64
+	buf := make([]byte, 512*1024)
+	for {
+		n, err := io.ReadFull(r, buf)
+		if err == io.ErrUnexpectedEOF {
+			err = nil
+		}
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			resultCh <- countResult{
+				total: 0,
+				err:   errors.Wrap(err, "failed to read part of tar"),
+			}
+			return
+		}
+		total = total + int64(n)
+	}
+
+	resultCh <- countResult{
+		total: total,
+		err:   nil,
+	}
+	return
 }
