@@ -11,21 +11,11 @@ import (
 
 	v1batch "github.com/nerdalize/nerd/nerd/client/batch/v1"
 	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
-	v1data "github.com/nerdalize/nerd/nerd/client/data/v1"
-	v1datapayload "github.com/nerdalize/nerd/nerd/client/data/v1/payload"
+	v1data "github.com/nerdalize/nerd/nerd/service/datatransfer/v1/client"
+	v1datapayload "github.com/nerdalize/nerd/nerd/service/datatransfer/v1/client/payload"
 	"github.com/pkg/errors"
 	"github.com/restic/chunker"
 )
-
-var heartbeatExpiredErr = fmt.Errorf("Upload failed because the server could not be reached for too long")
-
-type pipeErr struct {
-	error
-}
-
-func newPipeErr(err error) *pipeErr {
-	return &pipeErr{err}
-}
 
 type uploadProcess struct {
 	batchClient       *v1batch.Client
@@ -37,30 +27,8 @@ type uploadProcess struct {
 	progressCh        chan int64
 }
 
-func newUploadProcess(ds v1payload.DatasetSummary, concurrency int, progressCh chan int64) *uploadProcess {
-	process := &uploadProcess{
-		dataset:           ds,
-		heartbeatInterval: 15 * time.Second,
-		concurrency:       concurrency,
-		progressCh:        progressCh,
-	}
-	return process
-}
-
-type pipe struct {
-	r *io.PipeReader
-	w *io.PipeWriter
-}
-
-func newPipe() *pipe {
-	pr, pw := io.Pipe()
-	return &pipe{
-		r: pr,
-		w: pw,
-	}
-}
-
 func (p *uploadProcess) sendHeartbeats(w *io.PipeWriter) {
+	return
 	sendHearbeats := true
 	for sendHearbeats {
 		time.Sleep(p.heartbeatInterval)
@@ -70,7 +38,7 @@ func (p *uploadProcess) sendHeartbeats(w *io.PipeWriter) {
 		}
 		if out.HasExpired {
 			sendHearbeats = false
-			w.CloseWithError(heartbeatExpiredErr)
+			w.CloseWithError(newPipeErr(fmt.Errorf("upload failed because the server could not be reached for too long")))
 		}
 	}
 }
@@ -78,11 +46,11 @@ func (p *uploadProcess) sendHeartbeats(w *io.PipeWriter) {
 func (p *uploadProcess) uploadIndex(r io.Reader, doneCh chan error) {
 	b, err := ioutil.ReadAll(r)
 	if err != nil {
-		if _, ok := err.(*pipeErr); ok {
+		if isPipeErr(err) {
 			doneCh <- err
-		} else {
-			doneCh <- errors.Wrap(err, "failed to read keys")
+			return
 		}
+		doneCh <- errors.Wrap(err, "failed to read keys")
 		return
 	}
 	doneCh <- p.dataClient.Upload(p.dataset.Bucket, path.Join(p.dataset.DatasetRoot, v1data.IndexObjectKey), bytes.NewReader(b))
@@ -119,7 +87,9 @@ func (p *uploadProcess) uploadChunks(r io.Reader, w *io.PipeWriter) {
 				return
 			}
 		}
-		p.progressCh <- int64(len(it.chunk))
+		if p.progressCh != nil {
+			p.progressCh <- int64(len(it.chunk))
+		}
 
 		it.resCh <- &result{nil, k}
 	}
@@ -130,12 +100,10 @@ func (p *uploadProcess) uploadChunks(r io.Reader, w *io.PipeWriter) {
 		defer close(itemCh)
 		buf := make([]byte, chunker.MaxSize)
 		for {
+			fmt.Println("Chunk before")
 			chunk, err := chkr.Next(buf)
+			fmt.Println("Chunk read")
 			if err != nil {
-				if err == heartbeatExpiredErr {
-					w.CloseWithError(newPipeErr(heartbeatExpiredErr))
-					// TODO: stop p.uploadChunks
-				}
 				if err != io.EOF {
 					itemCh <- &item{err: err}
 				}
@@ -157,20 +125,24 @@ func (p *uploadProcess) uploadChunks(r io.Reader, w *io.PipeWriter) {
 	//fan-in
 	for it := range itemCh {
 		if it.err != nil {
-			// TODO: close pipewriter
-			// return errors.Wrapf(it.err, "failed to iterate")
+			if isPipeErr(it.err) {
+				w.CloseWithError(it.err)
+				return
+			}
+			w.CloseWithError(newPipeErr(errors.Wrapf(it.err, "failed to iterate")))
+			return
 		}
 
 		res := <-it.resCh
 		if res.err != nil {
-			// TODO: close pipewriter
-			// return res.err
+			w.CloseWithError(newPipeErr(res.err))
+			return
 		}
 
 		err := kw.WriteKey(res.k)
 		if err != nil {
-			// TODO: close pipewriter
-			// return errors.Wrapf(err, "failed to write key")
+			w.CloseWithError(newPipeErr(errors.Wrapf(err, "failed to write key")))
+			return
 		}
 	}
 }
@@ -190,6 +162,10 @@ func (p *uploadProcess) uploadMetadata(total int64) error {
 }
 
 func (p *uploadProcess) start() error {
+	if p.progressCh != nil {
+		defer close(p.progressCh)
+	}
+	// pipeline: tar -> count -> chunk+upload -> index
 	tar_count := newPipe()
 	count_chunks := newPipe()
 	chunks_index := newPipe()
@@ -198,13 +174,16 @@ func (p *uploadProcess) start() error {
 	doneCh := make(chan error)
 	countCh := make(chan countResult)
 
+	// chunks -> index
 	go p.uploadIndex(chunks_index.r, doneCh)
+	// count -> chunks
 	go p.uploadChunks(count_chunks.r, chunks_index.w)
+	// tar -> count
 	go countBytes(countReader, countCh)
 	go p.sendHeartbeats(tar_count.w)
 	err := tardir(p.localDir, tar_count.w)
 
-	if err != nil && errors.Cause(err) != io.ErrClosedPipe {
+	if err != nil && err != io.ErrClosedPipe {
 		return errors.Wrapf(err, "failed to tar '%s'", p.localDir)
 	}
 
@@ -215,6 +194,7 @@ func (p *uploadProcess) start() error {
 
 	cres := <-countCh
 	if cres.err != nil {
+		// TODO: wrap
 		return err
 	}
 

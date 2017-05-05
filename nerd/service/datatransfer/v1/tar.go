@@ -37,11 +37,17 @@ func tardir(dir string, w io.Writer) (err error) {
 			Size:    fi.Size(),
 		})
 		if err != nil {
+			if err == io.ErrClosedPipe {
+				return err
+			}
 			return errors.Wrapf(err, "failed to write tar header for '%s'", rel)
 		}
 
 		n, err := io.Copy(tw, f)
 		if err != nil {
+			if err == io.ErrClosedPipe {
+				return err
+			}
 			return errors.Wrapf(err, "failed to write tar file for '%s'", rel)
 		}
 
@@ -57,6 +63,9 @@ func tardir(dir string, w io.Writer) (err error) {
 	}
 
 	if err = tw.Close(); err != nil {
+		if err == io.ErrClosedPipe {
+			return err
+		}
 		return errors.Wrap(err, "failed to write remaining data")
 	}
 

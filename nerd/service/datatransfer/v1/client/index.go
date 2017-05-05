@@ -2,6 +2,7 @@ package v1data
 
 import (
 	"bufio"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -12,7 +13,30 @@ import (
 const (
 	//IndexObjectKey is the key of the object that contains an index of all the chunks of a dataset.
 	IndexObjectKey = "index"
+	//UploadPolynomal is the polynomal that is used for chunked uploading.
+	UploadPolynomal = 0x3DA3358B4DC173
 )
+
+//Key is the identifier of a chunk of data.
+type Key [sha256.Size]byte
+
+//ToString returns the string representation of a key.
+func (k Key) ToString() string {
+	return fmt.Sprintf("%x", k)
+}
+
+//ZeroKey is an empty key.
+var ZeroKey = Key{}
+
+//KeyReader can be implemented by objects capable of reading Keys.
+type KeyReader interface {
+	ReadKey() (Key, error)
+}
+
+//KeyWriter can be implemented by objects capable of writing Keys.
+type KeyWriter interface {
+	WriteKey(Key) error
+}
 
 //IndexReader can be used to read keys from the "index" object.
 type IndexReader struct {

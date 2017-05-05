@@ -6,7 +6,7 @@ import (
 	"path"
 
 	"github.com/nerdalize/nerd/nerd/client"
-	v1payload "github.com/nerdalize/nerd/nerd/client/data/v1/payload"
+	v1payload "github.com/nerdalize/nerd/nerd/service/datatransfer/v1/client/payload"
 )
 
 const (

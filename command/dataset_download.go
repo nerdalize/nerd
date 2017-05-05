@@ -12,14 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/dchest/safefile"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/aws"
-	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
-	v1data "github.com/nerdalize/nerd/nerd/client/data/v1"
-	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
 )
 
@@ -77,134 +72,134 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	if len(args) < 2 {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
-
-	config, err := conf.Read()
-	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
-	}
-
-	downloadObject := args[0]
-	outputDir := args[1]
-
-	// Folder create and check
-	fi, err := os.Stat(outputDir)
-	if err != nil && os.IsNotExist(err) {
-		err = os.MkdirAll(outputDir, OutputDirPermissions)
-		if err != nil {
-			HandleError(errors.Errorf("The provided path '%s' does not exist and could not be created.", outputDir), cmd.opts.VerboseOutput)
-		}
-		fi, err = os.Stat(outputDir)
-	}
-	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
-	} else if !fi.IsDir() {
-		HandleError(errors.Errorf("The provided path '%s' is not a directory", outputDir), cmd.opts.VerboseOutput)
-	}
-
-	// Clients
-	batchclient, err := NewClient(cmd.ui)
-	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
-	}
-	dataOps, err := aws.NewDataClient(
-		aws.NewNerdalizeCredentials(batchclient, config.CurrentProject.Name),
-		config.CurrentProject.AWSRegion,
-	)
-	if err != nil {
-		HandleError(errors.Wrap(err, "could not create aws dataops client"), cmd.opts.VerboseOutput)
-	}
-	dataclient := v1data.NewClient(dataOps)
-
-	// Gather dataset IDs
-	var datasetIDs []string
-	if !strings.HasPrefix(downloadObject, TagPrefix) {
-		datasetIDs = append(datasetIDs, downloadObject)
-	} else {
-		datasets, err := batchclient.ListDatasets(config.CurrentProject.Name, downloadObject)
-		if err != nil {
-			HandleError(err, cmd.opts.VerboseOutput)
-		}
-		datasetIDs = make([]string, len(datasets.Datasets))
-		for i, dataset := range datasets.Datasets {
-			datasetIDs[i] = dataset.DatasetID
-		}
-	}
-
-	for _, datasetID := range datasetIDs {
-		// Dataset
-		var ds v1payload.DatasetSummary
-		for {
-			out, rerr := batchclient.DescribeDataset(config.CurrentProject.Name, datasetID)
-			ds = out.DatasetSummary
-			if rerr != nil {
-				HandleError(rerr, cmd.opts.VerboseOutput)
-			}
-			if ds.UploadStatus == v1payload.DatasetUploadStatusSuccess {
-				break
-			}
-			if ds.UploadStatus == v1payload.DatasetUploadStatusUploading && ds.UploadExpire < time.Now().Unix() {
-				HandleError(errors.Errorf("Stopped downloading because the upload process of dataset %v timed out", ds.DatasetID), cmd.opts.VerboseOutput)
-			}
-			wait := ds.UploadExpire - time.Now().Unix()
-			logrus.Infof("Waiting for dataset %v to be uploaded (sleeping for %v seconds)", ds.DatasetID, wait)
-			time.Sleep(time.Second * time.Duration(wait))
-		}
-		logrus.Infof("Downloading dataset with ID '%v'", ds.DatasetID)
-
-		// Metadata
-		metadata, err := dataclient.MetadataDownload(ds.Bucket, ds.DatasetRoot)
-		if err != nil {
-			HandleError(err, cmd.opts.VerboseOutput)
-		}
-
-		// Index
-		r, err := dataclient.Download(ds.Bucket, path.Join(ds.DatasetRoot, v1data.IndexObjectKey))
-		if err != nil {
-			HandleError(errors.Wrap(err, "failed to download chunk index"), cmd.opts.VerboseOutput)
-		}
-
-		// Progress bar
-		progressCh := make(chan int64)
-		progressBarDoneCh := make(chan struct{})
-		if !cmd.opts.JSONOutput {
-			go ProgressBar(metadata.Size, progressCh, progressBarDoneCh)
-		} else {
-			go func() {
-				for _ = range progressCh {
-				}
-				progressBarDoneCh <- struct{}{}
-			}()
-		}
-
-		// Untar
-		doneCh := make(chan error)
-		pr, pw := io.Pipe()
-		go func() {
-			uerr := untardir(outputDir, pr)
-			pr.Close()
-			doneCh <- uerr
-		}()
-
-		// Download
-		err = dataclient.ChunkedDownload(v1data.NewIndexReader(r), pw, DownloadConcurrency, ds.Bucket, ds.ProjectRoot, progressCh)
-		if err != nil {
-			HandleError(errors.Wrapf(err, "failed to download dataset '%v'", ds.DatasetID), cmd.opts.VerboseOutput)
-		}
-		close(progressCh)
-
-		// Finish downloading
-		err = pw.Close()
-		if err != nil {
-			HandleError(errors.Wrap(err, "failed to close chunked download pipe writer"), cmd.opts.VerboseOutput)
-		}
-		err = <-doneCh
-		if err != nil {
-			HandleError(errors.Wrapf(err, "failed to untar dataset '%v'", ds.DatasetID), cmd.opts.VerboseOutput)
-		}
-
-		// Wait for progress bar to be flushed to screen
-		<-progressBarDoneCh
-	}
+	//
+	// config, err := conf.Read()
+	// if err != nil {
+	// 	HandleError(err, cmd.opts.VerboseOutput)
+	// }
+	//
+	// downloadObject := args[0]
+	// outputDir := args[1]
+	//
+	// // Folder create and check
+	// fi, err := os.Stat(outputDir)
+	// if err != nil && os.IsNotExist(err) {
+	// 	err = os.MkdirAll(outputDir, OutputDirPermissions)
+	// 	if err != nil {
+	// 		HandleError(errors.Errorf("The provided path '%s' does not exist and could not be created.", outputDir), cmd.opts.VerboseOutput)
+	// 	}
+	// 	fi, err = os.Stat(outputDir)
+	// }
+	// if err != nil {
+	// 	HandleError(err, cmd.opts.VerboseOutput)
+	// } else if !fi.IsDir() {
+	// 	HandleError(errors.Errorf("The provided path '%s' is not a directory", outputDir), cmd.opts.VerboseOutput)
+	// }
+	//
+	// // Clients
+	// batchclient, err := NewClient(cmd.ui)
+	// if err != nil {
+	// 	HandleError(err, cmd.opts.VerboseOutput)
+	// }
+	// dataOps, err := aws.NewDataClient(
+	// 	aws.NewNerdalizeCredentials(batchclient, config.CurrentProject.Name),
+	// 	config.CurrentProject.AWSRegion,
+	// )
+	// if err != nil {
+	// 	HandleError(errors.Wrap(err, "could not create aws dataops client"), cmd.opts.VerboseOutput)
+	// }
+	// dataclient := v1data.NewClient(dataOps)
+	//
+	// // Gather dataset IDs
+	// var datasetIDs []string
+	// if !strings.HasPrefix(downloadObject, TagPrefix) {
+	// 	datasetIDs = append(datasetIDs, downloadObject)
+	// } else {
+	// 	datasets, err := batchclient.ListDatasets(config.CurrentProject.Name, downloadObject)
+	// 	if err != nil {
+	// 		HandleError(err, cmd.opts.VerboseOutput)
+	// 	}
+	// 	datasetIDs = make([]string, len(datasets.Datasets))
+	// 	for i, dataset := range datasets.Datasets {
+	// 		datasetIDs[i] = dataset.DatasetID
+	// 	}
+	// }
+	//
+	// for _, datasetID := range datasetIDs {
+	// 	// Dataset
+	// 	var ds v1payload.DatasetSummary
+	// 	for {
+	// 		out, rerr := batchclient.DescribeDataset(config.CurrentProject.Name, datasetID)
+	// 		ds = out.DatasetSummary
+	// 		if rerr != nil {
+	// 			HandleError(rerr, cmd.opts.VerboseOutput)
+	// 		}
+	// 		if ds.UploadStatus == v1payload.DatasetUploadStatusSuccess {
+	// 			break
+	// 		}
+	// 		if ds.UploadStatus == v1payload.DatasetUploadStatusUploading && ds.UploadExpire < time.Now().Unix() {
+	// 			HandleError(errors.Errorf("Stopped downloading because the upload process of dataset %v timed out", ds.DatasetID), cmd.opts.VerboseOutput)
+	// 		}
+	// 		wait := ds.UploadExpire - time.Now().Unix()
+	// 		logrus.Infof("Waiting for dataset %v to be uploaded (sleeping for %v seconds)", ds.DatasetID, wait)
+	// 		time.Sleep(time.Second * time.Duration(wait))
+	// 	}
+	// 	logrus.Infof("Downloading dataset with ID '%v'", ds.DatasetID)
+	//
+	// 	// Metadata
+	// 	metadata, err := dataclient.MetadataDownload(ds.Bucket, ds.DatasetRoot)
+	// 	if err != nil {
+	// 		HandleError(err, cmd.opts.VerboseOutput)
+	// 	}
+	//
+	// 	// Index
+	// 	r, err := dataclient.Download(ds.Bucket, path.Join(ds.DatasetRoot, v1data.IndexObjectKey))
+	// 	if err != nil {
+	// 		HandleError(errors.Wrap(err, "failed to download chunk index"), cmd.opts.VerboseOutput)
+	// 	}
+	//
+	// 	// Progress bar
+	// 	progressCh := make(chan int64)
+	// 	progressBarDoneCh := make(chan struct{})
+	// 	if !cmd.opts.JSONOutput {
+	// 		go ProgressBar(metadata.Size, progressCh, progressBarDoneCh)
+	// 	} else {
+	// 		go func() {
+	// 			for _ = range progressCh {
+	// 			}
+	// 			progressBarDoneCh <- struct{}{}
+	// 		}()
+	// 	}
+	//
+	// 	// Untar
+	// 	doneCh := make(chan error)
+	// 	pr, pw := io.Pipe()
+	// 	go func() {
+	// 		uerr := untardir(outputDir, pr)
+	// 		pr.Close()
+	// 		doneCh <- uerr
+	// 	}()
+	//
+	// 	// Download
+	// 	err = dataclient.ChunkedDownload(v1data.NewIndexReader(r), pw, DownloadConcurrency, ds.Bucket, ds.ProjectRoot, progressCh)
+	// 	if err != nil {
+	// 		HandleError(errors.Wrapf(err, "failed to download dataset '%v'", ds.DatasetID), cmd.opts.VerboseOutput)
+	// 	}
+	// 	close(progressCh)
+	//
+	// 	// Finish downloading
+	// 	err = pw.Close()
+	// 	if err != nil {
+	// 		HandleError(errors.Wrap(err, "failed to close chunked download pipe writer"), cmd.opts.VerboseOutput)
+	// 	}
+	// 	err = <-doneCh
+	// 	if err != nil {
+	// 		HandleError(errors.Wrapf(err, "failed to untar dataset '%v'", ds.DatasetID), cmd.opts.VerboseOutput)
+	// 	}
+	//
+	// 	// Wait for progress bar to be flushed to screen
+	// 	<-progressBarDoneCh
+	// }
 
 	return nil
 }
