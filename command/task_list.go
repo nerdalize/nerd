@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/conf"
+	"github.com/olekukonko/tablewriter"
 )
 
 //TaskListOpts describes command options
@@ -68,6 +68,16 @@ func (cmd *TaskList) DoRun(args []string) (err error) {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	logrus.Infof("Task Listing: %v", out)
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"QueueID", "TaskID", "Status"})
+	for _, t := range out.Tasks {
+		row := []string{}
+		row = append(row, t.QueueID)
+		row = append(row, fmt.Sprintf("%d", t.TaskID))
+		row = append(row, t.Status)
+		table.Append(row)
+	}
+
+	table.Render()
 	return nil
 }

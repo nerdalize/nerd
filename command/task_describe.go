@@ -75,6 +75,6 @@ func (cmd *TaskDescribe) DoRun(args []string) (err error) {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	logrus.Infof("Task Listing: %v", out)
+	logrus.Infof("Task Description: %+v", out)
 	return nil
 }
