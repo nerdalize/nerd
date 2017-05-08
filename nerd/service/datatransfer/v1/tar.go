@@ -44,6 +44,7 @@ func tardir(dir string, w io.Writer) (err error) {
 		}
 
 		n, err := io.Copy(tw, f)
+		// fmt.Printf("%v %v\n", path, n)
 		if err != nil {
 			if err == io.ErrClosedPipe {
 				return err

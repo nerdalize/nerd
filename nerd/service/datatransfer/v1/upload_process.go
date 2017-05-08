@@ -54,6 +54,7 @@ func (p *uploadProcess) uploadIndex(r io.Reader, doneCh chan error) {
 		return
 	}
 	doneCh <- p.dataClient.Upload(p.dataset.Bucket, path.Join(p.dataset.DatasetRoot, v1data.IndexObjectKey), bytes.NewReader(b))
+	return
 }
 
 func (p *uploadProcess) uploadChunks(r io.Reader, w *io.PipeWriter) {
@@ -73,7 +74,7 @@ func (p *uploadProcess) uploadChunks(r io.Reader, w *io.PipeWriter) {
 
 	work := func(it *item) {
 		k := v1data.Key(sha256.Sum256(it.chunk)) //hash
-		key := path.Join(p.dataset.DatasetRoot, k.ToString())
+		key := path.Join(p.dataset.ProjectRoot, k.ToString())
 		exists, err := p.dataClient.Exists(p.dataset.Bucket, key) //check existence
 		if err != nil {
 			it.resCh <- &result{errors.Wrapf(err, "failed to check existence of '%x'", k), v1data.ZeroKey}
@@ -100,9 +101,7 @@ func (p *uploadProcess) uploadChunks(r io.Reader, w *io.PipeWriter) {
 		defer close(itemCh)
 		buf := make([]byte, chunker.MaxSize)
 		for {
-			fmt.Println("Chunk before")
 			chunk, err := chkr.Next(buf)
-			fmt.Println("Chunk read")
 			if err != nil {
 				if err != io.EOF {
 					itemCh <- &item{err: err}
@@ -145,6 +144,9 @@ func (p *uploadProcess) uploadChunks(r io.Reader, w *io.PipeWriter) {
 			return
 		}
 	}
+
+	w.Close()
+	return
 }
 
 func (p *uploadProcess) uploadMetadata(total int64) error {
@@ -166,25 +168,32 @@ func (p *uploadProcess) start() error {
 		defer close(p.progressCh)
 	}
 	// pipeline: tar -> count -> chunk+upload -> index
-	tar_count := newPipe()
-	count_chunks := newPipe()
-	chunks_index := newPipe()
-	countReader := io.TeeReader(tar_count.r, count_chunks.w)
+	tarCountPipe := newPipe()
+	countChunksPipe := newPipe()
+	chunksIndexPipe := newPipe()
+	countReader := io.TeeReader(tarCountPipe.r, countChunksPipe.w)
 
 	doneCh := make(chan error)
 	countCh := make(chan countResult)
 
 	// chunks -> index
-	go p.uploadIndex(chunks_index.r, doneCh)
+	go p.uploadIndex(chunksIndexPipe.r, doneCh)
 	// count -> chunks
-	go p.uploadChunks(count_chunks.r, chunks_index.w)
+	go p.uploadChunks(countChunksPipe.r, chunksIndexPipe.w)
 	// tar -> count
 	go countBytes(countReader, countCh)
-	go p.sendHeartbeats(tar_count.w)
-	err := tardir(p.localDir, tar_count.w)
-
+	go p.sendHeartbeats(tarCountPipe.w)
+	err := tardir(p.localDir, tarCountPipe.w)
 	if err != nil && err != io.ErrClosedPipe {
 		return errors.Wrapf(err, "failed to tar '%s'", p.localDir)
+	}
+	err = countChunksPipe.w.Close()
+	if err != nil {
+		return errors.Wrap(err, "failed to close countChunksPipe writer")
+	}
+	err = tarCountPipe.w.Close()
+	if err != nil {
+		return errors.Wrap(err, "failed to close tarCountPipe writer")
 	}
 
 	err = <-doneCh
