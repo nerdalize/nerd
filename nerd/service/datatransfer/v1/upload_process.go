@@ -24,41 +24,115 @@ type uploadProcess struct {
 	heartbeatInterval time.Duration
 	localDir          string
 	concurrency       int
-	progressCh        chan int64
+	progressCh        chan<- int64
 }
 
-func (p *uploadProcess) sendHeartbeats(w *io.PipeWriter) {
-	return
-	sendHearbeats := true
-	for sendHearbeats {
-		time.Sleep(p.heartbeatInterval)
-		out, err := p.batchClient.SendUploadHeartbeat(p.dataset.ProjectID, p.dataset.DatasetID)
-		if err != nil {
-			continue
-		}
-		if out.HasExpired {
-			sendHearbeats = false
-			w.CloseWithError(newPipeErr(fmt.Errorf("upload failed because the server could not be reached for too long")))
-		}
-	}
-}
-
-func (p *uploadProcess) uploadIndex(r io.Reader, doneCh chan error) {
-	b, err := ioutil.ReadAll(r)
+//uploadChunks starts the chunking process and closes w when it is done
+func (p *uploadProcess) uploadChunks(r *io.PipeReader, w *io.PipeWriter) {
+	kw := v1data.NewIndexWriter(w)
+	err := uploadChunks(p.dataClient, r, kw, p.dataset.Bucket, p.dataset.ProjectRoot, p.concurrency, p.progressCh)
 	if err != nil {
-		if isPipeErr(err) {
-			doneCh <- err
+		if isPipeErr(errors.Cause(err)) {
+			w.CloseWithError(errors.Cause(err))
 			return
 		}
-		doneCh <- errors.Wrap(err, "failed to read keys")
+		w.CloseWithError(newPipeErr(err))
 		return
 	}
-	doneCh <- p.dataClient.Upload(p.dataset.Bucket, path.Join(p.dataset.DatasetRoot, v1data.IndexObjectKey), bytes.NewReader(b))
+	w.Close()
+}
+
+//sendHeartbeat sends heartbeats and closes closer and closer2 when the upload has timed out
+func (p *uploadProcess) sendHeartbeat(closer *io.PipeWriter, closer2 *io.PipeWriter) {
+	for {
+		err := sendHeartbeat(p.batchClient, p.dataset.ProjectID, p.dataset.DatasetID, p.heartbeatInterval)
+		if err != nil {
+			closer.CloseWithError(newPipeErr(err))
+			closer2.CloseWithError(newPipeErr(err))
+			return
+		}
+	}
+}
+
+//tar starts the tar process and closes both w and closer when it finishes
+func (p *uploadProcess) tar(w *io.PipeWriter, closer *io.PipeWriter) {
+	err := tardir(p.localDir, w)
+	if err != nil && err != io.ErrClosedPipe {
+		err = newPipeErr(errors.Wrapf(err, "failed to tar '%s'", p.localDir))
+		w.CloseWithError(err)
+		closer.CloseWithError(err)
+		return
+	}
+	w.Close()
+	closer.Close()
 	return
 }
 
-func (p *uploadProcess) uploadChunks(r io.Reader, w *io.PipeWriter) {
-	kw := v1data.NewIndexWriter(w)
+//start starts the upload process
+func (p *uploadProcess) start() error {
+	type countResult struct {
+		total int64
+		err   error
+	}
+
+	// pipeline: tar | count | chunk+upload | index
+	tarCountPipe := newPipe()
+	countChunksPipe := newPipe()
+	chunksIndexPipe := newPipe()
+	countReader := io.TeeReader(tarCountPipe.r, countChunksPipe.w)
+
+	doneCh := make(chan error)
+	countCh := make(chan countResult)
+
+	// chunks | index
+	go func() {
+		doneCh <- uploadIndex(p.dataClient, chunksIndexPipe.r, p.dataset.Bucket, p.dataset.DatasetRoot)
+	}()
+	// count | chunks
+	go p.uploadChunks(countChunksPipe.r, chunksIndexPipe.w)
+	// tar | count
+	go func() {
+		total, err := countBytes(countReader)
+		countCh <- countResult{
+			err:   err,
+			total: total,
+		}
+	}()
+	// heartbeat
+	go p.sendHeartbeat(countChunksPipe.w, tarCountPipe.w)
+	// tar
+	p.tar(tarCountPipe.w, countChunksPipe.w)
+
+	err := <-doneCh
+	if err != nil {
+		if isPipeErr(errors.Cause(err)) {
+			return errors.Cause(err)
+		}
+		return err
+	}
+
+	cres := <-countCh
+	if cres.err != nil {
+		return errors.Wrap(err, "failed to calculate dataset size")
+	}
+	err = uploadMetadata(p.dataClient, cres.total, p.dataset.Bucket, p.dataset.DatasetRoot)
+	if err != nil {
+		return err
+	}
+
+	_, err = p.batchClient.SendUploadSuccess(p.dataset.ProjectID, p.dataset.DatasetID)
+	if err != nil {
+		return errors.Wrap(err, "failed to send dataset success message")
+	}
+
+	return nil
+}
+
+//uploadChunks uploads data from r in a chunked way
+func uploadChunks(dataClient *v1data.Client, r io.Reader, kw v1data.KeyWriter, bucket, root string, concurrency int, progressCh chan<- int64) error {
+	if progressCh != nil {
+		defer close(progressCh)
+	}
 	chkr := chunker.New(r, chunker.Pol(v1data.UploadPolynomal))
 	type result struct {
 		err error
@@ -74,29 +148,29 @@ func (p *uploadProcess) uploadChunks(r io.Reader, w *io.PipeWriter) {
 
 	work := func(it *item) {
 		k := v1data.Key(sha256.Sum256(it.chunk)) //hash
-		key := path.Join(p.dataset.ProjectRoot, k.ToString())
-		exists, err := p.dataClient.Exists(p.dataset.Bucket, key) //check existence
+		key := path.Join(root, k.ToString())
+		exists, err := dataClient.Exists(bucket, key) //check existence
 		if err != nil {
 			it.resCh <- &result{errors.Wrapf(err, "failed to check existence of '%x'", k), v1data.ZeroKey}
 			return
 		}
 
 		if !exists {
-			err = p.dataClient.Upload(p.dataset.Bucket, key, bytes.NewReader(it.chunk)) //if not exists put
+			err = dataClient.Upload(bucket, key, bytes.NewReader(it.chunk)) //if not exists put
 			if err != nil {
 				it.resCh <- &result{errors.Wrapf(err, "failed to put chunk '%x'", k), v1data.ZeroKey}
 				return
 			}
 		}
-		if p.progressCh != nil {
-			p.progressCh <- int64(len(it.chunk))
+		if progressCh != nil {
+			progressCh <- int64(len(it.chunk))
 		}
 
 		it.resCh <- &result{nil, k}
 	}
 
 	//fan out
-	itemCh := make(chan *item, p.concurrency)
+	itemCh := make(chan *item, concurrency)
 	go func() {
 		defer close(itemCh)
 		buf := make([]byte, chunker.MaxSize)
@@ -124,133 +198,52 @@ func (p *uploadProcess) uploadChunks(r io.Reader, w *io.PipeWriter) {
 	//fan-in
 	for it := range itemCh {
 		if it.err != nil {
-			if isPipeErr(it.err) {
-				w.CloseWithError(it.err)
-				return
-			}
-			w.CloseWithError(newPipeErr(errors.Wrapf(it.err, "failed to iterate")))
-			return
+			return errors.Wrapf(it.err, "failed to iterate")
 		}
 
 		res := <-it.resCh
 		if res.err != nil {
-			w.CloseWithError(newPipeErr(res.err))
-			return
+			return res.err
 		}
 
 		err := kw.WriteKey(res.k)
 		if err != nil {
-			w.CloseWithError(newPipeErr(errors.Wrapf(err, "failed to write key")))
-			return
+			return errors.Wrapf(err, "failed to write key")
 		}
 	}
 
-	w.Close()
-	return
+	return nil
 }
 
-func (p *uploadProcess) uploadMetadata(total int64) error {
+//uploadIndex uploads the index object with all the keys
+func uploadIndex(dataClient *v1data.Client, r io.Reader, bucket, root string) error {
+	b, err := ioutil.ReadAll(r)
+	if err != nil {
+		return errors.Wrap(err, "failed to read keys")
+	}
+	return dataClient.Upload(bucket, path.Join(root, v1data.IndexObjectKey), bytes.NewReader(b))
+}
+
+//uploadMetadata uploads the metadata object
+func uploadMetadata(dataClient *v1data.Client, total int64, bucket, root string) error {
 	metadata := &v1datapayload.Metadata{
 		Size:    total,
 		Created: time.Now(),
 		Updated: time.Now(),
 	}
-	err := p.dataClient.MetadataUpload(p.dataset.Bucket, p.dataset.DatasetRoot, metadata)
+	err := dataClient.MetadataUpload(bucket, root, metadata)
 	if err != nil {
-		// TODO: wrap error
-		return err
+		return errors.Wrap(err, "failed to upload metadata")
 	}
 	return nil
 }
 
-func (p *uploadProcess) start() error {
-	if p.progressCh != nil {
-		defer close(p.progressCh)
+//sendHeartbeat sends a heartbeat and sleeps for the given interval
+func sendHeartbeat(batchClient *v1batch.Client, projectID, datasetID string, interval time.Duration) error {
+	time.Sleep(interval)
+	out, err := batchClient.SendUploadHeartbeat(projectID, datasetID)
+	if err == nil && out.HasExpired {
+		return fmt.Errorf("upload failed because the server could not be reached for too long")
 	}
-	// pipeline: tar -> count -> chunk+upload -> index
-	tarCountPipe := newPipe()
-	countChunksPipe := newPipe()
-	chunksIndexPipe := newPipe()
-	countReader := io.TeeReader(tarCountPipe.r, countChunksPipe.w)
-
-	doneCh := make(chan error)
-	countCh := make(chan countResult)
-
-	// chunks -> index
-	go p.uploadIndex(chunksIndexPipe.r, doneCh)
-	// count -> chunks
-	go p.uploadChunks(countChunksPipe.r, chunksIndexPipe.w)
-	// tar -> count
-	go countBytes(countReader, countCh)
-	go p.sendHeartbeats(tarCountPipe.w)
-	err := tardir(p.localDir, tarCountPipe.w)
-	if err != nil && err != io.ErrClosedPipe {
-		return errors.Wrapf(err, "failed to tar '%s'", p.localDir)
-	}
-	err = countChunksPipe.w.Close()
-	if err != nil {
-		return errors.Wrap(err, "failed to close countChunksPipe writer")
-	}
-	err = tarCountPipe.w.Close()
-	if err != nil {
-		return errors.Wrap(err, "failed to close tarCountPipe writer")
-	}
-
-	err = <-doneCh
-	if err != nil {
-		return err
-	}
-
-	cres := <-countCh
-	if cres.err != nil {
-		// TODO: wrap
-		return err
-	}
-
-	err = p.uploadMetadata(cres.total)
-	if err != nil {
-		return err
-	}
-
-	_, err = p.batchClient.SendUploadSuccess(p.dataset.ProjectID, p.dataset.DatasetID)
-	if err != nil {
-		// TODO: wrap error
-		return err
-	}
-
 	return nil
-}
-
-type countResult struct {
-	total int64
-	err   error
-}
-
-//countBytes counts all bytes from a reader.
-func countBytes(r io.Reader, resultCh chan countResult) {
-	var total int64
-	buf := make([]byte, 512*1024)
-	for {
-		n, err := io.ReadFull(r, buf)
-		if err == io.ErrUnexpectedEOF {
-			err = nil
-		}
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			resultCh <- countResult{
-				total: 0,
-				err:   errors.Wrap(err, "failed to read part of tar"),
-			}
-			return
-		}
-		total = total + int64(n)
-	}
-
-	resultCh <- countResult{
-		total: total,
-		err:   nil,
-	}
-	return
 }

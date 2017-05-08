@@ -1,12 +1,10 @@
 package command
 
 import (
-	"archive/tar"
 	"fmt"
-	"io"
 	"os"
-	"path/filepath"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/aws"
@@ -96,125 +94,36 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	if err != nil {
 		HandleError(errors.Wrap(err, "could not create aws dataops client"), cmd.opts.VerboseOutput)
 	}
-
-	progressCh := make(chan int64)
-	progressBarDoneCh := make(chan struct{})
-	size, err := totalTarSize(dataPath)
-	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
-	}
-	go ProgressBar(size, progressCh, progressBarDoneCh)
-
-	err = v1datatransfer.Upload(v1datatransfer.UploadConfig{
+	uploadConf := v1datatransfer.UploadConfig{
 		BatchClient: batchclient,
 		DataOps:     dataOps,
 		LocalDir:    dataPath,
 		ProjectID:   config.CurrentProject.Name,
 		Tag:         cmd.opts.Tag,
 		Concurrency: 64,
-		ProgressCh:  progressCh,
-	})
-	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
 	}
-	<-progressBarDoneCh
+	if !cmd.opts.JSONOutput { // show progress bar
+		progressCh := make(chan int64)
+		progressBarDoneCh := make(chan struct{})
+		size, err := v1datatransfer.GetLocalDatasetSize(dataPath)
+		if err != nil {
+			HandleError(err, cmd.opts.VerboseOutput)
+		}
+		go ProgressBar(size, progressCh, progressBarDoneCh)
+		uploadConf.ProgressCh = progressCh
+
+		datasetID, err := v1datatransfer.Upload(uploadConf)
+		if err != nil {
+			HandleError(err, cmd.opts.VerboseOutput)
+		}
+		logrus.Infof("Created dataset with ID '%v'", datasetID)
+		<-progressBarDoneCh
+	} else { // do not show progress bar
+		datasetID, err := v1datatransfer.Upload(uploadConf)
+		if err != nil {
+			HandleError(err, cmd.opts.VerboseOutput)
+		}
+		logrus.Infof("Created dataset with ID '%v'", datasetID)
+	}
 	return nil
-}
-
-//tardir archives the given directory and writes bytes to w.
-func tardir(dir string, w io.Writer) (err error) {
-	tw := tar.NewWriter(w)
-	err = filepath.Walk(dir, func(path string, fi os.FileInfo, err error) error {
-		if fi.Mode().IsDir() {
-			return nil
-		}
-
-		rel, err := filepath.Rel(dir, path)
-		if err != nil {
-			return errors.Wrapf(err, "failed to determine path '%s' relative to '%s'", path, dir)
-		}
-
-		f, err := os.Open(path)
-		if err != nil {
-			return errors.Wrapf(err, "failed to open file '%s'", rel)
-		}
-		defer f.Close()
-
-		err = tw.WriteHeader(&tar.Header{
-			Name:    rel,
-			Mode:    int64(fi.Mode()),
-			ModTime: fi.ModTime(),
-			Size:    fi.Size(),
-		})
-		if err != nil {
-			return errors.Wrapf(err, "failed to write tar header for '%s'", rel)
-		}
-
-		n, err := io.Copy(tw, f)
-		if err != nil {
-			return errors.Wrapf(err, "failed to write tar file for '%s'", rel)
-		}
-
-		if n != fi.Size() {
-			return errors.Errorf("unexpected nr of bytes written to tar, saw '%d' on-disk but only wrote '%d', is directory '%s' in use?", fi.Size(), n, dir)
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		return errors.Wrapf(err, "failed to walk dir '%s'", dir)
-	}
-
-	if err = tw.Close(); err != nil {
-		return errors.Wrap(err, "failed to write remaining data")
-	}
-
-	return nil
-}
-
-//countBytes counts all bytes from a reader.
-func countBytes(r io.Reader) (int64, error) {
-	var total int64
-	buf := make([]byte, 512*1024)
-	for {
-		n, err := io.ReadFull(r, buf)
-		if err == io.ErrUnexpectedEOF {
-			err = nil
-		}
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return 0, errors.Wrap(err, "failed to read part of tar")
-		}
-		total = total + int64(n)
-	}
-	return total, nil
-}
-
-//totalTarSize calculates the total size in bytes of the archived version of a directory on disk.
-func totalTarSize(dataPath string) (int64, error) {
-	type countResult struct {
-		total int64
-		err   error
-	}
-	doneCh := make(chan countResult)
-	pr, pw := io.Pipe()
-	go func() {
-		total, err := countBytes(pr)
-		doneCh <- countResult{total, err}
-	}()
-
-	err := tardir(dataPath, pw)
-	if err != nil {
-		return 0, errors.Wrapf(err, "failed to tar '%s'", dataPath)
-	}
-
-	pw.Close()
-	cr := <-doneCh
-	if cr.err != nil {
-		return 0, errors.Wrapf(err, "failed to count total disk size of '%v'", dataPath)
-	}
-	return cr.total, nil
 }

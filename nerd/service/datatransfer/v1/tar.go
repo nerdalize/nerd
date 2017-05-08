@@ -2,9 +2,14 @@ package v1datatransfer
 
 import (
 	"archive/tar"
+	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/dchest/safefile"
@@ -86,7 +91,7 @@ func untardir(dir string, r io.Reader) (err error) {
 			return errors.Wrap(err, "failed to read next tar header")
 		}
 
-		path := filepath.Join(dir, hdr.Name)
+		path := safeFilePath(filepath.Join(dir, hdr.Name))
 		err = os.MkdirAll(filepath.Dir(path), 0777)
 		if err != nil {
 			return errors.Wrap(err, "failed to create dirs")
@@ -119,4 +124,46 @@ func untardir(dir string, r io.Reader) (err error) {
 	}
 
 	return nil
+}
+
+//safeFilePath returns a unique filename for a given filepath.
+//For example: file.txt will become file_(1).txt if file.txt is already present.
+func safeFilePath(p string) string {
+	_, err := os.Stat(p)
+	if err != nil && os.IsNotExist(err) {
+		return p
+	}
+	filename := filepath.Base(p)
+	ext := filepath.Ext(filename)
+	clean := strings.TrimSuffix(filename, ext)
+	re := regexp.MustCompile("_\\(\\d+\\)$")
+	versionMatch := re.FindString(clean)
+	version := 1
+	if versionMatch != "" {
+		oldVersion, _ := strconv.Atoi(strings.Trim(versionMatch, "_()"))
+		clean = strings.TrimSuffix(clean, fmt.Sprintf("_(%v)", oldVersion))
+		version = oldVersion + 1
+	}
+	newFilename := fmt.Sprintf("%s_(%v)%s", clean, version, ext)
+	newPath := path.Join(filepath.Dir(p), newFilename)
+	return safeFilePath(newPath)
+}
+
+//countBytes counts all bytes from a reader.
+func countBytes(r io.Reader) (total int64, err error) {
+	buf := make([]byte, 512*1024)
+	for {
+		n, err := io.ReadFull(r, buf)
+		if err == io.ErrUnexpectedEOF {
+			err = nil
+		}
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return 0, errors.Wrap(err, "failed to read part of tar")
+		}
+		total = total + int64(n)
+	}
+	return total, nil
 }
