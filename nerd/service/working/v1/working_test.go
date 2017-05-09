@@ -45,6 +45,15 @@ func (c *mClient) DescribeTask(projectID, queueID string, taskID int64) (output 
 func (c *mClient) ReceiveTaskRuns(projectID, queueID string, timeout time.Duration, queueOps v1batch.QueueOps) (output []*v1payload.Run, err error) {
 	return <-c.receiveRuns, <-c.receiveErrs
 }
+func (c *mClient) SendRunHeartbeat(projectID, queueID string, taskID int64, runToken string) (output *v1payload.SendRunHeartbeatOutput, err error) {
+	return output, nil
+}
+func (c *mClient) SendRunSuccess(projectID, queueID string, taskID int64, runToken, result string) (output *v1payload.SendRunSuccessOutput, err error) {
+	return output, nil
+}
+func (c *mClient) SendRunFailure(projectID, queueID string, taskID int64, runToken, errCode, errMessage string) (output *v1payload.SendRunFailureOutput, err error) {
+	return output, nil
+}
 
 func TestContextDone(t *testing.T) {
 	logs := log.New(os.Stderr, "test/", log.Lshortfile)

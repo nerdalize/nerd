@@ -22,6 +22,7 @@ type Worker struct {
 
 type workerClient interface {
 	v1batch.ClientTaskInterface
+	v1batch.ClientRunInterface
 }
 
 //Conf holds worker configuration
@@ -57,7 +58,7 @@ type runReceive struct {
 	err error
 }
 
-func (w *Worker) startRunExecHeartbeat(procCtx context.Context, procCancel context.CancelFunc, run *v1payload.Run) {
+func (w *Worker) startRunExecHeartbeat(procCtx context.Context, cancelProc context.CancelFunc, run *v1payload.Run) {
 	w.logs.Printf("[DEBUG] Start task run heartbeat")
 	defer w.logs.Printf("[DEBUG] Exited task run heartbeat")
 
@@ -67,8 +68,15 @@ func (w *Worker) startRunExecHeartbeat(procCtx context.Context, procCancel conte
 		case <-procCtx.Done():
 			return
 		case <-ticker:
-			//@TODO send heartbeat
-			//@TODO on expire, cancel proc context
+
+			if out, err := w.bclient.SendRunHeartbeat(run.ProjectID, run.QueueID, run.TaskID, run.Token); err != nil {
+				w.logs.Printf("[ERROR] failed to send run heartbeat: %v", err)
+			} else {
+				if out.HasExpired {
+					cancelProc()
+				}
+			}
+
 		}
 	}
 }
@@ -87,23 +95,40 @@ func (w *Worker) startRunExec(ctx context.Context, run *v1payload.Run) {
 		return
 	}
 
-	//start heartbeat, it may use the cancel function to kill the process
+	//start heartbeat, it may use the cancel() to kill the process
 	go w.startRunExecHeartbeat(ctx, cancel, run)
 
-	//wait for process to exit
+	//wait for process to exit and send result to server
+	//@TODO find a way to pass the context
 	err = cmd.Wait()
 	if err != nil {
 		switch e := err.(type) {
 		case *exec.ExitError:
 			w.logs.Printf("[INFO] run process exited: %v", e)
-			//@TODO store a piece of stderr
-			//@TODO includes process state
+			if _, err = w.bclient.SendRunFailure(
+				run.ProjectID,
+				run.QueueID,
+				run.TaskID,
+				run.Token,
+				"my-error-code",    //@TODO exit code
+				"my-error-message", //@TODO store a piece of stderr
+			); err != nil {
+				w.logs.Printf("[ERROR] failed to send run failure: %+v", err)
+			}
 		default:
 			w.logs.Printf("[ERROR] run process exited unexpectedly: %+v", err)
 		}
 	} else {
 		w.logs.Printf("[INFO] run process exited succesfully")
-		//@TODO send task success
+		if _, err = w.bclient.SendRunSuccess(
+			run.ProjectID,
+			run.QueueID,
+			run.TaskID,
+			run.Token,
+			"my-result", //@TODO what do we send as success "result"
+		); err != nil {
+			w.logs.Printf("[ERROR] failed to send run success: %+v", err)
+		}
 	}
 }
 
