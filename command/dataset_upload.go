@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -105,21 +106,21 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	if !cmd.opts.JSONOutput { // show progress bar
 		progressCh := make(chan int64)
 		progressBarDoneCh := make(chan struct{})
-		size, err := v1datatransfer.GetLocalDatasetSize(dataPath)
+		size, err := v1datatransfer.GetLocalDatasetSize(context.Background(), dataPath)
 		if err != nil {
 			HandleError(err, cmd.opts.VerboseOutput)
 		}
 		go ProgressBar(size, progressCh, progressBarDoneCh)
 		uploadConf.ProgressCh = progressCh
 
-		datasetID, err := v1datatransfer.Upload(uploadConf)
+		datasetID, err := v1datatransfer.Upload(context.Background(), uploadConf)
 		if err != nil {
 			HandleError(err, cmd.opts.VerboseOutput)
 		}
-		logrus.Infof("Created dataset with ID '%v'", datasetID)
 		<-progressBarDoneCh
+		logrus.Infof("Created dataset with ID '%v'", datasetID)
 	} else { // do not show progress bar
-		datasetID, err := v1datatransfer.Upload(uploadConf)
+		datasetID, err := v1datatransfer.Upload(context.Background(), uploadConf)
 		if err != nil {
 			HandleError(err, cmd.opts.VerboseOutput)
 		}

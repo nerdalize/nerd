@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -133,19 +134,19 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		if !cmd.opts.JSONOutput { // show progress bar
 			progressCh := make(chan int64)
 			progressBarDoneCh := make(chan struct{})
-			size, err := v1datatransfer.GetRemoteDatasetSize(batchclient, dataOps, config.CurrentProject.Name, datasetID)
+			size, err := v1datatransfer.GetRemoteDatasetSize(context.Background(), batchclient, dataOps, config.CurrentProject.Name, datasetID)
 			if err != nil {
 				HandleError(err, cmd.opts.VerboseOutput)
 			}
 			go ProgressBar(size, progressCh, progressBarDoneCh)
 			downloadConf.ProgressCh = progressCh
-			err = v1datatransfer.DownloadBlocking(downloadConf)
+			err = v1datatransfer.Download(context.Background(), downloadConf)
 			if err != nil {
 				HandleError(errors.Wrapf(err, "failed to download dataset '%v'", datasetID), cmd.opts.VerboseOutput)
 			}
 			<-progressBarDoneCh
 		} else { //do not show progress bar
-			err = v1datatransfer.DownloadBlocking(downloadConf)
+			err = v1datatransfer.Download(context.Background(), downloadConf)
 			if err != nil {
 				HandleError(errors.Wrapf(err, "failed to download dataset '%v'", datasetID), cmd.opts.VerboseOutput)
 			}

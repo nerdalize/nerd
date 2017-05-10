@@ -1,6 +1,7 @@
 package v1datatransfer
 
 import (
+	"context"
 	"io"
 
 	v1batch "github.com/nerdalize/nerd/nerd/client/batch/v1"
@@ -20,7 +21,10 @@ type UploadConfig struct {
 }
 
 //Upload uploads a dataset
-func Upload(conf UploadConfig) (string, error) {
+func Upload(ctx context.Context, conf UploadConfig) (string, error) {
+	if conf.ProgressCh != nil {
+		defer close(conf.ProgressCh)
+	}
 	ds, err := conf.BatchClient.CreateDataset(conf.ProjectID, conf.Tag)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create dataset")
@@ -35,11 +39,11 @@ func Upload(conf UploadConfig) (string, error) {
 		concurrency:       conf.Concurrency,
 		progressCh:        conf.ProgressCh,
 	}
-	return ds.DatasetID, up.start()
+	return ds.DatasetID, up.start(ctx)
 }
 
 //GetLocalDatasetSize calculates the total size in bytes of the archived version of a directory on disk
-func GetLocalDatasetSize(dataPath string) (int64, error) {
+func GetLocalDatasetSize(ctx context.Context, dataPath string) (int64, error) {
 	type countResult struct {
 		total int64
 		err   error
@@ -47,11 +51,11 @@ func GetLocalDatasetSize(dataPath string) (int64, error) {
 	doneCh := make(chan countResult)
 	pr, pw := io.Pipe()
 	go func() {
-		total, err := countBytes(pr)
+		total, err := countBytes(ctx, pr)
 		doneCh <- countResult{total, err}
 	}()
 
-	err := tardir(dataPath, pw)
+	err := tardir(ctx, dataPath, pw)
 	if err != nil {
 		return 0, errors.Wrapf(err, "failed to tar '%s'", dataPath)
 	}

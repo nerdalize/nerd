@@ -2,6 +2,7 @@ package v1data
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"path"
 
@@ -15,17 +16,17 @@ const (
 )
 
 //MetadataExists checks if the metadata object exists.
-func (c *Client) MetadataExists(bucket, root string) (bool, error) {
-	return c.Exists(bucket, path.Join(root, MetadataObjectKey))
+func (c *Client) MetadataExists(ctx context.Context, bucket, root string) (bool, error) {
+	return c.Exists(ctx, bucket, path.Join(root, MetadataObjectKey))
 }
 
 //MetadataUpload uploads a dataset's metadata.
-func (c *Client) MetadataUpload(bucket, root string, m *v1payload.Metadata) error {
+func (c *Client) MetadataUpload(ctx context.Context, bucket, root string, m *v1payload.Metadata) error {
 	dat, err := json.Marshal(m)
 	if err != nil {
 		return client.NewError("failed to encode metadata", err)
 	}
-	err = c.Upload(bucket, path.Join(root, MetadataObjectKey), bytes.NewReader(dat))
+	err = c.Upload(ctx, bucket, path.Join(root, MetadataObjectKey), bytes.NewReader(dat))
 	if err != nil {
 		return client.NewError("failed to upload index file", err)
 	}
@@ -33,8 +34,8 @@ func (c *Client) MetadataUpload(bucket, root string, m *v1payload.Metadata) erro
 }
 
 //MetadataDownload downloads a dataset's metadata.
-func (c *Client) MetadataDownload(bucket, root string) (*v1payload.Metadata, error) {
-	r, err := c.Download(bucket, path.Join(root, MetadataObjectKey))
+func (c *Client) MetadataDownload(ctx context.Context, bucket, root string) (*v1payload.Metadata, error) {
+	r, err := c.Download(ctx, bucket, path.Join(root, MetadataObjectKey))
 	if err != nil {
 		return nil, client.NewError("failed to download metadata", err)
 	}

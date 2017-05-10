@@ -1,7 +1,7 @@
 package v1datatransfer
 
 import (
-	"fmt"
+	"context"
 	"time"
 
 	v1batch "github.com/nerdalize/nerd/nerd/client/batch/v1"
@@ -12,7 +12,7 @@ import (
 
 //DownloadConfig is the config for Download operations
 type DownloadConfig struct {
-	BatchClient *v1batch.Client
+	BatchClient v1batch.ClientInterface
 	DataOps     v1data.DataOps
 	LocalDir    string
 	ProjectID   string
@@ -22,31 +22,10 @@ type DownloadConfig struct {
 }
 
 //Download downloads a dataset or fails if it is still being uploaded
-func Download(conf DownloadConfig) error {
-	ds, err := conf.BatchClient.DescribeDataset(conf.ProjectID, conf.DatasetID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get dataset")
+func Download(ctx context.Context, conf DownloadConfig) error {
+	if conf.ProgressCh != nil {
+		defer close(conf.ProgressCh)
 	}
-	if ds.UploadStatus != v1payload.DatasetUploadStatusSuccess {
-		if ds.UploadStatus == v1payload.DatasetUploadStatusUploading && ds.UploadExpire < time.Now().Unix() {
-			return fmt.Errorf("cannot start download, because the upload timed out")
-		}
-		return fmt.Errorf("cannot start download, because uploading has not yet finished")
-	}
-	dataClient := v1data.NewClient(conf.DataOps)
-	down := &downloadProcess{
-		batchClient: conf.BatchClient,
-		dataClient:  dataClient,
-		dataset:     ds.DatasetSummary,
-		localDir:    conf.LocalDir,
-		concurrency: conf.Concurrency,
-		progressCh:  conf.ProgressCh,
-	}
-	return down.start()
-}
-
-//DownloadBlocking downloads a dataset and blocks if the dataset is still being uploaded
-func DownloadBlocking(conf DownloadConfig) error {
 	var ds v1payload.DatasetSummary
 	for {
 		out, err := conf.BatchClient.DescribeDataset(conf.ProjectID, conf.DatasetID)
@@ -61,7 +40,11 @@ func DownloadBlocking(conf DownloadConfig) error {
 			return errors.Errorf("cannot start download, because the upload timed out")
 		}
 		wait := ds.UploadExpire - time.Now().Unix()
-		time.Sleep(time.Second * time.Duration(wait))
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(time.Second * time.Duration(wait)):
+		}
 	}
 	dataClient := v1data.NewClient(conf.DataOps)
 	down := &downloadProcess{
@@ -72,17 +55,17 @@ func DownloadBlocking(conf DownloadConfig) error {
 		concurrency: conf.Concurrency,
 		progressCh:  conf.ProgressCh,
 	}
-	return down.start()
+	return down.start(ctx)
 }
 
 //GetRemoteDatasetSize gets the size of a dataset from the metadata object
-func GetRemoteDatasetSize(batchClient *v1batch.Client, dataOps v1data.DataOps, projectID, datasetID string) (int64, error) {
+func GetRemoteDatasetSize(ctx context.Context, batchClient *v1batch.Client, dataOps v1data.DataOps, projectID, datasetID string) (int64, error) {
 	dataClient := v1data.NewClient(dataOps)
 	ds, err := batchClient.DescribeDataset(projectID, datasetID)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get dataset")
 	}
-	metadata, err := dataClient.MetadataDownload(ds.Bucket, ds.DatasetRoot)
+	metadata, err := dataClient.MetadataDownload(ctx, ds.Bucket, ds.DatasetRoot)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to download metadata")
 	}
