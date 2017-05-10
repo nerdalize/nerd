@@ -1,8 +1,12 @@
 package v1working
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
+	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"time"
 
@@ -10,14 +14,25 @@ import (
 	"github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
 )
 
+var (
+	//RunErrCodeUnexpected is presented to the api when an unexpected error occured during the run of the task
+	RunErrCodeUnexpected = "ERR_UNEXPECTED"
+
+	//RunResultUndefined is send to the server when
+	RunResultUndefined = "-"
+)
+
 //Worker is a longer running process that spawns processes based on task runs that arrive via the batch client
 type Worker struct {
-	conf    Conf
-	bclient workerClient
-	logs    *log.Logger
-	qops    v1batch.QueueOps
-	pid     string
-	qid     string
+	conf  Conf
+	batch workerClient
+	logs  *log.Logger
+	qops  v1batch.QueueOps
+	pid   string
+	qid   string
+
+	bexec string
+	bargs []string
 }
 
 type workerClient interface {
@@ -40,14 +55,17 @@ func DefaultConf() *Conf {
 }
 
 //NewWorker creates a worker based on the provided configuration
-func NewWorker(logger *log.Logger, bclient workerClient, qops v1batch.QueueOps, projectID string, queueID string, conf *Conf) (w *Worker) {
+func NewWorker(logger *log.Logger, batchClient workerClient, qops v1batch.QueueOps, projectID string, queueID string, baseExec string, baseArgs []string, conf *Conf) (w *Worker) {
 	w = &Worker{
-		conf:    *conf,
-		logs:    logger,
-		bclient: bclient,
-		qops:    qops,
-		qid:     queueID,
-		pid:     projectID,
+		conf:  *conf,
+		logs:  logger,
+		batch: batchClient,
+		qops:  qops,
+		qid:   queueID,
+		pid:   projectID,
+
+		bexec: baseExec,
+		bargs: baseArgs,
 	}
 
 	return w
@@ -68,13 +86,10 @@ func (w *Worker) startRunExecHeartbeat(procCtx context.Context, cancelProc conte
 		case <-procCtx.Done():
 			return
 		case <-ticker:
-
-			if out, err := w.bclient.SendRunHeartbeat(run.ProjectID, run.QueueID, run.TaskID, run.Token); err != nil {
+			if out, err := w.batch.SendRunHeartbeat(run.ProjectID, run.QueueID, run.TaskID, run.Token); err != nil {
 				w.logs.Printf("[ERROR] failed to send run heartbeat: %v", err)
-			} else {
-				if out.HasExpired {
-					cancelProc()
-				}
+			} else if out != nil && out.HasExpired {
+				cancelProc()
 			}
 
 		}
@@ -88,44 +103,65 @@ func (w *Worker) startRunExec(ctx context.Context, run *v1payload.Run) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel() //cancel heartbeat context if this function exits
 
-	cmd := exec.CommandContext(ctx, "false")
-	err := cmd.Start()
-	if err != nil {
-		w.logs.Printf("[ERROR] failed to start run process: %+v", err)
-		return
+	//blindly appending task args to base args
+	cmd := exec.CommandContext(ctx, w.bexec, append(w.bargs, run.Cmd...)...)
+	cmd.Stdin = bytes.NewBuffer(run.Stdin)
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	for k, v := range run.Env {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
 	}
 
-	//start heartbeat, it may use the cancel() to kill the process
-	go w.startRunExecHeartbeat(ctx, cancel, run)
+	err := cmd.Start()
+	if err == nil {
 
-	//wait for process to exit and send result to server
-	//@TODO find a way to pass the context
-	err = cmd.Wait()
+		//start heartbeat, it may use the cancel() to kill the process
+		go w.startRunExecHeartbeat(ctx, cancel, run)
+
+		//we launched successfully, set err to process result
+		err = cmd.Wait()
+	}
+
+	//if an error happend at this point we want to send a failure to the server
 	if err != nil {
+		var errCode string
+		var errMsg string
 		switch e := err.(type) {
 		case *exec.ExitError:
-			w.logs.Printf("[INFO] run process exited: %v", e)
-			if _, err = w.bclient.SendRunFailure(
-				run.ProjectID,
-				run.QueueID,
-				run.TaskID,
-				run.Token,
-				"my-error-code",    //@TODO exit code
-				"my-error-message", //@TODO store a piece of stderr
-			); err != nil {
-				w.logs.Printf("[ERROR] failed to send run failure: %+v", err)
-			}
+			errCode = e.String()
+			errMsg = base64.StdEncoding.EncodeToString(e.Stderr)
 		default:
 			w.logs.Printf("[ERROR] run process exited unexpectedly: %+v", err)
+			errCode = RunErrCodeUnexpected
+			errMsg = e.Error()
 		}
-	} else {
-		w.logs.Printf("[INFO] run process exited succesfully")
-		if _, err = w.bclient.SendRunSuccess(
+
+		//@TODO allow sending context
+		if _, err = w.batch.SendRunFailure(
 			run.ProjectID,
 			run.QueueID,
 			run.TaskID,
 			run.Token,
-			"my-result", //@TODO what do we send as success "result"
+			errCode,
+			errMsg,
+		); err != nil {
+			w.logs.Printf("[ERROR] failed to send run failure: %+v", err)
+		}
+
+	} else {
+		runRes := RunResultUndefined
+		if cmd.ProcessState != nil {
+			runRes = cmd.ProcessState.String()
+		}
+
+		w.logs.Printf("[INFO] run process exited succesfully")
+		//@TODO allow sending context
+		if _, err = w.batch.SendRunSuccess(
+			run.ProjectID,
+			run.QueueID,
+			run.TaskID,
+			run.Token,
+			runRes,
 		); err != nil {
 			w.logs.Printf("[ERROR] failed to send run success: %+v", err)
 		}
@@ -135,7 +171,7 @@ func (w *Worker) startRunExec(ctx context.Context, run *v1payload.Run) {
 func (w *Worker) startReceivingRuns(ctx context.Context) <-chan runReceive {
 	runCh := make(chan runReceive)
 	go func() {
-		w.logs.Printf("[DEBUG] Start receiving task runs")
+		w.logs.Printf("[DEBUG] Started receiving task runs, base exec: '%s %v'", w.bexec, w.bargs)
 		defer w.logs.Printf("[DEBUG] Exited task run receiving")
 
 		for {
@@ -145,7 +181,7 @@ func (w *Worker) startReceivingRuns(ctx context.Context) <-chan runReceive {
 			default:
 
 				//@TODO we should allow context to be passed on to the batch client to allow cancelling of tcp connections
-				out, err := w.bclient.ReceiveTaskRuns(w.pid, w.qid, w.conf.ReceiveTimeout, w.qops)
+				out, err := w.batch.ReceiveTaskRuns(w.pid, w.qid, w.conf.ReceiveTimeout, w.qops)
 				if err != nil {
 					runCh <- runReceive{err: err}
 					continue
@@ -163,7 +199,7 @@ func (w *Worker) startReceivingRuns(ctx context.Context) <-chan runReceive {
 
 //Start will block and begins handling tasks run. It stops when context ctx ends
 func (w *Worker) Start(ctx context.Context) {
-	w.logs.Printf("[DEBUG] started worker")
+	w.logs.Printf("[DEBUG] started worker for queue '%s'", w.qid)
 	defer w.logs.Printf("[DEBUG] exited worker")
 
 	runCh := w.startReceivingRuns(ctx)

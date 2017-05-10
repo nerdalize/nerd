@@ -6,7 +6,10 @@ type Run struct {
 	QueueID   string `json:"queue_id"`
 	TaskID    int64  `json:"task_id"`
 	Token     string `json:"token"`
-	Payload   string `json:"payload"`
+
+	Cmd   []string          `json:"args"`
+	Env   map[string]string `json:"env"`
+	Stdin []byte            `json:"stdin"`
 }
 
 //SendRunHeartbeatInput is input for queue creation
