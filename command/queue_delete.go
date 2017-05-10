@@ -55,17 +55,17 @@ func (cmd *QueueDelete) DoRun(args []string) (err error) {
 
 	config, err := conf.Read()
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	bclient, err := NewClient(cmd.ui)
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	out, err := bclient.DeleteQueue(config.CurrentProject.Name, args[0])
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	logrus.Infof("Queue Deletion: %v", out)

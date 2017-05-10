@@ -26,9 +26,6 @@ func TestFromFile(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 	auth := conf.Auth
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
 	if auth.APIEndpoint != "test_url" {
 		t.Errorf("Expected api_endpoint %v but got %v", "test_url", auth.APIEndpoint)
 	}

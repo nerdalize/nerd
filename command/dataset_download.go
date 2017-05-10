@@ -74,7 +74,7 @@ func (cmd *Download) DoRun(args []string) (err error) {
 
 	config, err := conf.Read()
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	downloadObject := args[0]
@@ -85,27 +85,27 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	if err != nil && os.IsNotExist(err) {
 		err = os.MkdirAll(outputDir, OutputDirPermissions)
 		if err != nil {
-			HandleError(errors.Errorf("The provided path '%s' does not exist and could not be created.", outputDir), cmd.opts.VerboseOutput)
+			HandleError(errors.Errorf("The provided path '%s' does not exist and could not be created.", outputDir))
 		}
 		fi, err = os.Stat(outputDir)
 	}
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	} else if !fi.IsDir() {
-		HandleError(errors.Errorf("The provided path '%s' is not a directory", outputDir), cmd.opts.VerboseOutput)
+		HandleError(errors.Errorf("The provided path '%s' is not a directory", outputDir))
 	}
 
 	// Clients
 	batchclient, err := NewClient(cmd.ui)
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 	dataOps, err := aws.NewDataClient(
 		aws.NewNerdalizeCredentials(batchclient, config.CurrentProject.Name),
 		config.CurrentProject.AWSRegion,
 	)
 	if err != nil {
-		HandleError(errors.Wrap(err, "could not create aws dataops client"), cmd.opts.VerboseOutput)
+		HandleError(errors.Wrap(err, "could not create aws dataops client"))
 	}
 
 	// Gather dataset IDs
@@ -116,7 +116,7 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		var datasets *v1payload.ListDatasetsOutput
 		datasets, err = batchclient.ListDatasets(config.CurrentProject.Name, downloadObject)
 		if err != nil {
-			HandleError(err, cmd.opts.VerboseOutput)
+			HandleError(err)
 		}
 		datasetIDs = make([]string, len(datasets.Datasets))
 		for i, dataset := range datasets.Datasets {
@@ -140,19 +140,19 @@ func (cmd *Download) DoRun(args []string) (err error) {
 			var size int64
 			size, err = v1datatransfer.GetRemoteDatasetSize(context.Background(), batchclient, dataOps, config.CurrentProject.Name, datasetID)
 			if err != nil {
-				HandleError(err, cmd.opts.VerboseOutput)
+				HandleError(err)
 			}
 			go ProgressBar(size, progressCh, progressBarDoneCh)
 			downloadConf.ProgressCh = progressCh
 			err = v1datatransfer.Download(context.Background(), downloadConf)
 			if err != nil {
-				HandleError(errors.Wrapf(err, "failed to download dataset '%v'", datasetID), cmd.opts.VerboseOutput)
+				HandleError(errors.Wrapf(err, "failed to download dataset '%v'", datasetID))
 			}
 			<-progressBarDoneCh
 		} else { //do not show progress bar
 			err = v1datatransfer.Download(context.Background(), downloadConf)
 			if err != nil {
-				HandleError(errors.Wrapf(err, "failed to download dataset '%v'", datasetID), cmd.opts.VerboseOutput)
+				HandleError(errors.Wrapf(err, "failed to download dataset '%v'", datasetID))
 			}
 		}
 	}

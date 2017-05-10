@@ -28,12 +28,12 @@ func (e *ConfigProvider) Retrieve() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "failed to read config")
 	}
-	if c.NerdToken == "" {
+	if c.Credentials.JWT.Token == "" {
 		return "", errors.New("nerd_token is not set in config")
 	}
-	err = e.SetExpirationFromJWT(c.NerdToken)
+	err = e.SetExpirationFromJWT(c.Credentials.JWT.Token)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to set expiration")
 	}
-	return c.NerdToken, nil
+	return c.Credentials.JWT.Token, nil
 }

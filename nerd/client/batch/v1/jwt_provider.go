@@ -1,8 +1,6 @@
 package v1batch
 
-import (
-	"github.com/pkg/errors"
-)
+import "github.com/nerdalize/nerd/nerd/client"
 
 //JWTProvider is capable of providing a JWT.  When IsExpired return false
 //the in-memory JWT will be used to prevent from calling Retrieve for each API call.
@@ -61,7 +59,7 @@ func (c *ChainedJWTProvider) Retrieve() (string, error) {
 	}
 	c.curr = nil
 
-	return "", errors.Wrapf(provErr, "could not retreive token from any provider: %v")
+	return "", client.NewError("could not retreive token from any provider", provErr)
 }
 
 // IsExpired will returned the expired state of the currently cached provider

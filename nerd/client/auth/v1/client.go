@@ -1,30 +1,37 @@
 package v1auth
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
+	"sync"
 
 	"github.com/nerdalize/nerd/nerd/client"
 	v1payload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
 )
 
 const (
+	authHeader = "Authorization"
 	//TokenEndpoint is the endpoint from where to fetch the JWT.
-	TokenEndpoint = "token/?service=nce.nerdalize.com"
+	tokenEndpoint    = "token"
+	projectsEndpoint = "projects"
 )
 
 //Client is the client for the nerdalize authentication server.
 type Client struct {
 	ClientConfig
+	cred string
+	m    sync.Mutex
 }
 
 //ClientConfig provides config details to create an Auth client.
 type ClientConfig struct {
-	Doer   Doer
-	Base   *url.URL
-	Logger client.Logger
+	Doer               Doer
+	Base               *url.URL
+	OAuthTokenProvider OAuthTokenProvider
+	Logger             client.Logger
 }
 
 // Doer executes http requests.  It is implemented by *http.Client.
@@ -40,49 +47,108 @@ func NewClient(c ClientConfig) *Client {
 	if c.Base.Path != "" && c.Base.Path[len(c.Base.Path)-1] != '/' {
 		c.Base.Path = c.Base.Path + "/"
 	}
-	return &Client{c}
+	return &Client{
+		ClientConfig: c,
+		cred:         "",
+		m:            sync.Mutex{},
+	}
 }
 
-//GetToken fetches a JWT for a given user.
-func (c *Client) GetToken(user, pass string) (string, error) {
-	path, err := url.Parse(TokenEndpoint)
-	if err != nil {
-		return "", client.NewError("invalid url path provided", err)
+//getOAuthAccessToken gets the oauth access token to authenticate
+func (c *Client) getOAuthAccessToken() (string, error) {
+	c.m.Lock()
+	defer c.m.Unlock()
+	if c.OAuthTokenProvider == nil {
+		return "", fmt.Errorf("no oauth token provider provider found")
 	}
+	if c.cred == "" || c.OAuthTokenProvider.IsExpired() {
+		cred, err := c.OAuthTokenProvider.Retrieve()
+		if err != nil {
+			return "", err
+		}
+		c.cred = cred
+	}
+	return c.cred, nil
+}
+
+//doRequest requests the server and decodes the output into the `output` field.
+//
+//doRequest will set the Authentication header with the JWT provided by the JWTProvider.
+//When a status code >= 400 is returned by the server the returned error will be of type HTTPError.
+func (c *Client) doRequest(method, urlPath string, input, output interface{}) (err error) {
+	cred, err := c.getOAuthAccessToken()
+	if err != nil {
+		return err
+	}
+
+	path, err := url.Parse(urlPath)
+	if err != nil {
+		return client.NewError("invalid url path provided", err)
+	}
+
 	resolved := c.Base.ResolveReference(path)
 
-	req, err := http.NewRequest(http.MethodGet, resolved.String(), nil)
-	if err != nil {
-		return "", client.NewError("invalid url path provided", err)
+	var req *http.Request
+	if input != nil && method != http.MethodGet {
+		buf := bytes.NewBuffer(nil)
+		enc := json.NewEncoder(buf)
+		err = enc.Encode(input)
+		if err != nil {
+			return client.NewError("failed to encode the request body", err)
+		}
+		req, err = http.NewRequest(method, resolved.String(), buf)
+		if err != nil {
+			return client.NewError("failed to create HTTP request", err)
+		}
+	} else {
+		req, err = http.NewRequest(method, resolved.String(), nil)
+		if err != nil {
+			return client.NewError("failed to create HTTP request", err)
+		}
 	}
-	req.SetBasicAuth(user, pass)
+
+	req.Header.Set(authHeader, "Bearer "+cred)
 	client.LogRequest(req, c.Logger)
 	resp, err := c.Doer.Do(req)
 	if err != nil {
-		return "", client.NewError("failed to perform HTTP request", err)
+		return client.NewError("failed to create HTTP request", err)
 	}
 	client.LogResponse(resp, c.Logger)
 
 	dec := json.NewDecoder(resp.Body)
 	defer resp.Body.Close()
-
 	if resp.StatusCode > 399 {
 		errv := &v1payload.Error{}
 		err = dec.Decode(errv)
 		if err != nil {
-			return "", client.NewError(fmt.Sprintf("failed to decode unexpected HTTP response (%s)", resp.Status), err)
+			return client.NewError(fmt.Sprintf("failed to decode unexpected HTTP response (%s)", resp.Status), err)
 		}
 
-		return "", errv
+		return &HTTPError{
+			StatusCode: resp.StatusCode,
+			Err:        errv,
+		}
 	}
 
-	type body struct {
-		Token string `json:"token"`
+	if output != nil {
+		err = dec.Decode(output)
+		if err != nil {
+			return client.NewError(fmt.Sprintf("failed to decode successfull HTTP response (%s)", resp.Status), err)
+		}
 	}
-	b := &body{}
-	err = dec.Decode(b)
-	if err != nil {
-		return "", client.NewError(fmt.Sprintf("failed to decode successfull HTTP response (%s)", resp.Status), err)
-	}
-	return b.Token, nil
+
+	return nil
+}
+
+//ListProjects lists projects
+func (c *Client) ListProjects() (output *v1payload.ListProjectsOutput, err error) {
+	output = &v1payload.ListProjectsOutput{}
+	return output, c.doRequest(http.MethodGet, projectsEndpoint, nil, output)
+}
+
+//GetJWT gets a JWT for a given scope
+func (c *Client) GetJWT(scope string) (output *v1payload.GetJWTOutput, err error) {
+	output = &v1payload.GetJWTOutput{}
+	path := tokenEndpoint + "?service=" + scope
+	return output, c.doRequest(http.MethodGet, path, nil, output)
 }

@@ -57,23 +57,23 @@ func (cmd *TaskReceive) DoRun(args []string) (err error) {
 
 	config, err := conf.Read()
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	bclient, err := NewClient(cmd.ui)
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	creds := nerdaws.NewNerdalizeCredentials(bclient, config.CurrentProject.Name)
 	qops, err := nerdaws.NewQueueClient(creds, config.CurrentProject.AWSRegion) //@TODO get region from credentials provider
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	out, err := bclient.ReceiveTaskRuns(config.CurrentProject.Name, args[0], time.Minute*3, qops)
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	logrus.Infof("Task Receiving: %v", out)

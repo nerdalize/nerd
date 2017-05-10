@@ -60,12 +60,12 @@ func (cmd *TaskStart) DoRun(args []string) (err error) {
 
 	config, err := conf.Read()
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	bclient, err := NewClient(cmd.ui)
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	tcmd := []string{}
@@ -93,7 +93,7 @@ func (cmd *TaskStart) DoRun(args []string) (err error) {
 
 	out, err := bclient.StartTask(config.CurrentProject.Name, args[0], tcmd, tenv, buf.Bytes())
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	logrus.Infof("Task Start: %v", out)
