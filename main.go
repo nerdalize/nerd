@@ -41,6 +41,7 @@ func main() {
 		"dataset upload":   command.DatasetUploadFactory,
 		"dataset download": command.DatasetDownloadFactory,
 		"queue":            command.QueueFactory,
+		"queue list":       command.QueueListFactory,
 		"queue describe":   command.QueueDescribeFactory,
 		"queue create":     command.QueueCreateFactory,
 		"queue delete":     command.QueueDeleteFactory,
