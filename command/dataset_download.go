@@ -52,7 +52,7 @@ func DatasetDownloadFactory() (cli.Command, error) {
 	cmd := &Download{
 		command: &command{
 			help:     "",
-			synopsis: "Download a dataset from cloud storage",
+			synopsis: "download data from the cloud to a local directory",
 			parser:   flags.NewNamedParser("nerd dataset download <dataset> <output-dir>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,

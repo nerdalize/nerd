@@ -26,7 +26,7 @@ func QueueCreateFactory() (cli.Command, error) {
 	cmd := &QueueCreate{
 		command: &command{
 			help:     "",
-			synopsis: "...",
+			synopsis: "initialize a new queue for workers to consume tasks from",
 			parser:   flags.NewNamedParser("nerd queue create", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,

@@ -33,19 +33,27 @@ func main() {
 	c.Args = os.Args[1:]
 	c.Commands = map[string]cli.CommandFactory{
 		"login":            command.LoginFactory,
+		"worker":           command.WorkerFactory,
+		"worker start":     command.WorkerStartFactory,
+		"worker stop":      command.WorkerStopFactory,
+		"worker work":      command.WorkerWorkFactory,
 		"dataset":          command.DatasetFactory,
 		"dataset upload":   command.DatasetUploadFactory,
 		"dataset download": command.DatasetDownloadFactory,
 		"queue":            command.QueueFactory,
+		"queue list":       command.QueueListFactory,
 		"queue describe":   command.QueueDescribeFactory,
 		"queue create":     command.QueueCreateFactory,
 		"queue delete":     command.QueueDeleteFactory,
-		"task":             command.QueueFactory,
+		"task":             command.TaskFactory,
 		"task list":        command.TaskListFactory,
 		"task start":       command.TaskStartFactory,
 		"task stop":        command.TaskStopFactory,
 		"task describe":    command.TaskDescribeFactory,
 		"task receive":     command.TaskReceiveFactory,
+		"task heartbeat":   command.TaskHeartbeatFactory,
+		"task success":     command.TaskSuccessFactory,
+		"task failure":     command.TaskFailureFactory,
 	}
 
 	status, err := c.Run()

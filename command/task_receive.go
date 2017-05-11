@@ -29,7 +29,7 @@ func TaskReceiveFactory() (cli.Command, error) {
 	cmd := &TaskReceive{
 		command: &command{
 			help:     "",
-			synopsis: "...",
+			synopsis: "wait for a new task run to be available on a queue",
 			parser:   flags.NewNamedParser("nerd task receive <queue-id>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,

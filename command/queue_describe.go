@@ -27,7 +27,7 @@ func QueueDescribeFactory() (cli.Command, error) {
 	cmd := &QueueDescribe{
 		command: &command{
 			help:     "",
-			synopsis: "...",
+			synopsis: "return more information about a specific queue",
 			parser:   flags.NewNamedParser("nerd queue describe <queue-id>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
@@ -68,6 +68,6 @@ func (cmd *QueueDescribe) DoRun(args []string) (err error) {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	logrus.Infof("Queue Describe: %v", out)
+	logrus.Infof("Queue Description: %+v", out)
 	return nil
 }

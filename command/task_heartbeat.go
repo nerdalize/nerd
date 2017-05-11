@@ -12,32 +12,32 @@ import (
 	"github.com/pkg/errors"
 )
 
-//TaskDescribeOpts describes command options
-type TaskDescribeOpts struct {
+//TaskHeartbeatOpts describes command options
+type TaskHeartbeatOpts struct {
 	NerdOpts
 }
 
-//TaskDescribe command
-type TaskDescribe struct {
+//TaskHeartbeat command
+type TaskHeartbeat struct {
 	*command
-	opts   *TaskDescribeOpts
+	opts   *TaskHeartbeatOpts
 	parser *flags.Parser
 }
 
-//TaskDescribeFactory returns a factory method for the join command
-func TaskDescribeFactory() (cli.Command, error) {
-	cmd := &TaskDescribe{
+//TaskHeartbeatFactory returns a factory method for the join command
+func TaskHeartbeatFactory() (cli.Command, error) {
+	cmd := &TaskHeartbeat{
 		command: &command{
 			help:     "",
-			synopsis: "return more information about a specific task",
-			parser:   flags.NewNamedParser("nerd task describe <queue-id> <task-id>", flags.Default),
+			synopsis: "indicate that a task run is still in progress",
+			parser:   flags.NewNamedParser("nerd task heartbeat <queue-id> <task-id> <run-token>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
 				Writer: os.Stderr,
 			},
 		},
 
-		opts: &TaskDescribeOpts{},
+		opts: &TaskHeartbeatOpts{},
 	}
 
 	cmd.runFunc = cmd.DoRun
@@ -50,8 +50,8 @@ func TaskDescribeFactory() (cli.Command, error) {
 }
 
 //DoRun is called by run and allows an error to be returned
-func (cmd *TaskDescribe) DoRun(args []string) (err error) {
-	if len(args) < 2 {
+func (cmd *TaskHeartbeat) DoRun(args []string) (err error) {
+	if len(args) < 3 {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
@@ -70,11 +70,11 @@ func (cmd *TaskDescribe) DoRun(args []string) (err error) {
 		HandleError(errors.Wrap(err, "invalid task ID, must be a number"), cmd.opts.VerboseOutput)
 	}
 
-	out, err := bclient.DescribeTask(config.CurrentProject.Name, args[0], taskID)
+	out, err := bclient.SendRunHeartbeat(config.CurrentProject, args[0], taskID, args[2])
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	logrus.Infof("Task Description: %+v", out)
+	logrus.Infof("Task Heartbeat: %v", out)
 	return nil
 }

@@ -7,17 +7,17 @@ import (
 	"github.com/mitchellh/cli"
 )
 
-//Task command
-type Task struct {
+//Worker command
+type Worker struct {
 	*command
 }
 
-//TaskFactory returns a factory method for the join command
-func TaskFactory() (cli.Command, error) {
-	cmd := &Task{
+//WorkerFactory returns a factory method for the join command
+func WorkerFactory() (cli.Command, error) {
+	cmd := &Worker{
 		command: &command{
-			help:     `manage the lifecycle of compute tasks`,
-			synopsis: "manage the lifecycle of compute tasks",
+			help:     `control compute capacity for working on tasks`,
+			synopsis: "control compute capacity for working on tasks",
 			parser:   flags.NewNamedParser("nerd task", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
@@ -31,6 +31,6 @@ func TaskFactory() (cli.Command, error) {
 }
 
 //DoRun is called by run and allows an error to be returned
-func (cmd *Task) DoRun(args []string) (err error) {
+func (cmd *Worker) DoRun(args []string) (err error) {
 	return errShowHelp
 }

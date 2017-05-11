@@ -11,7 +11,7 @@ import (
 
 //ClientTaskInterface is an interface so client task calls can be mocked.
 type ClientTaskInterface interface {
-	StartTask(projectID, queueID, payload string) (output *v1payload.StartTaskOutput, err error)
+	StartTask(projectID, queueID string, cmd []string, env map[string]string, stdin []byte) (output *v1payload.StartTaskOutput, err error)
 	StopTask(projectID, queueID string, taskID int64) (output *v1payload.StopTaskOutput, err error)
 	ListTasks(projectID, queueID string) (output *v1payload.ListTasksOutput, err error)
 	DescribeTask(projectID, queueID string, taskID int64) (output *v1payload.DescribeTaskOutput, err error)
@@ -38,12 +38,14 @@ func (c *Client) DescribeTask(projectID, queueID string, taskID int64) (output *
 }
 
 //StartTask will create an execute a new task
-func (c *Client) StartTask(projectID, queueID, payload string) (output *v1payload.StartTaskOutput, err error) {
+func (c *Client) StartTask(projectID, queueID string, cmd []string, env map[string]string, stdin []byte) (output *v1payload.StartTaskOutput, err error) {
 	output = &v1payload.StartTaskOutput{}
 	input := &v1payload.StartTaskInput{
 		QueueID:   queueID,
 		ProjectID: projectID,
-		Payload:   payload,
+		Cmd:       cmd,
+		Env:       env,
+		Stdin:     stdin,
 	}
 
 	return output, c.doRequest(http.MethodPost, createPath(projectID, queuesEndpoint, queueID, "tasks"), input, output)

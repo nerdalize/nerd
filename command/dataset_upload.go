@@ -49,7 +49,7 @@ func DatasetUploadFactory() (cli.Command, error) {
 	cmd := &Upload{
 		command: &command{
 			help:     "",
-			synopsis: "Upload a dataset to cloud storage",
+			synopsis: "upload data to the cloud and create a new dataset",
 			parser:   flags.NewNamedParser("nerd upload <path>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,

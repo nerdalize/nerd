@@ -1,7 +1,6 @@
 package command
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/jessevdk/go-flags"
@@ -10,32 +9,32 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-//TaskListOpts describes command options
-type TaskListOpts struct {
+//QueueListOpts describes command options
+type QueueListOpts struct {
 	NerdOpts
 }
 
-//TaskList command
-type TaskList struct {
+//QueueList command
+type QueueList struct {
 	*command
-	opts   *TaskListOpts
+	opts   *QueueListOpts
 	parser *flags.Parser
 }
 
-//TaskListFactory returns a factory method for the join command
-func TaskListFactory() (cli.Command, error) {
-	cmd := &TaskList{
+//QueueListFactory returns a factory method for the join command
+func QueueListFactory() (cli.Command, error) {
+	cmd := &QueueList{
 		command: &command{
 			help:     "",
-			synopsis: "show a list of all task currently in a queue",
-			parser:   flags.NewNamedParser("nerd task list <queue-id>", flags.Default),
+			synopsis: "show a list of all queues in the current project",
+			parser:   flags.NewNamedParser("nerd queue list", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
 				Writer: os.Stderr,
 			},
 		},
 
-		opts: &TaskListOpts{},
+		opts: &QueueListOpts{},
 	}
 
 	cmd.runFunc = cmd.DoRun
@@ -48,11 +47,7 @@ func TaskListFactory() (cli.Command, error) {
 }
 
 //DoRun is called by run and allows an error to be returned
-func (cmd *TaskList) DoRun(args []string) (err error) {
-	if len(args) < 1 {
-		return fmt.Errorf("not enough arguments, see --help")
-	}
-
+func (cmd *QueueList) DoRun(args []string) (err error) {
 	config, err := conf.Read()
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
@@ -63,18 +58,17 @@ func (cmd *TaskList) DoRun(args []string) (err error) {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	out, err := bclient.ListTasks(config.CurrentProject.Name, args[0])
+	out, err := bclient.ListQueues(config.CurrentProject)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"QueueID", "TaskID", "Status"})
-	for _, t := range out.Tasks {
+	table.SetHeader([]string{"ProjectID", "QueueID"})
+	for _, t := range out.Queues {
 		row := []string{}
+		row = append(row, t.ProjectID)
 		row = append(row, t.QueueID)
-		row = append(row, fmt.Sprintf("%d", t.TaskID))
-		row = append(row, t.Status)
 		table.Append(row)
 	}
 

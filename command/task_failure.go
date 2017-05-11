@@ -12,32 +12,32 @@ import (
 	"github.com/pkg/errors"
 )
 
-//TaskDescribeOpts describes command options
-type TaskDescribeOpts struct {
+//TaskFailureOpts describes command options
+type TaskFailureOpts struct {
 	NerdOpts
 }
 
-//TaskDescribe command
-type TaskDescribe struct {
+//TaskFailure command
+type TaskFailure struct {
 	*command
-	opts   *TaskDescribeOpts
+	opts   *TaskFailureOpts
 	parser *flags.Parser
 }
 
-//TaskDescribeFactory returns a factory method for the join command
-func TaskDescribeFactory() (cli.Command, error) {
-	cmd := &TaskDescribe{
+//TaskFailureFactory returns a factory method for the join command
+func TaskFailureFactory() (cli.Command, error) {
+	cmd := &TaskFailure{
 		command: &command{
 			help:     "",
-			synopsis: "return more information about a specific task",
-			parser:   flags.NewNamedParser("nerd task describe <queue-id> <task-id>", flags.Default),
+			synopsis: "mark a task run as being failed",
+			parser:   flags.NewNamedParser("nerd task failure <queue-id> <task-id> <run-token> <error-code> <err-message>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
 				Writer: os.Stderr,
 			},
 		},
 
-		opts: &TaskDescribeOpts{},
+		opts: &TaskFailureOpts{},
 	}
 
 	cmd.runFunc = cmd.DoRun
@@ -50,8 +50,8 @@ func TaskDescribeFactory() (cli.Command, error) {
 }
 
 //DoRun is called by run and allows an error to be returned
-func (cmd *TaskDescribe) DoRun(args []string) (err error) {
-	if len(args) < 2 {
+func (cmd *TaskFailure) DoRun(args []string) (err error) {
+	if len(args) < 5 {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
@@ -70,11 +70,11 @@ func (cmd *TaskDescribe) DoRun(args []string) (err error) {
 		HandleError(errors.Wrap(err, "invalid task ID, must be a number"), cmd.opts.VerboseOutput)
 	}
 
-	out, err := bclient.DescribeTask(config.CurrentProject.Name, args[0], taskID)
+	out, err := bclient.SendRunFailure(config.CurrentProject, args[0], taskID, args[2], args[3], args[4])
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	logrus.Infof("Task Description: %+v", out)
+	logrus.Infof("Task Failure: %v", out)
 	return nil
 }
