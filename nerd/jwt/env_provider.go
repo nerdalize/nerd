@@ -9,7 +9,7 @@ import (
 
 const (
 	//NerdTokenEnvVar is the environment variable used to set the JWT.
-	NerdTokenEnvVar = "NERD_TOKEN"
+	NerdTokenEnvVar = "NERD_JWT"
 )
 
 //EnvProvider provides nerdalize credentials from the `credentials.NerdTokenEnvVar` environment variable.

@@ -63,7 +63,7 @@ func (cmd *QueueDescribe) DoRun(args []string) (err error) {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	out, err := bclient.DescribeQueue(config.CurrentProject, args[0])
+	out, err := bclient.DescribeQueue(config.CurrentProject.Name, args[0])
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}

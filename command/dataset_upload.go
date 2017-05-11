@@ -14,7 +14,6 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd"
 	"github.com/nerdalize/nerd/nerd/aws"
 	v1data "github.com/nerdalize/nerd/nerd/client/data/v1"
 	v1datapayload "github.com/nerdalize/nerd/nerd/client/data/v1/payload"
@@ -34,6 +33,7 @@ const (
 //UploadOpts describes command options
 type UploadOpts struct {
 	NerdOpts
+	Tag string `long:"tag" default:"" default-mask:"" description:"use a tag to logically group datasets"`
 }
 
 //Upload command
@@ -96,8 +96,8 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 	dataOps, err := aws.NewDataClient(
-		aws.NewNerdalizeCredentials(batchclient, config.CurrentProject),
-		nerd.GetCurrentUser().Region,
+		aws.NewNerdalizeCredentials(batchclient, config.CurrentProject.Name),
+		config.CurrentProject.AWSRegion,
 	)
 	if err != nil {
 		HandleError(errors.Wrap(err, "could not create aws dataops client"), cmd.opts.VerboseOutput)
@@ -105,7 +105,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	dataclient := v1data.NewClient(dataOps)
 
 	// Dataset
-	ds, err := batchclient.CreateDataset(config.CurrentProject)
+	ds, err := batchclient.CreateDataset(config.CurrentProject.Name, cmd.opts.Tag)
 	if err != nil {
 		HandleError(errors.Wrap(err, "failed to create dataset"), cmd.opts.VerboseOutput)
 	}

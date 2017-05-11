@@ -63,7 +63,7 @@ func (cmd *QueueDelete) DoRun(args []string) (err error) {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	out, err := bclient.DeleteQueue(config.CurrentProject, args[0])
+	out, err := bclient.DeleteQueue(config.CurrentProject.Name, args[0])
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}

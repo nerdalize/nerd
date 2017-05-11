@@ -58,7 +58,7 @@ func (cmd *QueueCreate) DoRun(args []string) (err error) {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	out, err := bclient.CreateQueue(config.CurrentProject)
+	out, err := bclient.CreateQueue(config.CurrentProject.Name)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}

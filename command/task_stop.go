@@ -70,7 +70,7 @@ func (cmd *TaskStop) DoRun(args []string) (err error) {
 		HandleError(errors.Wrap(err, "invalid task ID, must be a number"), cmd.opts.VerboseOutput)
 	}
 
-	out, err := bclient.StopTask(config.CurrentProject, args[0], taskID)
+	out, err := bclient.StopTask(config.CurrentProject.Name, args[0], taskID)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}

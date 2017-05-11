@@ -23,17 +23,24 @@ var conf *Config
 
 //Config is the structure that describes how the config file looks.
 type Config struct {
-	Auth            AuthConfig `json:"auth"`
-	EnableLogging   bool       `json:"enable_logging"`
-	CurrentProject  string     `json:"current_project"`
-	NerdToken       string     `json:"nerd_token"`
-	NerdAPIEndpoint string     `json:"nerd_api_endpoint"`
+	Auth           AuthConfig           `json:"auth"`
+	EnableLogging  bool                 `json:"enable_logging"`
+	CurrentProject CurrentProjectConfig `json:"current_project"`
+
+	NerdToken       string `json:"nerd_token"`
+	NerdAPIEndpoint string `json:"nerd_api_endpoint"`
 }
 
 //AuthConfig contains config details with respect to authentication.
 type AuthConfig struct {
 	APIEndpoint string `json:"api_endpoint"`
 	PublicKey   string `json:"public_key"`
+}
+
+//CurrentProjectConfig contains details of the current working project.
+type CurrentProjectConfig struct {
+	Name      string `json:"current_project"`
+	AWSRegion string `json:"aws_region"`
 }
 
 //Defaults provides the default for when the config file misses certain fields.
@@ -47,8 +54,11 @@ kyvc4LwKZ8pez5KYY76H1ox+AfUlWOEq+bExypcFfEIrJkf/JXa7jpzkOWBDF9Sa
 OWbQHMK+vvUXieCJvCc9Vj084ABwLBgX
 -----END PUBLIC KEY-----`,
 		},
-		EnableLogging:   false,
-		CurrentProject:  "6de308f4-face-11e6-bc64-92361f002671",
+		EnableLogging: false,
+		CurrentProject: CurrentProjectConfig{
+			Name:      "projectx",
+			AWSRegion: "eu-west-1",
+		},
 		NerdAPIEndpoint: "https://batch.nerdalize.com/v1",
 	}
 }

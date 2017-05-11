@@ -69,7 +69,7 @@ func TestEnvProviderRetrieve(t *testing.T) {
 		if tc.claims == EmptyClaims {
 			token = ""
 		}
-		os.Setenv("NERD_TOKEN", token)
+		os.Setenv("NERD_JWT", token)
 		e := newEnvProvider(pub)
 		value, err := e.Retrieve()
 		if err != nil {
@@ -94,7 +94,7 @@ func TestEnvProviderRetrieve(t *testing.T) {
 		},
 		"no token found": {
 			claims:   EmptyClaims,
-			errorMsg: "environment variable NERD_TOKEN is not set",
+			errorMsg: "environment variable NERD_JWT is not set",
 		},
 	}
 	for name, tc := range errorCases {
@@ -102,7 +102,7 @@ func TestEnvProviderRetrieve(t *testing.T) {
 		if tc.claims == EmptyClaims {
 			token = ""
 		}
-		os.Setenv("NERD_TOKEN", token)
+		os.Setenv("NERD_JWT", token)
 
 		e := newEnvProvider(pub)
 		_, err := e.Retrieve()
