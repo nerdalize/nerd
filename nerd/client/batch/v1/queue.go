@@ -11,6 +11,7 @@ type ClientQueueInterface interface {
 	CreateQueue(projectID string) (output *v1payload.CreateQueueOutput, err error)
 	DeleteQueue(projectID, queueID string) (output *v1payload.DeleteQueueOutput, err error)
 	DescribeQueue(projectID, queueID string) (output *v1payload.DescribeQueueOutput, err error)
+	ListQueues(projectID string) (output *v1payload.ListQueuesOutput, err error)
 }
 
 //CreateQueue will create queue
@@ -32,6 +33,16 @@ func (c *Client) DeleteQueue(projectID, queueID string) (output *v1payload.Delet
 	}
 
 	return output, c.doRequest(http.MethodDelete, createPath(projectID, queuesEndpoint, queueID), input, output)
+}
+
+// ListQueues will return all tasks in a queue
+func (c *Client) ListQueues(projectID string) (output *v1payload.ListQueuesOutput, err error) {
+	output = &v1payload.ListQueuesOutput{}
+	input := &v1payload.ListQueuesInput{
+		ProjectID: projectID,
+	}
+
+	return output, c.doRequest(http.MethodGet, createPath(projectID, queuesEndpoint), input, output)
 }
 
 //DescribeQueue returns detailed information of a queue

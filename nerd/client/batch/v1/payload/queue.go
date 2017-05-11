@@ -7,6 +7,16 @@ type QueueSummary struct {
 	QueueURL  string `json:"queue_url"`
 }
 
+//ListQueuesInput is input for queue creation
+type ListQueuesInput struct {
+	ProjectID string `json:"project_id" valid:"required"`
+}
+
+//ListQueuesOutput is output for queue creation
+type ListQueuesOutput struct {
+	Queues []*QueueSummary
+}
+
 //DescribeQueueInput is input for getting queue information
 type DescribeQueueInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
