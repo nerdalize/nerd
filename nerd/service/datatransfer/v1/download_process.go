@@ -153,6 +153,7 @@ func downloadIndex(ctx context.Context, dataClient *v1data.Client, w io.Writer, 
 	if err != nil {
 		return errors.Wrap(err, "failed download index")
 	}
+	defer body.Close()
 	b, err := ioutil.ReadAll(body)
 	if err != nil {
 		return errors.Wrap(err, "failed to read body")

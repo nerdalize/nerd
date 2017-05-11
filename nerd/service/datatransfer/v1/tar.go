@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dchest/safefile"
 	"github.com/pkg/errors"
 )
 
@@ -92,13 +91,13 @@ func untardir(ctx context.Context, dir string, r io.Reader) (err error) {
 				return errors.Wrap(err, "failed to read next tar header")
 			}
 
-			path := safeFilePath(filepath.Join(dir, hdr.Name))
+			path := filepath.Join(dir, hdr.Name)
 			err = os.MkdirAll(filepath.Dir(path), 0777)
 			if err != nil {
 				return errors.Wrap(err, "failed to create dirs")
 			}
 
-			f, err := safefile.Create(path, os.FileMode(hdr.Mode))
+			f, err := safeFilePath(path, os.FileMode(hdr.Mode))
 			if err != nil {
 				return errors.Wrap(err, "failed to create tmp safe file")
 			}
@@ -113,11 +112,6 @@ func untardir(ctx context.Context, dir string, r io.Reader) (err error) {
 				return errors.Errorf("unexpected nr of bytes written, wrote '%d' saw '%d' in tar hdr", n, hdr.Size)
 			}
 
-			err = f.Commit()
-			if err != nil {
-				return errors.Wrap(err, "failed to swap old file for tmp file")
-			}
-
 			err = os.Chtimes(path, time.Now(), hdr.ModTime)
 			if err != nil {
 				return errors.Wrap(err, "failed to change times of tmp file")
@@ -130,10 +124,13 @@ func untardir(ctx context.Context, dir string, r io.Reader) (err error) {
 
 //safeFilePath returns a unique filename for a given filepath.
 //For example: file.txt will become file_(1).txt if file.txt is already present.
-func safeFilePath(p string) string {
-	_, err := os.Stat(p)
-	if err != nil && os.IsNotExist(err) {
-		return p
+func safeFilePath(p string, perm os.FileMode) (*os.File, error) {
+	f, err := os.OpenFile(p, os.O_CREATE|os.O_EXCL, perm)
+	if err == nil {
+		return f, nil
+	}
+	if err != nil && !os.IsExist(err) {
+		return nil, err
 	}
 	filename := filepath.Base(p)
 	ext := filepath.Ext(filename)
@@ -148,7 +145,7 @@ func safeFilePath(p string) string {
 	}
 	newFilename := fmt.Sprintf("%s_(%v)%s", clean, version, ext)
 	newPath := path.Join(filepath.Dir(p), newFilename)
-	return safeFilePath(newPath)
+	return safeFilePath(newPath, perm)
 }
 
 //countBytes counts all bytes from a reader.

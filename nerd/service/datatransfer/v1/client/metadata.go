@@ -39,6 +39,7 @@ func (c *Client) MetadataDownload(ctx context.Context, bucket, root string) (*v1
 	if err != nil {
 		return nil, client.NewError("failed to download metadata", err)
 	}
+	defer r.Close()
 	dec := json.NewDecoder(r)
 	metadata := &v1payload.Metadata{}
 	err = dec.Decode(metadata)
