@@ -7,7 +7,7 @@ type Run struct {
 	TaskID    int64  `json:"task_id"`
 	Token     string `json:"token"`
 
-	Cmd   []string          `json:"args"`
+	Cmd   []string          `json:"cmd"`
 	Env   map[string]string `json:"env"`
 	Stdin []byte            `json:"stdin"`
 }

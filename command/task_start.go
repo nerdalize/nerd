@@ -71,7 +71,8 @@ func (cmd *TaskStart) DoRun(args []string) (err error) {
 		HandleError(errors.Errorf("payload must a valid JSON map, received: '%s'", args[1]), cmd.opts.VerboseOutput)
 	}
 
-	out, err := bclient.StartTask(config.CurrentProject, args[0], args[1])
+	//@TODO get cmd, map and stdin from args
+	out, err := bclient.StartTask(config.CurrentProject, args[0], []string{}, map[string]string{}, []byte{})
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}

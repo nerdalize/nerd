@@ -43,7 +43,7 @@ type mClient struct {
 	runFailure    chan mRunFeedback
 }
 
-func (c *mClient) StartTask(projectID, queueID, payload string) (output *v1payload.StartTaskOutput, err error) {
+func (c *mClient) StartTask(projectID, queueID string, cmd []string, env map[string]string, stdin []byte) (output *v1payload.StartTaskOutput, err error) {
 	return output, nil
 }
 func (c *mClient) StopTask(projectID, queueID string, taskID int64) (output *v1payload.StopTaskOutput, err error) {

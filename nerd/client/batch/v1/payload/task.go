@@ -14,7 +14,10 @@ type StopTaskOutput struct{}
 type StartTaskInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
 	QueueID   string `json:"queue_id" valid:"required"`
-	Payload   string `json:"payload" valid:"required"`
+
+	Cmd   []string          `json:"cmd"`
+	Env   map[string]string `json:"env"`
+	Stdin []byte            `json:"stdin"`
 }
 
 //StartTaskOutput is output for queue creation
