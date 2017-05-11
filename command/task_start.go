@@ -1,20 +1,23 @@
 package command
 
 import (
-	"encoding/json"
+	"bytes"
 	"fmt"
+	"io"
 	"os"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
+	"github.com/mattn/go-isatty"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/conf"
-	"github.com/pkg/errors"
 )
 
 //TaskStartOpts describes command options
 type TaskStartOpts struct {
 	NerdOpts
+	Env []string `long:"env" short:"e" description:"environment variables to"`
 }
 
 //TaskStart command
@@ -30,7 +33,7 @@ func TaskStartFactory() (cli.Command, error) {
 		command: &command{
 			help:     "",
 			synopsis: "schedule a new task for workers to consume from a queue",
-			parser:   flags.NewNamedParser("nerd task start <queue-id> <payload>", flags.Default),
+			parser:   flags.NewNamedParser("nerd task start <queue-id> [<cmd_arg1>, <cmd_arg2>]", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
 				Writer: os.Stderr,
@@ -51,7 +54,7 @@ func TaskStartFactory() (cli.Command, error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *TaskStart) DoRun(args []string) (err error) {
-	if len(args) < 2 {
+	if len(args) < 1 {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
@@ -65,14 +68,30 @@ func (cmd *TaskStart) DoRun(args []string) (err error) {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	v := map[string]interface{}{}
-	err = json.Unmarshal([]byte(args[1]), &v)
-	if err != nil {
-		HandleError(errors.Errorf("payload must a valid JSON map, received: '%s'", args[1]), cmd.opts.VerboseOutput)
+	tcmd := []string{}
+	if len(args) > 1 {
+		tcmd = args[1:]
 	}
 
-	//@TODO get cmd, map and stdin from args
-	out, err := bclient.StartTask(config.CurrentProject, args[0], []string{}, map[string]string{}, []byte{})
+	tenv := map[string]string{}
+	for _, l := range cmd.opts.Env {
+		split := strings.SplitN(l, "=", 2)
+		if len(split) < 2 {
+			HandleError(fmt.Errorf("invalid environment variable format, expected 'FOO=bar' fromat, got: %v", l), cmd.opts.VerboseOutput)
+		}
+		tenv[split[0]] = split[1]
+	}
+
+	buf := bytes.NewBuffer(nil)
+	if !isatty.IsTerminal(os.Stdin.Fd()) {
+		lr := io.LimitReader(os.Stdin, 128*1024) //128KiB
+		_, err = io.Copy(buf, lr)
+		if err != nil {
+			HandleError(fmt.Errorf("failed to copy stdin: %v", err), cmd.opts.VerboseOutput)
+		}
+	}
+
+	out, err := bclient.StartTask(config.CurrentProject, args[0], tcmd, tenv, buf.Bytes())
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
