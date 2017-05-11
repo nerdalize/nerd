@@ -6,14 +6,12 @@ import (
 	"io/ioutil"
 	"path"
 
-	v1batch "github.com/nerdalize/nerd/nerd/client/batch/v1"
 	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
 	v1data "github.com/nerdalize/nerd/nerd/service/datatransfer/v1/client"
 	"github.com/pkg/errors"
 )
 
 type downloadProcess struct {
-	batchClient v1batch.ClientInterface
 	dataClient  *v1data.Client
 	dataset     v1payload.DatasetSummary
 	localDir    string
@@ -29,10 +27,13 @@ func (p *downloadProcess) start(ctx context.Context) error {
 	indexChunksPipe := newPipe()
 	chunksUntarPipe := newPipe()
 
-	doneCh := make(chan error)
+	doneCh := make(chan error, 3)
+	// untar
 	go func() {
-		doneCh <- untardir(ctx, p.localDir, chunksUntarPipe.r)
+		err := untardir(ctx, p.localDir, chunksUntarPipe.r)
+		doneCh <- err
 	}()
+	// chunk
 	go func() {
 		defer chunksUntarPipe.w.Close()
 		kr := v1data.NewIndexReader(indexChunksPipe.r)
@@ -41,6 +42,7 @@ func (p *downloadProcess) start(ctx context.Context) error {
 			doneCh <- err
 		}
 	}()
+	// index
 	go func() {
 		defer indexChunksPipe.w.Close()
 		err := downloadIndex(ctx, p.dataClient, indexChunksPipe.w, p.dataset.Bucket, p.dataset.DatasetRoot)
@@ -74,21 +76,34 @@ func downloadChunks(ctx context.Context, dataClient *v1data.Client, kr v1data.Ke
 	work := func(it *item) {
 		r, err := dataClient.Download(ctx, bucket, path.Join(root, it.k.ToString()))
 		if err != nil {
-			it.resCh <- &result{errors.Wrapf(err, "failed to get key '%s'", it.k), nil}
+			select {
+			case <-ctx.Done():
+			case it.resCh <- &result{errors.Wrapf(err, "failed to get key '%s'", it.k), nil}:
+			}
 			return
 		}
 		defer r.Close()
 
 		chunk, err := ioutil.ReadAll(r)
 		if err != nil {
-			it.resCh <- &result{errors.Wrap(err, "failed to copy chunk to byte buffer"), nil}
+			select {
+			case <-ctx.Done():
+			case it.resCh <- &result{errors.Wrap(err, "failed to copy chunk to byte buffer"), nil}:
+			}
+			return
 		}
 
 		if progressCh != nil {
-			progressCh <- int64(len(chunk))
+			select {
+			case <-ctx.Done():
+			case progressCh <- int64(len(chunk)):
+			}
 		}
 
-		it.resCh <- &result{nil, chunk}
+		select {
+		case <-ctx.Done():
+		case it.resCh <- &result{nil, chunk}:
+		}
 	}
 
 	//fan out
@@ -96,30 +111,33 @@ func downloadChunks(ctx context.Context, dataClient *v1data.Client, kr v1data.Ke
 	go func() {
 		defer close(itemCh)
 		for {
+			k, err := kr.ReadKey()
+			if err != nil {
+				if err != io.EOF {
+					select {
+					case <-ctx.Done():
+					case itemCh <- &item{err: err}:
+					}
+				}
+				return
+			}
+
+			it := &item{
+				k:     k,
+				resCh: make(chan *result),
+			}
+
 			select {
 			case <-ctx.Done():
 				return
-			default:
-				k, err := kr.ReadKey()
-				if err != nil {
-					if err != io.EOF {
-						itemCh <- &item{err: err}
-					}
-					return
-				}
-
-				it := &item{
-					k:     k,
-					resCh: make(chan *result),
-				}
-
-				go work(it)  //create work
-				itemCh <- it //send to fan-in thread for syncing results
+			case itemCh <- it: //send to fan-in thread for syncing results
+				go work(it) //create work
 			}
 		}
 	}()
 
 	//fan-in
+	var err error
 	for {
 		select {
 		case <-ctx.Done():
@@ -132,19 +150,22 @@ func downloadChunks(ctx context.Context, dataClient *v1data.Client, kr v1data.Ke
 				return errors.Wrapf(it.err, "failed to iterate")
 			}
 
-			res := <-it.resCh
-			if res.err != nil {
-				return res.err
-			}
-
-			_, err := w.Write(res.chunk)
-			if err != nil {
-				return errors.Wrapf(err, "failed to write key")
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case res := <-it.resCh:
+				if res.err != nil {
+					return res.err
+				}
+				_, err := w.Write(res.chunk)
+				if err != nil {
+					return errors.Wrapf(err, "failed to write key")
+				}
 			}
 		}
 	}
 
-	return nil
+	return err
 }
 
 //downloadIndex downloads the index object and writes it to w

@@ -48,7 +48,6 @@ func Download(ctx context.Context, conf DownloadConfig) error {
 	}
 	dataClient := v1data.NewClient(conf.DataOps)
 	down := &downloadProcess{
-		batchClient: conf.BatchClient,
 		dataClient:  dataClient,
 		dataset:     ds,
 		localDir:    conf.LocalDir,

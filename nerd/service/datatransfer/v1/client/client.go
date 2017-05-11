@@ -34,35 +34,38 @@ func NewClient(ops DataOps) *Client {
 
 //Upload uploads a single object.
 func (c *Client) Upload(ctx context.Context, bucket, key string, body io.ReadSeeker) error {
+	var err error
 	for i := 0; i <= NoOfRetries; i++ {
-		err := c.DataOps.Upload(ctx, bucket, key, body)
-		if err != nil {
-			if i < NoOfRetries {
-				continue
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			err = c.DataOps.Upload(ctx, bucket, key, body)
+			if err == nil {
+				return nil
 			}
-			return client.NewError(fmt.Sprintf("failed to put '%v'", key), err)
 		}
-		break
 	}
 	// TODO: Include logging.
-	return nil
+	return client.NewError(fmt.Sprintf("failed to put '%v'", key), err)
 }
 
 //Download downloads a single object.
 func (c *Client) Download(ctx context.Context, bucket, key string) (io.ReadCloser, error) {
-	var r io.ReadCloser
+	var err error
 	for i := 0; i <= NoOfRetries; i++ {
-		resp, err := c.DataOps.Download(ctx, bucket, key)
-		if err != nil {
-			if i < NoOfRetries {
-				continue
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+			var resp io.ReadCloser
+			resp, err = c.DataOps.Download(ctx, bucket, key)
+			if err == nil {
+				return resp, nil
 			}
-			return nil, client.NewError(fmt.Sprintf("failed to download '%v'", key), err)
 		}
-		r = resp
-		break
 	}
-	return r, nil
+	return nil, client.NewError(fmt.Sprintf("failed to download '%v'", key), err)
 }
 
 //Exists checks if a given object key exists.

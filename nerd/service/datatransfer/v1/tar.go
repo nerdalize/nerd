@@ -125,7 +125,7 @@ func untardir(ctx context.Context, dir string, r io.Reader) (err error) {
 //safeFilePath returns a unique filename for a given filepath.
 //For example: file.txt will become file_(1).txt if file.txt is already present.
 func safeFilePath(p string, perm os.FileMode) (*os.File, error) {
-	f, err := os.OpenFile(p, os.O_CREATE|os.O_EXCL, perm)
+	f, err := os.OpenFile(p, os.O_CREATE|os.O_EXCL|os.O_WRONLY, perm)
 	if err == nil {
 		return f, nil
 	}

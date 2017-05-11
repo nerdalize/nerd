@@ -19,7 +19,7 @@ import (
 )
 
 type uploadProcess struct {
-	batchClient       *v1batch.Client
+	batchClient       v1batch.ClientUploadInterface
 	dataClient        *v1data.Client
 	dataset           v1payload.DatasetSummary
 	heartbeatInterval time.Duration
@@ -31,6 +31,7 @@ type uploadProcess struct {
 //start starts the upload process
 func (p *uploadProcess) start(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	type countResult struct {
 		total int64
 		err   error
@@ -38,12 +39,13 @@ func (p *uploadProcess) start(ctx context.Context) error {
 
 	// pipeline: tar | count | chunk+upload | index
 	tarCountPipe := newPipe()
+	defer tarCountPipe.w.Close()
 	countChunksPipe := newPipe()
 	chunksIndexPipe := newPipe()
 	countReader := io.TeeReader(tarCountPipe.r, countChunksPipe.w)
 
-	doneCh := make(chan error)
-	countCh := make(chan countResult)
+	doneCh := make(chan error, 4)
+	countCh := make(chan countResult, 1)
 
 	// heartbeat
 	go sendHeartbeat(ctx, cancel, doneCh, p.batchClient, p.dataset.ProjectID, p.dataset.DatasetID, p.heartbeatInterval)
@@ -123,19 +125,28 @@ func uploadChunks(ctx context.Context, dataClient *v1data.Client, r io.Reader, k
 		key := path.Join(root, k.ToString())
 		exists, err := dataClient.Exists(ctx, bucket, key) //check existence
 		if err != nil {
-			it.resCh <- &result{errors.Wrapf(err, "failed to check existence of '%x'", k), v1data.ZeroKey}
+			select {
+			case <-ctx.Done():
+			case it.resCh <- &result{errors.Wrapf(err, "failed to check existence of '%x'", k), v1data.ZeroKey}:
+			}
 			return
 		}
 
 		if !exists {
 			err = dataClient.Upload(ctx, bucket, key, bytes.NewReader(it.chunk)) //if not exists put
 			if err != nil {
-				it.resCh <- &result{errors.Wrapf(err, "failed to put chunk '%x'", k), v1data.ZeroKey}
+				select {
+				case <-ctx.Done():
+				case it.resCh <- &result{errors.Wrapf(err, "failed to put chunk '%x'", k), v1data.ZeroKey}:
+				}
 				return
 			}
 		}
 		if progressCh != nil {
-			progressCh <- int64(len(it.chunk))
+			select {
+			case <-ctx.Done():
+			case progressCh <- int64(len(it.chunk)):
+			}
 		}
 
 		it.resCh <- &result{nil, k}
@@ -147,27 +158,28 @@ func uploadChunks(ctx context.Context, dataClient *v1data.Client, r io.Reader, k
 		defer close(itemCh)
 		buf := make([]byte, chunker.MaxSize)
 		for {
+			chunk, err := chkr.Next(buf)
+			if err != nil {
+				if err != io.EOF {
+					select {
+					case <-ctx.Done():
+					case itemCh <- &item{err: err}:
+					}
+				}
+				return
+			}
+
+			it := &item{
+				chunk: make([]byte, chunk.Length),
+				resCh: make(chan *result),
+			}
+
+			copy(it.chunk, chunk.Data) //underlying buffer is switched out
+
 			select {
 			case <-ctx.Done():
-				return
-			default:
-				chunk, err := chkr.Next(buf)
-				if err != nil {
-					if err != io.EOF {
-						itemCh <- &item{err: err}
-					}
-					return
-				}
-
-				it := &item{
-					chunk: make([]byte, chunk.Length),
-					resCh: make(chan *result),
-				}
-
-				copy(it.chunk, chunk.Data) //underlying buffer is switched out
-
-				go work(it)  //create work
-				itemCh <- it //send to fan-in thread for syncing results
+			case itemCh <- it: //send to fan-in thread for syncing results
+				go work(it) //create work
 			}
 		}
 	}()
@@ -185,14 +197,18 @@ func uploadChunks(ctx context.Context, dataClient *v1data.Client, r io.Reader, k
 				return errors.Wrapf(it.err, "failed to iterate")
 			}
 
-			res := <-it.resCh
-			if res.err != nil {
-				return res.err
-			}
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case res := <-it.resCh:
+				if res.err != nil {
+					return res.err
+				}
 
-			err := kw.WriteKey(res.k)
-			if err != nil {
-				return errors.Wrapf(err, "failed to write key")
+				err := kw.WriteKey(res.k)
+				if err != nil {
+					return errors.Wrapf(err, "failed to write key")
+				}
 			}
 		}
 	}
@@ -224,7 +240,8 @@ func uploadMetadata(ctx context.Context, dataClient *v1data.Client, total int64,
 }
 
 //sendHeartbeat sends a heartbeat and sleeps for the given interval
-func sendHeartbeat(ctx context.Context, cancel context.CancelFunc, doneCh chan error, batchClient *v1batch.Client, projectID, datasetID string, interval time.Duration) {
+func sendHeartbeat(ctx context.Context, cancel context.CancelFunc, doneCh chan error, batchClient v1batch.ClientUploadInterface, projectID, datasetID string, interval time.Duration) {
+	defer fmt.Println("heartbeat done")
 	ticker := time.Tick(interval)
 	for {
 		select {
