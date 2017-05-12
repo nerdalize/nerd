@@ -7,6 +7,8 @@ type ClaimCapacityInput struct {
 
 //ClaimCapacityOutput is output for capacity creation
 type ClaimCapacityOutput struct {
+	ClusterID  string `json:"cluster_id"`
+	CapacityID string `json:"capacity_id"`
 }
 
 //ReleaseCapacityInput is input for capacity creation
