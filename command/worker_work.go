@@ -68,8 +68,8 @@ func (cmd *WorkerWork) DoRun(args []string) (err error) {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	creds := nerdaws.NewNerdalizeCredentials(bclient, config.CurrentProject)
-	qops, err := nerdaws.NewQueueClient(creds, "eu-west-1")
+	creds := nerdaws.NewNerdalizeCredentials(bclient, config.CurrentProject.Name)
+	qops, err := nerdaws.NewQueueClient(creds, config.CurrentProject.AWSRegion)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
@@ -77,7 +77,7 @@ func (cmd *WorkerWork) DoRun(args []string) (err error) {
 	logger := log.New(os.Stderr, "worker/", log.Lshortfile)
 	conf := v1working.DefaultConf()
 
-	worker := v1working.NewWorker(logger, bclient, qops, config.CurrentProject, args[0], args[1], args[2:], conf)
+	worker := v1working.NewWorker(logger, bclient, qops, config.CurrentProject.Name, args[0], args[1], args[2:], conf)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

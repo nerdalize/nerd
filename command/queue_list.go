@@ -58,7 +58,7 @@ func (cmd *QueueList) DoRun(args []string) (err error) {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
 
-	out, err := bclient.ListQueues(config.CurrentProject)
+	out, err := bclient.ListQueues(config.CurrentProject.Name)
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
