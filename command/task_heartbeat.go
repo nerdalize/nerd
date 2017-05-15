@@ -57,22 +57,22 @@ func (cmd *TaskHeartbeat) DoRun(args []string) (err error) {
 
 	config, err := conf.Read()
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	bclient, err := NewClient(cmd.ui)
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	taskID, err := strconv.ParseInt(args[1], 10, 64)
 	if err != nil {
-		HandleError(errors.Wrap(err, "invalid task ID, must be a number"), cmd.opts.VerboseOutput)
+		HandleError(errors.Wrap(err, "invalid task ID, must be a number"))
 	}
 
 	out, err := bclient.SendRunHeartbeat(config.CurrentProject.Name, args[0], taskID, args[2])
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	logrus.Infof("Task Heartbeat: %v", out)
