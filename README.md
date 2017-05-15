@@ -58,15 +58,15 @@ The nerd CLI can be dockerized. To build the docker container run:
 
 You can now run the container like so:
 
-```docker run my-nerd /go/bin/nerd <command>```
+```docker run my-nerd <command>```
 
 If you want to use your local nerd config file (which contains your credentials), you can mount it:
 
-```docker run -v ~/.nerd:/root/.nerd my-nerd /go/bin/nerd <command>```
+```docker run -v ~/.nerd:/root/.nerd my-nerd <command>```
 
 If you just want to set your credentials, you can also set it with an environment variable:
 
-```docker run -e NERD_JWT=put.jwt.here my-nerd /go/bin/nerd <command>```
+```docker run -e NERD_JWT=put.jwt.here my-nerd <command>```
 
 ## Nerdalize SDK
 
