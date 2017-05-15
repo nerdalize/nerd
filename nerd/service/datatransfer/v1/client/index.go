@@ -25,15 +25,6 @@ func (k Key) ToString() string {
 	return fmt.Sprintf("%x", k)
 }
 
-func KeyFromString(key string) (k Key, err error) {
-	bytes, err := hex.DecodeString(key)
-	if err != nil {
-		return ZeroKey, fmt.Errorf("could not decode key '%v'", key)
-	}
-	copy(k[:], bytes)
-	return k, nil
-}
-
 //ZeroKey is an empty key.
 var ZeroKey = Key{}
 

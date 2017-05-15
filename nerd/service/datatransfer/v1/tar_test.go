@@ -100,9 +100,9 @@ func TestSafeFilePath(t *testing.T) {
 		}
 		// clean up files
 		for _, file := range tc.present {
-			err := os.Remove(path.Join(tmp, file))
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
+			rerr := os.Remove(path.Join(tmp, file))
+			if rerr != nil {
+				t.Fatalf("unexpected error: %v", rerr)
 			}
 		}
 		err = os.Remove(safe.Name())

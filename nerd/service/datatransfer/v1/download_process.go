@@ -137,7 +137,6 @@ func downloadChunks(ctx context.Context, dataClient *v1data.Client, kr v1data.Ke
 	}()
 
 	//fan-in
-	var err error
 	for {
 		select {
 		case <-ctx.Done():
@@ -164,8 +163,6 @@ func downloadChunks(ctx context.Context, dataClient *v1data.Client, kr v1data.Ke
 			}
 		}
 	}
-
-	return err
 }
 
 //downloadIndex downloads the index object and writes it to w

@@ -212,8 +212,6 @@ func uploadChunks(ctx context.Context, dataClient *v1data.Client, r io.Reader, k
 			}
 		}
 	}
-
-	return nil
 }
 
 //uploadIndex uploads the index object with all the keys

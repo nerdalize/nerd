@@ -10,6 +10,7 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/aws"
+	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
 	"github.com/nerdalize/nerd/nerd/conf"
 	v1datatransfer "github.com/nerdalize/nerd/nerd/service/datatransfer/v1"
 	"github.com/pkg/errors"
@@ -22,7 +23,8 @@ const (
 	DownloadConcurrency = 64
 	//DatasetPrefix is the prefix of each dataset ID.
 	DatasetPrefix = "d-"
-	TagPrefix     = "tag-"
+	//TagPrefix is the prefix of a tag identifier
+	TagPrefix = "tag-"
 )
 
 //DownloadOpts describes command options
@@ -111,7 +113,8 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	if !strings.HasPrefix(downloadObject, TagPrefix) {
 		datasetIDs = append(datasetIDs, downloadObject)
 	} else {
-		datasets, err := batchclient.ListDatasets(config.CurrentProject.Name, downloadObject)
+		var datasets *v1payload.ListDatasetsOutput
+		datasets, err = batchclient.ListDatasets(config.CurrentProject.Name, downloadObject)
 		if err != nil {
 			HandleError(err, cmd.opts.VerboseOutput)
 		}
@@ -134,7 +137,8 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		if !cmd.opts.JSONOutput { // show progress bar
 			progressCh := make(chan int64)
 			progressBarDoneCh := make(chan struct{})
-			size, err := v1datatransfer.GetRemoteDatasetSize(context.Background(), batchclient, dataOps, config.CurrentProject.Name, datasetID)
+			var size int64
+			size, err = v1datatransfer.GetRemoteDatasetSize(context.Background(), batchclient, dataOps, config.CurrentProject.Name, datasetID)
 			if err != nil {
 				HandleError(err, cmd.opts.VerboseOutput)
 			}

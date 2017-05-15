@@ -118,8 +118,6 @@ func untardir(ctx context.Context, dir string, r io.Reader) (err error) {
 			}
 		}
 	}
-
-	return nil
 }
 
 //safeFilePath returns a unique filename for a given filepath.

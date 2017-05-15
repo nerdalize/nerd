@@ -26,7 +26,7 @@ const (
 
 var (
 	DownloadFailKey v1data.Key = [sha256.Size]byte{0, 1, 2}
-	DownloadFailErr            = fmt.Errorf("download failed")
+	ErrDownloadFail            = fmt.Errorf("download failed")
 )
 
 func randr(size int64, seed int64) io.Reader {
@@ -66,7 +66,7 @@ func (f *fakeDataOps) Download(ctx context.Context, bucket, key string) (body io
 	f.m.Lock()
 	defer f.m.Unlock()
 	if strings.Contains(key, DownloadFailKey.ToString()) {
-		return nil, DownloadFailErr
+		return nil, ErrDownloadFail
 	}
 	return ioutil.NopCloser(bytes.NewReader(f.data[bucket+"/"+key])), nil
 }
@@ -155,7 +155,7 @@ func TestDownloadFail(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error but got none")
 	}
-	if errors.Cause(err) != DownloadFailErr {
+	if errors.Cause(err) != ErrDownloadFail {
 		t.Errorf("expected error cause to be %v, but was %v", errors.Cause(err), err)
 	}
 }
