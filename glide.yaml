@@ -29,3 +29,7 @@ import:
   version: v1.0.11
 - package: github.com/dchest/safefile         #atomic file writes
   version: 855e8d98f1852d48dde521e0522408d1fe7e836a
+- package: github.com/google/go-querystring   #convert structs to query strings
+  version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
+- package: github.com/skratchdot/open-golang  #open pages in a web browser
+  version: 75fb7ed4208cf72d323d7d02fd1a5964a7a9073c

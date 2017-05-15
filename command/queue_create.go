@@ -50,17 +50,17 @@ func QueueCreateFactory() (cli.Command, error) {
 func (cmd *QueueCreate) DoRun(args []string) (err error) {
 	config, err := conf.Read()
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	bclient, err := NewClient(cmd.ui)
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	out, err := bclient.CreateQueue(config.CurrentProject.Name)
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	logrus.Infof("Queue Creation: %v", out)

@@ -72,28 +72,28 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 
 	fi, err := os.Stat(dataPath)
 	if err != nil {
-		HandleError(errors.Errorf("argument '%v' is not a valid file or directory", dataPath), cmd.opts.VerboseOutput)
+		HandleError(errors.Errorf("argument '%v' is not a valid file or directory", dataPath))
 	} else if !fi.IsDir() {
-		HandleError(errors.Errorf("provided path '%s' is not a directory", dataPath), cmd.opts.VerboseOutput)
+		HandleError(errors.Errorf("provided path '%s' is not a directory", dataPath))
 	}
 
 	// Config
 	config, err := conf.Read()
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	// Clients
 	batchclient, err := NewClient(cmd.ui)
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 	dataOps, err := aws.NewDataClient(
 		aws.NewNerdalizeCredentials(batchclient, config.CurrentProject.Name),
 		config.CurrentProject.AWSRegion,
 	)
 	if err != nil {
-		HandleError(errors.Wrap(err, "could not create aws dataops client"), cmd.opts.VerboseOutput)
+		HandleError(errors.Wrap(err, "could not create aws dataops client"))
 	}
 	uploadConf := v1datatransfer.UploadConfig{
 		BatchClient: batchclient,
@@ -108,21 +108,21 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		progressBarDoneCh := make(chan struct{})
 		size, err := v1datatransfer.GetLocalDatasetSize(context.Background(), dataPath)
 		if err != nil {
-			HandleError(err, cmd.opts.VerboseOutput)
+			HandleError(err)
 		}
 		go ProgressBar(size, progressCh, progressBarDoneCh)
 		uploadConf.ProgressCh = progressCh
 
 		datasetID, err := v1datatransfer.Upload(context.Background(), uploadConf)
 		if err != nil {
-			HandleError(err, cmd.opts.VerboseOutput)
+			HandleError(err)
 		}
 		<-progressBarDoneCh
 		logrus.Infof("Created dataset with ID '%v'", datasetID)
 	} else { // do not show progress bar
 		datasetID, err := v1datatransfer.Upload(context.Background(), uploadConf)
 		if err != nil {
-			HandleError(err, cmd.opts.VerboseOutput)
+			HandleError(err)
 		}
 		logrus.Infof("Created dataset with ID '%v'", datasetID)
 	}

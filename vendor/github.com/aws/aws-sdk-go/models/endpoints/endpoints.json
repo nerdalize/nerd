@@ -81,6 +81,7 @@
           "endpoints": {
             "ap-northeast-1": {},
             "ap-northeast-2": {},
+            "ap-south-1": {},
             "ap-southeast-1": {},
             "ap-southeast-2": {},
             "eu-central-1": {},
@@ -182,6 +183,7 @@
             "ap-southeast-1": {},
             "ap-southeast-2": {},
             "eu-west-1": {},
+            "eu-west-2": {},
             "us-east-1": {},
             "us-east-2": {},
             "us-west-2": {}
@@ -318,10 +320,19 @@
             "us-west-2": {}
           }
         },
+        "codestar": {
+          "endpoints": {
+            "eu-west-1": {},
+            "us-east-1": {},
+            "us-east-2": {},
+            "us-west-2": {}
+          }
+        },
         "cognito-identity": {
           "endpoints": {
             "ap-northeast-1": {},
             "ap-northeast-2": {},
+            "ap-south-1": {},
             "ap-southeast-2": {},
             "eu-central-1": {},
             "eu-west-1": {},
@@ -335,6 +346,7 @@
           "endpoints": {
             "ap-northeast-1": {},
             "ap-northeast-2": {},
+            "ap-south-1": {},
             "ap-southeast-2": {},
             "eu-central-1": {},
             "eu-west-1": {},
@@ -348,6 +360,7 @@
           "endpoints": {
             "ap-northeast-1": {},
             "ap-northeast-2": {},
+            "ap-south-1": {},
             "ap-southeast-2": {},
             "eu-central-1": {},
             "eu-west-1": {},
@@ -670,6 +683,16 @@
             "us-west-2": {}
           }
         },
+        "entitlement.marketplace": {
+          "defaults": {
+            "credentialScope": {
+              "service": "aws-marketplace"
+            }
+          },
+          "endpoints": {
+            "us-east-1": {}
+          }
+        },
         "es": {
           "endpoints": {
             "ap-northeast-1": {},
@@ -677,8 +700,10 @@
             "ap-south-1": {},
             "ap-southeast-1": {},
             "ap-southeast-2": {},
+            "ca-central-1": {},
             "eu-central-1": {},
             "eu-west-1": {},
+            "eu-west-2": {},
             "sa-east-1": {},
             "us-east-1": {},
             "us-east-2": {},
@@ -857,6 +882,7 @@
           "endpoints": {
             "ap-northeast-1": {},
             "ap-northeast-2": {},
+            "ap-south-1": {},
             "ap-southeast-1": {},
             "ap-southeast-2": {},
             "eu-central-1": {},
@@ -926,6 +952,16 @@
           }
         },
         "mobileanalytics": {
+          "endpoints": {
+            "us-east-1": {}
+          }
+        },
+        "models.lex": {
+          "defaults": {
+            "credentialScope": {
+              "service": "lex"
+            }
+          },
           "endpoints": {
             "us-east-1": {}
           }
@@ -1325,6 +1361,7 @@
           "endpoints": {
             "ap-northeast-1": {},
             "ap-northeast-2": {},
+            "ap-south-1": {},
             "ap-southeast-1": {},
             "ap-southeast-2": {},
             "ca-central-1": {},
@@ -1413,6 +1450,24 @@
           }
         },
         "swf": {
+          "endpoints": {
+            "ap-northeast-1": {},
+            "ap-northeast-2": {},
+            "ap-south-1": {},
+            "ap-southeast-1": {},
+            "ap-southeast-2": {},
+            "ca-central-1": {},
+            "eu-central-1": {},
+            "eu-west-1": {},
+            "eu-west-2": {},
+            "sa-east-1": {},
+            "us-east-1": {},
+            "us-east-2": {},
+            "us-west-1": {},
+            "us-west-2": {}
+          }
+        },
+        "tagging": {
           "endpoints": {
             "ap-northeast-1": {},
             "ap-northeast-2": {},
@@ -1526,6 +1581,11 @@
           }
         },
         "cloudtrail": {
+          "endpoints": {
+            "cn-north-1": {}
+          }
+        },
+        "codedeploy": {
           "endpoints": {
             "cn-north-1": {}
           }
@@ -1717,6 +1777,11 @@
           }
         },
         "swf": {
+          "endpoints": {
+            "cn-north-1": {}
+          }
+        },
+        "tagging": {
           "endpoints": {
             "cn-north-1": {}
           }

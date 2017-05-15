@@ -1,10 +1,10 @@
-hash: e51375e2185c8932d46c4201281bb110695cf13701312ea7dae06f5a42ae7edc
-updated: 2017-03-28T12:12:42.160104116+02:00
+hash: 085695e6b164637e868d35102fefd079e90154131bfce4041547b297668c53f9
+updated: 2017-05-10T12:03:27.444552023+02:00
 imports:
 - name: github.com/armon/go-radix
   version: 4239b77079c7b5d1243b7b4736304ce8ddb6f0f2
 - name: github.com/aws/aws-sdk-go
-  version: 7111a70b8bea15081468f11bc1450ac2fec2406b
+  version: 49c7a5e645b5eca5aabd1fd6a676dbddaf7b2a1a
   subpackages:
   - aws
   - aws/awserr
@@ -23,21 +23,17 @@ imports:
   - aws/session
   - aws/signer/v4
   - private/protocol
-  - private/protocol/json/jsonutil
-  - private/protocol/jsonrpc
   - private/protocol/query
   - private/protocol/query/queryutil
   - private/protocol/rest
   - private/protocol/restxml
   - private/protocol/xml/xmlutil
-  - service/cloudwatchlogs
   - service/s3
-  - service/sfn
   - service/sns
   - service/sqs
   - service/sts
 - name: github.com/bgentry/speakeasy
-  version: 675b82c74c0ed12283ee81ba8a534c8982c07b85
+  version: 4aabc24848ce5fd31929f7d1e4ea74d3709c14cd
 - name: github.com/dchest/safefile
   version: 855e8d98f1852d48dde521e0522408d1fe7e836a
 - name: github.com/dghubble/sling
@@ -55,9 +51,9 @@ imports:
 - name: github.com/jmespath/go-jmespath
   version: bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d
 - name: github.com/mattn/go-isatty
-  version: 30a891c33c7cde7b02a981314b4228ec99380cca
+  version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
 - name: github.com/mattn/go-runewidth
-  version: 14207d285c6c197daabb5c9793d63e7af9ab2d50
+  version: 97311d9f7767e3d6f422ea06661bc2c7a19e8a5d
 - name: github.com/mitchellh/cli
   version: fa17b36f6c61f1ddbbb08c9f6fde94b3c065a09d
 - name: github.com/mitchellh/go-homedir
@@ -70,6 +66,10 @@ imports:
   version: bb2ecf9a98e35a0b336ffc23fc515fb6e7961577
 - name: github.com/Sirupsen/logrus
   version: 0208149b40d863d2c1a2f8fe5753096a9cf2cc8b
+- name: github.com/skratchdot/open-golang
+  version: 75fb7ed4208cf72d323d7d02fd1a5964a7a9073c
+  subpackages:
+  - open
 - name: gopkg.in/cheggaaa/pb.v1
   version: 0817e3a1f8de9e3c78b159699b3c07d53e24a963
 testImports: []

@@ -1,7 +1,9 @@
 package command
 
 import (
+	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"strings"
 
@@ -13,6 +15,7 @@ import (
 	v1batch "github.com/nerdalize/nerd/nerd/client/batch/v1"
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/jwt"
+	"github.com/nerdalize/nerd/nerd/oauth"
 	"github.com/pkg/errors"
 	"github.com/restic/chunker"
 )
@@ -44,13 +47,18 @@ func NewClient(ui cli.Ui) (*v1batch.Client, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "auth endpoint '%v' is not a valid URL", c.Auth.APIEndpoint)
 	}
+	authOpsClient := v1auth.NewOpsClient(v1auth.OpsClientConfig{
+		Base:   authbase,
+		Logger: logrus.StandardLogger(),
+	})
 	return v1batch.NewClient(v1batch.ClientConfig{
 		JWTProvider: v1batch.NewChainedJWTProvider(
 			jwt.NewEnvProvider(key),
 			jwt.NewConfigProvider(key),
-			jwt.NewAuthAPIProvider(key, UserPassProvider(ui), v1auth.NewClient(v1auth.ClientConfig{
-				Base:   authbase,
-				Logger: logrus.StandardLogger(),
+			jwt.NewAuthAPIProvider(key, v1auth.NewClient(v1auth.ClientConfig{
+				Base:               authbase,
+				Logger:             logrus.StandardLogger(),
+				OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient),
 			})),
 		),
 		Base:   base,
@@ -86,26 +94,31 @@ func ErrorCauser(err error) error {
 	return err
 }
 
-//printUserFacing will try to get the user facing error message from the error chain and print it.
-func printUserFacing(err error, verbose bool) {
-	cause := errors.Cause(err)
-	type userFacing interface {
-		UserFacingMsg() string
-		Underlying() error
+//batchErrMsg returns a human-readble error message for batch HTTPErrors
+func batchErrMsg(err *v1batch.HTTPError) string {
+	switch err.StatusCode {
+	case http.StatusUnprocessableEntity:
+		if len(err.Err.Fields) > 0 {
+			return fmt.Sprintf("Validation error: %v", err.Err.Fields)
+		}
+	case http.StatusNotFound:
+		return fmt.Sprint("The specified resource does not exist")
 	}
-	if uerr, ok := cause.(userFacing); ok {
-		logrus.Info(uerr.UserFacingMsg())
-		logrus.Debugf("Underlying error: %v", uerr.Underlying())
-		logrus.Exit(-1)
-	}
+	return fmt.Sprintf("unknown server error (%v)", err.StatusCode)
 }
 
 //HandleError handles the way errors are presented to the user.
-func HandleError(err error, verbose bool) {
-	printUserFacing(err, verbose)
-	// when there's are more than 1 message on the message stack, only print the top one for user friendlyness.
-	if errors.Cause(err) != nil {
+func HandleError(err error) {
+	if errors.Cause(err) == oauth.ErrTokenRevoked {
+		logrus.Info("Your login session has expired. Please login using 'nerd login'")
+	} else if errors.Cause(err) == oauth.ErrTokenUnset {
+		logrus.Info("You are not logged in. Please login using 'nerd login'")
+	} else if herr, ok := errors.Cause(err).(*v1batch.HTTPError); ok {
+		logrus.Info(batchErrMsg(herr))
+	} else if errors.Cause(err) != nil { // when there's are more than 1 message on the message stack, only print the top one for user friendlyness.
 		logrus.Info(strings.Replace(err.Error(), ": "+ErrorCauser(ErrorCauser(err)).Error(), "", 1))
+	} else {
+		logrus.Info(err)
 	}
 	logrus.Debugf("Underlying error: %+v", err)
 	logrus.Exit(-1)

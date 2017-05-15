@@ -50,17 +50,17 @@ func QueueListFactory() (cli.Command, error) {
 func (cmd *QueueList) DoRun(args []string) (err error) {
 	config, err := conf.Read()
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	bclient, err := NewClient(cmd.ui)
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	out, err := bclient.ListQueues(config.CurrentProject.Name)
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)

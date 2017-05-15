@@ -1,9 +1,6 @@
 package v1batch
 
 import (
-	"fmt"
-	"net/http"
-
 	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
 )
 
@@ -16,25 +13,7 @@ type HTTPError struct {
 
 //Error returns the error message specific for the status code.
 func (e HTTPError) Error() string {
-	switch e.StatusCode {
-	case http.StatusUnprocessableEntity:
-		if len(e.Err.Fields) > 0 {
-			return fmt.Sprintf("Validation error: %v", e.Err.Fields)
-		}
-	case http.StatusNotFound:
-		return fmt.Sprint("The specified resource does not exist")
-	}
-	return fmt.Sprintf("unknown server error (%v)", e.StatusCode)
-}
-
-//UserFacingMsg is implemented to make sure this message is shown to an end user.
-func (e HTTPError) UserFacingMsg() string {
-	return e.Error()
-}
-
-//Underlying is part of the user facing interface.
-func (e HTTPError) Underlying() error {
-	return nil
+	return e.Err.Message
 }
 
 //Cause is implemented to be compatible with the pkg/errors package.

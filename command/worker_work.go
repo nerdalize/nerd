@@ -60,18 +60,18 @@ func (cmd *WorkerWork) DoRun(args []string) (err error) {
 
 	config, err := conf.Read()
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	bclient, err := NewClient(cmd.ui)
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	creds := nerdaws.NewNerdalizeCredentials(bclient, config.CurrentProject.Name)
 	qops, err := nerdaws.NewQueueClient(creds, config.CurrentProject.AWSRegion)
 	if err != nil {
-		HandleError(err, cmd.opts.VerboseOutput)
+		HandleError(err)
 	}
 
 	logger := log.New(os.Stderr, "worker/", log.Lshortfile)
