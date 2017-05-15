@@ -241,7 +241,6 @@ func uploadMetadata(ctx context.Context, dataClient *v1data.Client, total int64,
 
 //sendHeartbeat sends a heartbeat and sleeps for the given interval
 func sendHeartbeat(ctx context.Context, cancel context.CancelFunc, doneCh chan error, batchClient v1batch.ClientUploadInterface, projectID, datasetID string, interval time.Duration) {
-	defer fmt.Println("heartbeat done")
 	ticker := time.Tick(interval)
 	for {
 		select {
