@@ -1,4 +1,4 @@
-package command
+package v1datatransfer
 
 import (
 	"os"
@@ -89,17 +89,25 @@ func TestSafeFilePath(t *testing.T) {
 			}
 		}
 		// test
-		safe := safeFilePath(path.Join(tmp, tc.input))
+		safe, err := safeFilePath(path.Join(tmp, tc.input), 0644)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		defer safe.Close()
 		expected := path.Join(tmp, tc.expected)
-		if safe != expected {
-			t.Errorf("Expected %v but got %v, for test case {%v, %v}", expected, safe, tc.present, tc.input)
+		if safe.Name() != expected {
+			t.Errorf("Expected %v but got %v, for test case {%v, %v}", expected, safe.Name(), tc.present, tc.input)
 		}
 		// clean up files
 		for _, file := range tc.present {
-			err := os.Remove(path.Join(tmp, file))
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
+			rerr := os.Remove(path.Join(tmp, file))
+			if rerr != nil {
+				t.Fatalf("unexpected error: %v", rerr)
 			}
+		}
+		err = os.Remove(safe.Name())
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
 		}
 	}
 }

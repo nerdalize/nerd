@@ -70,7 +70,7 @@ func (cmd *TaskFailure) DoRun(args []string) (err error) {
 		HandleError(errors.Wrap(err, "invalid task ID, must be a number"), cmd.opts.VerboseOutput)
 	}
 
-	out, err := bclient.SendRunFailure(config.CurrentProject, args[0], taskID, args[2], args[3], args[4])
+	out, err := bclient.SendRunFailure(config.CurrentProject.Name, args[0], taskID, args[2], args[3], args[4])
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}

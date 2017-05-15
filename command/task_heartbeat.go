@@ -70,7 +70,7 @@ func (cmd *TaskHeartbeat) DoRun(args []string) (err error) {
 		HandleError(errors.Wrap(err, "invalid task ID, must be a number"), cmd.opts.VerboseOutput)
 	}
 
-	out, err := bclient.SendRunHeartbeat(config.CurrentProject, args[0], taskID, args[2])
+	out, err := bclient.SendRunHeartbeat(config.CurrentProject.Name, args[0], taskID, args[2])
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}

@@ -1,6 +1,7 @@
 package aws
 
 import (
+	"context"
 	"io"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -37,23 +38,23 @@ func NewDataClient(c *credentials.Credentials, region string) (*DataClient, erro
 }
 
 //Upload uploads an object to S3.
-func (c *DataClient) Upload(bucket, key string, body io.ReadSeeker) error {
+func (c *DataClient) Upload(ctx context.Context, bucket, key string, body io.ReadSeeker) error {
 	input := &s3.PutObjectInput{
 		Bucket: aws.String(bucket), // Required
 		Key:    aws.String(key),    // Required
 		Body:   body,
 	}
-	_, err := c.Service.PutObject(input)
+	_, err := c.Service.PutObjectWithContext(ctx, input)
 	return err
 }
 
 //Download downloads an object to S3.
-func (c *DataClient) Download(bucket, key string) (body io.ReadCloser, err error) {
+func (c *DataClient) Download(ctx context.Context, bucket, key string) (body io.ReadCloser, err error) {
 	input := &s3.GetObjectInput{
 		Bucket: aws.String(bucket), // Required
 		Key:    aws.String(key),    // Required
 	}
-	resp, err := c.Service.GetObject(input)
+	resp, err := c.Service.GetObjectWithContext(ctx, input)
 
 	if err != nil {
 		return nil, err
@@ -62,12 +63,12 @@ func (c *DataClient) Download(bucket, key string) (body io.ReadCloser, err error
 }
 
 //Exists checks whether an object exists on S3.
-func (c *DataClient) Exists(bucket, key string) (exists bool, err error) {
+func (c *DataClient) Exists(ctx context.Context, bucket, key string) (exists bool, err error) {
 	input := &s3.HeadObjectInput{
 		Bucket: aws.String(bucket), // Required
 		Key:    aws.String(key),
 	}
-	_, err = c.Service.HeadObject(input)
+	_, err = c.Service.HeadObjectWithContext(ctx, input)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok && (aerr.Code() == s3.ErrCodeNoSuchKey || aerr.Code() == sns.ErrCodeNotFoundException || aerr.Code() == StatusCodeForbidden) {
 			return false, nil

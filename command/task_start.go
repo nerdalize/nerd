@@ -91,7 +91,7 @@ func (cmd *TaskStart) DoRun(args []string) (err error) {
 		}
 	}
 
-	out, err := bclient.StartTask(config.CurrentProject, args[0], tcmd, tenv, buf.Bytes())
+	out, err := bclient.StartTask(config.CurrentProject.Name, args[0], tcmd, tenv, buf.Bytes())
 	if err != nil {
 		HandleError(err, cmd.opts.VerboseOutput)
 	}
