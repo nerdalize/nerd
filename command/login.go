@@ -83,7 +83,7 @@ func (cmd *Login) DoRun(args []string) error {
 
 	err = open.Run(fmt.Sprintf("http://%s/oauth?state=%s", c.Auth.OAuthLocalServer, randomState))
 	if err != nil {
-		HandleError(errors.Wrap(err, "failed to open browser window"))
+		HandleError(errors.Wrap(err, "Failed to open browser window. Please see github.com/nerdalize/nerd for alternative ways of authenticating."))
 	}
 
 	oauthResponse := <-doneCh
