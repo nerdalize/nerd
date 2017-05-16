@@ -5,7 +5,7 @@ type CreatePlacementInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
 	Host      string `json:"host" valid:"required"`
 	Token     string `json:"token" valid:"required"`
-	CAPem     string `json:"ca_pem" valid:"required"`
+	CAPem     string `json:"ca_pem"`
 }
 
 //CreatePlacementOutput is output for queue creation
