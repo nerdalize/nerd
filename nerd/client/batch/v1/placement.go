@@ -2,7 +2,6 @@ package v1batch
 
 import (
 	"net/http"
-	"path"
 
 	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
 )
@@ -23,7 +22,7 @@ func (c *Client) CreatePlacement(projectID, host, token, capem string) (output *
 		CAPem:     capem,
 	}
 
-	return output, c.doRequest(http.MethodPost, path.Join("clusters"), input, output)
+	return output, c.doRequest(http.MethodPost, createPath(projectID, placementsEndpoint), input, output)
 }
 
 //DeletePlacement will delete queue a queue with the provided id
@@ -33,5 +32,5 @@ func (c *Client) DeletePlacement(projectID string) (output *v1payload.DeletePlac
 		ProjectID: projectID,
 	}
 
-	return output, c.doRequest(http.MethodDelete, path.Join("clusters", projectID), input, output)
+	return output, c.doRequest(http.MethodDelete, createPath(projectID, placementsEndpoint), input, output)
 }

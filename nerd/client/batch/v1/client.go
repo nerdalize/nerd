@@ -19,11 +19,12 @@ const (
 
 	projectsPrefix = "projects"
 
-	tasksEndpoint   = "tasks"
-	tokensEndpoint  = "tokens"
-	datasetEndpoint = "datasets"
-	workersEndpoint = "workers"
-	queuesEndpoint  = "queues"
+	tasksEndpoint      = "tasks"
+	tokensEndpoint     = "tokens"
+	datasetEndpoint    = "datasets"
+	workersEndpoint    = "workers"
+	queuesEndpoint     = "queues"
+	placementsEndpoint = "placements"
 )
 
 //Client is a client for the Nerdalize API.
