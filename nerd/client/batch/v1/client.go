@@ -50,8 +50,7 @@ type ClientInterface interface {
 	ClientRunInterface
 	ClientTokenInterface
 	ClientUploadInterface
-	ClientClusterInterface
-	ClientCapacityInterface
+	ClientPlacementInterface
 }
 
 // Force compile errors when Client doesn't implement ClientInterface.

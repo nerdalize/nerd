@@ -7,30 +7,31 @@ import (
 	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
 )
 
-//ClientClusterInterface is an interface so client queue calls can be mocked.
-type ClientClusterInterface interface {
-	RegisterCluster(host, token, capem string) (output *v1payload.RegisterClusterOutput, err error)
-	DeregisterCluster(clusterID string) (output *v1payload.DeregisterClusterOutput, err error)
+//ClientPlacementInterface is an interface for placement of project
+type ClientPlacementInterface interface {
+	CreatePlacement(projectID, host, token, capem string) (output *v1payload.CreatePlacementOutput, err error)
+	DeletePlacement(projectID string) (output *v1payload.DeletePlacementOutput, err error)
 }
 
-//RegisterCluster will create queue
-func (c *Client) RegisterCluster(host, token, capem string) (output *v1payload.RegisterClusterOutput, err error) {
-	output = &v1payload.RegisterClusterOutput{}
-	input := &v1payload.RegisterClusterInput{
-		Host:  host,
-		Token: token,
-		CAPem: capem,
+//CreatePlacement will create queue
+func (c *Client) CreatePlacement(projectID, host, token, capem string) (output *v1payload.CreatePlacementOutput, err error) {
+	output = &v1payload.CreatePlacementOutput{}
+	input := &v1payload.CreatePlacementInput{
+		ProjectID: projectID,
+		Host:      host,
+		Token:     token,
+		CAPem:     capem,
 	}
 
 	return output, c.doRequest(http.MethodPost, path.Join("clusters"), input, output)
 }
 
-//DeregisterCluster will delete queue a queue with the provided id
-func (c *Client) DeregisterCluster(clusterID string) (output *v1payload.DeregisterClusterOutput, err error) {
-	output = &v1payload.DeregisterClusterOutput{}
-	input := &v1payload.DeregisterClusterInput{
-		ClusterID: clusterID,
+//DeletePlacement will delete queue a queue with the provided id
+func (c *Client) DeletePlacement(projectID string) (output *v1payload.DeletePlacementOutput, err error) {
+	output = &v1payload.DeletePlacementOutput{}
+	input := &v1payload.DeletePlacementInput{
+		ProjectID: projectID,
 	}
 
-	return output, c.doRequest(http.MethodDelete, path.Join("clusters", clusterID), input, output)
+	return output, c.doRequest(http.MethodDelete, path.Join("clusters", projectID), input, output)
 }
