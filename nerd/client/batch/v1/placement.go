@@ -8,14 +8,14 @@ import (
 
 //ClientPlacementInterface is an interface for placement of project
 type ClientPlacementInterface interface {
-	CreatePlacement(projectID, host, token, capem string) (output *v1payload.CreatePlacementOutput, err error)
-	DeletePlacement(projectID string) (output *v1payload.DeletePlacementOutput, err error)
+	PlaceProject(projectID, host, token, capem string) (output *v1payload.PlaceProjectOutput, err error)
+	ExpelProject(projectID string) (output *v1payload.ExpelProjectOutput, err error)
 }
 
-//CreatePlacement will create queue
-func (c *Client) CreatePlacement(projectID, host, token, capem string) (output *v1payload.CreatePlacementOutput, err error) {
-	output = &v1payload.CreatePlacementOutput{}
-	input := &v1payload.CreatePlacementInput{
+//PlaceProject will create queue
+func (c *Client) PlaceProject(projectID, host, token, capem string) (output *v1payload.PlaceProjectOutput, err error) {
+	output = &v1payload.PlaceProjectOutput{}
+	input := &v1payload.PlaceProjectInput{
 		ProjectID: projectID,
 		Host:      host,
 		Token:     token,
@@ -25,10 +25,10 @@ func (c *Client) CreatePlacement(projectID, host, token, capem string) (output *
 	return output, c.doRequest(http.MethodPost, createPath(projectID, placementsEndpoint), input, output)
 }
 
-//DeletePlacement will delete queue a queue with the provided id
-func (c *Client) DeletePlacement(projectID string) (output *v1payload.DeletePlacementOutput, err error) {
-	output = &v1payload.DeletePlacementOutput{}
-	input := &v1payload.DeletePlacementInput{
+//ExpelProject will delete queue a queue with the provided id
+func (c *Client) ExpelProject(projectID string) (output *v1payload.ExpelProjectOutput, err error) {
+	output = &v1payload.ExpelProjectOutput{}
+	input := &v1payload.ExpelProjectInput{
 		ProjectID: projectID,
 	}
 

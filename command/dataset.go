@@ -16,8 +16,8 @@ type Dataset struct {
 func DatasetFactory() (cli.Command, error) {
 	cmd := &Dataset{
 		command: &command{
-			help:     `upload and download datasets for tasks to use`,
-			synopsis: "upload and download datasets for tasks to use",
+			help:     `upload and download data for tasks to use`,
+			synopsis: "upload and download data for tasks to use",
 			parser:   flags.NewNamedParser("nerd dataset <subcommand>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,

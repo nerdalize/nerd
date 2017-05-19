@@ -46,6 +46,8 @@ func main() {
 		"queue create":     command.QueueCreateFactory,
 		"queue delete":     command.QueueDeleteFactory,
 		"project":          command.ProjectFactory,
+		"project place":    command.ProjectPlaceFactory,
+		"project expel":    command.ProjectExpelFactory,
 		"project set":      command.ProjectSetFactory,
 		"project list":     command.ProjectListFactory,
 		"task":             command.TaskFactory,
