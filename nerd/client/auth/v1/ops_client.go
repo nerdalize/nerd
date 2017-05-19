@@ -101,8 +101,16 @@ func (c *OpsClient) doRequest(method, urlPath string, input, output interface{})
 }
 
 //RefreshJWT refreshes a JWT with a refresh token
-func (c *OpsClient) RefreshJWT(jwt, secret string) (string, error) {
-	return "", nil
+func (c *OpsClient) RefreshJWT(projectID, jwt, secret string) (output *v1payload.RefreshWorkerJWTOutput, err error) {
+	output = &v1payload.RefreshWorkerJWTOutput{}
+	input := &v1payload.RefreshWorkerJWTInput{
+		WorkerJWT: v1payload.WorkerJWT{
+			Token:  jwt,
+			Secret: secret,
+		},
+	}
+	path := fmt.Sprintf("%v/%v/refresh", tokenEndpoint, projectID)
+	return output, c.doRequest(http.MethodPost, path, input, output)
 }
 
 //GetOAuthCredentials gets oauth credentials based on a 'session' code

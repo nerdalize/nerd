@@ -17,6 +17,8 @@ const (
 	//TokenEndpoint is the endpoint from where to fetch the JWT.
 	tokenEndpoint    = "token"
 	projectsEndpoint = "projects"
+
+	NCEScope = "nce.nerdalize.com"
 )
 
 //Client is the client for the nerdalize authentication server.
@@ -150,5 +152,11 @@ func (c *Client) ListProjects() (output *v1payload.ListProjectsOutput, err error
 func (c *Client) GetJWT(scope string) (output *v1payload.GetJWTOutput, err error) {
 	output = &v1payload.GetJWTOutput{}
 	path := tokenEndpoint + "?service=" + scope
+	return output, c.doRequest(http.MethodGet, path, nil, output)
+}
+
+func (c *Client) GetWorkerJWT(project, scope string) (output *v1payload.GetWorkerJWTOutput, err error) {
+	output = &v1payload.GetWorkerJWTOutput{}
+	path := fmt.Sprintf("%v/%v/worker?service=%v", tokenEndpoint, project, scope)
 	return output, c.doRequest(http.MethodGet, path, nil, output)
 }
