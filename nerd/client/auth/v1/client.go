@@ -143,7 +143,7 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 //ListProjects lists projects
 func (c *Client) ListProjects() (output *v1payload.ListProjectsOutput, err error) {
 	output = &v1payload.ListProjectsOutput{}
-	return output, c.doRequest(http.MethodGet, projectsEndpoint, nil, output)
+	return output, c.doRequest(http.MethodGet, projectsEndpoint, nil, &output.Projects)
 }
 
 //GetJWT gets a JWT for a given scope

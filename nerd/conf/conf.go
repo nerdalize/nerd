@@ -182,6 +182,18 @@ func Read() (*Config, error) {
 }
 
 //WriteJWT writes the JWT to the config file
+func WriteProject(project string) error {
+	mut.Lock()
+	defer mut.Unlock()
+	c, err := read()
+	if err != nil {
+		return errors.Wrap(err, "failed to read config")
+	}
+	c.CurrentProject.Name = project
+	return write()
+}
+
+//WriteJWT writes the JWT to the config file
 func WriteJWT(jwt, refreshToken string) error {
 	mut.Lock()
 	defer mut.Unlock()
