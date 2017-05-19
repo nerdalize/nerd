@@ -19,11 +19,11 @@ const (
 //EnvProvider provides nerdalize credentials from the `credentials.NerdTokenEnvVar` environment variable.
 type EnvProvider struct {
 	*ProviderBasis
-	Client *v1auth.OpsClient
+	Client *v1auth.TokenClient
 }
 
 //NewEnvProvider creates a new EnvProvider provider.
-func NewEnvProvider(pub *ecdsa.PublicKey, client *v1auth.OpsClient) *EnvProvider {
+func NewEnvProvider(pub *ecdsa.PublicKey, client *v1auth.TokenClient) *EnvProvider {
 	return &EnvProvider{
 		ProviderBasis: &ProviderBasis{
 			ExpireWindow: DefaultExpireWindow,

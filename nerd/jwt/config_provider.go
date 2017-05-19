@@ -11,11 +11,11 @@ import (
 //ConfigProvider provides a JWT from the config file. For the default file location please see TokenFilename().
 type ConfigProvider struct {
 	*ProviderBasis
-	Client *v1auth.OpsClient
+	Client *v1auth.TokenClient
 }
 
 //NewConfigProvider creates a new ConfigProvider provider.
-func NewConfigProvider(pub *ecdsa.PublicKey, client *v1auth.OpsClient) *ConfigProvider {
+func NewConfigProvider(pub *ecdsa.PublicKey, client *v1auth.TokenClient) *ConfigProvider {
 	return &ConfigProvider{
 		ProviderBasis: &ProviderBasis{
 			ExpireWindow: DefaultExpireWindow,
