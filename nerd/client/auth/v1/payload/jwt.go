@@ -4,3 +4,20 @@ package v1payload
 type GetJWTOutput struct {
 	Token string `json:"token"`
 }
+
+type GetWorkerJWTOutput struct {
+	WorkerJWT
+}
+
+type RefreshWorkerJWTInput struct {
+	WorkerJWT
+}
+
+type RefreshWorkerJWTOutput struct {
+	WorkerJWT
+}
+
+type WorkerJWT struct {
+	Token  string `json:"token"`
+	Secret string `json:"secret"`
+}

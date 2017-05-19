@@ -41,6 +41,10 @@ func (p *AuthAPIProvider) Retrieve() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "failed to set expiration")
 	}
+	err = isValid(out.Token, p.Pub)
+	if err != nil {
+		return "", err
+	}
 	err = conf.WriteJWT(out.Token, "")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to write nerd jwt to config")
