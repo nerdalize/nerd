@@ -4,45 +4,26 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/olekukonko/tablewriter"
+	"github.com/pkg/errors"
 )
-
-//TaskListOpts describes command options
-type TaskListOpts struct {
-	NerdOpts
-}
 
 //TaskList command
 type TaskList struct {
 	*command
-	opts   *TaskListOpts
-	parser *flags.Parser
 }
 
 //TaskListFactory returns a factory method for the join command
 func TaskListFactory() (cli.Command, error) {
-	cmd := &TaskList{
-		command: &command{
-			help:     "",
-			synopsis: "show a list of all task currently in a queue",
-			parser:   flags.NewNamedParser("nerd task list <queue-id>", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
-
-		opts: &TaskListOpts{},
-	}
-
-	cmd.runFunc = cmd.DoRun
-	_, err := cmd.command.parser.AddGroup("options", "options", cmd.opts)
+	comm, err := newCommand("nerd task list <queue-id>", "show a list of all task currently in a queue", "", nil)
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "failed to create command")
 	}
+	cmd := &TaskList{
+		command: comm,
+	}
+	cmd.runFunc = cmd.DoRun
 
 	return cmd, nil
 }
@@ -53,17 +34,16 @@ func (cmd *TaskList) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	config, err := conf.Read()
+	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
 
-	bclient, err := NewClient(cmd.ui)
+	ss, err := cmd.session.Read()
 	if err != nil {
 		HandleError(err)
 	}
-
-	out, err := bclient.ListTasks(config.CurrentProject.Name, args[0])
+	out, err := bclient.ListTasks(ss.Project.Name, args[0])
 	if err != nil {
 		HandleError(err)
 	}

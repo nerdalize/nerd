@@ -20,8 +20,7 @@ func TestFromFile(t *testing.T) {
 		t.Fatalf("Unexpected error for temp file: %v", err)
 	}
 	temp.WriteString(testConf)
-	SetLocation(temp.Name())
-	conf, err := Read()
+	conf, err := Read(temp.Name())
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}

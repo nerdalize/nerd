@@ -2,49 +2,28 @@ package command
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
 )
-
-//TaskDescribeOpts describes command options
-type TaskDescribeOpts struct {
-	NerdOpts
-}
 
 //TaskDescribe command
 type TaskDescribe struct {
 	*command
-	opts   *TaskDescribeOpts
-	parser *flags.Parser
 }
 
 //TaskDescribeFactory returns a factory method for the join command
 func TaskDescribeFactory() (cli.Command, error) {
-	cmd := &TaskDescribe{
-		command: &command{
-			help:     "",
-			synopsis: "return more information about a specific task",
-			parser:   flags.NewNamedParser("nerd task describe <queue-id> <task-id>", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
-
-		opts: &TaskDescribeOpts{},
-	}
-
-	cmd.runFunc = cmd.DoRun
-	_, err := cmd.command.parser.AddGroup("options", "options", cmd.opts)
+	comm, err := newCommand("nerd task describe <queue-id> <task-id>", "return more information about a specific task", "", nil)
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "failed to create command")
 	}
+	cmd := &TaskDescribe{
+		command: comm,
+	}
+	cmd.runFunc = cmd.DoRun
 
 	return cmd, nil
 }
@@ -55,12 +34,7 @@ func (cmd *TaskDescribe) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	config, err := conf.Read()
-	if err != nil {
-		HandleError(err)
-	}
-
-	bclient, err := NewClient(cmd.ui)
+	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
@@ -70,7 +44,11 @@ func (cmd *TaskDescribe) DoRun(args []string) (err error) {
 		HandleError(errors.Wrap(err, "invalid task ID, must be a number"))
 	}
 
-	out, err := bclient.DescribeTask(config.CurrentProject.Name, args[0], taskID)
+	ss, err := cmd.session.Read()
+	if err != nil {
+		HandleError(err)
+	}
+	out, err := bclient.DescribeTask(ss.Project.Name, args[0], taskID)
 	if err != nil {
 		HandleError(err)
 	}

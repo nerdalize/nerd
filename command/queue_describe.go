@@ -2,47 +2,27 @@ package command
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/conf"
+	"github.com/pkg/errors"
 )
-
-//QueueDescribeOpts describes command options
-type QueueDescribeOpts struct {
-	NerdOpts
-}
 
 //QueueDescribe command
 type QueueDescribe struct {
 	*command
-	opts   *QueueDescribeOpts
-	parser *flags.Parser
 }
 
 //QueueDescribeFactory returns a factory method for the join command
 func QueueDescribeFactory() (cli.Command, error) {
-	cmd := &QueueDescribe{
-		command: &command{
-			help:     "",
-			synopsis: "return more information about a specific queue",
-			parser:   flags.NewNamedParser("nerd queue describe <queue-id>", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
-
-		opts: &QueueDescribeOpts{},
-	}
-
-	cmd.runFunc = cmd.DoRun
-	_, err := cmd.command.parser.AddGroup("options", "options", cmd.opts)
+	comm, err := newCommand("nerd queue describe <queue-id>", "return more information about a specific queue", "", nil)
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "failed to create command")
 	}
+	cmd := &QueueDescribe{
+		command: comm,
+	}
+	cmd.runFunc = cmd.DoRun
 
 	return cmd, nil
 }
@@ -53,17 +33,16 @@ func (cmd *QueueDescribe) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	config, err := conf.Read()
+	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
 
-	bclient, err := NewClient(cmd.ui)
+	ss, err := cmd.session.Read()
 	if err != nil {
 		HandleError(err)
 	}
-
-	out, err := bclient.DescribeQueue(config.CurrentProject.Name, args[0])
+	out, err := bclient.DescribeQueue(ss.Project.Name, args[0])
 	if err != nil {
 		HandleError(err)
 	}

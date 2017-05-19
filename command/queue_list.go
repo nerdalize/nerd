@@ -3,62 +3,42 @@ package command
 import (
 	"os"
 
-	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/olekukonko/tablewriter"
+	"github.com/pkg/errors"
 )
-
-//QueueListOpts describes command options
-type QueueListOpts struct {
-	NerdOpts
-}
 
 //QueueList command
 type QueueList struct {
 	*command
-	opts   *QueueListOpts
-	parser *flags.Parser
 }
 
 //QueueListFactory returns a factory method for the join command
 func QueueListFactory() (cli.Command, error) {
-	cmd := &QueueList{
-		command: &command{
-			help:     "",
-			synopsis: "show a list of all queues in the current project",
-			parser:   flags.NewNamedParser("nerd queue list", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
-
-		opts: &QueueListOpts{},
-	}
-
-	cmd.runFunc = cmd.DoRun
-	_, err := cmd.command.parser.AddGroup("options", "options", cmd.opts)
+	comm, err := newCommand("nerd queue list", "show a list of all queues in the current project", "", nil)
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "failed to create command")
 	}
+	cmd := &QueueList{
+		command: comm,
+	}
+	cmd.runFunc = cmd.DoRun
 
 	return cmd, nil
 }
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *QueueList) DoRun(args []string) (err error) {
-	config, err := conf.Read()
+	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
 
-	bclient, err := NewClient(cmd.ui)
+	ss, err := cmd.session.Read()
 	if err != nil {
 		HandleError(err)
 	}
-
-	out, err := bclient.ListQueues(config.CurrentProject.Name)
+	out, err := bclient.ListQueues(ss.Project.Name)
 	if err != nil {
 		HandleError(err)
 	}

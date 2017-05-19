@@ -2,49 +2,28 @@ package command
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
 )
-
-//TaskSuccessOpts describes command options
-type TaskSuccessOpts struct {
-	NerdOpts
-}
 
 //TaskSuccess command
 type TaskSuccess struct {
 	*command
-	opts   *TaskSuccessOpts
-	parser *flags.Parser
 }
 
 //TaskSuccessFactory returns a factory method for the join command
 func TaskSuccessFactory() (cli.Command, error) {
-	cmd := &TaskSuccess{
-		command: &command{
-			help:     "",
-			synopsis: "mark a task run as having succeeded",
-			parser:   flags.NewNamedParser("nerd task success <queue-id> <task-id> <run-token> <result>", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
-
-		opts: &TaskSuccessOpts{},
-	}
-
-	cmd.runFunc = cmd.DoRun
-	_, err := cmd.command.parser.AddGroup("options", "options", cmd.opts)
+	comm, err := newCommand("nerd task success <queue-id> <task-id> <run-token> <result>", "mark a task run as having succeeded", "", nil)
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "failed to create command")
 	}
+	cmd := &TaskSuccess{
+		command: comm,
+	}
+	cmd.runFunc = cmd.DoRun
 
 	return cmd, nil
 }
@@ -55,12 +34,7 @@ func (cmd *TaskSuccess) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	config, err := conf.Read()
-	if err != nil {
-		HandleError(err)
-	}
-
-	bclient, err := NewClient(cmd.ui)
+	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
@@ -70,7 +44,11 @@ func (cmd *TaskSuccess) DoRun(args []string) (err error) {
 		HandleError(errors.Wrap(err, "invalid task ID, must be a number"))
 	}
 
-	out, err := bclient.SendRunSuccess(config.CurrentProject.Name, args[0], taskID, args[2], args[3])
+	ss, err := cmd.session.Read()
+	if err != nil {
+		HandleError(err)
+	}
+	out, err := bclient.SendRunSuccess(ss.Project.Name, args[0], taskID, args[2], args[3])
 	if err != nil {
 		HandleError(err)
 	}

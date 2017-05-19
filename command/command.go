@@ -2,19 +2,58 @@ package command
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
+
+	"github.com/pkg/errors"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/nerd/conf"
 )
 
 var errShowHelp = errors.New("show error")
 
-func (cmd *command) setConfigLocation(loc string) {
-	cmd.configLocation = loc
+func (cmd *command) setConfig(loc string) {
+	if loc == "" {
+		loc, err := conf.GetDefaultConfigLocation()
+		if err != nil {
+			fmt.Fprint(os.Stderr, errors.Wrap(err, "failed to find config location"))
+			os.Exit(-1)
+		}
+		os.MkdirAll(filepath.Dir(loc), 0755)
+		f, err := os.OpenFile(loc, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
+		if err != nil && !os.IsExist(err) {
+			fmt.Fprint(os.Stderr, errors.Wrapf(err, "failed to create config file %v", loc))
+			os.Exit(-1)
+		}
+		f.Close()
+	}
+	conf, err := conf.Read(loc)
+	if err != nil {
+		fmt.Fprint(os.Stderr, errors.Wrap(err, "failed to read config file"))
+		os.Exit(-1)
+	}
+	cmd.config = conf
+}
+
+func (cmd *command) setSession(loc string) {
+	if loc == "" {
+		loc, err := conf.GetDefaultSessionLocation()
+		if err != nil {
+			fmt.Fprint(os.Stderr, errors.Wrap(err, "failed to find session location"))
+			os.Exit(-1)
+		}
+		os.MkdirAll(filepath.Dir(loc), 0755)
+		f, err := os.OpenFile(loc, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
+		if err != nil && !os.IsExist(err) {
+			fmt.Fprint(os.Stderr, errors.Wrapf(err, "failed to create session file %v", loc))
+		}
+		f.Close()
+	}
+	cmd.session = conf.NewSession(loc)
 }
 
 func setVerbose(verbose bool) {
@@ -48,7 +87,8 @@ func newCommand(title, synopsis, help string, opts interface{}) (*command, error
 		}
 	}
 	confOpts := &ConfOpts{
-		ConfigFile: cmd.setConfigLocation,
+		ConfigFile:  cmd.setConfig,
+		SessionFile: cmd.setSession,
 		OutputOpts: OutputOpts{
 			VerboseOutput: setVerbose,
 			JSONOutput:    cmd.setJSON,
@@ -63,16 +103,14 @@ func newCommand(title, synopsis, help string, opts interface{}) (*command, error
 
 //command is an abstract implementation for embedding in concrete commands and allows basic command functionality to be reused.
 type command struct {
-	help           string        //extended help message, show when --help a command
-	synopsis       string        //short help message, shown on the command overview
-	parser         *flags.Parser //option parser that will be used when parsing args
-	ui             cli.Ui
-	configLocation string
-	jsonOutput     bool
-	// conf     conf.ConfInterface
-	// confOpts *ConfOpts
-	// renderer Renderer
-	runFunc func(args []string) error
+	help       string        //extended help message, show when --help a command
+	synopsis   string        //short help message, shown on the command overview
+	parser     *flags.Parser //option parser that will be used when parsing args
+	ui         cli.Ui
+	config     *conf.Config
+	jsonOutput bool
+	session    *conf.Session
+	runFunc    func(args []string) error
 }
 
 //Will write help text for when a user uses --help, it automatically renders all option groups of the flags.Parser (augmented with default values). It will show an extended help message if it is not empty, else it shows the synopsis.

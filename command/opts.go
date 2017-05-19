@@ -6,13 +6,9 @@ type OutputOpts struct {
 	JSONOutput    func(bool) `long:"json-format" default:"false" optional:"true" optional-value:"true" description:"show output in json format"`
 }
 
-//NerdOpts are the options that are applicable to all nerd commands.
-type NerdOpts struct {
-	ConfOpts
-}
-
 //ConfOpts are the options related to config file and the way output is handled.
 type ConfOpts struct {
-	ConfigFile func(string) `long:"config" default:"" default-mask:"" env:"CONFIG" description:"location of config file"`
+	ConfigFile  func(string) `long:"config-file" default:"" default-mask:"" env:"NERD_CONFIG_FILE" description:"location of config file"`
+	SessionFile func(string) `long:"session-file" default:"" default-mask:"" env:"NERD_SESSION_FILE" description:"location of session file"`
 	OutputOpts
 }

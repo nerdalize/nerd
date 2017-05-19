@@ -1,64 +1,42 @@
 package command
 
 import (
-	"os"
-
 	"github.com/Sirupsen/logrus"
-	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/conf"
+	"github.com/pkg/errors"
 )
-
-//QueueCreateOpts describes command options
-type QueueCreateOpts struct {
-	NerdOpts
-}
 
 //QueueCreate command
 type QueueCreate struct {
 	*command
-	opts   *QueueCreateOpts
-	parser *flags.Parser
 }
 
 //QueueCreateFactory returns a factory method for the join command
 func QueueCreateFactory() (cli.Command, error) {
-	cmd := &QueueCreate{
-		command: &command{
-			help:     "",
-			synopsis: "initialize a new queue for workers to consume tasks from",
-			parser:   flags.NewNamedParser("nerd queue create", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
-
-		opts: &QueueCreateOpts{},
-	}
-
-	cmd.runFunc = cmd.DoRun
-	_, err := cmd.command.parser.AddGroup("options", "options", cmd.opts)
+	comm, err := newCommand("nerd queue create", "initialize a new queue for workers to consume tasks from", "", nil)
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "failed to create command")
 	}
+	cmd := &QueueCreate{
+		command: comm,
+	}
+	cmd.runFunc = cmd.DoRun
 
 	return cmd, nil
 }
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *QueueCreate) DoRun(args []string) (err error) {
-	config, err := conf.Read()
+	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
 
-	bclient, err := NewClient(cmd.ui)
+	ss, err := cmd.session.Read()
 	if err != nil {
 		HandleError(err)
 	}
-
-	out, err := bclient.CreateQueue(config.CurrentProject.Name)
+	out, err := bclient.CreateQueue(ss.Project.Name)
 	if err != nil {
 		HandleError(err)
 	}

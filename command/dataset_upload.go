@@ -6,10 +6,8 @@ import (
 	"os"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/aws"
-	"github.com/nerdalize/nerd/nerd/conf"
 	v1datatransfer "github.com/nerdalize/nerd/nerd/service/datatransfer/v1"
 	"github.com/pkg/errors"
 )
@@ -25,7 +23,6 @@ const (
 
 //UploadOpts describes command options
 type UploadOpts struct {
-	NerdOpts
 	Tag string `long:"tag" default:"" default-mask:"" description:"use a tag to logically group datasets"`
 }
 
@@ -33,31 +30,21 @@ type UploadOpts struct {
 type Upload struct {
 	*command
 
-	opts   *UploadOpts
-	parser *flags.Parser
+	opts *UploadOpts
 }
 
 //DatasetUploadFactory returns a factory method for the join command
 func DatasetUploadFactory() (cli.Command, error) {
-	cmd := &Upload{
-		command: &command{
-			help:     "",
-			synopsis: "upload data to the cloud and create a new dataset",
-			parser:   flags.NewNamedParser("nerd upload <path>", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
-
-		opts: &UploadOpts{},
-	}
-
-	cmd.runFunc = cmd.DoRun
-	_, err := cmd.command.parser.AddGroup("options", "options", cmd.opts)
+	opts := &UploadOpts{}
+	comm, err := newCommand("nerd upload <path>", "upload data to the cloud and create a new dataset", "", opts)
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "failed to create command")
 	}
+	cmd := &Upload{
+		command: comm,
+		opts:    opts,
+	}
+	cmd.runFunc = cmd.DoRun
 
 	return cmd, nil
 }
@@ -77,20 +64,18 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		HandleError(errors.Errorf("provided path '%s' is not a directory", dataPath))
 	}
 
-	// Config
-	config, err := conf.Read()
+	// Clients
+	batchclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
-
-	// Clients
-	batchclient, err := NewClient(cmd.ui)
+	ss, err := cmd.session.Read()
 	if err != nil {
 		HandleError(err)
 	}
 	dataOps, err := aws.NewDataClient(
-		aws.NewNerdalizeCredentials(batchclient, config.CurrentProject.Name),
-		config.CurrentProject.AWSRegion,
+		aws.NewNerdalizeCredentials(batchclient, ss.Project.Name),
+		ss.Project.AWSRegion,
 	)
 	if err != nil {
 		HandleError(errors.Wrap(err, "could not create aws dataops client"))
@@ -99,7 +84,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		BatchClient: batchclient,
 		DataOps:     dataOps,
 		LocalDir:    dataPath,
-		ProjectID:   config.CurrentProject.Name,
+		ProjectID:   ss.Project.Name,
 		Tag:         cmd.opts.Tag,
 		Concurrency: 64,
 	}
