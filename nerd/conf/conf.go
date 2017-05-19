@@ -9,23 +9,10 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"path/filepath"
-	"sync"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
 )
-
-//location is the file location of the config file.
-var location string
-
-//conf is an in-memory representation of the config file.
-var conf *Config
-
-var mut *sync.Mutex
-
-func init() {
-	mut = &sync.Mutex{}
-}
 
 //Config is the structure that describes how the config file looks.
 type Config struct {
@@ -62,7 +49,7 @@ OWbQHMK+vvUXieCJvCc9Vj084ABwLBgX
 	}
 }
 
-//GetDefaultLocation sets the location to ~/.nerd/session.json
+//GetDefaultConfigLocation sets the location to ~/.nerd/config.json
 func GetDefaultConfigLocation() (string, error) {
 	dir, err := homedir.Dir()
 	if err != nil {
@@ -77,7 +64,7 @@ func Read(location string) (*Config, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open config file")
 	}
-	conf = Defaults()
+	conf := Defaults()
 	err = json.Unmarshal(content, conf)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse config file")

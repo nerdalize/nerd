@@ -16,64 +16,6 @@ import (
 
 var errShowHelp = errors.New("show error")
 
-func (cmd *command) setConfig(loc string) {
-	if loc == "" {
-		var err error
-		loc, err = conf.GetDefaultConfigLocation()
-		if err != nil {
-			fmt.Fprint(os.Stderr, errors.Wrap(err, "failed to find config location"))
-			os.Exit(-1)
-		}
-		os.MkdirAll(filepath.Dir(loc), 0755)
-		f, err := os.OpenFile(loc, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
-		if err != nil && !os.IsExist(err) {
-			fmt.Fprint(os.Stderr, errors.Wrapf(err, "failed to create config file %v", loc))
-			os.Exit(-1)
-		}
-		f.Write([]byte("{}"))
-		f.Close()
-	}
-	conf, err := conf.Read(loc)
-	if err != nil {
-		fmt.Fprint(os.Stderr, errors.Wrap(err, "failed to read config file"))
-		os.Exit(-1)
-	}
-	cmd.config = conf
-}
-
-func (cmd *command) setSession(loc string) {
-	if loc == "" {
-		var err error
-		loc, err = conf.GetDefaultSessionLocation()
-		if err != nil {
-			fmt.Fprint(os.Stderr, errors.Wrap(err, "failed to find session location"))
-			os.Exit(-1)
-		}
-		os.MkdirAll(filepath.Dir(loc), 0755)
-		f, err := os.OpenFile(loc, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
-		if err != nil && !os.IsExist(err) {
-			fmt.Fprint(os.Stderr, errors.Wrapf(err, "failed to create session file %v", loc))
-		}
-		f.Write([]byte("{}"))
-		f.Close()
-	}
-	cmd.session = conf.NewSession(loc)
-}
-
-func setVerbose(verbose bool) {
-	if verbose {
-		logrus.SetFormatter(new(logrus.TextFormatter))
-		logrus.SetLevel(logrus.DebugLevel)
-	}
-}
-
-func (cmd *command) setJSON(json bool) {
-	cmd.jsonOutput = json
-	if json {
-		logrus.SetFormatter(new(logrus.JSONFormatter))
-	}
-}
-
 func newCommand(title, synopsis, help string, opts interface{}) (*command, error) {
 	cmd := &command{
 		help:     help,
@@ -157,4 +99,66 @@ func (c *command) Run(args []string) int {
 	}
 
 	return 0
+}
+
+//setConfig sets the cmd.config field according to the config file location
+func (c *command) setConfig(loc string) {
+	if loc == "" {
+		var err error
+		loc, err = conf.GetDefaultConfigLocation()
+		if err != nil {
+			fmt.Fprint(os.Stderr, errors.Wrap(err, "failed to find config location"))
+			os.Exit(-1)
+		}
+		os.MkdirAll(filepath.Dir(loc), 0755)
+		f, err := os.OpenFile(loc, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
+		if err != nil && !os.IsExist(err) {
+			fmt.Fprint(os.Stderr, errors.Wrapf(err, "failed to create config file %v", loc))
+			os.Exit(-1)
+		}
+		f.Write([]byte("{}"))
+		f.Close()
+	}
+	conf, err := conf.Read(loc)
+	if err != nil {
+		fmt.Fprint(os.Stderr, errors.Wrap(err, "failed to read config file"))
+		os.Exit(-1)
+	}
+	c.config = conf
+}
+
+//setSession sets the cmd.session field according to the session file location
+func (c *command) setSession(loc string) {
+	if loc == "" {
+		var err error
+		loc, err = conf.GetDefaultSessionLocation()
+		if err != nil {
+			fmt.Fprint(os.Stderr, errors.Wrap(err, "failed to find session location"))
+			os.Exit(-1)
+		}
+		os.MkdirAll(filepath.Dir(loc), 0755)
+		f, err := os.OpenFile(loc, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
+		if err != nil && !os.IsExist(err) {
+			fmt.Fprint(os.Stderr, errors.Wrapf(err, "failed to create session file %v", loc))
+		}
+		f.Write([]byte("{}"))
+		f.Close()
+	}
+	c.session = conf.NewSession(loc)
+}
+
+//setVerbose sets verbose output formatting
+func setVerbose(verbose bool) {
+	if verbose {
+		logrus.SetFormatter(new(logrus.TextFormatter))
+		logrus.SetLevel(logrus.DebugLevel)
+	}
+}
+
+//setJSON sets json output formatting
+func (c *command) setJSON(json bool) {
+	c.jsonOutput = json
+	if json {
+		logrus.SetFormatter(new(logrus.JSONFormatter))
+	}
 }
