@@ -11,6 +11,7 @@ import (
 //WorkerStartOpts describes command options
 type WorkerStartOpts struct {
 	NerdOpts
+	Verb func(bool) `short:"a" long:"verb" default:"false" optional:"true" optional-value:"true" description:"show verbose output"`
 }
 
 //WorkerStart command
@@ -34,6 +35,10 @@ func WorkerStartFactory() (cli.Command, error) {
 		},
 
 		opts: &WorkerStartOpts{},
+	}
+
+	cmd.opts.Verb = func(set bool) {
+		fmt.Println("!!!!!", set)
 	}
 
 	cmd.runFunc = cmd.DoRun

@@ -2,8 +2,8 @@ package command
 
 //OutputOpts are options that are related to CLI output.
 type OutputOpts struct {
-	VerboseOutput bool `short:"v" long:"verbose" default-mask:"false" description:"show verbose output"`
-	JSONOutput    bool `long:"json-format" default-mask:"false" description:"show output in json format"`
+	VerboseOutput func(bool) `short:"v" long:"verbose" default:"false" optional:"true" optional-value:"true" description:"show verbose output"`
+	JSONOutput    func(bool) `long:"json-format" default:"false" optional:"true" optional-value:"true" description:"show output in json format"`
 }
 
 //NerdOpts are the options that are applicable to all nerd commands.
@@ -13,6 +13,6 @@ type NerdOpts struct {
 
 //ConfOpts are the options related to config file and the way output is handled.
 type ConfOpts struct {
-	ConfigFile string `long:"config" default:"" default-mask:"" env:"CONFIG" description:"location of config file"`
+	ConfigFile func(string) `long:"config" default:"" default-mask:"" env:"CONFIG" description:"location of config file"`
 	OutputOpts
 }

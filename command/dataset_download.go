@@ -134,7 +134,7 @@ func (cmd *Download) DoRun(args []string) (err error) {
 			DatasetID:   datasetID,
 			Concurrency: 64,
 		}
-		if !cmd.opts.JSONOutput { // show progress bar
+		if !cmd.jsonOutput { // show progress bar
 			progressCh := make(chan int64)
 			progressBarDoneCh := make(chan struct{})
 			var size int64

@@ -103,7 +103,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		Tag:         cmd.opts.Tag,
 		Concurrency: 64,
 	}
-	if !cmd.opts.JSONOutput { // show progress bar
+	if !cmd.jsonOutput { // show progress bar
 		progressCh := make(chan int64)
 		progressBarDoneCh := make(chan struct{})
 		size, err := v1datatransfer.GetLocalDatasetSize(context.Background(), dataPath)
