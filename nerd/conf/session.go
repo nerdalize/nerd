@@ -41,8 +41,8 @@ type JWT struct {
 
 //ProjectConfig contains details of the current working project.
 type Project struct {
-	Name      string `json:"name"`
-	AWSRegion string `json:"aws_region"`
+	Name      string `json:"name,omitempty"`
+	AWSRegion string `json:"aws_region,omitempty"`
 }
 
 type Session struct {

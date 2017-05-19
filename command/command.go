@@ -18,7 +18,8 @@ var errShowHelp = errors.New("show error")
 
 func (cmd *command) setConfig(loc string) {
 	if loc == "" {
-		loc, err := conf.GetDefaultConfigLocation()
+		var err error
+		loc, err = conf.GetDefaultConfigLocation()
 		if err != nil {
 			fmt.Fprint(os.Stderr, errors.Wrap(err, "failed to find config location"))
 			os.Exit(-1)
@@ -29,6 +30,7 @@ func (cmd *command) setConfig(loc string) {
 			fmt.Fprint(os.Stderr, errors.Wrapf(err, "failed to create config file %v", loc))
 			os.Exit(-1)
 		}
+		f.Write([]byte("{}"))
 		f.Close()
 	}
 	conf, err := conf.Read(loc)
@@ -41,7 +43,8 @@ func (cmd *command) setConfig(loc string) {
 
 func (cmd *command) setSession(loc string) {
 	if loc == "" {
-		loc, err := conf.GetDefaultSessionLocation()
+		var err error
+		loc, err = conf.GetDefaultSessionLocation()
 		if err != nil {
 			fmt.Fprint(os.Stderr, errors.Wrap(err, "failed to find session location"))
 			os.Exit(-1)
@@ -51,6 +54,7 @@ func (cmd *command) setSession(loc string) {
 		if err != nil && !os.IsExist(err) {
 			fmt.Fprint(os.Stderr, errors.Wrapf(err, "failed to create session file %v", loc))
 		}
+		f.Write([]byte("{}"))
 		f.Close()
 	}
 	cmd.session = conf.NewSession(loc)
