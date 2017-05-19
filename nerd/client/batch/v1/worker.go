@@ -9,7 +9,7 @@ import (
 //ClientWorkerInterface is an interface for placement of project
 type ClientWorkerInterface interface {
 	StartWorker(projectID string) (output *v1payload.StartWorkerOutput, err error)
-	StopWorker(projectID string) (output *v1payload.StopWorkerOutput, err error)
+	StopWorker(projectID, workerID string) (output *v1payload.StopWorkerOutput, err error)
 }
 
 //StartWorker will create queue
@@ -23,11 +23,12 @@ func (c *Client) StartWorker(projectID string) (output *v1payload.StartWorkerOut
 }
 
 //StopWorker will delete queue a queue with the provided id
-func (c *Client) StopWorker(projectID string) (output *v1payload.StopWorkerOutput, err error) {
+func (c *Client) StopWorker(projectID, workerID string) (output *v1payload.StopWorkerOutput, err error) {
 	output = &v1payload.StopWorkerOutput{}
 	input := &v1payload.StopWorkerInput{
 		ProjectID: projectID,
+		WorkerID:  workerID,
 	}
 
-	return output, c.doRequest(http.MethodDelete, createPath(projectID, workersEndpoint), input, output)
+	return output, c.doRequest(http.MethodDelete, createPath(projectID, workersEndpoint, workerID), input, output)
 }
