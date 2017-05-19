@@ -40,7 +40,7 @@ type AuthConfig struct {
 	PublicKey        string `json:"public_key"`
 	ClientID         string `json:"client_id"`
 	OAuthSuccessURL  string `json:"oauth_success_url"`
-	OAuthLocalServer string `json:"nerd_oauth_localserver"`
+	OAuthLocalServer string `json:"oauth_localserver"`
 }
 
 //Defaults provides the default for when the config file misses certain fields.
