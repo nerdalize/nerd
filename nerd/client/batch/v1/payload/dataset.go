@@ -5,10 +5,8 @@ import "time"
 const (
 	//DatasetUploadStatusCreated is the created upload status
 	DatasetUploadStatusCreated = "CREATED"
-
 	//DatasetUploadStatusUploading is the uploading upload status
 	DatasetUploadStatusUploading = "UPLOADING"
-
 	//DatasetUploadStatusSuccess is the success upload status
 	DatasetUploadStatusSuccess = "SUCCESS"
 )

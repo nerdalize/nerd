@@ -10,6 +10,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sync"
+	"time"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
@@ -21,20 +23,49 @@ var location string
 //conf is an in-memory representation of the config file.
 var conf *Config
 
-//Config is the structure that describes how the config file looks.
-type Config struct {
-	Auth           AuthConfig           `json:"auth"`
-	EnableLogging  bool                 `json:"enable_logging"`
-	CurrentProject CurrentProjectConfig `json:"current_project"`
+var mut *sync.Mutex
 
-	NerdToken       string `json:"nerd_token"`
-	NerdAPIEndpoint string `json:"nerd_api_endpoint"`
+func init() {
+	mut = &sync.Mutex{}
 }
 
-//AuthConfig contains config details with respect to authentication.
+//Config is the structure that describes how the config file looks.
+type Config struct {
+	Auth            AuthConfig           `json:"auth"`
+	Credentials     CredentialsConfig    `json:"credentials"`
+	EnableLogging   bool                 `json:"enable_logging"`
+	CurrentProject  CurrentProjectConfig `json:"current_project"`
+	NerdAPIEndpoint string               `json:"nerd_api_endpoint"`
+}
+
+//AuthConfig contains config details with respect to the authentication server.
 type AuthConfig struct {
-	APIEndpoint string `json:"api_endpoint"`
-	PublicKey   string `json:"public_key"`
+	APIEndpoint      string `json:"api_endpoint"`
+	PublicKey        string `json:"public_key"`
+	ClientID         string `json:"client_id"`
+	OAuthSuccessURL  string `json:"oauth_success_url"`
+	OAuthLocalServer string `json:"nerd_oauth_localserver"`
+}
+
+//CredentialsConfig contains oauth and jwt credentials
+type CredentialsConfig struct {
+	OAuth OAuthConfig `json:"oauth,omitempty"`
+	JWT   JWTConfig   `json:"jwt,omitempty"`
+}
+
+//OAuthConfig contians oauth credentials
+type OAuthConfig struct {
+	AccessToken  string    `json:"access_token"`
+	RefreshToken string    `json:"refresh_token"`
+	Expiration   time.Time `json:"expiration"`
+	Scope        string    `json:"scope"`
+	TokenType    string    `json:"token_type"`
+}
+
+//JWTConfig contains JWT credentials
+type JWTConfig struct {
+	Token        string `json:"token"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 //CurrentProjectConfig contains details of the current working project.
@@ -47,7 +78,10 @@ type CurrentProjectConfig struct {
 func Defaults() *Config {
 	return &Config{
 		Auth: AuthConfig{
-			APIEndpoint: "http://auth.nerdalize.com",
+			APIEndpoint:      "http://auth.nerdalize.com",
+			OAuthLocalServer: "localhost:9876",
+			OAuthSuccessURL:  "https://cloud.nerdalize.com",
+			ClientID:         "GuoeRJLYOXzVa9ydPjKi83lCctWtXpNHuiy46Yux",
 			PublicKey: `-----BEGIN PUBLIC KEY-----
 MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEAkYbLnam4wo+heLlTZEeh1ZWsfruz9nk
 kyvc4LwKZ8pez5KYY76H1ox+AfUlWOEq+bExypcFfEIrJkf/JXa7jpzkOWBDF9Sa
@@ -93,8 +127,8 @@ func GetLocation() (string, error) {
 	return location, nil
 }
 
-//Read reads the config either from memory or from disk for the first time.
-func Read() (*Config, error) {
+//read reads the config either from memory or from disk for the first time.
+func read() (*Config, error) {
 	if conf != nil {
 		return conf, nil
 	}
@@ -117,13 +151,13 @@ func Read() (*Config, error) {
 	return conf, nil
 }
 
-//Write writes the conf variable to disk.
-func Write() error {
+//write writes the conf variable to disk.
+func write() error {
 	loc, err := GetLocation()
 	if err != nil {
 		return errors.Wrap(err, "failed to get config location")
 	}
-	c, err := Read()
+	c, err := read()
 	if err != nil {
 		return errors.Wrap(err, "failed to read config")
 	}
@@ -140,12 +174,50 @@ func Write() error {
 	return nil
 }
 
-//WriteNerdToken sets the nerd token and calls Write() to write to disk.
-func WriteNerdToken(token string) error {
-	c, err := Read()
+//Read reads the config file
+func Read() (*Config, error) {
+	mut.Lock()
+	defer mut.Unlock()
+	return read()
+}
+
+//WriteJWT writes the JWT to the config file
+func WriteProject(project string) error {
+	mut.Lock()
+	defer mut.Unlock()
+	c, err := read()
 	if err != nil {
 		return errors.Wrap(err, "failed to read config")
 	}
-	c.NerdToken = token
-	return Write()
+	c.CurrentProject.Name = project
+	return write()
+}
+
+//WriteJWT writes the JWT to the config file
+func WriteJWT(jwt, refreshToken string) error {
+	mut.Lock()
+	defer mut.Unlock()
+	c, err := read()
+	if err != nil {
+		return errors.Wrap(err, "failed to read config")
+	}
+	c.Credentials.JWT.Token = jwt
+	c.Credentials.JWT.RefreshToken = refreshToken
+	return write()
+}
+
+//WriteOAuth writes oauth credentials to the config file
+func WriteOAuth(accessToken, refreshToken string, expiration time.Time, scope, tokenType string) error {
+	mut.Lock()
+	defer mut.Unlock()
+	c, err := read()
+	if err != nil {
+		return errors.Wrap(err, "failed to read config")
+	}
+	c.Credentials.OAuth.AccessToken = accessToken
+	c.Credentials.OAuth.RefreshToken = refreshToken
+	c.Credentials.OAuth.Expiration = expiration
+	c.Credentials.OAuth.Scope = scope
+	c.Credentials.OAuth.TokenType = tokenType
+	return write()
 }
