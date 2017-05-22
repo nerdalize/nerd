@@ -1,10 +1,8 @@
 package command
 
 import (
-	"os"
-
-	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	"github.com/pkg/errors"
 )
 
 //Task command
@@ -14,19 +12,15 @@ type Task struct {
 
 //TaskFactory returns a factory method for the join command
 func TaskFactory() (cli.Command, error) {
-	cmd := &Task{
-		command: &command{
-			help:     `manage the lifecycle of compute tasks`,
-			synopsis: "manage the lifecycle of compute tasks",
-			parser:   flags.NewNamedParser("nerd task", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
+	comm, err := newCommand("nerd task <subcommand>", "manage the lifecycle of compute tasks", "", nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create command")
 	}
-
+	cmd := &Task{
+		command: comm,
+	}
 	cmd.runFunc = cmd.DoRun
+
 	return cmd, nil
 }
 

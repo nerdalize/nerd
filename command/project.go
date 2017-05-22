@@ -1,10 +1,8 @@
 package command
 
 import (
-	"os"
-
-	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	"github.com/pkg/errors"
 )
 
 //Project command
@@ -14,19 +12,15 @@ type Project struct {
 
 //ProjectFactory returns a factory method for the join command
 func ProjectFactory() (cli.Command, error) {
-	cmd := &Queue{
-		command: &command{
-			help:     "",
-			synopsis: "set and list projects",
-			parser:   flags.NewNamedParser("nerd project <subcommand>", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
+	comm, err := newCommand("nerd project <subcommand>", "set and list projects", "", nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create command")
 	}
-
+	cmd := &Project{
+		command: comm,
+	}
 	cmd.runFunc = cmd.DoRun
+
 	return cmd, nil
 }
 

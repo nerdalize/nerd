@@ -8,46 +8,27 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	nerdaws "github.com/nerdalize/nerd/nerd/aws"
-	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/service/working/v1"
+	"github.com/pkg/errors"
 )
-
-//WorkerWorkOpts describes command options
-type WorkerWorkOpts struct {
-	NerdOpts
-}
 
 //WorkerWork command
 type WorkerWork struct {
 	*command
-	opts   *WorkerWorkOpts
-	parser *flags.Parser
 }
 
 //WorkerWorkFactory returns a factory method for the join command
 func WorkerWorkFactory() (cli.Command, error) {
-	cmd := &WorkerWork{
-		command: &command{
-			help:     "",
-			synopsis: "start working tasks of a queue locally",
-			parser:   flags.NewNamedParser("nerd worker work <queue-id> <command-tmpl> [arg-tmpl...]", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
-
-		opts: &WorkerWorkOpts{},
-	}
-
-	cmd.runFunc = cmd.DoRun
-	_, err := cmd.command.parser.AddGroup("options", "options", cmd.opts)
+	comm, err := newCommand("nerd worker work <queue-id> <command-tmpl> [arg-tmpl...]", "start working tasks of a queue locally", "", nil)
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "failed to create command")
 	}
+	cmd := &WorkerWork{
+		command: comm,
+	}
+	cmd.runFunc = cmd.DoRun
 
 	return cmd, nil
 }
@@ -58,18 +39,17 @@ func (cmd *WorkerWork) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	config, err := conf.Read()
+	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
 
-	bclient, err := NewClient(cmd.ui)
+	ss, err := cmd.session.Read()
 	if err != nil {
 		HandleError(err)
 	}
-
-	creds := nerdaws.NewNerdalizeCredentials(bclient, config.CurrentProject.Name)
-	qops, err := nerdaws.NewQueueClient(creds, config.CurrentProject.AWSRegion)
+	creds := nerdaws.NewNerdalizeCredentials(bclient, ss.Project.Name)
+	qops, err := nerdaws.NewQueueClient(creds, ss.Project.AWSRegion)
 	if err != nil {
 		HandleError(err)
 	}
@@ -77,7 +57,7 @@ func (cmd *WorkerWork) DoRun(args []string) (err error) {
 	logger := log.New(os.Stderr, "worker/", log.Lshortfile)
 	conf := v1working.DefaultConf()
 
-	worker := v1working.NewWorker(logger, bclient, qops, config.CurrentProject.Name, args[0], args[1], args[2:], conf)
+	worker := v1working.NewWorker(logger, bclient, qops, ss.Project.Name, args[0], args[1], args[2:], conf)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

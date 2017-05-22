@@ -35,18 +35,41 @@ Each command accepts at least the following options:
 
 ### Config
 
-The `nerd` command uses a config file located at `~/.nerd/config.json` (location can be changed with the `--config` option) which can be used to customize nerd's behaviour.
+The `nerd` command uses a config file located at `~/.nerd/config.json` (location can be changed with the `--config-file` option) which can be used to customize nerd's behaviour.
 The structure of the config and the defaults are show below:
 ```bash
 {
         "auth": {
                 "api_endpoint": "http://auth.nerdalize.com", # URL of authentication server
-                "public_key": "-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEAkYbLnam4wo+heLlTZEeh1ZWsfruz9nk\nkyvc4LwKZ8pez5KYY76H1ox+AfUlWOEq+bExypcFfEIrJkf/JXa7jpzkOWBDF9Sa\nOWbQHMK+vvUXieCJvCc9Vj084ABwLBgX\n-----END PUBLIC KEY-----" # Public key used to verify JWT signature
+                "public_key": "-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEAkYbLnam4wo+heLlTZEeh1ZWsfruz9nk\nkyvc4LwKZ8pez5KYY76H1ox+AfUlWOEq+bExypcFfEIrJkf/JXa7jpzkOWBDF9Sa\nOWbQHMK+vvUXieCJvCc9Vj084ABwLBgX\n-----END PUBLIC KEY-----", # Public key used to verify JWT signature
+                "client_id": "GuoeRJLYOXzVa9ydPjKi83lCctWtXpNHuiy46Yux", #OAuth client ID
+                "oauth_localserver": "localhost:9876", #address of local oauth server
+                "oauth_success_url": "https://cloud.nerdalize.com" #redirect URL after successful login
         },
         "enable_logging": false, # When set to true, all output will be logged to ~/.nerd/log
-        "current_project": "", # Current project
-        "nerd_token": "", # Nerdalize JWT (can be set manually or it will be set by `nerd login`)
         "nerd_api_endpoint": "https://batch.nerdalize.com" # URL of nerdalize API (NCE)
+}
+```
+
+Session details such as OAuth session, JWT, and current project are stored in `~/.nerd/session.json` (can be changed using the `--session-file` option)
+The structure of `session.json` is show below:
+```bash
+{
+  "oauth": {
+  	"access_token": "", #oauth access token
+  	"refresh_token": "", #oauth refresh token
+  	"expiration": "", #expiration date + time
+  	"scope": "", #oauth scope
+  	"token_type": "" #Bearer
+  },
+  "jwt": {
+    "token": "", #Current JWT
+    "refresh_token": "" #used when JWT is refreshable
+  },
+  "project": {
+    "name": "", #NLZ project name
+    "aws_region": "" #AWS Region
+  }
 }
 ```
 

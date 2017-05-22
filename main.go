@@ -4,10 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	flags "github.com/jessevdk/go-flags"
 	"github.com/nerdalize/nerd/command"
 	"github.com/nerdalize/nerd/nerd"
-	"github.com/nerdalize/nerd/nerd/conf"
 
 	"github.com/mitchellh/cli"
 )
@@ -19,13 +17,8 @@ var (
 )
 
 func init() {
-	opts := new(command.ConfOpts)
-	_, err := flags.NewParser(opts, flags.None).ParseArgs(os.Args[1:])
-	if err == nil {
-		conf.SetLocation(opts.ConfigFile)
-		nerd.SetupLogging(opts.VerboseOutput, opts.JSONOutput)
-		nerd.VersionMessage(version)
-	}
+	nerd.SetupLogging()
+	nerd.VersionMessage(version)
 }
 
 func main() {

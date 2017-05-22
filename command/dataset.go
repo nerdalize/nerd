@@ -1,10 +1,8 @@
 package command
 
 import (
-	"os"
-
-	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	"github.com/pkg/errors"
 )
 
 //Dataset command
@@ -14,19 +12,15 @@ type Dataset struct {
 
 //DatasetFactory returns a factory method for the join command
 func DatasetFactory() (cli.Command, error) {
-	cmd := &Dataset{
-		command: &command{
-			help:     `upload and download datasets for tasks to use`,
-			synopsis: "upload and download datasets for tasks to use",
-			parser:   flags.NewNamedParser("nerd dataset <subcommand>", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
+	comm, err := newCommand("nerd dataset <subcommand>", "upload and download datasets for tasks to use", "", nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create command")
 	}
-
+	cmd := &Dataset{
+		command: comm,
+	}
 	cmd.runFunc = cmd.DoRun
+
 	return cmd, nil
 }
 

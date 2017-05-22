@@ -5,11 +5,9 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
 	"github.com/nerdalize/nerd/nerd/conf"
@@ -21,53 +19,30 @@ const (
 	authorizeEndpoint = "o/authorize"
 )
 
-//LoginOpts describes command options
-type LoginOpts struct {
-	NerdOpts
-}
-
 //Login command
 type Login struct {
 	*command
-
-	opts   *LoginOpts
-	parser *flags.Parser
 }
 
 //LoginFactory returns a factory method for the join command
 func LoginFactory() (cli.Command, error) {
-	cmd := &Login{
-		command: &command{
-			help:     "",
-			synopsis: "start a new authorized session",
-			parser:   flags.NewNamedParser("nerd login", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
-
-		opts: &LoginOpts{},
-	}
-
-	cmd.runFunc = cmd.DoRun
-	_, err := cmd.command.parser.AddGroup("options", "options", cmd.opts)
+	comm, err := newCommand("nerd login", "start a new authorized session", "", nil)
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "failed to create command")
 	}
+	cmd := &Login{
+		command: comm,
+	}
+	cmd.runFunc = cmd.DoRun
 
 	return cmd, nil
 }
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *Login) DoRun(args []string) error {
-	c, err := conf.Read()
+	authbase, err := url.Parse(cmd.config.Auth.APIEndpoint)
 	if err != nil {
-		HandleError(errors.Wrap(err, "failed to read config"))
-	}
-	authbase, err := url.Parse(c.Auth.APIEndpoint)
-	if err != nil {
-		HandleError(errors.Wrapf(err, "auth endpoint '%v' is not a valid URL", c.Auth.APIEndpoint))
+		HandleError(errors.Wrapf(err, "auth endpoint '%v' is not a valid URL", cmd.config.Auth.APIEndpoint))
 	}
 	authOpsClient := v1auth.NewOpsClient(v1auth.OpsClientConfig{
 		Base:   authbase,
@@ -76,12 +51,12 @@ func (cmd *Login) DoRun(args []string) error {
 	randomState := randomString(32)
 	doneCh := make(chan response)
 	svr := &http.Server{
-		Addr: c.Auth.OAuthLocalServer,
+		Addr: cmd.config.Auth.OAuthLocalServer,
 	}
 	defer svr.Close()
-	go spawnServer(svr, c.Auth, randomState, doneCh)
+	go spawnServer(svr, cmd.config.Auth, randomState, doneCh)
 
-	err = open.Run(fmt.Sprintf("http://%s/oauth?state=%s", c.Auth.OAuthLocalServer, randomState))
+	err = open.Run(fmt.Sprintf("http://%s/oauth?state=%s", cmd.config.Auth.OAuthLocalServer, randomState))
 	if err != nil {
 		HandleError(errors.Wrap(err, "Failed to open browser window. Please see github.com/nerdalize/nerd for alternative ways of authenticating."))
 	}
@@ -91,16 +66,17 @@ func (cmd *Login) DoRun(args []string) error {
 		HandleError(errors.Wrap(oauthResponse.err, "failed to do oauth login"))
 	}
 
-	out, err := authOpsClient.GetOAuthCredentials(oauthResponse.code, c.Auth.ClientID, fmt.Sprintf("http://%s/oauth/callback", c.Auth.OAuthLocalServer))
+	out, err := authOpsClient.GetOAuthCredentials(oauthResponse.code, cmd.config.Auth.ClientID, fmt.Sprintf("http://%s/oauth/callback", cmd.config.Auth.OAuthLocalServer))
 	if err != nil {
 		HandleError(errors.Wrap(err, "failed to get oauth credentials"))
 	}
 
 	expiration := time.Unix(time.Now().Unix()+int64(out.ExpiresIn), 0)
-	err = conf.WriteOAuth(out.AccessToken, out.RefreshToken, expiration, out.Scope, out.TokenType)
+	err = cmd.session.WriteOAuth(out.AccessToken, out.RefreshToken, expiration, out.Scope, out.TokenType)
 	if err != nil {
 		HandleError(errors.Wrap(err, "failed to write oauth tokens to config"))
 	}
+	cmd.ui.Info("Successful login. You can now select a project using 'nerd project set'.")
 	return nil
 }
 
