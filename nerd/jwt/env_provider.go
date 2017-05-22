@@ -13,7 +13,7 @@ const (
 	//NerdTokenEnvVar is the environment variable used to set the JWT
 	NerdTokenEnvVar = "NERD_JWT"
 	//NerdTokenEnvVar is the environment variable used for the JWT refresh secret
-	NerdSecretEnvVar = "NERD_JWT_SECRET"
+	NerdSecretEnvVar = "NERD_JWT_REFRESH_TOKEN"
 )
 
 //EnvProvider provides nerdalize credentials from the `credentials.NerdTokenEnvVar` environment variable.
