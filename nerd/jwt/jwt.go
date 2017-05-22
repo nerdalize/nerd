@@ -67,3 +67,15 @@ func ParseECDSAPublicKeyFromPemBytes(pemb []byte) (*ecdsa.PublicKey, error) {
 		return nil, errors.New("pem bytes doesn't contain a ECDSA public key")
 	}
 }
+
+func isValid(jwt string, pub *ecdsa.PublicKey) error {
+	claims, err := DecodeTokenWithKey(jwt, pub)
+	if err != nil {
+		return errors.Wrapf(err, "failed to decode jwt '%v'", jwt)
+	}
+	err = claims.Valid()
+	if err != nil {
+		return errors.Wrapf(err, "nerd jwt '%v' is invalid", jwt)
+	}
+	return nil
+}

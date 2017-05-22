@@ -47,10 +47,14 @@ func NewClient(ui cli.Ui, c *conf.Config, session *conf.Session) (*v1batch.Clien
 		Base:   authbase,
 		Logger: logrus.StandardLogger(),
 	})
+	authTokenClient := v1auth.NewTokenClient(v1auth.TokenClientConfig{
+		Base:   authbase,
+		Logger: logrus.StandardLogger(),
+	})
 	return v1batch.NewClient(v1batch.ClientConfig{
 		JWTProvider: v1batch.NewChainedJWTProvider(
-			jwt.NewEnvProvider(key),
-			jwt.NewConfigProvider(key, session),
+			jwt.NewEnvProvider(key, session, authTokenClient),
+			jwt.NewConfigProvider(key, session, authTokenClient),
 			jwt.NewAuthAPIProvider(key, session, v1auth.NewClient(v1auth.ClientConfig{
 				Base:               authbase,
 				Logger:             logrus.StandardLogger(),

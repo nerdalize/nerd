@@ -47,9 +47,5 @@ func (b *ProviderBasis) SetExpirationFromJWT(jwt string) error {
 
 	b.AlwaysValid = claims.ExpiresAt == 0 // if unset
 	b.SetExpiration(time.Unix(claims.ExpiresAt, 0))
-	err = claims.Valid()
-	if err != nil {
-		return errors.Wrapf(err, "nerd jwt '%v' is invalid", jwt)
-	}
 	return nil
 }
