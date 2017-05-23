@@ -1,15 +1,11 @@
 package command
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
 	"net/url"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
-	v1payload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
 	"github.com/nerdalize/nerd/nerd/oauth"
 	"github.com/pkg/errors"
 )
@@ -53,25 +49,9 @@ func (cmd *ProjectList) DoRun(args []string) (err error) {
 	if err != nil {
 		return errors.Wrap(err, "failed to list projects")
 	}
-	cmd.outputter.Output(&projectListDecorator{
-		list: projects,
-	})
+	pretty := "{{range $i, $x := $.Projects}}* {{$x.Code}}: {{$x.ID}}\n{{end}}"
+	raw := "{{range $i, $x := $.Projects}}{{$x.ID}}\t{{$x.Code}}\t{{$x.URL}}\n{{end}}"
+	cmd.outputter.Output(NewDefaultDecorator(projects, pretty, raw))
 
-	return nil
-}
-
-type projectListDecorator struct {
-	list *v1payload.ListProjectsOutput
-}
-
-func (d *projectListDecorator) JSON(outw, errw io.Writer) error {
-	enc := json.NewEncoder(outw)
-	return enc.Encode(d.list)
-}
-
-func (d *projectListDecorator) Text(outw, errw io.Writer) error {
-	for _, project := range d.list.Projects {
-		fmt.Fprintf(outw, "* %v: %v\n", project.Code, project.ID)
-	}
 	return nil
 }

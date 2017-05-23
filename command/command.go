@@ -177,10 +177,12 @@ func (c *command) setOutput(output string) {
 	switch output {
 	case "json":
 		c.outputter.SetOutputType(OutputTypeJSON)
-	case "text":
+	case "raw":
+		c.outputter.SetOutputType(OutputTypeRaw)
+	case "pretty":
 		fallthrough
 	default:
-		c.outputter.SetOutputType(OutputTypeText)
+		c.outputter.SetOutputType(OutputTypePretty)
 	}
 }
 
