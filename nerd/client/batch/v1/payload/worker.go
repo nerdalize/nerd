@@ -23,8 +23,7 @@ type StopWorkerOutput struct{}
 //WorkerSummary is a smaller representation of a queue
 type WorkerSummary struct {
 	ProjectID string `json:"project_id"`
-	WorkerID  string `json:"queue_id"`
-	WorkerURL string `json:"queue_url"`
+	WorkerID  string `json:"worker_id"`
 }
 
 //ListWorkersInput is input for queue creation
