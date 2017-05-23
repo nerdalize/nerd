@@ -2,8 +2,12 @@ package command
 
 import (
 	"fmt"
+	"net/url"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
+	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
+	"github.com/nerdalize/nerd/nerd/oauth"
 	"github.com/pkg/errors"
 )
 
@@ -28,5 +32,32 @@ func WorkerStartFactory() (cli.Command, error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *WorkerStart) DoRun(args []string) (err error) {
-	return fmt.Errorf("not yet implemented")
+	authbase, err := url.Parse(cmd.config.Auth.APIEndpoint)
+	if err != nil {
+		HandleError(errors.Wrapf(err, "auth endpoint '%v' is not a valid URL", cmd.config.Auth.APIEndpoint))
+	}
+	authOpsClient := v1auth.NewOpsClient(v1auth.OpsClientConfig{
+		Base:   authbase,
+		Logger: logrus.StandardLogger(),
+	})
+	authclient := v1auth.NewClient(v1auth.ClientConfig{
+		Base:               authbase,
+		Logger:             logrus.StandardLogger(),
+		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.ClientID, cmd.session),
+	})
+
+	ss, err := cmd.session.Read()
+	if err != nil {
+		HandleError(err)
+	}
+	workerJWT, err := authclient.GetWorkerJWT(ss.Project.Name, v1auth.NCEScope)
+	if err != nil {
+		HandleError(errors.Wrap(err, "failed to get worker JWT"))
+	}
+
+	fmt.Println(workerJWT)
+
+	// TODO: Create acatual worker on Universe and pass worker JWT
+
+	return nil
 }
