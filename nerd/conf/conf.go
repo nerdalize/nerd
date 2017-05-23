@@ -16,9 +16,9 @@ import (
 
 //Config is the structure that describes how the config file looks.
 type Config struct {
-	Auth            AuthConfig `json:"auth"`
-	EnableLogging   bool       `json:"enable_logging"`
-	NerdAPIEndpoint string     `json:"nerd_api_endpoint"`
+	Auth            AuthConfig    `json:"auth"`
+	Logging         LoggingConfig `json:"logging"`
+	NerdAPIEndpoint string        `json:"nerd_api_endpoint"`
 }
 
 //AuthConfig contains config details with respect to the authentication server.
@@ -28,6 +28,11 @@ type AuthConfig struct {
 	ClientID         string `json:"client_id"`
 	OAuthSuccessURL  string `json:"oauth_success_url"`
 	OAuthLocalServer string `json:"oauth_localserver"`
+}
+
+type LoggingConfig struct {
+	Enabled      bool   `json:"enabled"`
+	FileLocation string `json:"file_location"`
 }
 
 //Defaults provides the default for when the config file misses certain fields.
@@ -44,7 +49,10 @@ kyvc4LwKZ8pez5KYY76H1ox+AfUlWOEq+bExypcFfEIrJkf/JXa7jpzkOWBDF9Sa
 OWbQHMK+vvUXieCJvCc9Vj084ABwLBgX
 -----END PUBLIC KEY-----`,
 		},
-		EnableLogging:   false,
+		Logging: LoggingConfig{
+			Enabled:      false,
+			FileLocation: "~/.nerd/log",
+		},
 		NerdAPIEndpoint: "https://batch.nerdalize.com/v1",
 	}
 }

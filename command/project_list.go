@@ -1,12 +1,15 @@
 package command
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/url"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
+	v1payload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
 	"github.com/nerdalize/nerd/nerd/oauth"
 	"github.com/pkg/errors"
 )
@@ -34,7 +37,7 @@ func ProjectListFactory() (cli.Command, error) {
 func (cmd *ProjectList) DoRun(args []string) (err error) {
 	authbase, err := url.Parse(cmd.config.Auth.APIEndpoint)
 	if err != nil {
-		HandleError(errors.Wrapf(err, "auth endpoint '%v' is not a valid URL", cmd.config.Auth.APIEndpoint))
+		return errors.Wrapf(err, "auth endpoint '%v' is not a valid URL", cmd.config.Auth.APIEndpoint)
 	}
 	authOpsClient := v1auth.NewOpsClient(v1auth.OpsClientConfig{
 		Base:   authbase,
@@ -48,11 +51,27 @@ func (cmd *ProjectList) DoRun(args []string) (err error) {
 
 	projects, err := client.ListProjects()
 	if err != nil {
-		HandleError(err)
+		return errors.Wrap(err, "failed to list projects")
 	}
-	for _, project := range projects.Projects {
-		fmt.Printf("* %v: %v\n", project.Code, project.ID)
-	}
+	cmd.outputter.Output(&projectListDecorator{
+		list: projects,
+	})
 
+	return nil
+}
+
+type projectListDecorator struct {
+	list *v1payload.ListProjectsOutput
+}
+
+func (d *projectListDecorator) JSON(outw, errw io.Writer) error {
+	enc := json.NewEncoder(outw)
+	return enc.Encode(d.list)
+}
+
+func (d *projectListDecorator) Text(outw, errw io.Writer) error {
+	for _, project := range d.list.Projects {
+		fmt.Fprintf(outw, "* %v: %v\n", project.Code, project.ID)
+	}
 	return nil
 }
