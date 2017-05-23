@@ -55,7 +55,7 @@ func (e Error) Format(s fmt.State, verb rune) {
 //Logger is the log interface used by clients in the client package.
 type Logger interface {
 	Debugf(format string, args ...interface{})
-	Error(args ...interface{})
+	WriteError(err error)
 }
 
 //LogRequest is a util to log an HTTP request.
@@ -68,7 +68,7 @@ func LogRequest(req *http.Request, logger Logger) {
 	if err == nil {
 		logger.Debugf("HTTP Request:\n%s", txt)
 	} else {
-		logger.Error("Failed to log HTTP request")
+		logger.WriteError(fmt.Errorf("Failed to log HTTP request"))
 	}
 }
 
@@ -82,6 +82,6 @@ func LogResponse(res *http.Response, logger Logger) {
 	if err == nil {
 		logger.Debugf("HTTP Response:\n%s", txt)
 	} else {
-		logger.Error("Failed to log HTTP response")
+		logger.WriteError(fmt.Errorf("Failed to log HTTP response"))
 	}
 }

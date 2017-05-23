@@ -69,7 +69,7 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	}
 
 	// Clients
-	batchclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
+	batchclient, err := NewClient(cmd.ui, cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
 		HandleError(err)
 	}
@@ -119,7 +119,7 @@ func (cmd *Download) DoRun(args []string) (err error) {
 			if err != nil {
 				HandleError(err)
 			}
-			go ProgressBar(size, progressCh, progressBarDoneCh)
+			go ProgressBar(cmd.outputter.ErrW(), size, progressCh, progressBarDoneCh)
 			downloadConf.ProgressCh = progressCh
 			err = v1datatransfer.Download(context.Background(), downloadConf)
 			if err != nil {

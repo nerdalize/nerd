@@ -3,7 +3,6 @@ package command
 import (
 	"net/url"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/command/format"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
@@ -38,11 +37,11 @@ func (cmd *ProjectList) DoRun(args []string) (err error) {
 	}
 	authOpsClient := v1auth.NewOpsClient(v1auth.OpsClientConfig{
 		Base:   authbase,
-		Logger: logrus.StandardLogger(),
+		Logger: cmd.outputter,
 	})
 	client := v1auth.NewClient(v1auth.ClientConfig{
 		Base:               authbase,
-		Logger:             logrus.StandardLogger(),
+		Logger:             cmd.outputter,
 		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.ClientID, cmd.session),
 	})
 

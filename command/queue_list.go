@@ -29,7 +29,7 @@ func QueueListFactory() (cli.Command, error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *QueueList) DoRun(args []string) (err error) {
-	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
+	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
 		HandleError(err)
 	}

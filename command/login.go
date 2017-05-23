@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
 	"github.com/nerdalize/nerd/nerd/conf"
@@ -46,7 +45,7 @@ func (cmd *Login) DoRun(args []string) error {
 	}
 	authOpsClient := v1auth.NewOpsClient(v1auth.OpsClientConfig{
 		Base:   authbase,
-		Logger: logrus.StandardLogger(),
+		Logger: cmd.outputter,
 	})
 	randomState := randomString(32)
 	doneCh := make(chan response)
