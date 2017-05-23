@@ -12,6 +12,7 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/nerdalize/nerd/command/format"
 	"github.com/nerdalize/nerd/nerd/conf"
 )
 
@@ -26,7 +27,7 @@ func newCommand(title, synopsis, help string, opts interface{}) (*command, error
 			Reader: os.Stdin,
 			Writer: os.Stderr,
 		},
-		outputter: NewOutputter(),
+		outputter: format.NewOutputter(),
 	}
 	if opts != nil {
 		_, err := cmd.parser.AddGroup("options", "options", opts)
@@ -57,7 +58,7 @@ type command struct {
 	parser     *flags.Parser //option parser that will be used when parsing args
 	ui         cli.Ui
 	config     *conf.Config
-	outputter  *Outputter
+	outputter  *format.Outputter
 	jsonOutput bool
 	session    *conf.Session
 	runFunc    func(args []string) error
@@ -176,13 +177,13 @@ func (c *command) setVerbose(verbose bool) {
 func (c *command) setOutput(output string) {
 	switch output {
 	case "json":
-		c.outputter.SetOutputType(OutputTypeJSON)
+		c.outputter.SetOutputType(format.OutputTypeJSON)
 	case "raw":
-		c.outputter.SetOutputType(OutputTypeRaw)
+		c.outputter.SetOutputType(format.OutputTypeRaw)
 	case "pretty":
 		fallthrough
 	default:
-		c.outputter.SetOutputType(OutputTypePretty)
+		c.outputter.SetOutputType(format.OutputTypePretty)
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/command/format"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
 	"github.com/nerdalize/nerd/nerd/oauth"
 	"github.com/pkg/errors"
@@ -49,9 +50,14 @@ func (cmd *ProjectList) DoRun(args []string) (err error) {
 	if err != nil {
 		return errors.Wrap(err, "failed to list projects")
 	}
-	pretty := "{{range $i, $x := $.Projects}}* {{$x.Code}}: {{$x.ID}}\n{{end}}"
+	header := "ID\tCode"
+	pretty := "{{range $i, $x := $.Projects}}{{$x.ID}}\t{{$x.Code}}\n{{end}}"
 	raw := "{{range $i, $x := $.Projects}}{{$x.ID}}\t{{$x.Code}}\t{{$x.URL}}\n{{end}}"
-	cmd.outputter.Output(NewDefaultDecorator(projects, pretty, raw))
+	cmd.outputter.Output(format.DecMap{
+		format.OutputTypePretty: format.TableDecorator(projects, header, pretty),
+		format.OutputTypeRaw:    format.TmplDecorator(projects, raw),
+		format.OutputTypeJSON:   format.JSONDecorator(projects.Projects),
+	})
 
 	return nil
 }
