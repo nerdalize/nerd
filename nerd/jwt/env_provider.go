@@ -12,19 +12,19 @@ import (
 const (
 	//NerdTokenEnvVar is the environment variable used to set the JWT
 	NerdTokenEnvVar = "NERD_JWT"
-	//NerdTokenEnvVar is the environment variable used for the JWT refresh secret
+	//NerdSecretEnvVar is the environment variable used for the JWT refresh secret
 	NerdSecretEnvVar = "NERD_JWT_REFRESH_TOKEN"
 )
 
 //EnvProvider provides nerdalize credentials from the `credentials.NerdTokenEnvVar` environment variable.
 type EnvProvider struct {
 	*ProviderBasis
-	Client  *v1auth.TokenClient
+	Client  v1auth.TokenClientInterface
 	Session conf.SessionInterface
 }
 
 //NewEnvProvider creates a new EnvProvider provider.
-func NewEnvProvider(pub *ecdsa.PublicKey, session conf.SessionInterface, client *v1auth.TokenClient) *EnvProvider {
+func NewEnvProvider(pub *ecdsa.PublicKey, session conf.SessionInterface, client v1auth.TokenClientInterface) *EnvProvider {
 	return &EnvProvider{
 		ProviderBasis: &ProviderBasis{
 			ExpireWindow: DefaultExpireWindow,
@@ -72,10 +72,6 @@ func (e *EnvProvider) refresh(jwt, secret string) (string, error) {
 	err = e.SetExpirationFromJWT(out.Token)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to set expiration")
-	}
-	err = e.Session.WriteJWT(out.Token, secret)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to write jwt and secret to config")
 	}
 	return out.Token, nil
 }

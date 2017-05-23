@@ -12,11 +12,11 @@ import (
 type ConfigProvider struct {
 	*ProviderBasis
 	Session conf.SessionInterface
-	Client  *v1auth.TokenClient
+	Client  v1auth.TokenClientInterface
 }
 
 //NewConfigProvider creates a new ConfigProvider provider.
-func NewConfigProvider(pub *ecdsa.PublicKey, session conf.SessionInterface, client *v1auth.TokenClient) *ConfigProvider {
+func NewConfigProvider(pub *ecdsa.PublicKey, session conf.SessionInterface, client v1auth.TokenClientInterface) *ConfigProvider {
 	return &ConfigProvider{
 		ProviderBasis: &ProviderBasis{
 			ExpireWindow: DefaultExpireWindow,
@@ -35,7 +35,7 @@ func (e *ConfigProvider) Retrieve() (string, error) {
 	}
 	jwt := ss.JWT.Token
 	if jwt == "" {
-		return "", errors.New("nerd_token is not set in config")
+		return "", errors.New(".jwt.token is not set in config")
 	}
 	err = e.SetExpirationFromJWT(jwt)
 	if err != nil {

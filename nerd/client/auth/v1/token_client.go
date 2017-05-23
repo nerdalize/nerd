@@ -16,6 +16,14 @@ type TokenClient struct {
 	TokenClientConfig
 }
 
+var _ TokenClientInterface = &TokenClient{}
+
+//TokenClientInterface is an interface so client calls can be mocked.
+type TokenClientInterface interface {
+	RefreshJWT(projectID, jwt, secret string) (output *v1payload.RefreshWorkerJWTOutput, err error)
+	RevokeJWT(projectID, jwt, secret string) (output *v1payload.RefreshWorkerJWTOutput, err error)
+}
+
 //TokenClientConfig is the config for TokenClient
 type TokenClientConfig struct {
 	Doer   Doer

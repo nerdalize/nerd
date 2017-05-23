@@ -17,6 +17,14 @@ type OpsClient struct {
 	OpsClientConfig
 }
 
+var _ OpsClientInterface = &OpsClient{}
+
+//OpsClientInterface is an interface so client calls can be mocked.
+type OpsClientInterface interface {
+	GetOAuthCredentials(code, clientID, localServerURL string) (output *v1payload.GetOAuthCredentialsOutput, err error)
+	RefreshOAuthCredentials(refreshToken, clientID string) (output *v1payload.RefreshOAuthCredentialsOutput, err error)
+}
+
 //OpsClientConfig is the config for OpsClient
 type OpsClientConfig struct {
 	Doer   Doer
