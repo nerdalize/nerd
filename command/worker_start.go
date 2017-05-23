@@ -1,11 +1,12 @@
 package command
 
 import (
-	"fmt"
 	"os"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/nerd/conf"
 )
 
 //WorkerStartOpts describes command options
@@ -47,5 +48,21 @@ func WorkerStartFactory() (cli.Command, error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *WorkerStart) DoRun(args []string) (err error) {
-	return fmt.Errorf("not yet implemented")
+	config, err := conf.Read()
+	if err != nil {
+		HandleError(err)
+	}
+
+	bclient, err := NewClient(cmd.ui)
+	if err != nil {
+		HandleError(err)
+	}
+
+	worker, err := bclient.StartWorker(config.CurrentProject.Name)
+	if err != nil {
+		HandleError(err)
+	}
+
+	logrus.Infof("Worker Started: %v", worker)
+	return nil
 }

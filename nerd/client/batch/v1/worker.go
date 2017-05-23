@@ -10,9 +10,10 @@ import (
 type ClientWorkerInterface interface {
 	StartWorker(projectID string) (output *v1payload.StartWorkerOutput, err error)
 	StopWorker(projectID, workerID string) (output *v1payload.StopWorkerOutput, err error)
+	ListWorkers(projectID string) (output *v1payload.ListWorkersOutput, err error)
 }
 
-//StartWorker will create queue
+//StartWorker will create worker
 func (c *Client) StartWorker(projectID string) (output *v1payload.StartWorkerOutput, err error) {
 	output = &v1payload.StartWorkerOutput{}
 	input := &v1payload.StartWorkerInput{
@@ -22,7 +23,7 @@ func (c *Client) StartWorker(projectID string) (output *v1payload.StartWorkerOut
 	return output, c.doRequest(http.MethodPost, createPath(projectID, workersEndpoint), input, output)
 }
 
-//StopWorker will delete queue a queue with the provided id
+//StopWorker will delete worker a worker with the provided id
 func (c *Client) StopWorker(projectID, workerID string) (output *v1payload.StopWorkerOutput, err error) {
 	output = &v1payload.StopWorkerOutput{}
 	input := &v1payload.StopWorkerInput{
@@ -31,4 +32,14 @@ func (c *Client) StopWorker(projectID, workerID string) (output *v1payload.StopW
 	}
 
 	return output, c.doRequest(http.MethodDelete, createPath(projectID, workersEndpoint, workerID), input, output)
+}
+
+// ListWorkers will return all tasks in a worker
+func (c *Client) ListWorkers(projectID string) (output *v1payload.ListWorkersOutput, err error) {
+	output = &v1payload.ListWorkersOutput{}
+	input := &v1payload.ListWorkersInput{
+		ProjectID: projectID,
+	}
+
+	return output, c.doRequest(http.MethodGet, createPath(projectID, workersEndpoint), input, output)
 }

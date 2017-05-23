@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/nerd/conf"
 )
 
 //WorkerStopOpts describes command options
@@ -26,7 +28,7 @@ func WorkerStopFactory() (cli.Command, error) {
 		command: &command{
 			help:     "",
 			synopsis: "stop a worker from providing compute capacity",
-			parser:   flags.NewNamedParser("nerd worker stop", flags.Default),
+			parser:   flags.NewNamedParser("nerd worker stop <worker_id>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
 				Writer: os.Stderr,
@@ -47,5 +49,25 @@ func WorkerStopFactory() (cli.Command, error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *WorkerStop) DoRun(args []string) (err error) {
-	return fmt.Errorf("not yet implemented")
+	if len(args) < 1 {
+		return fmt.Errorf("not enough arguments, see --help")
+	}
+
+	config, err := conf.Read()
+	if err != nil {
+		HandleError(err)
+	}
+
+	bclient, err := NewClient(cmd.ui)
+	if err != nil {
+		HandleError(err)
+	}
+
+	worker, err := bclient.StopWorker(config.CurrentProject.Name, args[0])
+	if err != nil {
+		HandleError(err)
+	}
+
+	logrus.Infof("Worker stopped: %v", worker)
+	return nil
 }

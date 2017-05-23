@@ -36,6 +36,7 @@ func main() {
 		"worker":           command.WorkerFactory,
 		"worker start":     command.WorkerStartFactory,
 		"worker stop":      command.WorkerStopFactory,
+		"worker list":      command.WorkerListFactory,
 		"worker work":      command.WorkerWorkFactory,
 		"dataset":          command.DatasetFactory,
 		"dataset upload":   command.DatasetUploadFactory,

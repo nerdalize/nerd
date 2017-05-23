@@ -19,3 +19,20 @@ type StopWorkerInput struct {
 
 //StopWorkerOutput is output for queue creation
 type StopWorkerOutput struct{}
+
+//WorkerSummary is a smaller representation of a queue
+type WorkerSummary struct {
+	ProjectID string `json:"project_id"`
+	WorkerID  string `json:"queue_id"`
+	WorkerURL string `json:"queue_url"`
+}
+
+//ListWorkersInput is input for queue creation
+type ListWorkersInput struct {
+	ProjectID string `json:"project_id" valid:"required"`
+}
+
+//ListWorkersOutput is output for queue creation
+type ListWorkersOutput struct {
+	Workers []*WorkerSummary
+}
