@@ -3,6 +3,7 @@ package v1payload
 //StartWorkerInput is input for queue creation
 type StartWorkerInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
+	Image     string `json:"image" valid:"required"`
 }
 
 //StartWorkerOutput is output for queue creation
