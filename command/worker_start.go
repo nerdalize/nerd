@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/Sirupsen/logrus"
@@ -27,7 +28,7 @@ func WorkerStartFactory() (cli.Command, error) {
 		command: &command{
 			help:     "",
 			synopsis: "provision a new worker to provide compute",
-			parser:   flags.NewNamedParser("nerd worker start", flags.Default),
+			parser:   flags.NewNamedParser("nerd worker start <image>", flags.Default),
 			ui: &cli.BasicUi{
 				Reader: os.Stdin,
 				Writer: os.Stderr,
@@ -48,6 +49,10 @@ func WorkerStartFactory() (cli.Command, error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *WorkerStart) DoRun(args []string) (err error) {
+	if len(args) < 1 {
+		return fmt.Errorf("not enough arguments, see --help")
+	}
+
 	config, err := conf.Read()
 	if err != nil {
 		HandleError(err)
@@ -58,7 +63,7 @@ func (cmd *WorkerStart) DoRun(args []string) (err error) {
 		HandleError(err)
 	}
 
-	worker, err := bclient.StartWorker(config.CurrentProject.Name)
+	worker, err := bclient.StartWorker(config.CurrentProject.Name, args[0])
 	if err != nil {
 		HandleError(err)
 	}
