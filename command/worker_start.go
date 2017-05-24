@@ -95,6 +95,7 @@ func (cmd *WorkerStart) DoRun(args []string) (err error) {
 		HandleError(errors.Wrap(err, "failed to marshal config"))
 	}
 	wenv[EnvConfigJSON] = string(configJSON)
+	wenv[EnvNerdProject] = ss.Project.Name
 
 	worker, err := bclient.StartWorker(ss.Project.Name, args[0], args[1], wenv)
 	if err != nil {

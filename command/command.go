@@ -15,7 +15,8 @@ import (
 )
 
 const (
-	EnvConfigJSON = "NERD_CONFIG_JSON"
+	EnvConfigJSON  = "NERD_CONFIG_JSON"
+	EnvNerdProject = "NERD_PROJECT"
 )
 
 var errShowHelp = errors.New("show error")
@@ -158,6 +159,9 @@ func (c *command) setSession(loc string) {
 		f.Close()
 	}
 	c.session = conf.NewSession(loc)
+	if proj := os.Getenv(EnvNerdProject); proj != "" {
+		c.session.WriteProject(proj, conf.DefaultAWSRegion)
+	}
 }
 
 //setVerbose sets verbose output formatting
