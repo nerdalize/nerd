@@ -6,15 +6,6 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
-	// <<<<<<< HEAD
-	// 	"github.com/Sirupsen/logrus"
-	// 	"github.com/jessevdk/go-flags"
-	// 	"github.com/mitchellh/cli"
-	// 	"github.com/nerdalize/nerd/nerd/conf"
-	// =======
-	// 	"github.com/mitchellh/cli"
-	// 	"github.com/pkg/errors"
-	// >>>>>>> master
 )
 
 //WorkerStop command
