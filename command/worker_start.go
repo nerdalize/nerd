@@ -8,6 +8,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
+	"github.com/nerdalize/nerd/nerd/jwt"
 	"github.com/nerdalize/nerd/nerd/oauth"
 	"github.com/pkg/errors"
 )
@@ -86,8 +87,8 @@ func (cmd *WorkerStart) DoRun(args []string) (err error) {
 		wenv[split[0]] = split[1]
 	}
 
-	wenv["NERD_WORKER_TOKEN"] = workerJWT.Token
-	wenv["NERD_WORKER_SECRET"] = workerJWT.Secret
+	wenv[jwt.NerdTokenEnvVar] = workerJWT.Token
+	wenv[jwt.NerdSecretEnvVar] = workerJWT.Secret
 
 	worker, err := bclient.StartWorker(ss.Project.Name, args[0], wenv)
 	if err != nil {
