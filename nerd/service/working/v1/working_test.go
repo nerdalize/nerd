@@ -77,7 +77,7 @@ func TestContextDone(t *testing.T) {
 	bclient := &mClient{}
 	qops := &mQueueOps{}
 
-	w := v1working.NewWorker(logs, bclient, qops, "project-x", "queue-y", "false", []string{}, v1working.DefaultConf())
+	w := v1working.NewWorker(logs, bclient, qops, "project-x", "queue-y", "false", []string{}, nil, v1working.DefaultConf())
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	w.Start(ctx)
@@ -105,7 +105,7 @@ func TestRunReceivingFailingTask(t *testing.T) {
 
 	qops := &mQueueOps{}
 
-	w := v1working.NewWorker(logs, bclient, qops, "project-x", "queue-y", "false", []string{}, v1working.DefaultConf())
+	w := v1working.NewWorker(logs, bclient, qops, "project-x", "queue-y", "false", []string{}, nil, v1working.DefaultConf())
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	w.Start(ctx)
@@ -140,7 +140,7 @@ func TestRunReceivingSuccessTask(t *testing.T) {
 	conf := v1working.DefaultConf()
 	conf.HeartbeatInterval = time.Second
 
-	w := v1working.NewWorker(logs, bclient, qops, "project-x", "queue-y", "sleep", []string{}, conf)
+	w := v1working.NewWorker(logs, bclient, qops, "project-x", "queue-y", "sleep", []string{}, nil, conf)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	go w.Start(ctx)
 	defer cancel()
