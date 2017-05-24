@@ -3,27 +3,37 @@ package command
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
+	"github.com/nerdalize/nerd/nerd/jwt"
 	"github.com/nerdalize/nerd/nerd/oauth"
 	"github.com/pkg/errors"
 )
 
+//WorkerStartOpts describes command options
+type WorkerStartOpts struct {
+	Env []string `long:"env" short:"e" description:"environment variables"`
+}
+
 //WorkerStart command
 type WorkerStart struct {
 	*command
+	opts *WorkerStartOpts
 }
 
 //WorkerStartFactory returns a factory method for the join command
 func WorkerStartFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd worker start <image>", "provision a new worker to provide compute", "", nil)
+	opts := &WorkerStartOpts{}
+	comm, err := newCommand("nerd worker start <image>", "provision a new worker to provide compute", "", opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
 	cmd := &WorkerStart{
 		command: comm,
+		opts:    opts,
 	}
 	cmd.runFunc = cmd.DoRun
 
@@ -68,9 +78,19 @@ func (cmd *WorkerStart) DoRun(args []string) (err error) {
 		HandleError(err)
 	}
 
-	_ = workerJWT
-	//@TODO send over workerJWT
-	worker, err := bclient.StartWorker(ss.Project.Name, args[0])
+	wenv := map[string]string{}
+	for _, l := range cmd.opts.Env {
+		split := strings.SplitN(l, "=", 2)
+		if len(split) < 2 {
+			HandleError(fmt.Errorf("invalid environment variable format, expected 'FOO=bar' fromat, got: %v", l))
+		}
+		wenv[split[0]] = split[1]
+	}
+
+	wenv[jwt.NerdTokenEnvVar] = workerJWT.Token
+	wenv[jwt.NerdSecretEnvVar] = workerJWT.Secret
+
+	worker, err := bclient.StartWorker(ss.Project.Name, args[0], wenv)
 	if err != nil {
 		HandleError(err)
 	}
