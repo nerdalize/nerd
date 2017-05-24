@@ -17,17 +17,19 @@ const (
 type AuthAPIProvider struct {
 	*ProviderBasis
 
-	Client *v1auth.Client
+	Client  *v1auth.Client
+	Session conf.SessionInterface
 }
 
 //NewAuthAPIProvider creates a new AuthAPIProvider provider.
-func NewAuthAPIProvider(pub *ecdsa.PublicKey, c *v1auth.Client) *AuthAPIProvider {
+func NewAuthAPIProvider(pub *ecdsa.PublicKey, session conf.SessionInterface, c *v1auth.Client) *AuthAPIProvider {
 	return &AuthAPIProvider{
 		ProviderBasis: &ProviderBasis{
 			ExpireWindow: DefaultExpireWindow,
 			Pub:          pub,
 		},
-		Client: c,
+		Client:  c,
+		Session: session,
 	}
 }
 
@@ -41,7 +43,11 @@ func (p *AuthAPIProvider) Retrieve() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "failed to set expiration")
 	}
-	err = conf.WriteJWT(out.Token, "")
+	err = isValid(out.Token, p.Pub)
+	if err != nil {
+		return "", err
+	}
+	err = p.Session.WriteJWT(out.Token, "")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to write nerd jwt to config")
 	}

@@ -2,47 +2,27 @@ package command
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/conf"
+	"github.com/pkg/errors"
 )
-
-//QueueDeleteOpts describes command options
-type QueueDeleteOpts struct {
-	NerdOpts
-}
 
 //QueueDelete command
 type QueueDelete struct {
 	*command
-	opts   *QueueDeleteOpts
-	parser *flags.Parser
 }
 
 //QueueDeleteFactory returns a factory method for the join command
 func QueueDeleteFactory() (cli.Command, error) {
-	cmd := &QueueDelete{
-		command: &command{
-			help:     "",
-			synopsis: "remove a queue and all tasks currently in it",
-			parser:   flags.NewNamedParser("nerd queue delete", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
-
-		opts: &QueueDeleteOpts{},
-	}
-
-	cmd.runFunc = cmd.DoRun
-	_, err := cmd.command.parser.AddGroup("options", "options", cmd.opts)
+	comm, err := newCommand("nerd queue delete", "remove a queue and all tasks currently in it", "", nil)
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "failed to create command")
 	}
+	cmd := &QueueDelete{
+		command: comm,
+	}
+	cmd.runFunc = cmd.DoRun
 
 	return cmd, nil
 }
@@ -53,17 +33,16 @@ func (cmd *QueueDelete) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	config, err := conf.Read()
+	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
 
-	bclient, err := NewClient(cmd.ui)
+	ss, err := cmd.session.Read()
 	if err != nil {
 		HandleError(err)
 	}
-
-	out, err := bclient.DeleteQueue(config.CurrentProject.Name, args[0])
+	out, err := bclient.DeleteQueue(ss.Project.Name, args[0])
 	if err != nil {
 		HandleError(err)
 	}

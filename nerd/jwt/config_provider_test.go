@@ -3,7 +3,6 @@ package jwt
 import (
 	"crypto/ecdsa"
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -13,30 +12,33 @@ import (
 	"github.com/nerdalize/nerd/nerd/utils"
 )
 
-type staticSession struct {
+type inMemSession struct {
 	ss *conf.SessionSnapshot
 }
 
 //Read returns a snapshot of the session file
-func (s *staticSession) Read() (*conf.SessionSnapshot, error) {
+func (s *inMemSession) Read() (*conf.SessionSnapshot, error) {
 	return s.ss, nil
 }
 
 //WriteJWT writes the jwt object to the session file
-func (s *staticSession) WriteJWT(jwt, refreshToken string) error {
-	return fmt.Errorf("not implemented")
+func (s *inMemSession) WriteJWT(jwt, refreshToken string) error {
+	s.ss.JWT.Token = jwt
+	s.ss.JWT.RefreshToken = refreshToken
+	return nil
 }
 
 //WriteOAuth writes the oauth object to the session file
-func (s *staticSession) WriteOAuth(accessToken, refreshToken string, expiration time.Time, scope, tokenType string) error {
+func (s *inMemSession) WriteOAuth(accessToken, refreshToken string, expiration time.Time, scope, tokenType string) error {
 	return fmt.Errorf("not implemented")
 }
 
 //WriteProject writes the project object to the session file
-func (s *staticSession) WriteProject(name, awsRegion string) error {
+func (s *inMemSession) WriteProject(name, awsRegion string) error {
 	return fmt.Errorf("not implemented")
 }
-func TestEnvProvider(t *testing.T) {
+
+func TestConfigProvider(t *testing.T) {
 	key := testkey(t)
 	pub, _ := key.Public().(*ecdsa.PublicKey)
 	now := time.Now().Unix()
@@ -44,14 +46,14 @@ func TestEnvProvider(t *testing.T) {
 		ExpiresAt: now + minute*10,
 	}
 	refreshedToken := getToken(key, refreshedClaims, t)
-	session := &staticSession{
+	session := &inMemSession{
 		ss: &conf.SessionSnapshot{},
 	}
 	client := &tokenClient{
 		token: refreshedToken,
 	}
 
-	prov := NewEnvProvider(pub, session, client)
+	prov := NewConfigProvider(pub, session, client)
 	prov.ExpireWindow = 0
 
 	t.Run("normal", func(t *testing.T) {
@@ -59,14 +61,14 @@ func TestEnvProvider(t *testing.T) {
 			ExpiresAt: now + minute*5,
 		}
 		token := getToken(key, claims, t)
-		os.Setenv("NERD_JWT", token)
+		session.WriteJWT(token, "")
 		ret, err := prov.Retrieve()
 		utils.OK(t, err)
 		utils.Equals(t, token, ret)
 	})
 
 	t.Run("noToken", func(t *testing.T) {
-		os.Setenv("NERD_JWT", "")
+		session.WriteJWT("", "")
 		ret, err := prov.Retrieve()
 		utils.Assert(t, err != nil, "expected error because no token was set")
 		utils.Assert(t, strings.Contains(err.Error(), "not set"), "expected error because no token was set", err)
@@ -78,7 +80,7 @@ func TestEnvProvider(t *testing.T) {
 	}
 	tokenExp := getToken(key, claimsExp, t)
 	t.Run("expired", func(t *testing.T) {
-		os.Setenv("NERD_JWT", tokenExp)
+		session.WriteJWT(tokenExp, "")
 		ret, err := prov.Retrieve()
 		utils.Assert(t, err != nil, "expected token to be expired")
 		utils.Assert(t, strings.Contains(err.Error(), "expired"), "expected token to be expired", err)
@@ -86,11 +88,14 @@ func TestEnvProvider(t *testing.T) {
 	})
 
 	t.Run("refresh", func(t *testing.T) {
-		os.Setenv("NERD_JWT", tokenExp)
-		os.Setenv("NERD_JWT_REFRESH_TOKEN", "abc")
+		secret := "abc"
+		session.WriteJWT(tokenExp, secret)
 		ret, err := prov.Retrieve()
 		utils.OK(t, err)
 		utils.Equals(t, refreshedToken, ret)
 		utils.Equals(t, refreshedClaims.ExpiresAt, prov.expiration.Unix())
+		ss, _ := session.Read()
+		utils.Equals(t, refreshedToken, ss.JWT.Token)
+		utils.Equals(t, secret, ss.JWT.RefreshToken)
 	})
 }

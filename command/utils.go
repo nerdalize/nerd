@@ -30,11 +30,7 @@ func (kw *stdoutkw) Write(k string) (err error) {
 }
 
 //NewClient creates a new batch Client.
-func NewClient(ui cli.Ui) (*v1batch.Client, error) {
-	c, err := conf.Read()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read config")
-	}
+func NewClient(ui cli.Ui, c *conf.Config, session *conf.Session) (*v1batch.Client, error) {
 	key, err := jwt.ParseECDSAPublicKeyFromPemBytes([]byte(c.Auth.PublicKey))
 	if err != nil {
 		return nil, errors.Wrap(err, "ECDSA Public Key is invalid")
@@ -51,14 +47,18 @@ func NewClient(ui cli.Ui) (*v1batch.Client, error) {
 		Base:   authbase,
 		Logger: logrus.StandardLogger(),
 	})
+	authTokenClient := v1auth.NewTokenClient(v1auth.TokenClientConfig{
+		Base:   authbase,
+		Logger: logrus.StandardLogger(),
+	})
 	return v1batch.NewClient(v1batch.ClientConfig{
 		JWTProvider: v1batch.NewChainedJWTProvider(
-			jwt.NewEnvProvider(key),
-			jwt.NewConfigProvider(key),
-			jwt.NewAuthAPIProvider(key, v1auth.NewClient(v1auth.ClientConfig{
+			jwt.NewEnvProvider(key, session, authTokenClient),
+			jwt.NewConfigProvider(key, session, authTokenClient),
+			jwt.NewAuthAPIProvider(key, session, v1auth.NewClient(v1auth.ClientConfig{
 				Base:               authbase,
 				Logger:             logrus.StandardLogger(),
-				OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient),
+				OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, c.Auth.ClientID, session),
 			})),
 		),
 		Base:   base,

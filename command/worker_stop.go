@@ -2,47 +2,36 @@ package command
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/conf"
+	"github.com/pkg/errors"
+	// <<<<<<< HEAD
+	// 	"github.com/Sirupsen/logrus"
+	// 	"github.com/jessevdk/go-flags"
+	// 	"github.com/mitchellh/cli"
+	// 	"github.com/nerdalize/nerd/nerd/conf"
+	// =======
+	// 	"github.com/mitchellh/cli"
+	// 	"github.com/pkg/errors"
+	// >>>>>>> master
 )
-
-//WorkerStopOpts describes command options
-type WorkerStopOpts struct {
-	NerdOpts
-}
 
 //WorkerStop command
 type WorkerStop struct {
 	*command
-	opts   *WorkerStopOpts
-	parser *flags.Parser
 }
 
 //WorkerStopFactory returns a factory method for the join command
 func WorkerStopFactory() (cli.Command, error) {
-	cmd := &WorkerStop{
-		command: &command{
-			help:     "",
-			synopsis: "stop a worker from providing compute capacity",
-			parser:   flags.NewNamedParser("nerd worker stop <worker_id>", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
-
-		opts: &WorkerStopOpts{},
-	}
-
-	cmd.runFunc = cmd.DoRun
-	_, err := cmd.command.parser.AddGroup("options", "options", cmd.opts)
+	comm, err := newCommand("nerd worker stop <worker_id>", "stop a worker from providing compute capacity", "", nil)
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "failed to create command")
 	}
+	cmd := &WorkerStart{
+		command: comm,
+	}
+	cmd.runFunc = cmd.DoRun
 
 	return cmd, nil
 }
@@ -53,21 +42,21 @@ func (cmd *WorkerStop) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	config, err := conf.Read()
+	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
 
-	bclient, err := NewClient(cmd.ui)
+	ss, err := cmd.session.Read()
 	if err != nil {
 		HandleError(err)
 	}
 
-	worker, err := bclient.StopWorker(config.CurrentProject.Name, args[0])
+	out, err := bclient.StopWorker(ss.Project.Name, args[0])
 	if err != nil {
 		HandleError(err)
 	}
 
-	logrus.Infof("Worker stopped: %v", worker)
+	logrus.Infof("Worker stopped: %v", out)
 	return nil
 }

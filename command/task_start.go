@@ -8,46 +8,34 @@ import (
 	"strings"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/jessevdk/go-flags"
 	"github.com/mattn/go-isatty"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/conf"
+	"github.com/pkg/errors"
 )
 
 //TaskStartOpts describes command options
 type TaskStartOpts struct {
-	NerdOpts
 	Env []string `long:"env" short:"e" description:"environment variables to"`
 }
 
 //TaskStart command
 type TaskStart struct {
 	*command
-	opts   *TaskStartOpts
-	parser *flags.Parser
+	opts *TaskStartOpts
 }
 
 //TaskStartFactory returns a factory method for the join command
 func TaskStartFactory() (cli.Command, error) {
-	cmd := &TaskStart{
-		command: &command{
-			help:     "",
-			synopsis: "schedule a new task for workers to consume from a queue",
-			parser:   flags.NewNamedParser("nerd task start <queue-id> [<cmd_arg1>, <cmd_arg2>]", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
-
-		opts: &TaskStartOpts{},
-	}
-
-	cmd.runFunc = cmd.DoRun
-	_, err := cmd.command.parser.AddGroup("options", "options", cmd.opts)
+	opts := &TaskStartOpts{}
+	comm, err := newCommand("nerd task start <queue-id> [<cmd_arg1>, <cmd_arg2>]", "schedule a new task for workers to consume from a queue", "", opts)
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "failed to create command")
 	}
+	cmd := &TaskStart{
+		command: comm,
+		opts:    opts,
+	}
+	cmd.runFunc = cmd.DoRun
 
 	return cmd, nil
 }
@@ -58,12 +46,7 @@ func (cmd *TaskStart) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	config, err := conf.Read()
-	if err != nil {
-		HandleError(err)
-	}
-
-	bclient, err := NewClient(cmd.ui)
+	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
@@ -91,7 +74,11 @@ func (cmd *TaskStart) DoRun(args []string) (err error) {
 		}
 	}
 
-	out, err := bclient.StartTask(config.CurrentProject.Name, args[0], tcmd, tenv, buf.Bytes())
+	ss, err := cmd.session.Read()
+	if err != nil {
+		HandleError(err)
+	}
+	out, err := bclient.StartTask(ss.Project.Name, args[0], tcmd, tenv, buf.Bytes())
 	if err != nil {
 		HandleError(err)
 	}

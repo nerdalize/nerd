@@ -2,48 +2,28 @@ package command
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/conf"
+	"github.com/pkg/errors"
 )
-
-//ProjectPlaceOps describes command options
-type ProjectPlaceOps struct {
-	NerdOpts
-}
 
 //ProjectPlace command
 type ProjectPlace struct {
 	*command
-	opts   *ProjectPlaceOps
-	parser *flags.Parser
 }
 
 //ProjectPlaceFactory returns a factory method for the join command
 func ProjectPlaceFactory() (cli.Command, error) {
+	comm, err := newCommand("nerd project place <host> <token>", "place the current project on a compute cluster", "", nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create command")
+	}
 	cmd := &ProjectPlace{
-		command: &command{
-			help:     "",
-			synopsis: "place the current project on a compute cluster",
-			parser:   flags.NewNamedParser("nerd project place <host> <token>", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
-
-		opts: &ProjectPlaceOps{},
+		command: comm,
 	}
 
 	cmd.runFunc = cmd.DoRun
-	_, err := cmd.command.parser.AddGroup("options", "options", cmd.opts)
-	if err != nil {
-		panic(err)
-	}
-
 	return cmd, nil
 }
 
@@ -53,17 +33,17 @@ func (cmd *ProjectPlace) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	config, err := conf.Read()
+	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
 
-	bclient, err := NewClient(cmd.ui)
+	ss, err := cmd.session.Read()
 	if err != nil {
 		HandleError(err)
 	}
 
-	out, err := bclient.PlaceProject(config.CurrentProject.Name, args[0], args[1], "") //@TODO allow self signed certificate
+	out, err := bclient.PlaceProject(ss.Project.Name, args[0], args[1], "") //@TODO allow self signed certificate
 	if err != nil {
 		HandleError(err)
 	}

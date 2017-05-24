@@ -7,11 +7,9 @@ import (
 	"strings"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/aws"
 	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
-	"github.com/nerdalize/nerd/nerd/conf"
 	v1datatransfer "github.com/nerdalize/nerd/nerd/service/datatransfer/v1"
 	"github.com/pkg/errors"
 )
@@ -27,41 +25,21 @@ const (
 	TagPrefix = "tag-"
 )
 
-//DownloadOpts describes command options
-type DownloadOpts struct {
-	NerdOpts
-	AlwaysOverwrite bool `long:"always-overwrite" default-mask:"false" description:"always overwrite files when they already exist"`
-}
-
 //Download command
 type Download struct {
 	*command
-
-	opts   *DownloadOpts
-	parser *flags.Parser
 }
 
 //DatasetDownloadFactory returns a factory method for the join command
 func DatasetDownloadFactory() (cli.Command, error) {
-	cmd := &Download{
-		command: &command{
-			help:     "",
-			synopsis: "download data from the cloud to a local directory",
-			parser:   flags.NewNamedParser("nerd dataset download <dataset> <output-dir>", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
-
-		opts: &DownloadOpts{},
-	}
-
-	cmd.runFunc = cmd.DoRun
-	_, err := cmd.command.parser.AddGroup("options", "options", cmd.opts)
+	comm, err := newCommand("nerd dataset download <dataset> <output-dir>", "download data from the cloud to a local directory", "", nil)
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "failed to create command")
 	}
+	cmd := &Download{
+		command: comm,
+	}
+	cmd.runFunc = cmd.DoRun
 
 	return cmd, nil
 }
@@ -70,11 +48,6 @@ func DatasetDownloadFactory() (cli.Command, error) {
 func (cmd *Download) DoRun(args []string) (err error) {
 	if len(args) < 2 {
 		return fmt.Errorf("not enough arguments, see --help")
-	}
-
-	config, err := conf.Read()
-	if err != nil {
-		HandleError(err)
 	}
 
 	downloadObject := args[0]
@@ -96,13 +69,17 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	}
 
 	// Clients
-	batchclient, err := NewClient(cmd.ui)
+	batchclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
+	if err != nil {
+		HandleError(err)
+	}
+	ss, err := cmd.session.Read()
 	if err != nil {
 		HandleError(err)
 	}
 	dataOps, err := aws.NewDataClient(
-		aws.NewNerdalizeCredentials(batchclient, config.CurrentProject.Name),
-		config.CurrentProject.AWSRegion,
+		aws.NewNerdalizeCredentials(batchclient, ss.Project.Name),
+		ss.Project.AWSRegion,
 	)
 	if err != nil {
 		HandleError(errors.Wrap(err, "could not create aws dataops client"))
@@ -114,7 +91,7 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		datasetIDs = append(datasetIDs, downloadObject)
 	} else {
 		var datasets *v1payload.ListDatasetsOutput
-		datasets, err = batchclient.ListDatasets(config.CurrentProject.Name, downloadObject)
+		datasets, err = batchclient.ListDatasets(ss.Project.Name, downloadObject)
 		if err != nil {
 			HandleError(err)
 		}
@@ -130,15 +107,15 @@ func (cmd *Download) DoRun(args []string) (err error) {
 			BatchClient: batchclient,
 			DataOps:     dataOps,
 			LocalDir:    outputDir,
-			ProjectID:   config.CurrentProject.Name,
+			ProjectID:   ss.Project.Name,
 			DatasetID:   datasetID,
 			Concurrency: 64,
 		}
-		if !cmd.opts.JSONOutput { // show progress bar
+		if !cmd.jsonOutput { // show progress bar
 			progressCh := make(chan int64)
 			progressBarDoneCh := make(chan struct{})
 			var size int64
-			size, err = v1datatransfer.GetRemoteDatasetSize(context.Background(), batchclient, dataOps, config.CurrentProject.Name, datasetID)
+			size, err = v1datatransfer.GetRemoteDatasetSize(context.Background(), batchclient, dataOps, ss.Project.Name, datasetID)
 			if err != nil {
 				HandleError(err)
 			}

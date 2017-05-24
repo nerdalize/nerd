@@ -1,10 +1,8 @@
 package command
 
 import (
-	"os"
-
-	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	"github.com/pkg/errors"
 )
 
 //Worker command
@@ -14,19 +12,15 @@ type Worker struct {
 
 //WorkerFactory returns a factory method for the join command
 func WorkerFactory() (cli.Command, error) {
-	cmd := &Worker{
-		command: &command{
-			help:     `control compute capacity for working on tasks`,
-			synopsis: "control compute capacity for working on tasks",
-			parser:   flags.NewNamedParser("nerd task", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
+	comm, err := newCommand("nerd worker <subcommand>", "control compute capacity for working on tasks", "", nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create command")
 	}
-
+	cmd := &Worker{
+		command: comm,
+	}
 	cmd.runFunc = cmd.DoRun
+
 	return cmd, nil
 }
 

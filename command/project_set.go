@@ -2,46 +2,27 @@ package command
 
 import (
 	"fmt"
-	"os"
 
-	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/conf"
+	"github.com/pkg/errors"
 )
-
-//ProjectSetOps describes command options
-type ProjectSetOps struct {
-	NerdOpts
-}
 
 //ProjectSet command
 type ProjectSet struct {
 	*command
-	opts   *ProjectSetOps
-	parser *flags.Parser
 }
 
 //ProjectSetFactory returns a factory method for the join command
 func ProjectSetFactory() (cli.Command, error) {
-	cmd := &ProjectSet{
-		command: &command{
-			help:     "",
-			synopsis: "set current working project",
-			parser:   flags.NewNamedParser("nerd project set <project-name>", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
-
-		opts: &ProjectSetOps{},
-	}
-
-	cmd.runFunc = cmd.DoRun
-	_, err := cmd.command.parser.AddGroup("options", "options", cmd.opts)
+	comm, err := newCommand("nerd project set", "set current working project", "", nil)
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "failed to create command")
 	}
+	cmd := &ProjectSet{
+		command: comm,
+	}
+	cmd.runFunc = cmd.DoRun
 
 	return cmd, nil
 }
@@ -52,7 +33,7 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	err = conf.WriteProject(args[0])
+	err = cmd.session.WriteProject(args[0], conf.DefaultAWSRegion)
 	if err != nil {
 		HandleError(err)
 	}

@@ -2,49 +2,28 @@ package command
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
 )
-
-//TaskStopOpts describes command options
-type TaskStopOpts struct {
-	NerdOpts
-}
 
 //TaskStop command
 type TaskStop struct {
 	*command
-	opts   *TaskStopOpts
-	parser *flags.Parser
 }
 
 //TaskStopFactory returns a factory method for the join command
 func TaskStopFactory() (cli.Command, error) {
-	cmd := &TaskStop{
-		command: &command{
-			help:     "",
-			synopsis: "abort any run(s) of the specified task on a queue",
-			parser:   flags.NewNamedParser("nerd task stop <queue-id> <task-id>", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
-
-		opts: &TaskStopOpts{},
-	}
-
-	cmd.runFunc = cmd.DoRun
-	_, err := cmd.command.parser.AddGroup("options", "options", cmd.opts)
+	comm, err := newCommand("nerd task stop <queue-id> <task-id>", "abort any run(s) of the specified task on a queue", "", nil)
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "failed to create command")
 	}
+	cmd := &TaskStop{
+		command: comm,
+	}
+	cmd.runFunc = cmd.DoRun
 
 	return cmd, nil
 }
@@ -55,12 +34,7 @@ func (cmd *TaskStop) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	config, err := conf.Read()
-	if err != nil {
-		HandleError(err)
-	}
-
-	bclient, err := NewClient(cmd.ui)
+	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
@@ -70,7 +44,11 @@ func (cmd *TaskStop) DoRun(args []string) (err error) {
 		HandleError(errors.Wrap(err, "invalid task ID, must be a number"))
 	}
 
-	out, err := bclient.StopTask(config.CurrentProject.Name, args[0], taskID)
+	ss, err := cmd.session.Read()
+	if err != nil {
+		HandleError(err)
+	}
+	out, err := bclient.StopTask(ss.Project.Name, args[0], taskID)
 	if err != nil {
 		HandleError(err)
 	}

@@ -1,64 +1,43 @@
 package command
 
 import (
-	"os"
-
 	"github.com/Sirupsen/logrus"
-	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/conf"
+	"github.com/pkg/errors"
 )
-
-//ProjectExpelOps describes command options
-type ProjectExpelOps struct {
-	NerdOpts
-}
 
 //ProjectExpel command
 type ProjectExpel struct {
 	*command
-	opts   *ProjectExpelOps
-	parser *flags.Parser
 }
 
 //ProjectExpelFactory returns a factory method for the join command
 func ProjectExpelFactory() (cli.Command, error) {
+	comm, err := newCommand("nerd project expel", "move the current project away from its current cluster", "", nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create command")
+	}
 	cmd := &ProjectExpel{
-		command: &command{
-			help:     "",
-			synopsis: "expel the current project from its compute cluster",
-			parser:   flags.NewNamedParser("nerd project expel", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
-
-		opts: &ProjectExpelOps{},
+		command: comm,
 	}
 
 	cmd.runFunc = cmd.DoRun
-	_, err := cmd.command.parser.AddGroup("options", "options", cmd.opts)
-	if err != nil {
-		panic(err)
-	}
-
 	return cmd, nil
 }
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *ProjectExpel) DoRun(args []string) (err error) {
-	config, err := conf.Read()
+	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
 
-	bclient, err := NewClient(cmd.ui)
+	ss, err := cmd.session.Read()
 	if err != nil {
 		HandleError(err)
 	}
 
-	out, err := bclient.ExpelProject(config.CurrentProject.Name)
+	out, err := bclient.ExpelProject(ss.Project.Name)
 	if err != nil {
 		HandleError(err)
 	}

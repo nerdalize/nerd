@@ -3,62 +3,43 @@ package command
 import (
 	"os"
 
-	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/olekukonko/tablewriter"
+	"github.com/pkg/errors"
 )
-
-//WorkerListOpts describes command options
-type WorkerListOpts struct {
-	NerdOpts
-}
 
 //WorkerList command
 type WorkerList struct {
 	*command
-	opts   *WorkerListOpts
-	parser *flags.Parser
 }
 
 //WorkerListFactory returns a factory method for the join command
 func WorkerListFactory() (cli.Command, error) {
-	cmd := &WorkerList{
-		command: &command{
-			help:     "",
-			synopsis: "show a list of all workers in the current project",
-			parser:   flags.NewNamedParser("nerd worker list", flags.Default),
-			ui: &cli.BasicUi{
-				Reader: os.Stdin,
-				Writer: os.Stderr,
-			},
-		},
-
-		opts: &WorkerListOpts{},
-	}
-
-	cmd.runFunc = cmd.DoRun
-	_, err := cmd.command.parser.AddGroup("options", "options", cmd.opts)
+	comm, err := newCommand("nerd worker list", "show a list of all workers in the current project", "", nil)
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "failed to create command")
 	}
+	cmd := &WorkerList{
+		command: comm,
+	}
+	cmd.runFunc = cmd.DoRun
 
 	return cmd, nil
 }
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *WorkerList) DoRun(args []string) (err error) {
-	config, err := conf.Read()
+	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
 
-	bclient, err := NewClient(cmd.ui)
+	ss, err := cmd.session.Read()
 	if err != nil {
 		HandleError(err)
 	}
 
-	out, err := bclient.ListWorkers(config.CurrentProject.Name)
+	out, err := bclient.ListWorkers(ss.Project.Name)
 	if err != nil {
 		HandleError(err)
 	}
