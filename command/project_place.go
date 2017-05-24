@@ -8,28 +8,28 @@ import (
 	"github.com/pkg/errors"
 )
 
-//WorkerStop command
-type WorkerStop struct {
+//ProjectPlace command
+type ProjectPlace struct {
 	*command
 }
 
-//WorkerStopFactory returns a factory method for the join command
-func WorkerStopFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd worker stop <worker_id>", "stop a worker from providing compute capacity", "", nil)
+//ProjectPlaceFactory returns a factory method for the join command
+func ProjectPlaceFactory() (cli.Command, error) {
+	comm, err := newCommand("nerd project place <host> <token>", "place the current project on a compute cluster", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
-	cmd := &WorkerStart{
+	cmd := &ProjectPlace{
 		command: comm,
 	}
-	cmd.runFunc = cmd.DoRun
 
+	cmd.runFunc = cmd.DoRun
 	return cmd, nil
 }
 
 //DoRun is called by run and allows an error to be returned
-func (cmd *WorkerStop) DoRun(args []string) (err error) {
-	if len(args) < 1 {
+func (cmd *ProjectPlace) DoRun(args []string) (err error) {
+	if len(args) < 2 {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
@@ -43,11 +43,11 @@ func (cmd *WorkerStop) DoRun(args []string) (err error) {
 		HandleError(err)
 	}
 
-	out, err := bclient.StopWorker(ss.Project.Name, args[0])
+	out, err := bclient.PlaceProject(ss.Project.Name, args[0], args[1], "") //@TODO allow self signed certificate
 	if err != nil {
 		HandleError(err)
 	}
 
-	logrus.Infof("Worker stopped: %v", out)
+	logrus.Infof("Placement created: %v", out)
 	return nil
 }
