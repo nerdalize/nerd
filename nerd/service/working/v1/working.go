@@ -12,6 +12,7 @@ import (
 
 	"github.com/nerdalize/nerd/nerd/client/batch/v1"
 	"github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
+	v1datatransfer "github.com/nerdalize/nerd/nerd/service/datatransfer/v1"
 )
 
 var (
@@ -24,12 +25,13 @@ var (
 
 //Worker is a longer running process that spawns processes based on task runs that arrive via the batch client
 type Worker struct {
-	conf  Conf
-	batch workerClient
-	logs  *log.Logger
-	qops  v1batch.QueueOps
-	pid   string
-	qid   string
+	conf       Conf
+	batch      workerClient
+	logs       *log.Logger
+	qops       v1batch.QueueOps
+	pid        string
+	qid        string
+	uploadConf *v1datatransfer.UploadConfig
 
 	bexec string
 	bargs []string
@@ -55,14 +57,15 @@ func DefaultConf() *Conf {
 }
 
 //NewWorker creates a worker based on the provided configuration
-func NewWorker(logger *log.Logger, batchClient workerClient, qops v1batch.QueueOps, projectID string, queueID string, baseExec string, baseArgs []string, conf *Conf) (w *Worker) {
+func NewWorker(logger *log.Logger, batchClient workerClient, qops v1batch.QueueOps, projectID string, queueID string, baseExec string, baseArgs []string, uploadConf *v1datatransfer.UploadConfig, conf *Conf) (w *Worker) {
 	w = &Worker{
-		conf:  *conf,
-		logs:  logger,
-		batch: batchClient,
-		qops:  qops,
-		qid:   queueID,
-		pid:   projectID,
+		conf:       *conf,
+		logs:       logger,
+		batch:      batchClient,
+		qops:       qops,
+		qid:        queueID,
+		pid:        projectID,
+		uploadConf: uploadConf,
 
 		bexec: baseExec,
 		bargs: baseArgs,
@@ -164,6 +167,15 @@ func (w *Worker) startRunExec(ctx context.Context, run *v1payload.Run) {
 			runRes,
 		); err != nil {
 			w.logs.Printf("[ERROR] failed to send run success: %+v", err)
+		}
+		if w.uploadConf != nil {
+			if _, err := v1datatransfer.Upload(ctx, *w.uploadConf); err != nil {
+				w.logs.Printf("[ERROR] failed to upload output dataset: %+v", err)
+			}
+			if err := RemoveContents(w.uploadConf.LocalDir); err != nil {
+				w.logs.Printf("[ERROR] failed to clear output directory '%v', shutting down: %+v", err)
+				cancel()
+			}
 		}
 	}
 }
