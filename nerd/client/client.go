@@ -66,7 +66,7 @@ func LogRequest(req *http.Request, logger Logger) {
 		txt, err = httputil.DumpRequest(req, false)
 	}
 	if err == nil {
-		logger.Debugf("HTTP Request:\n%s", txt)
+		logger.Debugf("HTTP Request:\n%s\n", txt)
 	} else {
 		logger.WriteError(fmt.Errorf("Failed to log HTTP request"))
 	}
@@ -80,7 +80,7 @@ func LogResponse(res *http.Response, logger Logger) {
 		txt, err = httputil.DumpResponse(res, false)
 	}
 	if err == nil {
-		logger.Debugf("HTTP Response:\n%s", txt)
+		logger.Debugf("HTTP Response:\n%s\n", txt)
 	} else {
 		logger.WriteError(fmt.Errorf("Failed to log HTTP response"))
 	}
