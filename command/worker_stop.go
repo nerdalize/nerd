@@ -19,7 +19,7 @@ func WorkerStopFactory() (cli.Command, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
-	cmd := &WorkerStart{
+	cmd := &WorkerStop{
 		command: comm,
 	}
 	cmd.runFunc = cmd.DoRun
