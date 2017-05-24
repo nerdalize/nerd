@@ -73,6 +73,6 @@ func Read(location string) (*Config, error) {
 }
 
 func FromJSON(in string) (*Config, error) {
-	v := &Config{}
+	v := Defaults()
 	return v, json.Unmarshal([]byte(in), v)
 }
