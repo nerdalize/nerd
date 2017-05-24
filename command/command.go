@@ -103,6 +103,15 @@ func (c *command) Run(args []string) int {
 
 //setConfig sets the cmd.config field according to the config file location
 func (c *command) setConfig(loc string) {
+	if json := os.Getenv("NERD_CONFIG_JSON"); json != "" {
+		conf, err := conf.FromJSON(json)
+		if err != nil {
+			fmt.Fprint(os.Stderr, errors.Wrapf(err, "failed to parse config json '%v'", json))
+			os.Exit(-1)
+		}
+		c.config = conf
+		return
+	}
 	if loc == "" {
 		var err error
 		loc, err = conf.GetDefaultConfigLocation()
