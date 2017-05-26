@@ -16,14 +16,14 @@ type CreateSecretOutput struct {
 	Value     string `json:"value" valid:"required"`
 }
 
-// GetSecretInput is the input for getting a secret
-type GetSecretInput struct {
+// DescribeSecretInput is the input for describing a secret
+type DescribeSecretInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
 	Name      string `json:"name" valid:"required"`
 }
 
-// GetSecretOutput is the output from getting a secret
-type GetSecretOutput struct {
+// DescribeSecretOutput is the output from describing a secret
+type DescribeSecretOutput struct {
 	ProjectID string `json:"project_id" valid:"required"`
 	Name      string `json:"name" valid:"required"`
 	Key       string `json:"key" valid:"required"`
