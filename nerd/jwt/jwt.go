@@ -4,6 +4,8 @@ import (
 	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
+	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
@@ -73,9 +75,10 @@ func isValid(jwt string, pub *ecdsa.PublicKey) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to decode jwt '%v'", jwt)
 	}
-	err = claims.Valid()
-	if err != nil {
-		return errors.Wrapf(err, "nerd jwt '%v' is invalid", jwt)
+	now := time.Now().Unix()
+	if claims.VerifyExpiresAt(now, false) == false {
+		delta := time.Unix(now, 0).Sub(time.Unix(claims.ExpiresAt, 0))
+		return fmt.Errorf("token is expired by %v", delta)
 	}
 	return nil
 }
