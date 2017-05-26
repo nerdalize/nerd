@@ -158,6 +158,16 @@ func (w *Worker) startRunExec(ctx context.Context, run *v1payload.Run) {
 		}
 
 		w.logs.Printf("[INFO] run process exited succesfully")
+		if w.uploadConf != nil {
+			w.logs.Printf("[INFO] uploading output data")
+			if _, err = v1datatransfer.Upload(ctx, *w.uploadConf); err != nil {
+				w.logs.Printf("[ERROR] failed to upload output dataset: %+v", err)
+			}
+			if err = RemoveContents(w.uploadConf.LocalDir); err != nil {
+				w.logs.Printf("[ERROR] failed to clear output directory '%v', shutting down", err)
+				cancel()
+			}
+		}
 		//@TODO allow sending context
 		if _, err = w.batch.SendRunSuccess(
 			run.ProjectID,
@@ -167,15 +177,6 @@ func (w *Worker) startRunExec(ctx context.Context, run *v1payload.Run) {
 			runRes,
 		); err != nil {
 			w.logs.Printf("[ERROR] failed to send run success: %+v", err)
-		}
-		if w.uploadConf != nil {
-			if _, err := v1datatransfer.Upload(ctx, *w.uploadConf); err != nil {
-				w.logs.Printf("[ERROR] failed to upload output dataset: %+v", err)
-			}
-			if err := RemoveContents(w.uploadConf.LocalDir); err != nil {
-				w.logs.Printf("[ERROR] failed to clear output directory '%v', shutting down: %+v", err)
-				cancel()
-			}
 		}
 	}
 }
