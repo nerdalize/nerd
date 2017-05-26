@@ -1,6 +1,7 @@
 package command
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
@@ -27,7 +28,7 @@ type WorkerStart struct {
 //WorkerStartFactory returns a factory method for the join command
 func WorkerStartFactory() (cli.Command, error) {
 	opts := &WorkerStartOpts{}
-	comm, err := newCommand("nerd worker start <image>", "provision a new worker to provide compute", "", opts)
+	comm, err := newCommand("nerd worker start <image> <queue-id>", "provision a new worker to provide compute", "", opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -42,7 +43,7 @@ func WorkerStartFactory() (cli.Command, error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *WorkerStart) DoRun(args []string) (err error) {
-	if len(args) < 1 {
+	if len(args) < 2 {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
@@ -89,8 +90,14 @@ func (cmd *WorkerStart) DoRun(args []string) (err error) {
 
 	wenv[jwt.NerdTokenEnvVar] = workerJWT.Token
 	wenv[jwt.NerdSecretEnvVar] = workerJWT.Secret
+	configJSON, err := json.Marshal(cmd.config)
+	if err != nil {
+		HandleError(errors.Wrap(err, "failed to marshal config"))
+	}
+	wenv[EnvConfigJSON] = string(configJSON)
+	wenv[EnvNerdProject] = ss.Project.Name
 
-	worker, err := bclient.StartWorker(ss.Project.Name, args[0], wenv)
+	worker, err := bclient.StartWorker(ss.Project.Name, args[0], args[1], wenv)
 	if err != nil {
 		HandleError(err)
 	}

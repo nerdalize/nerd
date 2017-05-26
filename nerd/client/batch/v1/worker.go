@@ -8,17 +8,18 @@ import (
 
 //ClientWorkerInterface is an interface for placement of project
 type ClientWorkerInterface interface {
-	StartWorker(projectID, image string, env map[string]string) (output *v1payload.StartWorkerOutput, err error)
+	StartWorker(projectID, image, queueID string, env map[string]string) (output *v1payload.StartWorkerOutput, err error)
 	StopWorker(projectID, workerID string) (output *v1payload.StopWorkerOutput, err error)
 	ListWorkers(projectID string) (output *v1payload.ListWorkersOutput, err error)
 }
 
 //StartWorker will create worker
-func (c *Client) StartWorker(projectID, image string, env map[string]string) (output *v1payload.StartWorkerOutput, err error) {
+func (c *Client) StartWorker(projectID, image, queueID string, env map[string]string) (output *v1payload.StartWorkerOutput, err error) {
 	output = &v1payload.StartWorkerOutput{}
 	input := &v1payload.StartWorkerInput{
 		ProjectID: projectID,
 		Image:     image,
+		QueueID:   queueID,
 		Env:       env,
 	}
 

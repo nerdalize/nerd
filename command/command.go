@@ -14,6 +14,11 @@ import (
 	"github.com/nerdalize/nerd/nerd/conf"
 )
 
+const (
+	EnvConfigJSON  = "NERD_CONFIG_JSON"
+	EnvNerdProject = "NERD_PROJECT"
+)
+
 var errShowHelp = errors.New("show error")
 
 func newCommand(title, synopsis, help string, opts interface{}) (*command, error) {
@@ -103,7 +108,7 @@ func (c *command) Run(args []string) int {
 
 //setConfig sets the cmd.config field according to the config file location
 func (c *command) setConfig(loc string) {
-	if json := os.Getenv("NERD_CONFIG_JSON"); json != "" {
+	if json := os.Getenv(EnvConfigJSON); json != "" {
 		conf, err := conf.FromJSON(json)
 		if err != nil {
 			fmt.Fprint(os.Stderr, errors.Wrapf(err, "failed to parse config json '%v'", json))
@@ -154,6 +159,9 @@ func (c *command) setSession(loc string) {
 		f.Close()
 	}
 	c.session = conf.NewSession(loc)
+	if proj := os.Getenv(EnvNerdProject); proj != "" {
+		c.session.WriteProject(proj, conf.DefaultAWSRegion)
+	}
 }
 
 //setVerbose sets verbose output formatting

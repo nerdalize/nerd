@@ -4,6 +4,7 @@ package v1payload
 type StartWorkerInput struct {
 	ProjectID string            `json:"project_id" valid:"required"`
 	Image     string            `json:"image" valid:"required"`
+	QueueID   string            `json:"queue_id" valid:"required"`
 	Env       map[string]string `json:"env"`
 }
 

@@ -71,7 +71,8 @@ function run_docker { #build docker container
 
 function run_dockerpush { #build and push docker container
 	run_docker
-	docker push nerdalize/nerd
+	docker push nerdalize/nerd:latest
+	docker push nerdalize/nerd:`cat VERSION`
 }
 
 case $1 in
