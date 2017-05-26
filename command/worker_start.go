@@ -16,7 +16,8 @@ import (
 
 //WorkerStartOpts describes command options
 type WorkerStartOpts struct {
-	Env []string `long:"env" short:"e" description:"environment variables"`
+	Env          []string `long:"env" short:"e" description:"environment variables"`
+	InputDataset string   `long:"input-dataset" short:"i" description:"input dataset ID, will be available in /input in your container"`
 }
 
 //WorkerStart command
@@ -97,7 +98,7 @@ func (cmd *WorkerStart) DoRun(args []string) (err error) {
 	wenv[EnvConfigJSON] = string(configJSON)
 	wenv[EnvNerdProject] = ss.Project.Name
 
-	worker, err := bclient.StartWorker(ss.Project.Name, args[0], args[1], wenv)
+	worker, err := bclient.StartWorker(ss.Project.Name, args[0], args[1], wenv, cmd.opts.InputDataset)
 	if err != nil {
 		HandleError(err)
 	}
