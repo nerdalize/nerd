@@ -4,8 +4,11 @@ package v1payload
 type PlaceProjectInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
 	Host      string `json:"host" valid:"required"`
-	Token     string `json:"token" valid:"required"`
+	Token     string `json:"token"`
 	CAPem     string `json:"ca_pem"`
+	Password  string `json:"password"`
+	Username  string `json:"username"`
+	Insecure  bool   `json:"insecure"`
 }
 
 //PlaceProjectOutput is output for queue creation
