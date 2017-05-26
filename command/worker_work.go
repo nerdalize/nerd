@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//UploadOpts describes command options
+//WorkerWorkOpts describes command options
 type WorkerWorkOpts struct {
 	UploadTag string `long:"upload-tag" default:"" default-mask:"" description:"when set, data in --output-dir will be uploaded with this tag after each task run"`
 	OutputDir string `long:"output-dir" default:"" default-mask:"" description:"when set, data in --output-dir will be uploaded with the --upload-tag tag after each task run"`
