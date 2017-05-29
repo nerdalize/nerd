@@ -14,6 +14,7 @@ type ClientTaskInterface interface {
 	StartTask(projectID, workloadID string, cmd []string, env map[string]string, stdin []byte) (output *v1payload.StartTaskOutput, err error)
 	StopTask(projectID, workloadID string, taskID int64) (output *v1payload.StopTaskOutput, err error)
 	ListTasks(projectID, workloadID string, onlySuccessTasks bool) (output *v1payload.ListTasksOutput, err error)
+	PatchTask(projectID, workloadID string, taskID int64, outputDatasetID string) (output *v1payload.PatchTaskOutput, err error)
 	DescribeTask(projectID, workloadID string, taskID int64) (output *v1payload.DescribeTaskOutput, err error)
 	ReceiveTaskRuns(projectID, workloadID string, timeout time.Duration, queueOps QueueOps) (output []*v1payload.Run, err error)
 }

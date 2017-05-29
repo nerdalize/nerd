@@ -49,10 +49,13 @@ func (c *mClient) StartTask(projectID, workloadID string, cmd []string, env map[
 func (c *mClient) StopTask(projectID, workloadID string, taskID int64) (output *v1payload.StopTaskOutput, err error) {
 	return output, nil
 }
-func (c *mClient) ListTasks(projectID, workloadID string) (output *v1payload.ListTasksOutput, err error) {
+func (c *mClient) ListTasks(projectID, workloadID string, onlySuccessTasks bool) (output *v1payload.ListTasksOutput, err error) {
 	return output, nil
 }
 func (c *mClient) DescribeTask(projectID, workloadID string, taskID int64) (output *v1payload.DescribeTaskOutput, err error) {
+	return output, nil
+}
+func (c *mClient) PatchTask(projectID, workloadID string, taskID int64, outputDatasetID string) (output *v1payload.PatchTaskOutput, err error) {
 	return output, nil
 }
 func (c *mClient) ReceiveTaskRuns(projectID, workloadID string, timeout time.Duration, queueOps v1batch.QueueOps) (output []*v1payload.Run, err error) {
