@@ -43,7 +43,7 @@ func (cmd *TaskList) DoRun(args []string) (err error) {
 	if err != nil {
 		HandleError(err)
 	}
-	out, err := bclient.ListTasks(ss.Project.Name, args[0])
+	out, err := bclient.ListTasks(ss.Project.Name, args[0], false)
 	if err != nil {
 		HandleError(err)
 	}

@@ -13,7 +13,7 @@ import (
 type ClientTaskInterface interface {
 	StartTask(projectID, workloadID string, cmd []string, env map[string]string, stdin []byte) (output *v1payload.StartTaskOutput, err error)
 	StopTask(projectID, workloadID string, taskID int64) (output *v1payload.StopTaskOutput, err error)
-	ListTasks(projectID, workloadID string) (output *v1payload.ListTasksOutput, err error)
+	ListTasks(projectID, workloadID string, onlySuccessTasks bool) (output *v1payload.ListTasksOutput, err error)
 	DescribeTask(projectID, workloadID string, taskID int64) (output *v1payload.DescribeTaskOutput, err error)
 	ReceiveTaskRuns(projectID, workloadID string, timeout time.Duration, queueOps QueueOps) (output []*v1payload.Run, err error)
 }
@@ -64,11 +64,12 @@ func (c *Client) StopTask(projectID, workloadID string, taskID int64) (output *v
 }
 
 // ListTasks will return all tasks in a queue
-func (c *Client) ListTasks(projectID, workloadID string) (output *v1payload.ListTasksOutput, err error) {
+func (c *Client) ListTasks(projectID, workloadID string, onlySuccessTasks bool) (output *v1payload.ListTasksOutput, err error) {
 	output = &v1payload.ListTasksOutput{}
 	input := &v1payload.ListTasksInput{
-		ProjectID:  projectID,
-		WorkloadID: workloadID,
+		ProjectID:        projectID,
+		WorkloadID:       workloadID,
+		OnlySuccessTasks: onlySuccessTasks,
 	}
 
 	return output, c.doRequest(http.MethodGet, createPath(projectID, workloadsEndpoint, workloadID, "tasks"), input, output)

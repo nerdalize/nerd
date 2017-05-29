@@ -2,10 +2,11 @@ package v1payload
 
 //TaskSummary is a small version of
 type TaskSummary struct {
-	TaskID          int64  `json:"task_id"`
-	WorkloadID      string `json:"workload_id"`
-	Status          string `json:"status,omitempty"`
-	OutputDatasetID string `json:"output_dataset_id"`
+	TaskID          int64    `json:"task_id"`
+	WorkloadID      string   `json:"workload_id"`
+	Status          string   `json:"status,omitempty"`
+	OutputDatasetID string   `json:"output_dataset_id"`
+	Cmd             []string `json:"cmd"`
 }
 
 //StopTaskInput is input for task creation
@@ -35,8 +36,9 @@ type StartTaskOutput struct {
 
 //ListTasksInput is input for task creation
 type ListTasksInput struct {
-	ProjectID  string `json:"project_id" valid:"required"`
-	WorkloadID string `json:"workload_id" valid:"required"`
+	ProjectID        string `json:"project_id" valid:"required"`
+	WorkloadID       string `json:"workload_id" valid:"required"`
+	OnlySuccessTasks bool   `json:"only_success_tasks" valid:"required"`
 }
 
 //ListTasksOutput is output for task creation
