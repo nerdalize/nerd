@@ -1,6 +1,6 @@
 package v1payload
 
-//PlaceProjectInput is input for queue creation
+//PlaceProjectInput is input for placement creation
 type PlaceProjectInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
 	Host      string `json:"host" valid:"required"`
@@ -11,14 +11,14 @@ type PlaceProjectInput struct {
 	Insecure  bool   `json:"insecure"`
 }
 
-//PlaceProjectOutput is output for queue creation
+//PlaceProjectOutput is output for placement creation
 type PlaceProjectOutput struct {
 }
 
-//ExpelProjectInput is input for queue creation
+//ExpelProjectInput is input for placement creation
 type ExpelProjectInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
 }
 
-//ExpelProjectOutput is output for queue creation
+//ExpelProjectOutput is output for placement creation
 type ExpelProjectOutput struct{}

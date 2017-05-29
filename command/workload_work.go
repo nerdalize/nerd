@@ -15,26 +15,26 @@ import (
 	"github.com/pkg/errors"
 )
 
-//WorkerWorkOpts describes command options
-type WorkerWorkOpts struct {
+//WorkloadWorkOpts describes command options
+type WorkloadWorkOpts struct {
 	UploadTag string `long:"upload-tag" default:"" default-mask:"" description:"when set, data in --output-dir will be uploaded with this tag after each task run"`
 	OutputDir string `long:"output-dir" default:"" default-mask:"" description:"when set, data in --output-dir will be uploaded with the --upload-tag tag after each task run"`
 }
 
-//WorkerWork command
-type WorkerWork struct {
+//WorkloadWork command
+type WorkloadWork struct {
 	*command
-	opts *WorkerWorkOpts
+	opts *WorkloadWorkOpts
 }
 
-//WorkerWorkFactory returns a factory method for the join command
-func WorkerWorkFactory() (cli.Command, error) {
-	opts := &WorkerWorkOpts{}
-	comm, err := newCommand("nerd worker work <queue-id> <command-tmpl> [arg-tmpl...]", "start working tasks of a queue locally", "", opts)
+//WorkloadWorkFactory returns a factory method for the join command
+func WorkloadWorkFactory() (cli.Command, error) {
+	opts := &WorkloadWorkOpts{}
+	comm, err := newCommand("nerd worker work <workload-id> <command-tmpl> [arg-tmpl...]", "start working tasks of a queue locally", "", opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
-	cmd := &WorkerWork{
+	cmd := &WorkloadWork{
 		command: comm,
 		opts:    opts,
 	}
@@ -44,7 +44,7 @@ func WorkerWorkFactory() (cli.Command, error) {
 }
 
 //DoRun is called by run and allows an error to be returned
-func (cmd *WorkerWork) DoRun(args []string) (err error) {
+func (cmd *WorkloadWork) DoRun(args []string) (err error) {
 	if len(args) < 2 {
 		return fmt.Errorf("not enough arguments, see --help")
 	}

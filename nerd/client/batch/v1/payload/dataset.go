@@ -23,18 +23,18 @@ type CreateDatasetOutput struct {
 	HeartbeatInterval time.Duration `json:"heartbeat_interval"`
 }
 
-//DescribeDatasetInput is input for queue creation
+//DescribeDatasetInput is input for dataset creation
 type DescribeDatasetInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
 	DatasetID string `json:"dataset_id" valid:"required"`
 }
 
-//DescribeDatasetOutput is output for queue creation
+//DescribeDatasetOutput is output for dataset creation
 type DescribeDatasetOutput struct {
 	DatasetSummary
 }
 
-//ListDatasetsInput is input for queue creation
+//ListDatasetsInput is input for dataset creation
 type ListDatasetsInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
 	Tag       string `json:"tag,omitempty"`
@@ -52,7 +52,7 @@ type DatasetSummary struct {
 	Tag          string `json:"tag,omitempty"`
 }
 
-//ListDatasetsOutput is output for queue creation
+//ListDatasetsOutput is output for dataset creation
 type ListDatasetsOutput struct {
 	Datasets []*DatasetSummary
 }
