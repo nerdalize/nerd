@@ -55,9 +55,6 @@ func (c *mClient) ListTasks(projectID, workloadID string, onlySuccessTasks bool)
 func (c *mClient) DescribeTask(projectID, workloadID string, taskID int64) (output *v1payload.DescribeTaskOutput, err error) {
 	return output, nil
 }
-func (c *mClient) PatchTask(projectID, workloadID string, taskID int64, outputDatasetID string) (output *v1payload.PatchTaskOutput, err error) {
-	return output, nil
-}
 func (c *mClient) ReceiveTaskRuns(projectID, workloadID string, timeout time.Duration, queueOps v1batch.QueueOps) (output []*v1payload.Run, err error) {
 	return <-c.receiveRuns, <-c.receiveErrs
 }
@@ -65,7 +62,7 @@ func (c *mClient) SendRunHeartbeat(projectID, workloadID string, taskID int64, r
 	c.runHeartbeats <- mRunFeedback{projectID: projectID, workloadID: workloadID, taskID: taskID, token: runToken}
 	return output, nil
 }
-func (c *mClient) SendRunSuccess(projectID, workloadID string, taskID int64, runToken, result string) (output *v1payload.SendRunSuccessOutput, err error) {
+func (c *mClient) SendRunSuccess(projectID, workloadID string, taskID int64, runToken, result, outputDatasetID string) (output *v1payload.SendRunSuccessOutput, err error) {
 	c.runSuccess <- mRunFeedback{projectID: projectID, workloadID: workloadID, taskID: taskID, token: runToken, result: result}
 	return output, nil
 }

@@ -46,19 +46,6 @@ type ListTasksOutput struct {
 	Tasks []*TaskSummary
 }
 
-//PatchTaskInput is input for task update
-type PatchTaskInput struct {
-	ProjectID       string `json:"project_id" valid:"required"`
-	WorkloadID      string `json:"workload_id" valid:"required"`
-	TaskID          int64  `json:"task_id" valid:"required"`
-	OutputDatasetID string `json:"output_dataset_id"`
-}
-
-//PatchTaskOutput is output for task update
-type PatchTaskOutput struct {
-	TaskSummary
-}
-
 //DescribeTaskInput is input for task creation
 type DescribeTaskInput struct {
 	ProjectID  string `json:"project_id" valid:"required"`

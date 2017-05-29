@@ -10,7 +10,7 @@ import (
 //ClientRunInterface is an interface so client task calls can be mocked.
 type ClientRunInterface interface {
 	SendRunHeartbeat(projectID, workloadID string, taskID int64, runToken string) (output *v1payload.SendRunHeartbeatOutput, err error)
-	SendRunSuccess(projectID, workloadID string, taskID int64, runToken, result string) (output *v1payload.SendRunSuccessOutput, err error)
+	SendRunSuccess(projectID, workloadID string, taskID int64, runToken, result, outputDatasetID string) (output *v1payload.SendRunSuccessOutput, err error)
 	SendRunFailure(projectID, workloadID string, taskID int64, runToken, errCode, errMessage string) (output *v1payload.SendRunFailureOutput, err error)
 }
 
@@ -28,14 +28,15 @@ func (c *Client) SendRunHeartbeat(projectID, workloadID string, taskID int64, ru
 }
 
 //SendRunSuccess will send a successfully run for a task
-func (c *Client) SendRunSuccess(projectID, workloadID string, taskID int64, runToken, result string) (output *v1payload.SendRunSuccessOutput, err error) {
+func (c *Client) SendRunSuccess(projectID, workloadID string, taskID int64, runToken, result, outputDatasetID string) (output *v1payload.SendRunSuccessOutput, err error) {
 	output = &v1payload.SendRunSuccessOutput{}
 	input := &v1payload.SendRunSuccessInput{
-		TaskID:     taskID,
-		ProjectID:  projectID,
-		WorkloadID: workloadID,
-		RunToken:   runToken,
-		Result:     result,
+		TaskID:          taskID,
+		ProjectID:       projectID,
+		WorkloadID:      workloadID,
+		RunToken:        runToken,
+		Result:          result,
+		OutputDatasetID: outputDatasetID,
 	}
 
 	return output, c.doRequest(http.MethodPost, createPath(projectID, workloadsEndpoint, workloadID, "tasks", strconv.FormatInt(taskID, 10), "success"), input, output)

@@ -14,7 +14,6 @@ type ClientTaskInterface interface {
 	StartTask(projectID, workloadID string, cmd []string, env map[string]string, stdin []byte) (output *v1payload.StartTaskOutput, err error)
 	StopTask(projectID, workloadID string, taskID int64) (output *v1payload.StopTaskOutput, err error)
 	ListTasks(projectID, workloadID string, onlySuccessTasks bool) (output *v1payload.ListTasksOutput, err error)
-	PatchTask(projectID, workloadID string, taskID int64, outputDatasetID string) (output *v1payload.PatchTaskOutput, err error)
 	DescribeTask(projectID, workloadID string, taskID int64) (output *v1payload.DescribeTaskOutput, err error)
 	ReceiveTaskRuns(projectID, workloadID string, timeout time.Duration, queueOps QueueOps) (output []*v1payload.Run, err error)
 }
@@ -74,19 +73,6 @@ func (c *Client) ListTasks(projectID, workloadID string, onlySuccessTasks bool) 
 	}
 
 	return output, c.doRequest(http.MethodGet, createPath(projectID, workloadsEndpoint, workloadID, "tasks"), input, output)
-}
-
-//PatchTask will patch a task
-func (c *Client) PatchTask(projectID, workloadID string, taskID int64, outputDatasetID string) (output *v1payload.PatchTaskOutput, err error) {
-	output = &v1payload.PatchTaskOutput{}
-	input := &v1payload.PatchTaskInput{
-		WorkloadID:      workloadID,
-		ProjectID:       projectID,
-		TaskID:          taskID,
-		OutputDatasetID: outputDatasetID,
-	}
-
-	return output, c.doRequest(http.MethodPatch, createPath(projectID, workloadsEndpoint, workloadID, "tasks", strconv.FormatInt(taskID, 10)), input, output)
 }
 
 //ReceiveTaskRuns will long poll the aws sqs queue for the availability of new runs. It will receive and delete messages once decoded

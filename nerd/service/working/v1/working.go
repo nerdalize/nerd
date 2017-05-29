@@ -158,13 +158,12 @@ func (w *Worker) startRunExec(ctx context.Context, run *v1payload.Run) {
 		}
 
 		w.logs.Printf("[INFO] run process exited succesfully")
+		outputDatasetID := ""
 		if w.uploadConf != nil {
 			w.logs.Printf("[INFO] uploading output data")
-			var datasetID string
-			if datasetID, err = v1datatransfer.Upload(ctx, *w.uploadConf); err != nil {
+			if outputDatasetID, err = v1datatransfer.Upload(ctx, *w.uploadConf); err != nil {
 				w.logs.Printf("[ERROR] failed to upload output dataset: %+v", err)
 			}
-			w.batch.PatchTask(run.ProjectID, run.WorkloadID, run.TaskID, datasetID)
 			if err = RemoveContents(w.uploadConf.LocalDir); err != nil {
 				w.logs.Printf("[ERROR] failed to clear output directory '%v', shutting down", err)
 				cancel()
@@ -177,6 +176,7 @@ func (w *Worker) startRunExec(ctx context.Context, run *v1payload.Run) {
 			run.TaskID,
 			run.Token,
 			runRes,
+			outputDatasetID,
 		); err != nil {
 			w.logs.Printf("[ERROR] failed to send run success: %+v", err)
 		}

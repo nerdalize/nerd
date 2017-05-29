@@ -32,7 +32,8 @@ type SendRunSuccessInput struct {
 	TaskID     int64  `json:"task_id" valid:"required"`
 	RunToken   string `json:"run_token" valid:"required"`
 
-	Result string `json:"result"`
+	Result          string `json:"result"`
+	OutputDatasetID string `json:"output_dataset_id"`
 }
 
 //SendRunSuccessOutput is output from marking a run as failed
