@@ -17,8 +17,7 @@ import (
 
 //WorkloadWorkOpts describes command options
 type WorkloadWorkOpts struct {
-	UploadTag string `long:"upload-tag" default:"" default-mask:"" description:"when set, data in --output-dir will be uploaded with this tag after each task run"`
-	OutputDir string `long:"output-dir" default:"" default-mask:"" description:"when set, data in --output-dir will be uploaded with the --upload-tag tag after each task run"`
+	OutputDir string `long:"output-dir" default:"" default-mask:"" description:"when set, data in --output-dir will be uploaded after each task run"`
 }
 
 //WorkloadWork command
@@ -68,7 +67,7 @@ func (cmd *WorkloadWork) DoRun(args []string) (err error) {
 	conf := v1working.DefaultConf()
 
 	var worker *v1working.Worker
-	if cmd.opts.UploadTag != "" && cmd.opts.OutputDir != "" {
+	if cmd.opts.OutputDir != "" {
 		dataOps, err := nerdaws.NewDataClient(
 			nerdaws.NewNerdalizeCredentials(bclient, ss.Project.Name),
 			ss.Project.AWSRegion,
@@ -81,7 +80,6 @@ func (cmd *WorkloadWork) DoRun(args []string) (err error) {
 			DataOps:     dataOps,
 			LocalDir:    cmd.opts.OutputDir,
 			ProjectID:   ss.Project.Name,
-			Tag:         cmd.opts.UploadTag,
 			Concurrency: 64,
 		}
 		worker = v1working.NewWorker(logger, bclient, qops, ss.Project.Name, args[0], args[1], args[2:], uploadConf, conf)

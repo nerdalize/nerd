@@ -91,7 +91,7 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		datasetIDs = append(datasetIDs, downloadObject)
 	} else {
 		var datasets *v1payload.ListDatasetsOutput
-		datasets, err = batchclient.ListDatasets(ss.Project.Name, downloadObject)
+		datasets, err = batchclient.ListDatasets(ss.Project.Name)
 		if err != nil {
 			HandleError(err)
 		}
