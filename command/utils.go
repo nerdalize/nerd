@@ -126,8 +126,9 @@ func HandleError(err error) {
 
 //ProgressBar creates a new CLI progess bar and adds input from the progressCh to the bar.
 func ProgressBar(total int64, progressCh <-chan int64, doneCh chan<- struct{}) {
-	bar := pb.New64(total).Start()
+	bar := pb.New64(total)
 	bar.SetUnits(pb.U_BYTES)
+	bar.Start()
 	for elem := range progressCh {
 		bar.Add64(elem)
 	}

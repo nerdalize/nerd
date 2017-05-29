@@ -2,7 +2,6 @@ package jwt
 
 import (
 	"crypto/ecdsa"
-	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -37,7 +36,6 @@ func (b *ProviderBasis) SetExpiration(expiration time.Time) {
 	if b.ExpireWindow > 0 {
 		b.expiration = b.expiration.Add(-b.ExpireWindow)
 	}
-	fmt.Println()
 }
 
 //SetExpirationFromJWT decodes the JWT and sets the provider expiration based on the JWT expiration field.
