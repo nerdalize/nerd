@@ -17,7 +17,8 @@ import (
 //WorkloadStartOpts describes command options
 type WorkloadStartOpts struct {
 	Env          []string `long:"env" short:"e" description:"environment variables"`
-	InputDataset string   `long:"input-dataset" short:"i" description:"input dataset ID, will be available in /input in your container"`
+	InputDataset string   `long:"input-dataset" short:"d" description:"input dataset ID, will be available in /input in your container"`
+	Instances    int      `long:"instances" short:"i" default:"1" description:"number of working instances"`
 }
 
 //WorkloadStart command
@@ -98,7 +99,7 @@ func (cmd *WorkloadStart) DoRun(args []string) (err error) {
 	wenv[EnvConfigJSON] = string(configJSON)
 	wenv[EnvNerdProject] = ss.Project.Name
 
-	workload, err := bclient.StartWorkload(ss.Project.Name, args[0], cmd.opts.InputDataset, wenv)
+	workload, err := bclient.StartWorkload(ss.Project.Name, args[0], cmd.opts.InputDataset, wenv, cmd.opts.Instances)
 	if err != nil {
 		HandleError(err)
 	}

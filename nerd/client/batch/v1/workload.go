@@ -8,20 +8,21 @@ import (
 
 //ClientWorkloadInterface is an interface so client workload calls can be mocked.
 type ClientWorkloadInterface interface {
-	StartWorkload(projectID, image, inputDatasetID string, env map[string]string) (output *v1payload.StartWorkloadOutput, err error)
+	StartWorkload(projectID, image, inputDatasetID string, env map[string]string, instances int) (output *v1payload.StartWorkloadOutput, err error)
 	StopWorkload(projectID, workloadID string) (output *v1payload.StopWorkloadOutput, err error)
 	ListWorkloads(projectID string) (output *v1payload.ListWorkloadsOutput, err error)
 	DescribeWorkload(projectID, workloadID string) (output *v1payload.DescribeWorkloadOutput, err error)
 }
 
 //StartWorkload will start a workload
-func (c *Client) StartWorkload(projectID, image, inputDatasetID string, env map[string]string) (output *v1payload.StartWorkloadOutput, err error) {
+func (c *Client) StartWorkload(projectID, image, inputDatasetID string, env map[string]string, instances int) (output *v1payload.StartWorkloadOutput, err error) {
 	output = &v1payload.StartWorkloadOutput{}
 	input := &v1payload.StartWorkloadInput{
 		ProjectID:      projectID,
 		Image:          image,
 		InputDatasetID: inputDatasetID,
 		Env:            env,
+		Instances:      instances,
 	}
 
 	return output, c.doRequest(http.MethodPost, createPath(projectID, workloadsEndpoint), input, output)

@@ -4,7 +4,8 @@ package v1payload
 type WorkloadSummary struct {
 	ProjectID      string `json:"project_id"`
 	WorkloadID     string `json:"workload_id"`
-	Image          string `json:"image" valid:"required"`
+	Image          string `json:"image"`
+	Instances      int    `json:"instances"`
 	InputDatasetID string `json:"input_dataset_id"`
 }
 
@@ -39,6 +40,7 @@ type DescribeWorkloadOutput struct {
 type StartWorkloadInput struct {
 	ProjectID      string            `json:"project_id" valid:"required"`
 	Image          string            `json:"image" valid:"required"`
+	Instances      int               `json:"instances" valid:"required"`
 	InputDatasetID string            `json:"input_dataset_id"`
 	Env            map[string]string `json:"env"`
 }
