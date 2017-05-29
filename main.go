@@ -50,6 +50,26 @@ func main() {
 		"task success":      command.TaskSuccessFactory,
 		"task failure":      command.TaskFailureFactory,
 	}
+	include := []string{
+		"login",
+		"workload",
+		"workload start",
+		"workload stop",
+		"workload list",
+		"workload describe",
+		"dataset",
+		"dataset upload",
+		"dataset download",
+		"project",
+		"project set",
+		"project list",
+		"task",
+		"task list",
+		"task start",
+		"task stop",
+		"task describe",
+	}
+	c.HelpFunc = cli.FilteredHelpFunc(include, cli.BasicHelpFunc(name))
 
 	status, err := c.Run()
 	if err != nil {
