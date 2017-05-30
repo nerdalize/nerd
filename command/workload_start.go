@@ -99,7 +99,7 @@ func (cmd *WorkloadStart) DoRun(args []string) (err error) {
 	wenv[EnvConfigJSON] = string(configJSON)
 	wenv[EnvNerdProject] = ss.Project.Name
 
-	workload, err := bclient.StartWorkload(ss.Project.Name, args[0], cmd.opts.InputDataset, wenv, cmd.opts.Instances)
+	workload, err := bclient.CreateWorkload(ss.Project.Name, args[0], cmd.opts.InputDataset, wenv, cmd.opts.Instances, true)
 	if err != nil {
 		HandleError(err)
 	}

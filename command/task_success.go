@@ -48,7 +48,7 @@ func (cmd *TaskSuccess) DoRun(args []string) (err error) {
 	if err != nil {
 		HandleError(err)
 	}
-	out, err := bclient.SendRunSuccess(ss.Project.Name, args[0], taskID, args[2], args[3])
+	out, err := bclient.SendRunSuccess(ss.Project.Name, args[0], taskID, args[2], args[3], args[4])
 	if err != nil {
 		HandleError(err)
 	}
