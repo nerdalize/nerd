@@ -42,6 +42,7 @@ type CreateWorkloadInput struct {
 	Image          string            `json:"image" valid:"required"`
 	Instances      int               `json:"instances" valid:"required"`
 	InputDatasetID string            `json:"input_dataset_id"`
+	UseCuteur      bool              `json:"use_cuteur" valid:"required"`
 	Env            map[string]string `json:"env"`
 }
 

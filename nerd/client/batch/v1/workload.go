@@ -8,14 +8,14 @@ import (
 
 //ClientWorkloadInterface is an interface so client workload calls can be mocked.
 type ClientWorkloadInterface interface {
-	CreateWorkload(projectID, image, inputDatasetID string, env map[string]string, instances int) (output *v1payload.CreateWorkloadOutput, err error)
+	CreateWorkload(projectID, image, inputDatasetID string, env map[string]string, instances int, useCuteur bool) (output *v1payload.CreateWorkloadOutput, err error)
 	StopWorkload(projectID, workloadID string) (output *v1payload.StopWorkloadOutput, err error)
 	ListWorkloads(projectID string) (output *v1payload.ListWorkloadsOutput, err error)
 	DescribeWorkload(projectID, workloadID string) (output *v1payload.DescribeWorkloadOutput, err error)
 }
 
 //StartWorkload will start a workload
-func (c *Client) CreateWorkload(projectID, image, inputDatasetID string, env map[string]string, instances int) (output *v1payload.CreateWorkloadOutput, err error) {
+func (c *Client) CreateWorkload(projectID, image, inputDatasetID string, env map[string]string, instances int, useCuteur bool) (output *v1payload.CreateWorkloadOutput, err error) {
 	output = &v1payload.CreateWorkloadOutput{}
 	input := &v1payload.CreateWorkloadInput{
 		ProjectID:      projectID,
@@ -23,6 +23,7 @@ func (c *Client) CreateWorkload(projectID, image, inputDatasetID string, env map
 		InputDatasetID: inputDatasetID,
 		Env:            env,
 		Instances:      instances,
+		UseCuteur:      useCuteur,
 	}
 
 	return output, c.doRequest(http.MethodPost, createPath(projectID, workloadsEndpoint), input, output)
