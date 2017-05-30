@@ -22,7 +22,7 @@ const (
 	tasksEndpoint      = "tasks"
 	tokensEndpoint     = "tokens"
 	datasetEndpoint    = "datasets"
-	workloadsEndpoint  = "workload"
+	workloadsEndpoint  = "workloads"
 	placementsEndpoint = "placements"
 )
 
