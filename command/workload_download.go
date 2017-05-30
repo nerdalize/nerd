@@ -82,8 +82,11 @@ func (cmd *WorkloadDownload) DoRun(args []string) (err error) {
 	}
 
 	for _, task := range tasks.Tasks {
+		if task.OutputDatasetID == "" {
+			continue
+		}
 		cmdString := strings.Join(task.Cmd, "")
-		taskDir := fmt.Sprintf("%x", md5.Sum([]byte(cmdString)))
+		taskDir := fmt.Sprintf("%x_%v", md5.Sum([]byte(cmdString)), task.TaskID)
 		localDir := path.Join(outputDir, taskDir)
 		err := os.Mkdir(localDir, OutputDirPermissions)
 		if os.IsExist(err) {
@@ -112,6 +115,7 @@ func (cmd *WorkloadDownload) DoRun(args []string) (err error) {
 		if err != nil {
 			HandleError(errors.Wrapf(err, "failed to download dataset '%v'", task.OutputDatasetID))
 		}
+		<-progressBarDoneCh
 	}
 
 	return nil
