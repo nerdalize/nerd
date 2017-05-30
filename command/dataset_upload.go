@@ -67,35 +67,27 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	if err != nil {
 		HandleError(errors.Wrap(err, "could not create aws dataops client"))
 	}
+	progressCh := make(chan int64)
+	progressBarDoneCh := make(chan struct{})
+	size, err := v1datatransfer.GetLocalDatasetSize(context.Background(), dataPath)
+	if err != nil {
+		HandleError(err)
+	}
+	go ProgressBar(size, progressCh, progressBarDoneCh)
 	uploadConf := v1datatransfer.UploadConfig{
 		BatchClient: batchclient,
 		DataOps:     dataOps,
 		LocalDir:    dataPath,
 		ProjectID:   ss.Project.Name,
 		Concurrency: 64,
+		ProgressCh:  progressCh,
 	}
-	if !cmd.jsonOutput { // show progress bar
-		progressCh := make(chan int64)
-		progressBarDoneCh := make(chan struct{})
-		size, err := v1datatransfer.GetLocalDatasetSize(context.Background(), dataPath)
-		if err != nil {
-			HandleError(err)
-		}
-		go ProgressBar(size, progressCh, progressBarDoneCh)
-		uploadConf.ProgressCh = progressCh
 
-		datasetID, err := v1datatransfer.Upload(context.Background(), uploadConf)
-		if err != nil {
-			HandleError(err)
-		}
-		<-progressBarDoneCh
-		logrus.Infof("Created dataset with ID '%v'", datasetID)
-	} else { // do not show progress bar
-		datasetID, err := v1datatransfer.Upload(context.Background(), uploadConf)
-		if err != nil {
-			HandleError(err)
-		}
-		logrus.Infof("Created dataset with ID '%v'", datasetID)
+	datasetID, err := v1datatransfer.Upload(context.Background(), uploadConf)
+	if err != nil {
+		HandleError(err)
 	}
+	<-progressBarDoneCh
+	logrus.Infof("Created dataset with ID '%v'", datasetID)
 	return nil
 }

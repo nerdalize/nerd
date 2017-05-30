@@ -29,7 +29,7 @@ type WorkloadWork struct {
 //WorkloadWorkFactory returns a factory method for the join command
 func WorkloadWorkFactory() (cli.Command, error) {
 	opts := &WorkloadWorkOpts{}
-	comm, err := newCommand("nerd worker work <workload-id> <command-tmpl> [arg-tmpl...]", "start working tasks of a queue locally", "", opts)
+	comm, err := newCommand("nerd workload work <workload-id> <command> [args...]", "start working tasks of a queue locally", "", opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
