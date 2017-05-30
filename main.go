@@ -35,6 +35,7 @@ func main() {
 		"workload work":     command.WorkloadWorkFactory,
 		"dataset":           command.DatasetFactory,
 		"dataset upload":    command.DatasetUploadFactory,
+		"dataset list":      command.DatasetListFactory,
 		"dataset download":  command.DatasetDownloadFactory,
 		"project":           command.ProjectFactory,
 		"project place":     command.ProjectPlaceFactory,
