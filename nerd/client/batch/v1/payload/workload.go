@@ -4,6 +4,7 @@ package v1payload
 type WorkloadSummary struct {
 	ProjectID      string `json:"project_id"`
 	WorkloadID     string `json:"workload_id"`
+	QueueURL       string `json:"queue_url"`
 	Image          string `json:"image"`
 	Instances      int    `json:"instances"`
 	InputDatasetID string `json:"input_dataset_id"`
