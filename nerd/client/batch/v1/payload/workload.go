@@ -34,7 +34,6 @@ type DescribeWorkloadOutput struct {
 	WorkloadSummary
 	TaskCount map[TaskStatus]int `json:"task_count"`
 	Env       map[string]string  `json:"env"`
-	QueueURL  string             `json:"queue_url"`
 }
 
 //StartWorkloadInput is input for workload creation
