@@ -37,7 +37,7 @@ type DescribeWorkloadOutput struct {
 }
 
 //StartWorkloadInput is input for workload creation
-type StartWorkloadInput struct {
+type CreateWorkloadInput struct {
 	ProjectID      string            `json:"project_id" valid:"required"`
 	Image          string            `json:"image" valid:"required"`
 	Instances      int               `json:"instances" valid:"required"`
@@ -46,7 +46,7 @@ type StartWorkloadInput struct {
 }
 
 //StartWorkloadOutput is output for workload creation
-type StartWorkloadOutput struct {
+type CreateWorkloadOutput struct {
 	WorkloadSummary
 }
 
