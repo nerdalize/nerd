@@ -86,30 +86,31 @@ func (cmd *WorkloadDownload) DoRun(args []string) (err error) {
 		taskDir := fmt.Sprintf("%x", md5.Sum([]byte(cmdString)))
 		localDir := path.Join(outputDir, taskDir)
 		err := os.Mkdir(localDir, OutputDirPermissions)
-		if !os.IsExist(err) {
-			downloadConf := v1datatransfer.DownloadConfig{
-				BatchClient: batchclient,
-				DataOps:     dataOps,
-				LocalDir:    localDir,
-				ProjectID:   ss.Project.Name,
-				DatasetID:   task.OutputDatasetID,
-				Concurrency: DownloadConcurrency,
-			}
-			logrus.Infof("Downloading dataset with ID '%v'", task.OutputDatasetID)
-			progressCh := make(chan int64)
-			progressBarDoneCh := make(chan struct{})
-			var size int64
-			size, err = v1datatransfer.GetRemoteDatasetSize(context.Background(), batchclient, dataOps, ss.Project.Name, task.OutputDatasetID)
-			if err != nil {
-				HandleError(err)
-			}
-			go ProgressBar(size, progressCh, progressBarDoneCh)
-			downloadConf.ProgressCh = progressCh
-			err = v1datatransfer.Download(context.Background(), downloadConf)
-			if err != nil {
-				HandleError(errors.Wrapf(err, "failed to download dataset '%v'", task.OutputDatasetID))
-			}
-			<-progressBarDoneCh
+		if os.IsExist(err) {
+			logrus.Infof("Dataset %v for task %v already exists\n", task.OutputDatasetID, task.TaskID)
+			continue
+		}
+		downloadConf := v1datatransfer.DownloadConfig{
+			BatchClient: batchclient,
+			DataOps:     dataOps,
+			LocalDir:    localDir,
+			ProjectID:   ss.Project.Name,
+			DatasetID:   task.OutputDatasetID,
+			Concurrency: DownloadConcurrency,
+		}
+		logrus.Infof("Downloading dataset with ID '%v'", task.OutputDatasetID)
+		progressCh := make(chan int64)
+		progressBarDoneCh := make(chan struct{})
+		var size int64
+		size, err = v1datatransfer.GetRemoteDatasetSize(context.Background(), batchclient, dataOps, ss.Project.Name, task.OutputDatasetID)
+		if err != nil {
+			HandleError(err)
+		}
+		go ProgressBar(size, progressCh, progressBarDoneCh)
+		downloadConf.ProgressCh = progressCh
+		err = v1datatransfer.Download(context.Background(), downloadConf)
+		if err != nil {
+			HandleError(errors.Wrapf(err, "failed to download dataset '%v'", task.OutputDatasetID))
 		}
 	}
 

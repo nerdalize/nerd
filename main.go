@@ -31,6 +31,7 @@ func main() {
 		"workload stop":     command.WorkloadStopFactory,
 		"workload list":     command.WorkloadListFactory,
 		"workload describe": command.WorkloadDescribeFactory,
+		"workload download": command.WorkloadDownloadFactory,
 		"workload work":     command.WorkloadWorkFactory,
 		"dataset":           command.DatasetFactory,
 		"dataset upload":    command.DatasetUploadFactory,
