@@ -52,7 +52,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	}
 
 	// Clients
-	batchclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
+	batchclient, err := NewClient(cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}

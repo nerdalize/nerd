@@ -76,7 +76,7 @@ func (cmd *WorkloadStart) DoRun(args []string) (err error) {
 		HandleError(errors.Wrap(err, "failed to get worker JWT"))
 	}
 
-	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
+	bclient, err := NewClient(cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
