@@ -28,7 +28,7 @@ Uploading dataset with ID 'd-96fac377'
 314.38 MiB / 314.38 MiB [=============================] 100.00%
 
 # start a workload
-# we start 2 instances of the jrottenberg/ffmpeg container that work on the input dataset
+# we start 2 workers that use the jrottenberg/ffmpeg container to work on the input dataset
 $ nerd workload start jrottenberg/ffmpeg
     --instances 2
     --input-dataset d-96fac377
@@ -36,7 +36,7 @@ Started workload with ID 'w-96fac375'
 
 # start two tasks for this workload
 # this will start the jrottenberg/ffmpeg container twice with the given arguments
-# input dataset d-96fac377 will be available in /input, data in /output will be uploaded when the task successfully executed
+# input dataset d-96fac377 will be available in /input, data in /output will be uploaded when the task has successfully executed
 $ nerd task start w-96fac375 -- -i /input/video1.mov -acodec copy -vcodec copy /output/video1.avi
 $ nerd task start w-96fac375 -- -i /input/video2.mov -acodec copy -vcodec copy /output/video2.avi
 
