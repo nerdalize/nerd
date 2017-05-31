@@ -63,9 +63,10 @@ $ tree ~/Desktop/videos_out
 Please note that each command has a `--help` option that shows how to use the command.
 Each command accepts at least the following options:
 ```
-      --config=      location of config file [$CONFIG]
-  -v, --verbose      show verbose output (default: false)
-      --json-format  show output in json format (default: false)
+--config-file=  location of config file [$NERD_CONFIG_FILE]
+--session-file= location of session file [$NERD_SESSION_FILE]
+-v, --verbose=      show verbose output (default: false)
+--json-format=  show output in json format (default: false)
 ```
 
 ## Power users
@@ -130,8 +131,14 @@ If you just want to set your credentials, you can also set it with an environmen
 
 ## Nerdalize SDK
 
-Code in this repository can also be used as a Software Development Kit (SDK) to communicate with Nerdalize services. The SDK is located in the `nerd/client` package. It is devided into three different clients:
+Code in this repository can also be used as a Software Development Kit (SDK) to communicate with Nerdalize services. The SDK consists of two packages:
+
+### nerd/client
 
 * `auth` is a client to the Nerdalize authentication backend. It can be used to fetch new JWTs.
 * `batch` is a client to batch.nerdalize.com. It can be used to work with resources like `queues`, `workers`, and `datasets`.
-* `data` is a client to Nerdalize storage. It can be used to upload and download datasets.
+
+### nerd/service
+
+* `datatransfer` makes it possible to upload or download a dataset using one function call
+* `working` works on workload tasks
