@@ -1,4 +1,4 @@
-FROM golang:1.8
+FROM golang:1-alpine
 
 ENV NERD_PATH /go/src/github.com/nerdalize/nerd
 
