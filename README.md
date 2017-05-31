@@ -20,8 +20,8 @@ $ nerd project set nerdalize-video
 
 # upload a piece of data that will acts as input to the program
 $ ls ~/Desktop/videos
-video1.avi
-video2.avi
+video1.mov
+video2.mov
 
 $ nerd dataset upload ~/Desktop/videos
 Uploading dataset with ID 'd-96fac377'
