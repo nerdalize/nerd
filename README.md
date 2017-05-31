@@ -8,19 +8,45 @@ _NOTE: This project is currently experimental and not functional._
 ```bash
 # log into the scientific compute platform
 $ nerd login
-Please enter your Nerdalize username and password.
-Username: my-user@my-organization.com
-Password: ******
+Successful login. You can now select a project using 'nerd project'
+
+# list all projects
+$ nerd project list
+nerdalize-video
+nerdalize-weather
+
+# set a project to work with
+$ nerd project set nerdalize-video
 
 # upload a piece of data that will acts as input to the program
-$ nerd upload ./my-project/my-task-input
+$ ls ~/Desktop/videos
+video1.avi
+video2.avi
+
+$ nerd dataset upload ~/Desktop/videos
 Uploading dataset with ID 'd-96fac377'
 314.38 MiB / 314.38 MiB [=============================] 100.00%
 
-# download results of running the task
-$ nerd download t-615f2d56 ./my-project/my-task-output
-Downloading dataset with ID 'd-615f2d56'
-12.31 MiB / 12.31 MiB [=============================] 100.00%
+# start a workload
+# we start 2 instances of the jrottenberg/ffmpeg container that work on the input dataset
+$ nerd workload start jrottenberg/ffmpeg
+    --instances 2
+    --input-dataset d-96fac377
+Started workload with ID 'w-96fac375'
+
+# start two tasks for this workload
+# this will start the jrottenberg/ffmpeg container twice with the given arguments
+# input dataset d-96fac377 will be available in /input, data in /output will be uploaded when the task successfully executed
+$ nerd task start w-96fac375 -- -i /input/video1.mov -acodec copy -vcodec copy /output/video1.avi
+$ nerd task start w-96fac375 -- -i /input/video2.mov -acodec copy -vcodec copy /output/video2.avi
+
+# get status of tasks
+$ nerd task list w-96fac375
+
+# when all tasks are done we can download the output
+$ nerd workload download w-96fac375 ~/Desktop/videos_out
+$ tree -d ~/Desktop/videos_out
+
 ```
 
 Please note that each command has a `--help` option that shows how to use the command.
