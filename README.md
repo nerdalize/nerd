@@ -42,10 +42,21 @@ $ nerd task start w-96fac375 -- -i /input/video2.mov -acodec copy -vcodec copy /
 
 # get status of tasks
 $ nerd task list w-96fac375
++------------+------------+---------+
+| WORKLOADID |   TASKID   | STATUS  |
++------------+------------+---------+
+| w-96fac375 | t-14962176 | SUCCESS |
+| w-96fac375 | t-89491732 | PENDING |
++------------+------------+---------+
 
 # when all tasks are done we can download the output
 $ nerd workload download w-96fac375 ~/Desktop/videos_out
-$ tree -d ~/Desktop/videos_out
+$ tree ~/Desktop/videos_out
+~/Desktop/videos_out
+├── 7691e3df0c824efc1007082057b9c867_14962176
+│   └── video1.avi
+└── f45371445a7b95f7352bf841c30e4f58_89491732
+    └── video2.avi
 
 ```
 
