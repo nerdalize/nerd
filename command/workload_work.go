@@ -2,6 +2,8 @@ package command
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -17,7 +19,9 @@ import (
 
 //WorkloadWorkOpts describes command options
 type WorkloadWorkOpts struct {
-	OutputDir string `long:"output-dir" default:"" default-mask:"" description:"when set, data in --output-dir will be uploaded after each task run"`
+	EntrypointJSONB64 string `long:"entrypoint-json-base64" default:"W10=" description:"work entrypoint, first json and then base64 encoded"`
+	CmdJSONB64        string `long:"cmd-json-base64" default:"W10=" description:"work cmd, first json and then base64 encoded"`
+	OutputDir         string `long:"output-dir" default:"" default-mask:"" description:"when set, data in --output-dir will be uploaded after each task run"`
 }
 
 //WorkloadWork command
@@ -29,7 +33,7 @@ type WorkloadWork struct {
 //WorkloadWorkFactory returns a factory method for the join command
 func WorkloadWorkFactory() (cli.Command, error) {
 	opts := &WorkloadWorkOpts{}
-	comm, err := newCommand("nerd workload work <workload-id> -- <command> [args...]", "start working tasks of a queue locally", "", opts)
+	comm, err := newCommand("nerd workload work <workload-id>", "start working tasks of a queue locally", "", opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -44,13 +48,31 @@ func WorkloadWorkFactory() (cli.Command, error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *WorkloadWork) DoRun(args []string) (err error) {
-	if len(args) < 2 {
+	if len(args) < 1 {
 		return fmt.Errorf("not enough arguments, see --help")
+	}
+
+	var entrypoint, command []string
+	entrJsonStr, err := base64.StdEncoding.DecodeString(cmd.opts.EntrypointJSONB64)
+	if err != nil {
+		HandleError(errors.Wrapf(err, "failed to base64 decode entrypoint '%v'", cmd.opts.EntrypointJSONB64))
+	}
+	commandJsonStr, err := base64.StdEncoding.DecodeString(cmd.opts.CmdJSONB64)
+	if err != nil {
+		HandleError(errors.Wrapf(err, "failed to base64 decode cmd '%v'", cmd.opts.CmdJSONB64))
+	}
+	err = json.Unmarshal(entrJsonStr, &entrypoint)
+	if err != nil {
+		HandleError(errors.Wrapf(err, "failed to decode entrypoint '%s'", entrJsonStr))
+	}
+	err = json.Unmarshal(commandJsonStr, &command)
+	if err != nil {
+		HandleError(errors.Wrapf(err, "failed to decode cmd '%s'", commandJsonStr))
 	}
 
 	bclient, err := NewClient(cmd.config, cmd.session)
 	if err != nil {
-		HandleError(err)
+		HandleError(errors.Wrap(err, "failed to create client"))
 	}
 
 	ss, err := cmd.session.Read()
@@ -82,9 +104,9 @@ func (cmd *WorkloadWork) DoRun(args []string) (err error) {
 			ProjectID:   ss.Project.Name,
 			Concurrency: 64,
 		}
-		worker = v1working.NewWorker(logger, bclient, qops, ss.Project.Name, args[0], args[1], args[2:], uploadConf, conf)
+		worker = v1working.NewWorker(logger, bclient, qops, ss.Project.Name, args[0], entrypoint, command, uploadConf, conf)
 	} else {
-		worker = v1working.NewWorker(logger, bclient, qops, ss.Project.Name, args[0], args[1], args[2:], nil, conf)
+		worker = v1working.NewWorker(logger, bclient, qops, ss.Project.Name, args[0], entrypoint, command, nil, conf)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

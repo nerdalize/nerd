@@ -33,8 +33,10 @@ type Worker struct {
 	wid        string
 	uploadConf *v1datatransfer.UploadConfig
 
-	bexec string
-	bargs []string
+	entrypoint []string
+	cmd        []string
+	// bexec string
+	// bargs []string
 }
 
 type workerClient interface {
@@ -57,7 +59,7 @@ func DefaultConf() *Conf {
 }
 
 //NewWorker creates a worker based on the provided configuration
-func NewWorker(logger *log.Logger, batchClient workerClient, qops v1batch.QueueOps, projectID string, workloadID string, baseExec string, baseArgs []string, uploadConf *v1datatransfer.UploadConfig, conf *Conf) (w *Worker) {
+func NewWorker(logger *log.Logger, batchClient workerClient, qops v1batch.QueueOps, projectID string, workloadID string, entrypoint, cmd []string, uploadConf *v1datatransfer.UploadConfig, conf *Conf) (w *Worker) {
 	w = &Worker{
 		conf:       *conf,
 		logs:       logger,
@@ -67,8 +69,10 @@ func NewWorker(logger *log.Logger, batchClient workerClient, qops v1batch.QueueO
 		pid:        projectID,
 		uploadConf: uploadConf,
 
-		bexec: baseExec,
-		bargs: baseArgs,
+		entrypoint: entrypoint,
+		cmd:        cmd,
+		// bexec: baseExec,
+		// bargs: baseArgs,
 	}
 
 	return w
@@ -107,7 +111,16 @@ func (w *Worker) startRunExec(ctx context.Context, run *v1payload.Run) {
 	defer cancel() //cancel heartbeat context if this function exits
 
 	//blindly appending task args to base args
-	cmd := exec.CommandContext(ctx, w.bexec, append(w.bargs, run.Cmd...)...)
+	command := w.cmd
+	if len(run.Cmd) > 0 {
+		command = run.Cmd
+	}
+	command = append(w.entrypoint, command...)
+	if len(command) == 0 {
+		w.logs.Print("[ERROR] no run command was specified")
+		return
+	}
+	cmd := exec.CommandContext(ctx, command[0], command[1:]...)
 	cmd.Stdin = bytes.NewBuffer(run.Stdin)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
@@ -188,7 +201,7 @@ func (w *Worker) startRunExec(ctx context.Context, run *v1payload.Run) {
 func (w *Worker) startReceivingRuns(ctx context.Context) <-chan runReceive {
 	runCh := make(chan runReceive)
 	go func() {
-		w.logs.Printf("[DEBUG] Started receiving task runs, base exec: '%s %v'", w.bexec, w.bargs)
+		w.logs.Printf("[DEBUG] Started receiving task runs, base exec: '%v %v'", w.entrypoint, w.cmd)
 		defer w.logs.Printf("[DEBUG] Exited task run receiving")
 
 		for {
