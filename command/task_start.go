@@ -48,7 +48,7 @@ func (cmd *TaskStart) DoRun(args []string) (err error) {
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	tcmd := []string{}
@@ -60,7 +60,7 @@ func (cmd *TaskStart) DoRun(args []string) (err error) {
 	for _, l := range cmd.opts.Env {
 		split := strings.SplitN(l, "=", 2)
 		if len(split) < 2 {
-			HandleError(fmt.Errorf("invalid environment variable format, expected 'FOO=bar' fromat, got: %v", l))
+			return HandleError(fmt.Errorf("invalid environment variable format, expected 'FOO=bar' fromat, got: %v", l))
 		}
 		tenv[split[0]] = split[1]
 	}
@@ -70,17 +70,17 @@ func (cmd *TaskStart) DoRun(args []string) (err error) {
 		lr := io.LimitReader(os.Stdin, 128*1024) //128KiB
 		_, err = io.Copy(buf, lr)
 		if err != nil {
-			HandleError(fmt.Errorf("failed to copy stdin: %v", err))
+			return HandleError(fmt.Errorf("failed to copy stdin: %v", err))
 		}
 	}
 
 	ss, err := cmd.session.Read()
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 	out, err := bclient.StartTask(ss.Project.Name, args[0], tcmd, tenv, buf.Bytes())
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	logrus.Infof("Task Start: %v", out)

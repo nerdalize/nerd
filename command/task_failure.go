@@ -36,21 +36,21 @@ func (cmd *TaskFailure) DoRun(args []string) (err error) {
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	taskID, err := strconv.ParseInt(args[1], 10, 64)
 	if err != nil {
-		HandleError(errors.Wrap(err, "invalid task ID, must be a number"))
+		return HandleError(errors.Wrap(err, "invalid task ID, must be a number"))
 	}
 
 	ss, err := cmd.session.Read()
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 	out, err := bclient.SendRunFailure(ss.Project.Name, args[0], taskID, args[2], args[3], args[4])
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	logrus.Infof("Task Failure: %v", out)

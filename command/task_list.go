@@ -36,16 +36,16 @@ func (cmd *TaskList) DoRun(args []string) (err error) {
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	ss, err := cmd.session.Read()
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 	out, err := bclient.ListTasks(ss.Project.Name, args[0], false)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)

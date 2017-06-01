@@ -29,17 +29,17 @@ func ProjectExpelFactory() (cli.Command, error) {
 func (cmd *ProjectExpel) DoRun(args []string) (err error) {
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	ss, err := cmd.session.Read()
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	out, err := bclient.ExpelProject(ss.Project.Name)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	logrus.Infof("Placement removed: %v", out)

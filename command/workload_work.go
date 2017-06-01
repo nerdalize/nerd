@@ -54,34 +54,34 @@ func (cmd *WorkloadWork) DoRun(args []string) (err error) {
 	var entrypoint, command []string
 	entrJsonStr, err := base64.StdEncoding.DecodeString(cmd.opts.EntrypointJSONB64)
 	if err != nil {
-		HandleError(errors.Wrapf(err, "failed to base64 decode entrypoint '%v'", cmd.opts.EntrypointJSONB64))
+		return HandleError(errors.Wrapf(err, "failed to base64 decode entrypoint '%v'", cmd.opts.EntrypointJSONB64))
 	}
 	commandJsonStr, err := base64.StdEncoding.DecodeString(cmd.opts.CmdJSONB64)
 	if err != nil {
-		HandleError(errors.Wrapf(err, "failed to base64 decode cmd '%v'", cmd.opts.CmdJSONB64))
+		return HandleError(errors.Wrapf(err, "failed to base64 decode cmd '%v'", cmd.opts.CmdJSONB64))
 	}
 	err = json.Unmarshal(entrJsonStr, &entrypoint)
 	if err != nil {
-		HandleError(errors.Wrapf(err, "failed to decode entrypoint '%s'", entrJsonStr))
+		return HandleError(errors.Wrapf(err, "failed to decode entrypoint '%s'", entrJsonStr))
 	}
 	err = json.Unmarshal(commandJsonStr, &command)
 	if err != nil {
-		HandleError(errors.Wrapf(err, "failed to decode cmd '%s'", commandJsonStr))
+		return HandleError(errors.Wrapf(err, "failed to decode cmd '%s'", commandJsonStr))
 	}
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
-		HandleError(errors.Wrap(err, "failed to create client"))
+		return HandleError(errors.Wrap(err, "failed to create client"))
 	}
 
 	ss, err := cmd.session.Read()
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 	creds := nerdaws.NewNerdalizeCredentials(bclient, ss.Project.Name)
 	qops, err := nerdaws.NewQueueClient(creds, ss.Project.AWSRegion)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	conf := v1working.DefaultConf()
@@ -93,7 +93,7 @@ func (cmd *WorkloadWork) DoRun(args []string) (err error) {
 			ss.Project.AWSRegion,
 		)
 		if err != nil {
-			HandleError(errors.Wrap(err, "could not create aws dataops client"))
+			return HandleError(errors.Wrap(err, "could not create aws dataops client"))
 		}
 		uploadConf := &v1datatransfer.UploadConfig{
 			BatchClient: bclient,

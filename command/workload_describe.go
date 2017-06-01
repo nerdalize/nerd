@@ -35,16 +35,16 @@ func (cmd *WorkloadDescribe) DoRun(args []string) (err error) {
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	ss, err := cmd.session.Read()
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 	out, err := bclient.DescribeWorkload(ss.Project.Name, args[0])
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	logrus.Infof("Workload Description: %+v", out)

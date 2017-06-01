@@ -71,7 +71,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	progressBarDoneCh := make(chan struct{})
 	size, err := v1datatransfer.GetLocalDatasetSize(context.Background(), dataPath)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 	go ProgressBar(cmd.outputter.ErrW(), size, progressCh, progressBarDoneCh)
 	uploadConf := v1datatransfer.UploadConfig{
@@ -85,7 +85,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 
 	dataset, err := v1datatransfer.Upload(context.Background(), uploadConf)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 	<-progressBarDoneCh
 	tmpl := "$.DatasetID"

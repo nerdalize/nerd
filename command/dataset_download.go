@@ -52,31 +52,31 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	if err != nil && os.IsNotExist(err) {
 		err = os.MkdirAll(outputDir, OutputDirPermissions)
 		if err != nil {
-			HandleError(errors.Errorf("The provided path '%s' does not exist and could not be created.", outputDir))
+			return HandleError(errors.Errorf("The provided path '%s' does not exist and could not be created.", outputDir))
 		}
 		fi, err = os.Stat(outputDir)
 	}
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	} else if !fi.IsDir() {
-		HandleError(errors.Errorf("The provided path '%s' is not a directory", outputDir))
+		return HandleError(errors.Errorf("The provided path '%s' is not a directory", outputDir))
 	}
 
 	// Clients
 	batchclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 	ss, err := cmd.session.Read()
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 	dataOps, err := aws.NewDataClient(
 		aws.NewNerdalizeCredentials(batchclient, ss.Project.Name),
 		ss.Project.AWSRegion,
 	)
 	if err != nil {
-		HandleError(errors.Wrap(err, "could not create aws dataops client"))
+		return HandleError(errors.Wrap(err, "could not create aws dataops client"))
 	}
 
 	logrus.Infof("Downloading dataset with ID '%v'", datasetID)
@@ -93,13 +93,13 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	var size int64
 	size, err = v1datatransfer.GetRemoteDatasetSize(context.Background(), batchclient, dataOps, ss.Project.Name, datasetID)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 	go ProgressBar(cmd.outputter.ErrW(), size, progressCh, progressBarDoneCh)
 	downloadConf.ProgressCh = progressCh
 	err = v1datatransfer.Download(context.Background(), downloadConf)
 	if err != nil {
-		HandleError(errors.Wrapf(err, "failed to download dataset '%v'", datasetID))
+		return HandleError(errors.Wrapf(err, "failed to download dataset '%v'", datasetID))
 	}
 	<-progressBarDoneCh
 	return nil

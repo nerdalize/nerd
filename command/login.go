@@ -41,7 +41,7 @@ func LoginFactory() (cli.Command, error) {
 func (cmd *Login) DoRun(args []string) error {
 	authbase, err := url.Parse(cmd.config.Auth.APIEndpoint)
 	if err != nil {
-		HandleError(errors.Wrapf(err, "auth endpoint '%v' is not a valid URL", cmd.config.Auth.APIEndpoint))
+		return HandleError(errors.Wrapf(err, "auth endpoint '%v' is not a valid URL", cmd.config.Auth.APIEndpoint))
 	}
 	authOpsClient := v1auth.NewOpsClient(v1auth.OpsClientConfig{
 		Base:   authbase,
@@ -57,23 +57,23 @@ func (cmd *Login) DoRun(args []string) error {
 
 	err = open.Run(fmt.Sprintf("http://%s/oauth?state=%s", cmd.config.Auth.OAuthLocalServer, randomState))
 	if err != nil {
-		HandleError(errors.Wrap(err, "Failed to open browser window. Please see github.com/nerdalize/nerd for alternative ways of authenticating."))
+		return HandleError(errors.Wrap(err, "Failed to open browser window. Please see github.com/nerdalize/nerd for alternative ways of authenticating."))
 	}
 
 	oauthResponse := <-doneCh
 	if oauthResponse.err != nil {
-		HandleError(errors.Wrap(oauthResponse.err, "failed to do oauth login"))
+		return HandleError(errors.Wrap(oauthResponse.err, "failed to do oauth login"))
 	}
 
 	out, err := authOpsClient.GetOAuthCredentials(oauthResponse.code, cmd.config.Auth.ClientID, fmt.Sprintf("http://%s/oauth/callback", cmd.config.Auth.OAuthLocalServer))
 	if err != nil {
-		HandleError(errors.Wrap(err, "failed to get oauth credentials"))
+		return HandleError(errors.Wrap(err, "failed to get oauth credentials"))
 	}
 
 	expiration := time.Unix(time.Now().Unix()+int64(out.ExpiresIn), 0)
 	err = cmd.session.WriteOAuth(out.AccessToken, out.RefreshToken, expiration, out.Scope, out.TokenType)
 	if err != nil {
-		HandleError(errors.Wrap(err, "failed to write oauth tokens to config"))
+		return HandleError(errors.Wrap(err, "failed to write oauth tokens to config"))
 	}
 	cmd.ui.Info("Successful login. You can now select a project using 'nerd project'")
 	return nil
