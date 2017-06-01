@@ -1,9 +1,10 @@
 package command
 
 import (
-	"fmt"
 	"os"
+	"time"
 
+	humanize "github.com/dustin/go-humanize"
 	"github.com/mitchellh/cli"
 	"github.com/olekukonko/tablewriter"
 	"github.com/pkg/errors"
@@ -52,7 +53,7 @@ func (cmd *WorkloadList) DoRun(args []string) (err error) {
 		row = append(row, t.ProjectID)
 		row = append(row, t.WorkloadID)
 		row = append(row, t.Image)
-		row = append(row, fmt.Sprintf("%v", t.CreatedAt))
+		row = append(row, humanize.Time(time.Unix(t.CreatedAt, 0)))
 		table.Append(row)
 	}
 
