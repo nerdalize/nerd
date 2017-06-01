@@ -1,10 +1,10 @@
-hash: 085695e6b164637e868d35102fefd079e90154131bfce4041547b297668c53f9
-updated: 2017-05-10T12:03:27.444552023+02:00
+hash: 1bfd0263139b356816696f043a23577e5f73544a750287d94d281217f4e74519
+updated: 2017-06-01T12:52:07.352993313+02:00
 imports:
 - name: github.com/armon/go-radix
   version: 4239b77079c7b5d1243b7b4736304ce8ddb6f0f2
 - name: github.com/aws/aws-sdk-go
-  version: 49c7a5e645b5eca5aabd1fd6a676dbddaf7b2a1a
+  version: d43439f542aac478e400c879d32e567a406d172b
   subpackages:
   - aws
   - aws/awserr
@@ -46,6 +46,8 @@ imports:
   version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
   subpackages:
   - query
+- name: github.com/hashicorp/logutils
+  version: 0dc08b1671f34c4250ce212759ebd880f743d883
 - name: github.com/jessevdk/go-flags
   version: 4e64e4a4e2552194cf594243e23aa9baf3b4297e
 - name: github.com/jmespath/go-jmespath
