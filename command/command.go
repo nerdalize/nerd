@@ -9,7 +9,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	homedir "github.com/mitchellh/go-homedir"
@@ -18,7 +17,9 @@ import (
 )
 
 const (
-	EnvConfigJSON  = "NERD_CONFIG_JSON"
+	//EnvConfigJSON can be used to pass the config file as a json encoded string
+	EnvConfigJSON = "NERD_CONFIG_JSON"
+	//EnvNerdProject can be used to set the nerd project
 	EnvNerdProject = "NERD_PROJECT"
 )
 
@@ -45,9 +46,8 @@ func newCommand(title, synopsis, help string, opts interface{}) (*command, error
 		ConfigFile:  cmd.setConfig,
 		SessionFile: cmd.setSession,
 		OutputOpts: OutputOpts{
-			Output:        cmd.setOutput,
-			VerboseOutput: cmd.setVerbose,
-			JSONOutput:    cmd.setJSON,
+			Output: cmd.setOutput,
+			Debug:  cmd.setDebug,
 		},
 	}
 	_, err := cmd.parser.AddGroup("output options", "output options", confOpts)
@@ -59,15 +59,14 @@ func newCommand(title, synopsis, help string, opts interface{}) (*command, error
 
 //command is an abstract implementation for embedding in concrete commands and allows basic command functionality to be reused.
 type command struct {
-	help       string        //extended help message, show when --help a command
-	synopsis   string        //short help message, shown on the command overview
-	parser     *flags.Parser //option parser that will be used when parsing args
-	ui         cli.Ui
-	config     *conf.Config
-	outputter  *format.Outputter
-	jsonOutput bool
-	session    *conf.Session
-	runFunc    func(args []string) error
+	help      string        //extended help message, show when --help a command
+	synopsis  string        //short help message, shown on the command overview
+	parser    *flags.Parser //option parser that will be used when parsing args
+	ui        cli.Ui
+	config    *conf.Config
+	outputter *format.Outputter
+	session   *conf.Session
+	runFunc   func(args []string) error
 }
 
 //Will write help text for when a user uses --help, it automatically renders all option groups of the flags.Parser (augmented with default values). It will show an extended help message if it is not empty, else it shows the synopsis.
@@ -182,16 +181,12 @@ func (c *command) setSession(loc string) {
 	}
 }
 
-//setVerbose sets verbose output formatting
-func (c *command) setVerbose(verbose bool) {
-	c.outputter.SetDebug(verbose)
-	if verbose {
-		logrus.SetFormatter(new(logrus.TextFormatter))
-		logrus.SetLevel(logrus.DebugLevel)
-	}
+//setDebug sets debug output formatting
+func (c *command) setDebug(debug bool) {
+	c.outputter.SetDebug(debug)
 }
 
-//setJSON sets json output formatting
+//setOutput specifies the type of output
 func (c *command) setOutput(output string) {
 	switch output {
 	case "json":
@@ -202,14 +197,6 @@ func (c *command) setOutput(output string) {
 		fallthrough
 	default:
 		c.outputter.SetOutputType(format.OutputTypePretty)
-	}
-}
-
-//setJSON sets json output formatting
-func (c *command) setJSON(json bool) {
-	c.jsonOutput = json
-	if json {
-		logrus.SetFormatter(new(logrus.JSONFormatter))
 	}
 }
 
