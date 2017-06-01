@@ -1,11 +1,12 @@
 package format
 
 import (
-	"fmt"
 	"io"
+	"log"
 	"os"
 	"strings"
 
+	"github.com/hashicorp/logutils"
 	"github.com/pkg/errors"
 )
 
@@ -31,18 +32,39 @@ const (
 
 //Outputter is responsible for all output
 type Outputter struct {
-	verbose    bool
+	debug      bool
 	outputType OutputType
 	outw       io.Writer
 	errw       io.Writer
 	logfile    io.WriteCloser
+	Logger     *log.Logger
 }
 
 //NewOutputter creates a new Outputter that writes to Stdout and Stderr
-func NewOutputter() *Outputter {
-	return &Outputter{
-		outw: os.Stderr,
-		errw: os.Stdout,
+func NewOutputter(logger *log.Logger) *Outputter {
+	o := &Outputter{
+		outw:   os.Stderr,
+		errw:   os.Stdout,
+		Logger: logger,
+	}
+	o.setFilter()
+	return o
+}
+
+func (o *Outputter) setFilter() {
+	logLevel := "INFO"
+	if o.debug {
+		logLevel = "DEBUG"
+	}
+	filter := &logutils.LevelFilter{
+		Levels:   []logutils.LogLevel{"DEBUG", "WARN", "ERROR", "INFO"},
+		MinLevel: logutils.LogLevel(logLevel),
+		Writer:   o.errw,
+	}
+	if o.logfile != nil {
+		o.Logger.SetOutput(io.MultiWriter(o.logfile, filter))
+	} else {
+		o.Logger.SetOutput(filter)
 	}
 }
 
@@ -64,9 +86,9 @@ func (o *Outputter) SetOutputType(ot OutputType) {
 	o.outputType = ot
 }
 
-//SetVerbose sets verbose outputting
-func (o *Outputter) SetVerbose(v bool) {
-	o.verbose = v
+//SetDebug sets debug outputting
+func (o *Outputter) SetDebug(debug bool) {
+	o.debug = debug
 }
 
 //SetLogToDisk sets a logfile to write to
@@ -76,6 +98,7 @@ func (o *Outputter) SetLogToDisk(location string) error {
 		return errors.Wrap(err, "failed to open log file")
 	}
 	o.logfile = f
+	o.setFilter()
 	return nil
 }
 
@@ -102,36 +125,11 @@ func (o *Outputter) Output(d DecMap) {
 //WriteError writes an error to errw
 func (o *Outputter) WriteError(err error) {
 	if errors.Cause(err) != nil { // when there's are more than 1 message on the message stack, only print the top one for user friendlyness.
-		o.Info(strings.Replace(err.Error(), ": "+errorCauser(errorCauser(err)).Error(), "", 1))
+		o.Logger.Print(strings.Replace(err.Error(), ": "+errorCauser(errorCauser(err)).Error(), "", 1))
 	} else {
-		o.Info(err)
+		o.Logger.Print(err)
 	}
-	o.Debugf("Underlying error: %+v", err)
-}
-
-//Info writes to errw
-func (o *Outputter) Info(a ...interface{}) {
-	fmt.Fprint(o.multi(o.errw), a)
-}
-
-//Infof supports formatting
-func (o *Outputter) Infof(format string, a ...interface{}) {
-	o.Info(fmt.Sprintf(format, a))
-}
-
-//Debug only writes to errw if verbose mode is on
-func (o *Outputter) Debug(a ...interface{}) {
-	if o.logfile != nil {
-		fmt.Fprint(o.logfile, a)
-	}
-	if o.verbose {
-		fmt.Fprint(o.errw, a)
-	}
-}
-
-//Debugf supports formatting
-func (o *Outputter) Debugf(format string, a ...interface{}) {
-	o.Debug(fmt.Sprintf(format, a))
+	o.Logger.Print("[DEBUG] Underlying error: %+v", err)
 }
 
 //errorCauser returns the error that is one level up in the error chain.
