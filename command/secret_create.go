@@ -52,7 +52,7 @@ func (cmd *SecretCreate) DoRun(args []string) (err error) {
 		return fmt.Errorf("please provide a pull secret name")
 	}
 
-	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
+	bclient, err := NewClient(cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
