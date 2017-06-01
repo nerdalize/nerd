@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/mitchellh/cli"
@@ -45,11 +46,13 @@ func (cmd *WorkloadList) DoRun(args []string) (err error) {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ProjectID", "WorkloadID"})
+	table.SetHeader([]string{"ProjectID", "WorkloadID", "Image", "Created"})
 	for _, t := range out.Workloads {
 		row := []string{}
 		row = append(row, t.ProjectID)
 		row = append(row, t.WorkloadID)
+		row = append(row, t.Image)
+		row = append(row, fmt.Sprintf("%v", t.CreatedAt))
 		table.Append(row)
 	}
 
