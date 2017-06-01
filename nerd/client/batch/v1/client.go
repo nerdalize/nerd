@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"path"
@@ -38,7 +39,7 @@ type ClientConfig struct {
 	Doer        Doer
 	JWTProvider JWTProvider
 	Base        *url.URL
-	Logger      client.Logger
+	Logger      *log.Logger
 }
 
 //ClientInterface is an interface so client calls can be mocked.

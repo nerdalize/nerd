@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -85,7 +84,6 @@ func (cmd *WorkloadWork) DoRun(args []string) (err error) {
 		HandleError(err)
 	}
 
-	logger := log.New(os.Stderr, "worker/", log.Lshortfile)
 	conf := v1working.DefaultConf()
 
 	var worker *v1working.Worker
@@ -104,9 +102,9 @@ func (cmd *WorkloadWork) DoRun(args []string) (err error) {
 			ProjectID:   ss.Project.Name,
 			Concurrency: 64,
 		}
-		worker = v1working.NewWorker(logger, bclient, qops, ss.Project.Name, args[0], entrypoint, command, uploadConf, conf)
+		worker = v1working.NewWorker(cmd.outputter.Logger, bclient, qops, ss.Project.Name, args[0], entrypoint, command, uploadConf, conf)
 	} else {
-		worker = v1working.NewWorker(logger, bclient, qops, ss.Project.Name, args[0], entrypoint, command, nil, conf)
+		worker = v1working.NewWorker(cmd.outputter.Logger, bclient, qops, ss.Project.Name, args[0], entrypoint, command, nil, conf)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

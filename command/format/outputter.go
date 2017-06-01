@@ -30,6 +30,10 @@ const (
 	OutputTypeJSON = "json"
 )
 
+var (
+	debugFlags = log.LstdFlags | log.Lshortfile
+)
+
 //Outputter is responsible for all output
 type Outputter struct {
 	debug      bool
@@ -41,17 +45,21 @@ type Outputter struct {
 }
 
 //NewOutputter creates a new Outputter that writes to Stdout and Stderr
-func NewOutputter(logger *log.Logger) *Outputter {
+func NewOutputter(outw, errw io.Writer, logger *log.Logger) *Outputter {
 	o := &Outputter{
-		outw:   os.Stderr,
-		errw:   os.Stdout,
+		outw:   outw,
+		errw:   errw,
 		Logger: logger,
 	}
 	o.setFilter()
 	return o
 }
 
+//setFilter sets the logger output filter
 func (o *Outputter) setFilter() {
+	if o.Logger == nil {
+		panic("no logger specified")
+	}
 	logLevel := "INFO"
 	if o.debug {
 		logLevel = "DEBUG"
@@ -89,6 +97,10 @@ func (o *Outputter) SetOutputType(ot OutputType) {
 //SetDebug sets debug outputting
 func (o *Outputter) SetDebug(debug bool) {
 	o.debug = debug
+	o.setFilter()
+	if debug == true {
+		o.Logger.SetFlags(debugFlags)
+	}
 }
 
 //SetLogToDisk sets a logfile to write to
@@ -124,12 +136,15 @@ func (o *Outputter) Output(d DecMap) {
 
 //WriteError writes an error to errw
 func (o *Outputter) WriteError(err error) {
-	if errors.Cause(err) != nil { // when there's are more than 1 message on the message stack, only print the top one for user friendlyness.
-		o.Logger.Print(strings.Replace(err.Error(), ": "+errorCauser(errorCauser(err)).Error(), "", 1))
-	} else {
-		o.Logger.Print(err)
+	if o.Logger == nil {
+		panic("no logger specified")
 	}
-	o.Logger.Print("[DEBUG] Underlying error: %+v", err)
+	if errors.Cause(err) != nil { // when there's are more than 1 message on the message stack, only print the top one for user friendlyness.
+		o.Logger.Println(strings.Replace(err.Error(), ": "+errorCauser(errorCauser(err)).Error(), "", 1))
+	} else {
+		o.Logger.Println(err)
+	}
+	o.Logger.Printf("[DEBUG] Underlying error: %+v\n", err)
 }
 
 //errorCauser returns the error that is one level up in the error chain.

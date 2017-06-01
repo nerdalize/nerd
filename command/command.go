@@ -3,6 +3,7 @@ package command
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -32,7 +33,7 @@ func newCommand(title, synopsis, help string, opts interface{}) (*command, error
 			Reader: os.Stdin,
 			Writer: os.Stderr,
 		},
-		outputter: format.NewOutputter(),
+		outputter: format.NewOutputter(os.Stdout, os.Stderr, log.New(os.Stderr, "", 0)),
 	}
 	if opts != nil {
 		_, err := cmd.parser.AddGroup("options", "options", opts)
@@ -183,7 +184,7 @@ func (c *command) setSession(loc string) {
 
 //setVerbose sets verbose output formatting
 func (c *command) setVerbose(verbose bool) {
-	c.outputter.SetVerbose(verbose)
+	c.outputter.SetDebug(verbose)
 	if verbose {
 		logrus.SetFormatter(new(logrus.TextFormatter))
 		logrus.SetLevel(logrus.DebugLevel)

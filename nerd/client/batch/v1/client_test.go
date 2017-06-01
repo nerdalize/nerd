@@ -2,18 +2,15 @@ package v1batch
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"testing"
 
 	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
 )
-
-type logger struct{}
-
-func (l *logger) WriteError(err error)                 {}
-func (l *logger) Debugf(a string, args ...interface{}) {}
 
 type input struct {
 	Field string `json:"field"`
@@ -222,7 +219,7 @@ func TestDoRequest(t *testing.T) {
 			}
 			cl := NewClient(ClientConfig{
 				Base:        base,
-				Logger:      &logger{},
+				Logger:      log.New(os.Stderr, "test/", log.LstdFlags),
 				JWTProvider: NewStaticJWTProvider(tc.fields.jwt),
 			})
 			err = cl.doRequest(tc.fields.method, tc.fields.path, tc.fields.input, tc.fields.output)

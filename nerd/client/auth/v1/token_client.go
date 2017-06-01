@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 
@@ -28,7 +29,7 @@ type TokenClientInterface interface {
 type TokenClientConfig struct {
 	Doer   Doer
 	Base   *url.URL
-	Logger client.Logger
+	Logger *log.Logger
 }
 
 //NewTokenClient creates a new TokenClient.

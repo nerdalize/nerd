@@ -46,11 +46,11 @@ func NewClient(c *conf.Config, session *conf.Session, outputter *format.Outputte
 	}
 	authOpsClient := v1auth.NewOpsClient(v1auth.OpsClientConfig{
 		Base:   authbase,
-		Logger: outputter,
+		Logger: outputter.Logger,
 	})
 	authTokenClient := v1auth.NewTokenClient(v1auth.TokenClientConfig{
 		Base:   authbase,
-		Logger: outputter,
+		Logger: outputter.Logger,
 	})
 	return v1batch.NewClient(v1batch.ClientConfig{
 		JWTProvider: v1batch.NewChainedJWTProvider(
@@ -58,12 +58,12 @@ func NewClient(c *conf.Config, session *conf.Session, outputter *format.Outputte
 			jwt.NewConfigProvider(key, session, authTokenClient),
 			jwt.NewAuthAPIProvider(key, session, v1auth.NewClient(v1auth.ClientConfig{
 				Base:               authbase,
-				Logger:             outputter,
+				Logger:             outputter.Logger,
 				OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, c.Auth.ClientID, session),
 			})),
 		),
 		Base:   base,
-		Logger: outputter,
+		Logger: outputter.Logger,
 	}), nil
 }
 

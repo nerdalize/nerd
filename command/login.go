@@ -45,7 +45,7 @@ func (cmd *Login) DoRun(args []string) error {
 	}
 	authOpsClient := v1auth.NewOpsClient(v1auth.OpsClientConfig{
 		Base:   authbase,
-		Logger: cmd.outputter,
+		Logger: cmd.outputter.Logger,
 	})
 	randomState := randomString(32)
 	doneCh := make(chan response)
