@@ -34,8 +34,9 @@ type TaskStatus string
 //DescribeWorkloadOutput is output for getting workload information
 type DescribeWorkloadOutput struct {
 	WorkloadSummary
-	TaskCount map[TaskStatus]int `json:"task_count"`
-	Env       map[string]string  `json:"env"`
+	TaskCount  map[TaskStatus]int `json:"task_count"`
+	Env        map[string]string  `json:"env"`
+	PullSecret string             `json:"pull_secret"`
 }
 
 //CreateWorkloadInput is input for workload creation
@@ -46,6 +47,7 @@ type CreateWorkloadInput struct {
 	InputDatasetID string            `json:"input_dataset_id"`
 	UseCuteur      bool              `json:"use_cuteur"`
 	Env            map[string]string `json:"env"`
+	PullSecret     string            `json:"pull_secret"`
 }
 
 //CreateWorkloadOutput is output for workload creation
