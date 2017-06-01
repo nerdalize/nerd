@@ -8,18 +8,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-//QueueDescribe command
-type QueueDescribe struct {
+//WorkloadStop command
+type WorkloadStop struct {
 	*command
 }
 
-//QueueDescribeFactory returns a factory method for the join command
-func QueueDescribeFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd queue describe <queue-id>", "return more information about a specific queue", "", nil)
+//WorkloadStopFactory returns a factory method for the join command
+func WorkloadStopFactory() (cli.Command, error) {
+	comm, err := newCommand("nerd workload stop <workload-id>", "stop a workload from providing compute capacity", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
-	cmd := &QueueDescribe{
+	cmd := &WorkloadStop{
 		command: comm,
 	}
 	cmd.runFunc = cmd.DoRun
@@ -28,12 +28,12 @@ func QueueDescribeFactory() (cli.Command, error) {
 }
 
 //DoRun is called by run and allows an error to be returned
-func (cmd *QueueDescribe) DoRun(args []string) (err error) {
+func (cmd *WorkloadStop) DoRun(args []string) (err error) {
 	if len(args) < 1 {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session, cmd.outputter)
+	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
 		HandleError(err)
 	}
@@ -42,11 +42,12 @@ func (cmd *QueueDescribe) DoRun(args []string) (err error) {
 	if err != nil {
 		HandleError(err)
 	}
-	out, err := bclient.DescribeQueue(ss.Project.Name, args[0])
+
+	out, err := bclient.StopWorkload(ss.Project.Name, args[0])
 	if err != nil {
 		HandleError(err)
 	}
 
-	logrus.Infof("Queue Description: %+v", out)
+	logrus.Infof("Workload stopped: %v", out)
 	return nil
 }

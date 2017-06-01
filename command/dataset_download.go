@@ -4,12 +4,10 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/aws"
-	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
 	v1datatransfer "github.com/nerdalize/nerd/nerd/service/datatransfer/v1"
 	"github.com/pkg/errors"
 )
@@ -19,10 +17,6 @@ const (
 	OutputDirPermissions = 0755
 	//DownloadConcurrency is the amount of concurrent download threads.
 	DownloadConcurrency = 64
-	//DatasetPrefix is the prefix of each dataset ID.
-	DatasetPrefix = "d-"
-	//TagPrefix is the prefix of a tag identifier
-	TagPrefix = "tag-"
 )
 
 //Download command
@@ -32,7 +26,7 @@ type Download struct {
 
 //DatasetDownloadFactory returns a factory method for the join command
 func DatasetDownloadFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd dataset download <dataset> <output-dir>", "download data from the cloud to a local directory", "", nil)
+	comm, err := newCommand("nerd dataset download <dataset-id> <output-dir>", "download data from the cloud to a local directory", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -50,7 +44,7 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	downloadObject := args[0]
+	datasetID := args[0]
 	outputDir := args[1]
 
 	// Folder create and check
@@ -69,7 +63,7 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	}
 
 	// Clients
-	batchclient, err := NewClient(cmd.ui, cmd.config, cmd.session, cmd.outputter)
+	batchclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
 		HandleError(err)
 	}
@@ -85,54 +79,28 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		HandleError(errors.Wrap(err, "could not create aws dataops client"))
 	}
 
-	// Gather dataset IDs
-	var datasetIDs []string
-	if !strings.HasPrefix(downloadObject, TagPrefix) {
-		datasetIDs = append(datasetIDs, downloadObject)
-	} else {
-		var datasets *v1payload.ListDatasetsOutput
-		datasets, err = batchclient.ListDatasets(ss.Project.Name, downloadObject)
-		if err != nil {
-			HandleError(err)
-		}
-		datasetIDs = make([]string, len(datasets.Datasets))
-		for i, dataset := range datasets.Datasets {
-			datasetIDs[i] = dataset.DatasetID
-		}
+	logrus.Infof("Downloading dataset with ID '%v'", datasetID)
+	downloadConf := v1datatransfer.DownloadConfig{
+		BatchClient: batchclient,
+		DataOps:     dataOps,
+		LocalDir:    outputDir,
+		ProjectID:   ss.Project.Name,
+		DatasetID:   datasetID,
+		Concurrency: 64,
 	}
-
-	for _, datasetID := range datasetIDs {
-		logrus.Infof("Downloading dataset with ID '%v'", datasetID)
-		downloadConf := v1datatransfer.DownloadConfig{
-			BatchClient: batchclient,
-			DataOps:     dataOps,
-			LocalDir:    outputDir,
-			ProjectID:   ss.Project.Name,
-			DatasetID:   datasetID,
-			Concurrency: 64,
-		}
-		if !cmd.jsonOutput { // show progress bar
-			progressCh := make(chan int64)
-			progressBarDoneCh := make(chan struct{})
-			var size int64
-			size, err = v1datatransfer.GetRemoteDatasetSize(context.Background(), batchclient, dataOps, ss.Project.Name, datasetID)
-			if err != nil {
-				HandleError(err)
-			}
-			go ProgressBar(cmd.outputter.ErrW(), size, progressCh, progressBarDoneCh)
-			downloadConf.ProgressCh = progressCh
-			err = v1datatransfer.Download(context.Background(), downloadConf)
-			if err != nil {
-				HandleError(errors.Wrapf(err, "failed to download dataset '%v'", datasetID))
-			}
-			<-progressBarDoneCh
-		} else { //do not show progress bar
-			err = v1datatransfer.Download(context.Background(), downloadConf)
-			if err != nil {
-				HandleError(errors.Wrapf(err, "failed to download dataset '%v'", datasetID))
-			}
-		}
+	progressCh := make(chan int64)
+	progressBarDoneCh := make(chan struct{})
+	var size int64
+	size, err = v1datatransfer.GetRemoteDatasetSize(context.Background(), batchclient, dataOps, ss.Project.Name, datasetID)
+	if err != nil {
+		HandleError(err)
 	}
-
+	go ProgressBar(cmd.outputter.ErrW(), size, progressCh, progressBarDoneCh)
+	downloadConf.ProgressCh = progressCh
+	err = v1datatransfer.Download(context.Background(), downloadConf)
+	if err != nil {
+		HandleError(errors.Wrapf(err, "failed to download dataset '%v'", datasetID))
+	}
+	<-progressBarDoneCh
 	return nil
 }

@@ -16,7 +16,7 @@ type TaskStop struct {
 
 //TaskStopFactory returns a factory method for the join command
 func TaskStopFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd task stop <queue-id> <task-id>", "abort any run(s) of the specified task on a queue", "", nil)
+	comm, err := newCommand("nerd task stop <workload-id> <task-id>", "abort any run(s) of the specified task on a queue", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -34,7 +34,7 @@ func (cmd *TaskStop) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session, cmd.outputter)
+	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
 		HandleError(err)
 	}

@@ -27,7 +27,7 @@ type TaskStart struct {
 //TaskStartFactory returns a factory method for the join command
 func TaskStartFactory() (cli.Command, error) {
 	opts := &TaskStartOpts{}
-	comm, err := newCommand("nerd task start <queue-id> [<cmd_arg1>, <cmd_arg2>]", "schedule a new task for workers to consume from a queue", "", opts)
+	comm, err := newCommand("nerd task start <workload-id> -- [cmd [args...]]", "start a new task for a workload", "", opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -46,7 +46,7 @@ func (cmd *TaskStart) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session, cmd.outputter)
+	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
 		HandleError(err)
 	}

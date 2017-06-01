@@ -17,6 +17,14 @@ type OpsClient struct {
 	OpsClientConfig
 }
 
+var _ OpsClientInterface = &OpsClient{}
+
+//OpsClientInterface is an interface so client calls can be mocked.
+type OpsClientInterface interface {
+	GetOAuthCredentials(code, clientID, localServerURL string) (output *v1payload.GetOAuthCredentialsOutput, err error)
+	RefreshOAuthCredentials(refreshToken, clientID string) (output *v1payload.RefreshOAuthCredentialsOutput, err error)
+}
+
 //OpsClientConfig is the config for OpsClient
 type OpsClientConfig struct {
 	Doer   Doer
@@ -37,7 +45,6 @@ func NewOpsClient(c OpsClientConfig) *OpsClient {
 
 //doRequest requests the server and decodes the output into the `output` field.
 //
-//doRequest will set the Authentication header with the JWT provided by the JWTProvider.
 //When a status code >= 400 is returned by the server the returned error will be of type HTTPError.
 func (c *OpsClient) doRequest(method, urlPath string, input, output interface{}) (err error) {
 	path, err := url.Parse(urlPath)
@@ -98,11 +105,6 @@ func (c *OpsClient) doRequest(method, urlPath string, input, output interface{})
 	}
 
 	return nil
-}
-
-//RefreshJWT refreshes a JWT with a refresh token
-func (c *OpsClient) RefreshJWT(jwt, secret string) (string, error) {
-	return "", nil
 }
 
 //GetOAuthCredentials gets oauth credentials based on a 'session' code

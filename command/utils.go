@@ -31,7 +31,7 @@ func (kw *stdoutkw) Write(k string) (err error) {
 }
 
 //NewClient creates a new batch Client.
-func NewClient(ui cli.Ui, c *conf.Config, session *conf.Session, outputter *format.Outputter) (*v1batch.Client, error) {
+func NewClient(c *conf.Config, session *conf.Session, outputter *format.Outputter) (*v1batch.Client, error) {
 	key, err := jwt.ParseECDSAPublicKeyFromPemBytes([]byte(c.Auth.PublicKey))
 	if err != nil {
 		return nil, errors.Wrap(err, "ECDSA Public Key is invalid")
@@ -48,10 +48,14 @@ func NewClient(ui cli.Ui, c *conf.Config, session *conf.Session, outputter *form
 		Base:   authbase,
 		Logger: outputter,
 	})
+	authTokenClient := v1auth.NewTokenClient(v1auth.TokenClientConfig{
+		Base:   authbase,
+		Logger: outputter,
+	})
 	return v1batch.NewClient(v1batch.ClientConfig{
 		JWTProvider: v1batch.NewChainedJWTProvider(
-			jwt.NewEnvProvider(key),
-			jwt.NewConfigProvider(key, session),
+			jwt.NewEnvProvider(key, session, authTokenClient),
+			jwt.NewConfigProvider(key, session, authTokenClient),
 			jwt.NewAuthAPIProvider(key, session, v1auth.NewClient(v1auth.ClientConfig{
 				Base:               authbase,
 				Logger:             outputter,
@@ -123,9 +127,10 @@ func HandleError(err error) {
 
 //ProgressBar creates a new CLI progess bar and adds input from the progressCh to the bar.
 func ProgressBar(w io.Writer, total int64, progressCh <-chan int64, doneCh chan<- struct{}) {
-	bar := pb.New64(total).Start()
+	bar := pb.New64(total)
 	bar.SetUnits(pb.U_BYTES)
 	bar.Output = w
+	bar.Start()
 	for elem := range progressCh {
 		bar.Add64(elem)
 	}

@@ -4,6 +4,8 @@ import (
 	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
+	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
@@ -66,4 +68,17 @@ func ParseECDSAPublicKeyFromPemBytes(pemb []byte) (*ecdsa.PublicKey, error) {
 	default:
 		return nil, errors.New("pem bytes doesn't contain a ECDSA public key")
 	}
+}
+
+func isValid(jwt string, pub *ecdsa.PublicKey) error {
+	claims, err := DecodeTokenWithKey(jwt, pub)
+	if err != nil {
+		return errors.Wrapf(err, "failed to decode jwt '%v'", jwt)
+	}
+	now := time.Now().Unix()
+	if claims.VerifyExpiresAt(now, false) == false {
+		delta := time.Unix(now, 0).Sub(time.Unix(claims.ExpiresAt, 0))
+		return fmt.Errorf("token is expired by %v", delta)
+	}
+	return nil
 }

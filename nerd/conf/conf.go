@@ -79,3 +79,8 @@ func Read(location string) (*Config, error) {
 	}
 	return conf, nil
 }
+
+func FromJSON(in string) (*Config, error) {
+	v := Defaults()
+	return v, json.Unmarshal([]byte(in), v)
+}

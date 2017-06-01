@@ -11,7 +11,7 @@ type ClientTokenInterface interface {
 	CreateToken(projectID string) (output *v1payload.CreateTokenOutput, err error)
 }
 
-//CreateToken will create queue
+//CreateToken will create a token
 func (c *Client) CreateToken(projectID string) (output *v1payload.CreateTokenOutput, err error) {
 	output = &v1payload.CreateTokenOutput{}
 	input := &v1payload.CreateTokenInput{

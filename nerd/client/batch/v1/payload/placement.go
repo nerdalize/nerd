@@ -1,21 +1,24 @@
 package v1payload
 
-//CreatePlacementInput is input for queue creation
-type CreatePlacementInput struct {
+//PlaceProjectInput is input for placement creation
+type PlaceProjectInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
 	Host      string `json:"host" valid:"required"`
-	Token     string `json:"token" valid:"required"`
+	Token     string `json:"token"`
 	CAPem     string `json:"ca_pem"`
+	Password  string `json:"password"`
+	Username  string `json:"username"`
+	Insecure  bool   `json:"insecure"`
 }
 
-//CreatePlacementOutput is output for queue creation
-type CreatePlacementOutput struct {
+//PlaceProjectOutput is output for placement creation
+type PlaceProjectOutput struct {
 }
 
-//DeletePlacementInput is input for queue creation
-type DeletePlacementInput struct {
+//ExpelProjectInput is input for placement creation
+type ExpelProjectInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
 }
 
-//DeletePlacementOutput is output for queue creation
-type DeletePlacementOutput struct{}
+//ExpelProjectOutput is output for placement creation
+type ExpelProjectOutput struct{}

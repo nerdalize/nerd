@@ -1,56 +1,59 @@
 package v1payload
 
-//StopTaskInput is input for queue creation
-type StopTaskInput struct {
-	ProjectID string `json:"project_id" valid:"required"`
-	QueueID   string `json:"queue_id" valid:"required"`
-	TaskID    int64  `json:"task_id" valid:"required"`
+//TaskSummary is a small version of
+type TaskSummary struct {
+	TaskID          int64    `json:"task_id"`
+	WorkloadID      string   `json:"workload_id"`
+	Status          string   `json:"status,omitempty"`
+	OutputDatasetID string   `json:"output_dataset_id"`
+	Cmd             []string `json:"cmd"`
 }
 
-//StopTaskOutput is output for queue creation
+//StopTaskInput is input for task creation
+type StopTaskInput struct {
+	ProjectID  string `json:"project_id" valid:"required"`
+	WorkloadID string `json:"workload_id" valid:"required"`
+	TaskID     int64  `json:"task_id" valid:"required"`
+}
+
+//StopTaskOutput is output for task creation
 type StopTaskOutput struct{}
 
-//StartTaskInput is input for queue creation
+//StartTaskInput is input for task creation
 type StartTaskInput struct {
-	ProjectID string `json:"project_id" valid:"required"`
-	QueueID   string `json:"queue_id" valid:"required"`
+	ProjectID  string `json:"project_id" valid:"required"`
+	WorkloadID string `json:"workload_id" valid:"required"`
 
 	Cmd   []string          `json:"cmd"`
 	Env   map[string]string `json:"env"`
 	Stdin []byte            `json:"stdin"`
 }
 
-//StartTaskOutput is output for queue creation
+//StartTaskOutput is output for task creation
 type StartTaskOutput struct {
 	TaskSummary
 }
 
-//ListTasksInput is input for queue creation
+//ListTasksInput is input for task creation
 type ListTasksInput struct {
-	ProjectID string `json:"project_id" valid:"required"`
-	QueueID   string `json:"queue_id" valid:"required"`
+	ProjectID        string `json:"project_id" valid:"required"`
+	WorkloadID       string `json:"workload_id" valid:"required"`
+	OnlySuccessTasks bool   `json:"only_success_tasks" valid:"required"`
 }
 
-//TaskSummary is a small version of
-type TaskSummary struct {
-	TaskID  int64  `json:"task_id"`
-	QueueID string `json:"queue_id"`
-	Status  string `json:"status,omitempty"`
-}
-
-//ListTasksOutput is output for queue creation
+//ListTasksOutput is output for task creation
 type ListTasksOutput struct {
 	Tasks []*TaskSummary
 }
 
-//DescribeTaskInput is input for queue creation
+//DescribeTaskInput is input for task creation
 type DescribeTaskInput struct {
-	ProjectID string `json:"project_id" valid:"required"`
-	QueueID   string `json:"queue_id" valid:"required"`
-	TaskID    int64  `json:"task_id" valid:"required"`
+	ProjectID  string `json:"project_id" valid:"required"`
+	WorkloadID string `json:"workload_id" valid:"required"`
+	TaskID     int64  `json:"task_id" valid:"required"`
 }
 
-//DescribeTaskOutput is output for queue creation
+//DescribeTaskOutput is output for task creation
 type DescribeTaskOutput struct {
 	TaskSummary
 	ExecutionARN   string `json:"execution_arn"`

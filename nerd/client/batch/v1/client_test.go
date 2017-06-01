@@ -12,7 +12,7 @@ import (
 
 type logger struct{}
 
-func (l *logger) Error(args ...interface{})            {}
+func (l *logger) WriteError(err error)                 {}
 func (l *logger) Debugf(a string, args ...interface{}) {}
 
 type input struct {

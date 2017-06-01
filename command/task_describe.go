@@ -16,7 +16,7 @@ type TaskDescribe struct {
 
 //TaskDescribeFactory returns a factory method for the join command
 func TaskDescribeFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd task describe <queue-id> <task-id>", "return more information about a specific task", "", nil)
+	comm, err := newCommand("nerd task describe <workload-id> <task-id>", "return more information about a specific task", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -34,7 +34,7 @@ func (cmd *TaskDescribe) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session, cmd.outputter)
+	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
 		HandleError(err)
 	}

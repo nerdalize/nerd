@@ -14,7 +14,6 @@ const (
 //CreateDatasetInput is used as input to dataset creation
 type CreateDatasetInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
-	Tag       string `json:"tag" valid:"noDatasetPrefix"`
 }
 
 //CreateDatasetOutput is returned from creating a dataset
@@ -23,21 +22,20 @@ type CreateDatasetOutput struct {
 	HeartbeatInterval time.Duration `json:"heartbeat_interval"`
 }
 
-//DescribeDatasetInput is input for queue creation
+//DescribeDatasetInput is input for dataset creation
 type DescribeDatasetInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
 	DatasetID string `json:"dataset_id" valid:"required"`
 }
 
-//DescribeDatasetOutput is output for queue creation
+//DescribeDatasetOutput is output for dataset creation
 type DescribeDatasetOutput struct {
 	DatasetSummary
 }
 
-//ListDatasetsInput is input for queue creation
+//ListDatasetsInput is input for dataset creation
 type ListDatasetsInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
-	Tag       string `json:"tag,omitempty"`
 }
 
 //DatasetSummary is a small version of
@@ -49,10 +47,10 @@ type DatasetSummary struct {
 	ProjectRoot  string `json:"project_root"`
 	UploadExpire int64  `json:"upload_expire"`
 	UploadStatus string `json:"upload_status"`
-	Tag          string `json:"tag,omitempty"`
+	CreatedAt    int64  `json:"created_at"`
 }
 
-//ListDatasetsOutput is output for queue creation
+//ListDatasetsOutput is output for dataset creation
 type ListDatasetsOutput struct {
 	Datasets []*DatasetSummary
 }

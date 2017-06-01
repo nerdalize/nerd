@@ -17,7 +17,7 @@ type TaskReceive struct {
 
 //TaskReceiveFactory returns a factory method for the join command
 func TaskReceiveFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd task receive <queue-id>", "wait for a new task run to be available on a queue", "", nil)
+	comm, err := newCommand("nerd task receive <workload-id>", "wait for a new task run to be available on a queue", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -35,7 +35,7 @@ func (cmd *TaskReceive) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session, cmd.outputter)
+	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
 		HandleError(err)
 	}
