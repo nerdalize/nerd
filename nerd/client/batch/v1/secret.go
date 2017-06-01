@@ -27,6 +27,21 @@ func (c *Client) CreateSecret(projectID, name, key, value string) (output *v1pay
 	return output, c.doRequest(http.MethodPost, createPath(projectID, secretsEndpoint), input, output)
 }
 
+// CreatePullSecret will create a pull secret
+func (c *Client) CreatePullSecret(projectID, name, dockerServer, dockerUsername, dockerPassword, dockerEmail string) (output *v1payload.CreateSecretOutput, err error) {
+	output = &v1payload.CreateSecretOutput{}
+	input := &v1payload.CreateSecretInput{
+		ProjectID:      projectID,
+		Name:           name,
+		DockerServer:   dockerServer,
+		DockerUsername: dockerUsername,
+		DockerPassword: dockerPassword,
+		DockerEmail:    dockerEmail,
+	}
+
+	return output, c.doRequest(http.MethodPost, createPath(projectID, secretsEndpoint), input, output)
+}
+
 //DeleteSecret will delete a secret with the provided name
 func (c *Client) DeleteSecret(projectID, name string) (output *v1payload.DeleteSecretOutput, err error) {
 	output = &v1payload.DeleteSecretOutput{}
