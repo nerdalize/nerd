@@ -22,8 +22,7 @@ const (
 	tasksEndpoint      = "tasks"
 	tokensEndpoint     = "tokens"
 	datasetEndpoint    = "datasets"
-	workersEndpoint    = "workers"
-	queuesEndpoint     = "queues"
+	workloadsEndpoint  = "workloads"
 	placementsEndpoint = "placements"
 )
 
@@ -46,13 +45,12 @@ type ClientConfig struct {
 type ClientInterface interface {
 	ClientDatasetInterface
 	ClientPingInterface
-	ClientQueueInterface
+	ClientWorkloadInterface
 	ClientTaskInterface
 	ClientRunInterface
 	ClientTokenInterface
 	ClientUploadInterface
 	ClientPlacementInterface
-	ClientWorkerInterface
 }
 
 // Force compile errors when Client doesn't implement ClientInterface.

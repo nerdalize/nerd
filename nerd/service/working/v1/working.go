@@ -30,11 +30,13 @@ type Worker struct {
 	logs       *log.Logger
 	qops       v1batch.QueueOps
 	pid        string
-	qid        string
+	wid        string
 	uploadConf *v1datatransfer.UploadConfig
 
-	bexec string
-	bargs []string
+	entrypoint []string
+	cmd        []string
+	// bexec string
+	// bargs []string
 }
 
 type workerClient interface {
@@ -57,18 +59,20 @@ func DefaultConf() *Conf {
 }
 
 //NewWorker creates a worker based on the provided configuration
-func NewWorker(logger *log.Logger, batchClient workerClient, qops v1batch.QueueOps, projectID string, queueID string, baseExec string, baseArgs []string, uploadConf *v1datatransfer.UploadConfig, conf *Conf) (w *Worker) {
+func NewWorker(logger *log.Logger, batchClient workerClient, qops v1batch.QueueOps, projectID string, workloadID string, entrypoint, cmd []string, uploadConf *v1datatransfer.UploadConfig, conf *Conf) (w *Worker) {
 	w = &Worker{
 		conf:       *conf,
 		logs:       logger,
 		batch:      batchClient,
 		qops:       qops,
-		qid:        queueID,
+		wid:        workloadID,
 		pid:        projectID,
 		uploadConf: uploadConf,
 
-		bexec: baseExec,
-		bargs: baseArgs,
+		entrypoint: entrypoint,
+		cmd:        cmd,
+		// bexec: baseExec,
+		// bargs: baseArgs,
 	}
 
 	return w
@@ -89,7 +93,7 @@ func (w *Worker) startRunExecHeartbeat(procCtx context.Context, cancelProc conte
 		case <-procCtx.Done():
 			return
 		case <-ticker:
-			if out, err := w.batch.SendRunHeartbeat(run.ProjectID, run.QueueID, run.TaskID, run.Token); err != nil {
+			if out, err := w.batch.SendRunHeartbeat(run.ProjectID, run.WorkloadID, run.TaskID, run.Token); err != nil {
 				w.logs.Printf("[ERROR] failed to send run heartbeat: %v", err)
 			} else if out != nil && out.HasExpired {
 				cancelProc()
@@ -107,7 +111,16 @@ func (w *Worker) startRunExec(ctx context.Context, run *v1payload.Run) {
 	defer cancel() //cancel heartbeat context if this function exits
 
 	//blindly appending task args to base args
-	cmd := exec.CommandContext(ctx, w.bexec, append(w.bargs, run.Cmd...)...)
+	command := w.cmd
+	if len(run.Cmd) > 0 {
+		command = run.Cmd
+	}
+	command = append(w.entrypoint, command...)
+	if len(command) == 0 {
+		w.logs.Print("[ERROR] no run command was specified")
+		return
+	}
+	cmd := exec.CommandContext(ctx, command[0], command[1:]...)
 	cmd.Stdin = bytes.NewBuffer(run.Stdin)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
@@ -142,7 +155,7 @@ func (w *Worker) startRunExec(ctx context.Context, run *v1payload.Run) {
 		//@TODO allow sending context
 		if _, err = w.batch.SendRunFailure(
 			run.ProjectID,
-			run.QueueID,
+			run.WorkloadID,
 			run.TaskID,
 			run.Token,
 			errCode,
@@ -158,23 +171,27 @@ func (w *Worker) startRunExec(ctx context.Context, run *v1payload.Run) {
 		}
 
 		w.logs.Printf("[INFO] run process exited succesfully")
+		outputDatasetID := ""
 		if w.uploadConf != nil {
-			w.logs.Printf("[INFO] uploading output data")
-			if _, err = v1datatransfer.Upload(ctx, *w.uploadConf); err != nil {
-				w.logs.Printf("[ERROR] failed to upload output dataset: %+v", err)
-			}
-			if err = RemoveContents(w.uploadConf.LocalDir); err != nil {
-				w.logs.Printf("[ERROR] failed to clear output directory '%v', shutting down", err)
-				cancel()
+			if empty, err := IsEmptyDir(w.uploadConf.LocalDir); !empty && err == nil {
+				w.logs.Printf("[INFO] uploading output data")
+				if outputDatasetID, err = v1datatransfer.Upload(ctx, *w.uploadConf); err != nil {
+					w.logs.Printf("[ERROR] failed to upload output dataset: %+v", err)
+				}
+				if err = RemoveContents(w.uploadConf.LocalDir); err != nil {
+					w.logs.Printf("[ERROR] failed to clear output directory '%v', shutting down", err)
+					cancel()
+				}
 			}
 		}
 		//@TODO allow sending context
 		if _, err = w.batch.SendRunSuccess(
 			run.ProjectID,
-			run.QueueID,
+			run.WorkloadID,
 			run.TaskID,
 			run.Token,
 			runRes,
+			outputDatasetID,
 		); err != nil {
 			w.logs.Printf("[ERROR] failed to send run success: %+v", err)
 		}
@@ -184,7 +201,7 @@ func (w *Worker) startRunExec(ctx context.Context, run *v1payload.Run) {
 func (w *Worker) startReceivingRuns(ctx context.Context) <-chan runReceive {
 	runCh := make(chan runReceive)
 	go func() {
-		w.logs.Printf("[DEBUG] Started receiving task runs, base exec: '%s %v'", w.bexec, w.bargs)
+		w.logs.Printf("[DEBUG] Started receiving task runs, base exec: '%v %v'", w.entrypoint, w.cmd)
 		defer w.logs.Printf("[DEBUG] Exited task run receiving")
 
 		for {
@@ -194,7 +211,7 @@ func (w *Worker) startReceivingRuns(ctx context.Context) <-chan runReceive {
 			default:
 
 				//@TODO we should allow context to be passed on to the batch client to allow cancelling of tcp connections
-				out, err := w.batch.ReceiveTaskRuns(w.pid, w.qid, w.conf.ReceiveTimeout, w.qops)
+				out, err := w.batch.ReceiveTaskRuns(w.pid, w.wid, w.conf.ReceiveTimeout, w.qops)
 				if err != nil {
 					runCh <- runReceive{err: err}
 					continue
@@ -212,7 +229,7 @@ func (w *Worker) startReceivingRuns(ctx context.Context) <-chan runReceive {
 
 //Start will block and begins handling tasks run. It stops when context ctx ends
 func (w *Worker) Start(ctx context.Context) {
-	w.logs.Printf("[DEBUG] started worker for queue '%s'", w.qid)
+	w.logs.Printf("[DEBUG] started worker for workload '%s'", w.wid)
 	defer w.logs.Printf("[DEBUG] exited worker")
 
 	runCh := w.startReceivingRuns(ctx)

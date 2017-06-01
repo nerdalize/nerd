@@ -8,18 +8,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-//QueueList command
-type QueueList struct {
+//DatasetList command
+type DatasetList struct {
 	*command
 }
 
-//QueueListFactory returns a factory method for the join command
-func QueueListFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd queue list", "show a list of all queues in the current project", "", nil)
+//DatasetListFactory returns a factory method for the join command
+func DatasetListFactory() (cli.Command, error) {
+	comm, err := newCommand("nerd dataset list", "show a list of all datasets", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
-	cmd := &QueueList{
+	cmd := &DatasetList{
 		command: comm,
 	}
 	cmd.runFunc = cmd.DoRun
@@ -28,8 +28,8 @@ func QueueListFactory() (cli.Command, error) {
 }
 
 //DoRun is called by run and allows an error to be returned
-func (cmd *QueueList) DoRun(args []string) (err error) {
-	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
+func (cmd *DatasetList) DoRun(args []string) (err error) {
+	bclient, err := NewClient(cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
@@ -38,17 +38,17 @@ func (cmd *QueueList) DoRun(args []string) (err error) {
 	if err != nil {
 		HandleError(err)
 	}
-	out, err := bclient.ListQueues(ss.Project.Name)
+	out, err := bclient.ListDatasets(ss.Project.Name)
 	if err != nil {
 		HandleError(err)
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ProjectID", "QueueID"})
-	for _, t := range out.Queues {
+	table.SetHeader([]string{"ProjectID", "DatasetID"})
+	for _, t := range out.Datasets {
 		row := []string{}
 		row = append(row, t.ProjectID)
-		row = append(row, t.QueueID)
+		row = append(row, t.DatasetID)
 		table.Append(row)
 	}
 

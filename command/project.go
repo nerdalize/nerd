@@ -1,6 +1,8 @@
 package command
 
 import (
+	"fmt"
+
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
 )
@@ -22,6 +24,16 @@ func ProjectFactory() (cli.Command, error) {
 	cmd.runFunc = cmd.DoRun
 
 	return cmd, nil
+}
+
+func (cmd *Project) HelpTemplate() string {
+	return fmt.Sprintf(`
+{{.Help}}{{if gt (len .Subcommands) 0}}
+Subcommands:
+{{- range $value := .Subcommands }}{{if and (ne "%v" $value.Name) (ne "%v" $value.Name)}}
+    {{ $value.NameAligned }}    {{ $value.Synopsis }}{{ end }}{{ end }}
+{{- end }}
+`, "place", "expel")
 }
 
 //DoRun is called by run and allows an error to be returned

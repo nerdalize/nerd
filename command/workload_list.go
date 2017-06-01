@@ -8,18 +8,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-//WorkerList command
-type WorkerList struct {
+//WorkloadList command
+type WorkloadList struct {
 	*command
 }
 
-//WorkerListFactory returns a factory method for the join command
-func WorkerListFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd worker list", "show a list of all workers in the current project", "", nil)
+//WorkloadListFactory returns a factory method for the join command
+func WorkloadListFactory() (cli.Command, error) {
+	comm, err := newCommand("nerd workload list", "show a list of all workloads in the current project", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
-	cmd := &WorkerList{
+	cmd := &WorkloadList{
 		command: comm,
 	}
 	cmd.runFunc = cmd.DoRun
@@ -28,8 +28,8 @@ func WorkerListFactory() (cli.Command, error) {
 }
 
 //DoRun is called by run and allows an error to be returned
-func (cmd *WorkerList) DoRun(args []string) (err error) {
-	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
+func (cmd *WorkloadList) DoRun(args []string) (err error) {
+	bclient, err := NewClient(cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
@@ -39,17 +39,17 @@ func (cmd *WorkerList) DoRun(args []string) (err error) {
 		HandleError(err)
 	}
 
-	out, err := bclient.ListWorkers(ss.Project.Name)
+	out, err := bclient.ListWorkloads(ss.Project.Name)
 	if err != nil {
 		HandleError(err)
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ProjectID", "WorkerID"})
-	for _, t := range out.Workers {
+	table.SetHeader([]string{"ProjectID", "WorkloadID"})
+	for _, t := range out.Workloads {
 		row := []string{}
 		row = append(row, t.ProjectID)
-		row = append(row, t.WorkerID)
+		row = append(row, t.WorkloadID)
 		table.Append(row)
 	}
 

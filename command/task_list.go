@@ -16,7 +16,7 @@ type TaskList struct {
 
 //TaskListFactory returns a factory method for the join command
 func TaskListFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd task list <queue-id>", "show a list of all task currently in a queue", "", nil)
+	comm, err := newCommand("nerd task list <workload-id>", "show a list of all task currently in a queue", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -34,7 +34,7 @@ func (cmd *TaskList) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
+	bclient, err := NewClient(cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
@@ -43,16 +43,16 @@ func (cmd *TaskList) DoRun(args []string) (err error) {
 	if err != nil {
 		HandleError(err)
 	}
-	out, err := bclient.ListTasks(ss.Project.Name, args[0])
+	out, err := bclient.ListTasks(ss.Project.Name, args[0], false)
 	if err != nil {
 		HandleError(err)
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"QueueID", "TaskID", "Status"})
+	table.SetHeader([]string{"WorkloadID", "TaskID", "Status"})
 	for _, t := range out.Tasks {
 		row := []string{}
-		row = append(row, t.QueueID)
+		row = append(row, t.WorkloadID)
 		row = append(row, fmt.Sprintf("%d", t.TaskID))
 		row = append(row, t.Status)
 		table.Append(row)

@@ -25,13 +25,13 @@ func (mq *mQueueOps) DeleteMessage(queueURL string, message interface{}) error {
 }
 
 type mRunFeedback struct {
-	projectID string
-	queueID   string
-	taskID    int64
-	token     string
-	result    string
-	errCode   string
-	errMsg    string
+	projectID  string
+	workloadID string
+	taskID     int64
+	token      string
+	result     string
+	errCode    string
+	errMsg     string
 }
 
 //mock the sdk client
@@ -43,31 +43,31 @@ type mClient struct {
 	runFailure    chan mRunFeedback
 }
 
-func (c *mClient) StartTask(projectID, queueID string, cmd []string, env map[string]string, stdin []byte) (output *v1payload.StartTaskOutput, err error) {
+func (c *mClient) StartTask(projectID, workloadID string, cmd []string, env map[string]string, stdin []byte) (output *v1payload.StartTaskOutput, err error) {
 	return output, nil
 }
-func (c *mClient) StopTask(projectID, queueID string, taskID int64) (output *v1payload.StopTaskOutput, err error) {
+func (c *mClient) StopTask(projectID, workloadID string, taskID int64) (output *v1payload.StopTaskOutput, err error) {
 	return output, nil
 }
-func (c *mClient) ListTasks(projectID, queueID string) (output *v1payload.ListTasksOutput, err error) {
+func (c *mClient) ListTasks(projectID, workloadID string, onlySuccessTasks bool) (output *v1payload.ListTasksOutput, err error) {
 	return output, nil
 }
-func (c *mClient) DescribeTask(projectID, queueID string, taskID int64) (output *v1payload.DescribeTaskOutput, err error) {
+func (c *mClient) DescribeTask(projectID, workloadID string, taskID int64) (output *v1payload.DescribeTaskOutput, err error) {
 	return output, nil
 }
-func (c *mClient) ReceiveTaskRuns(projectID, queueID string, timeout time.Duration, queueOps v1batch.QueueOps) (output []*v1payload.Run, err error) {
+func (c *mClient) ReceiveTaskRuns(projectID, workloadID string, timeout time.Duration, queueOps v1batch.QueueOps) (output []*v1payload.Run, err error) {
 	return <-c.receiveRuns, <-c.receiveErrs
 }
-func (c *mClient) SendRunHeartbeat(projectID, queueID string, taskID int64, runToken string) (output *v1payload.SendRunHeartbeatOutput, err error) {
-	c.runHeartbeats <- mRunFeedback{projectID: projectID, queueID: queueID, taskID: taskID, token: runToken}
+func (c *mClient) SendRunHeartbeat(projectID, workloadID string, taskID int64, runToken string) (output *v1payload.SendRunHeartbeatOutput, err error) {
+	c.runHeartbeats <- mRunFeedback{projectID: projectID, workloadID: workloadID, taskID: taskID, token: runToken}
 	return output, nil
 }
-func (c *mClient) SendRunSuccess(projectID, queueID string, taskID int64, runToken, result string) (output *v1payload.SendRunSuccessOutput, err error) {
-	c.runSuccess <- mRunFeedback{projectID: projectID, queueID: queueID, taskID: taskID, token: runToken, result: result}
+func (c *mClient) SendRunSuccess(projectID, workloadID string, taskID int64, runToken, result, outputDatasetID string) (output *v1payload.SendRunSuccessOutput, err error) {
+	c.runSuccess <- mRunFeedback{projectID: projectID, workloadID: workloadID, taskID: taskID, token: runToken, result: result}
 	return output, nil
 }
-func (c *mClient) SendRunFailure(projectID, queueID string, taskID int64, runToken, errCode, errMessage string) (output *v1payload.SendRunFailureOutput, err error) {
-	c.runFailure <- mRunFeedback{projectID: projectID, queueID: queueID, taskID: taskID, token: runToken, errCode: errCode, errMsg: errMessage}
+func (c *mClient) SendRunFailure(projectID, workloadID string, taskID int64, runToken, errCode, errMessage string) (output *v1payload.SendRunFailureOutput, err error) {
+	c.runFailure <- mRunFeedback{projectID: projectID, workloadID: workloadID, taskID: taskID, token: runToken, errCode: errCode, errMsg: errMessage}
 	return output, nil
 }
 
@@ -77,7 +77,7 @@ func TestContextDone(t *testing.T) {
 	bclient := &mClient{}
 	qops := &mQueueOps{}
 
-	w := v1working.NewWorker(logs, bclient, qops, "project-x", "queue-y", "false", []string{}, nil, v1working.DefaultConf())
+	w := v1working.NewWorker(logs, bclient, qops, "project-x", "workload-y", []string{"false"}, []string{}, nil, v1working.DefaultConf())
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	w.Start(ctx)
@@ -100,12 +100,12 @@ func TestRunReceivingFailingTask(t *testing.T) {
 
 	bclient.receiveErrs <- nil
 	bclient.receiveRuns <- []*v1payload.Run{
-		{ProjectID: "my-project", TaskID: 123, QueueID: "my-queue", Token: "my-token"},
+		{ProjectID: "my-project", TaskID: 123, WorkloadID: "my-workload", Token: "my-token"},
 	}
 
 	qops := &mQueueOps{}
 
-	w := v1working.NewWorker(logs, bclient, qops, "project-x", "queue-y", "false", []string{}, nil, v1working.DefaultConf())
+	w := v1working.NewWorker(logs, bclient, qops, "project-x", "workload-y", []string{"false"}, []string{}, nil, v1working.DefaultConf())
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	w.Start(ctx)
@@ -133,14 +133,14 @@ func TestRunReceivingSuccessTask(t *testing.T) {
 
 	bclient.receiveErrs <- nil
 	bclient.receiveRuns <- []*v1payload.Run{
-		{ProjectID: "my-project", TaskID: 123, QueueID: "my-queue", Token: "my-token", Cmd: []string{"2"}},
+		{ProjectID: "my-project", TaskID: 123, WorkloadID: "my-workload", Token: "my-token", Cmd: []string{"2"}},
 	}
 
 	qops := &mQueueOps{}
 	conf := v1working.DefaultConf()
 	conf.HeartbeatInterval = time.Second
 
-	w := v1working.NewWorker(logs, bclient, qops, "project-x", "queue-y", "sleep", []string{}, nil, conf)
+	w := v1working.NewWorker(logs, bclient, qops, "project-x", "workload-y", []string{"sleep"}, []string{}, nil, conf)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	go w.Start(ctx)
 	defer cancel()

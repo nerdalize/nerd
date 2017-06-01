@@ -14,26 +14,27 @@ import (
 	"github.com/pkg/errors"
 )
 
-//WorkerStartOpts describes command options
-type WorkerStartOpts struct {
+//WorkloadStartOpts describes command options
+type WorkloadStartOpts struct {
 	Env          []string `long:"env" short:"e" description:"environment variables"`
-	InputDataset string   `long:"input-dataset" short:"i" description:"input dataset ID, will be available in /input in your container"`
+	InputDataset string   `long:"input-dataset" short:"d" description:"input dataset ID, will be available in /input in your container"`
+	Instances    int      `long:"instances" short:"i" default:"1" description:"number of working instances"`
 }
 
-//WorkerStart command
-type WorkerStart struct {
+//WorkloadStart command
+type WorkloadStart struct {
 	*command
-	opts *WorkerStartOpts
+	opts *WorkloadStartOpts
 }
 
-//WorkerStartFactory returns a factory method for the join command
-func WorkerStartFactory() (cli.Command, error) {
-	opts := &WorkerStartOpts{}
-	comm, err := newCommand("nerd worker start <image> <queue-id>", "provision a new worker to provide compute", "", opts)
+//WorkloadStartFactory returns a factory method for the join command
+func WorkloadStartFactory() (cli.Command, error) {
+	opts := &WorkloadStartOpts{}
+	comm, err := newCommand("nerd workload start <image>", "provision a new workload to provide compute", "", opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
-	cmd := &WorkerStart{
+	cmd := &WorkloadStart{
 		command: comm,
 		opts:    opts,
 	}
@@ -43,8 +44,8 @@ func WorkerStartFactory() (cli.Command, error) {
 }
 
 //DoRun is called by run and allows an error to be returned
-func (cmd *WorkerStart) DoRun(args []string) (err error) {
-	if len(args) < 2 {
+func (cmd *WorkloadStart) DoRun(args []string) (err error) {
+	if len(args) < 1 {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
@@ -75,7 +76,7 @@ func (cmd *WorkerStart) DoRun(args []string) (err error) {
 		HandleError(errors.Wrap(err, "failed to get worker JWT"))
 	}
 
-	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
+	bclient, err := NewClient(cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
@@ -98,11 +99,11 @@ func (cmd *WorkerStart) DoRun(args []string) (err error) {
 	wenv[EnvConfigJSON] = string(configJSON)
 	wenv[EnvNerdProject] = ss.Project.Name
 
-	worker, err := bclient.StartWorker(ss.Project.Name, args[0], args[1], wenv, cmd.opts.InputDataset)
+	workload, err := bclient.CreateWorkload(ss.Project.Name, args[0], cmd.opts.InputDataset, wenv, cmd.opts.Instances, true)
 	if err != nil {
 		HandleError(err)
 	}
 
-	logrus.Infof("Worker Started: %v", worker)
+	logrus.Infof("Workload Started: %v", workload)
 	return nil
 }

@@ -30,7 +30,7 @@ func (kw *stdoutkw) Write(k string) (err error) {
 }
 
 //NewClient creates a new batch Client.
-func NewClient(ui cli.Ui, c *conf.Config, session *conf.Session) (*v1batch.Client, error) {
+func NewClient(c *conf.Config, session *conf.Session) (*v1batch.Client, error) {
 	key, err := jwt.ParseECDSAPublicKeyFromPemBytes([]byte(c.Auth.PublicKey))
 	if err != nil {
 		return nil, errors.Wrap(err, "ECDSA Public Key is invalid")

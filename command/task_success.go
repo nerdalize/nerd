@@ -16,7 +16,7 @@ type TaskSuccess struct {
 
 //TaskSuccessFactory returns a factory method for the join command
 func TaskSuccessFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd task success <queue-id> <task-id> <run-token> <result>", "mark a task run as having succeeded", "", nil)
+	comm, err := newCommand("nerd task success <workload-id> <task-id> <run-token> <result>", "mark a task run as having succeeded", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -34,7 +34,7 @@ func (cmd *TaskSuccess) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
+	bclient, err := NewClient(cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
@@ -48,7 +48,7 @@ func (cmd *TaskSuccess) DoRun(args []string) (err error) {
 	if err != nil {
 		HandleError(err)
 	}
-	out, err := bclient.SendRunSuccess(ss.Project.Name, args[0], taskID, args[2], args[3])
+	out, err := bclient.SendRunSuccess(ss.Project.Name, args[0], taskID, args[2], args[3], args[4])
 	if err != nil {
 		HandleError(err)
 	}

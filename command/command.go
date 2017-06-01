@@ -25,7 +25,7 @@ func newCommand(title, synopsis, help string, opts interface{}) (*command, error
 	cmd := &command{
 		help:     help,
 		synopsis: synopsis,
-		parser:   flags.NewNamedParser(title, flags.None),
+		parser:   flags.NewNamedParser(title, flags.Default),
 		ui: &cli.BasicUi{
 			Reader: os.Stdin,
 			Writer: os.Stderr,

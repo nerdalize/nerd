@@ -76,7 +76,7 @@ func (cmd *Login) DoRun(args []string) error {
 	if err != nil {
 		HandleError(errors.Wrap(err, "failed to write oauth tokens to config"))
 	}
-	cmd.ui.Info("Successful login. You can now select a project using 'nerd project set'.")
+	cmd.ui.Info("Successful login. You can now select a project using 'nerd project'")
 	return nil
 }
 

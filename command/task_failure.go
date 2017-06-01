@@ -16,7 +16,7 @@ type TaskFailure struct {
 
 //TaskFailureFactory returns a factory method for the join command
 func TaskFailureFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd task failure <queue-id> <task-id> <run-token> <error-code> <err-message>", "mark a task run as being failed", "", nil)
+	comm, err := newCommand("nerd task failure <workload-id> <task-id> <run-token> <error-code> <err-message>", "mark a task run as being failed", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -34,7 +34,7 @@ func (cmd *TaskFailure) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
+	bclient, err := NewClient(cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}

@@ -16,7 +16,7 @@ type TaskHeartbeat struct {
 
 //TaskHeartbeatFactory returns a factory method for the join command
 func TaskHeartbeatFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd task heartbeat <queue-id> <task-id> <run-token>", "indicate that a task run is still in progress", "", nil)
+	comm, err := newCommand("nerd task heartbeat <workload-id> <task-id> <run-token>", "indicate that a task run is still in progress", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -34,7 +34,7 @@ func (cmd *TaskHeartbeat) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	bclient, err := NewClient(cmd.ui, cmd.config, cmd.session)
+	bclient, err := NewClient(cmd.config, cmd.session)
 	if err != nil {
 		HandleError(err)
 	}
