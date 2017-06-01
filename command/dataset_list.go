@@ -2,7 +2,9 @@ package command
 
 import (
 	"os"
+	"time"
 
+	humanize "github.com/dustin/go-humanize"
 	"github.com/mitchellh/cli"
 	"github.com/olekukonko/tablewriter"
 	"github.com/pkg/errors"
@@ -44,11 +46,12 @@ func (cmd *DatasetList) DoRun(args []string) (err error) {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ProjectID", "DatasetID"})
+	table.SetHeader([]string{"ProjectID", "DatasetID", "Created"})
 	for _, t := range out.Datasets {
 		row := []string{}
 		row = append(row, t.ProjectID)
 		row = append(row, t.DatasetID)
+		row = append(row, humanize.Time(time.Unix(t.CreatedAt, 0)))
 		table.Append(row)
 	}
 
