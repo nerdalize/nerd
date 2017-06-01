@@ -47,6 +47,7 @@ type DatasetSummary struct {
 	ProjectRoot  string `json:"project_root"`
 	UploadExpire int64  `json:"upload_expire"`
 	UploadStatus string `json:"upload_status"`
+	CreatedAt    int64  `json:"created_at"`
 }
 
 //ListDatasetsOutput is output for dataset creation

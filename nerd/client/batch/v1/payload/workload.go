@@ -8,6 +8,7 @@ type WorkloadSummary struct {
 	Image          string `json:"image"`
 	Instances      int    `json:"instances"`
 	InputDatasetID string `json:"input_dataset_id"`
+	CreatedAt      int64  `json:"created_at"`
 }
 
 //ListWorkloadsInput is input for workload listing
