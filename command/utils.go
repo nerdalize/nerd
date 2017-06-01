@@ -8,7 +8,6 @@ import (
 
 	pb "gopkg.in/cheggaaa/pb.v1"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/command/format"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
@@ -19,15 +18,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/restic/chunker"
 )
-
-type stdoutkw struct{}
-
-//Write writes a key to stdout.
-func (kw *stdoutkw) Write(k string) (err error) {
-	// _, err = fmt.Fprintf(os.Stdout, "%v\n", k)
-	logrus.Info(k)
-	return nil
-}
 
 //NewClient creates a new batch Client.
 func NewClient(c *conf.Config, session *conf.Session, outputter *format.Outputter) (*v1batch.Client, error) {
