@@ -1,7 +1,6 @@
 package command
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
 )
@@ -42,6 +41,6 @@ func (cmd *ProjectExpel) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	logrus.Infof("Placement removed: %v", out)
+	cmd.outputter.Logger.Printf("Placement removed: %v", out)
 	return nil
 }

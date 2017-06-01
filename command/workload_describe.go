@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
 )
@@ -47,6 +46,6 @@ func (cmd *WorkloadDescribe) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	logrus.Infof("Workload Description: %+v", out)
+	cmd.outputter.Logger.Printf("Workload Description: %+v", out)
 	return nil
 }

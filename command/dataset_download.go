@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/aws"
 	v1datatransfer "github.com/nerdalize/nerd/nerd/service/datatransfer/v1"
@@ -79,7 +78,7 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		return HandleError(errors.Wrap(err, "could not create aws dataops client"))
 	}
 
-	logrus.Infof("Downloading dataset with ID '%v'", datasetID)
+	cmd.outputter.Logger.Printf("Downloading dataset with ID '%v'", datasetID)
 	downloadConf := v1datatransfer.DownloadConfig{
 		BatchClient: batchclient,
 		DataOps:     dataOps,

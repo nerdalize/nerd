@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
 	"github.com/nerdalize/nerd/nerd/jwt"
@@ -104,6 +103,6 @@ func (cmd *WorkloadStart) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	logrus.Infof("Workload Started: %v", workload)
+	cmd.outputter.Logger.Printf("Workload Started: %v", workload)
 	return nil
 }

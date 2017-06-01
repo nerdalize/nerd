@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
 )
@@ -65,6 +64,6 @@ func (cmd *ProjectPlace) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	logrus.Infof("Placement created: %v", out)
+	cmd.outputter.Logger.Printf("Placement created: %v", out)
 	return nil
 }

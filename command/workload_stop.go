@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
 )
@@ -48,6 +47,6 @@ func (cmd *WorkloadStop) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	logrus.Infof("Workload stopped: %v", out)
+	cmd.outputter.Logger.Printf("Workload stopped: %v", out)
 	return nil
 }

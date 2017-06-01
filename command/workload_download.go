@@ -8,7 +8,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/aws"
 	v1datatransfer "github.com/nerdalize/nerd/nerd/service/datatransfer/v1"
@@ -90,7 +89,7 @@ func (cmd *WorkloadDownload) DoRun(args []string) (err error) {
 		localDir := path.Join(outputDir, taskDir)
 		err := os.Mkdir(localDir, OutputDirPermissions)
 		if os.IsExist(err) {
-			logrus.Infof("Dataset %v for task %v already exists\n", task.OutputDatasetID, task.TaskID)
+			cmd.outputter.Logger.Printf("Dataset %v for task %v already exists\n", task.OutputDatasetID, task.TaskID)
 			continue
 		}
 		downloadConf := v1datatransfer.DownloadConfig{
@@ -101,7 +100,7 @@ func (cmd *WorkloadDownload) DoRun(args []string) (err error) {
 			DatasetID:   task.OutputDatasetID,
 			Concurrency: DownloadConcurrency,
 		}
-		logrus.Infof("Downloading dataset with ID '%v'", task.OutputDatasetID)
+		cmd.outputter.Logger.Printf("Downloading dataset with ID '%v'", task.OutputDatasetID)
 		progressCh := make(chan int64)
 		progressBarDoneCh := make(chan struct{})
 		var size int64

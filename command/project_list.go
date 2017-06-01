@@ -53,9 +53,9 @@ func (cmd *ProjectList) DoRun(args []string) (err error) {
 	pretty := "{{range $i, $x := $.Projects}}{{$x.ID}}\t{{$x.Code}}\n{{end}}"
 	raw := "{{range $i, $x := $.Projects}}{{$x.ID}}\t{{$x.Code}}\t{{$x.URL}}\n{{end}}"
 	cmd.outputter.Output(format.DecMap{
-		format.OutputTypePretty: format.TableDecorator(projects, header, pretty),
-		format.OutputTypeRaw:    format.TmplDecorator(projects, raw),
-		format.OutputTypeJSON:   format.JSONDecorator(projects.Projects),
+		format.OutputTypePretty: format.NewTableDecorator(projects, header, pretty),
+		format.OutputTypeRaw:    format.NewTmplDecorator(projects, raw),
+		format.OutputTypeJSON:   format.NewJSONDecorator(projects.Projects),
 	})
 
 	return nil

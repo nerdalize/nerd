@@ -10,38 +10,38 @@ import (
 	"github.com/pkg/errors"
 )
 
-type jsonDecorator struct {
+type JSONDecorator struct {
 	v interface{}
 }
 
-//JSONDecorator is a decorator that outputs JSON
-func JSONDecorator(v interface{}) *jsonDecorator {
-	return &jsonDecorator{
+//NewJSONDecorator is a decorator that outputs JSON
+func NewJSONDecorator(v interface{}) *JSONDecorator {
+	return &JSONDecorator{
 		v: v,
 	}
 }
 
 //Decorate writes JSON to out
-func (d *jsonDecorator) Decorate(out io.Writer) error {
+func (d *JSONDecorator) Decorate(out io.Writer) error {
 	enc := json.NewEncoder(out)
 	return enc.Encode(d.v)
 }
 
-type tmplDecorator struct {
+type TmplDecorator struct {
 	v    interface{}
 	tmpl string
 }
 
-//TmplDecorator is a decorator that uses golang's templating
-func TmplDecorator(v interface{}, tmpl string) *tmplDecorator {
-	return &tmplDecorator{
+//NewTmplDecorator is a decorator that uses golang's templating
+func NewTmplDecorator(v interface{}, tmpl string) *TmplDecorator {
+	return &TmplDecorator{
 		v:    v,
 		tmpl: tmpl,
 	}
 }
 
 //Decorate writes templated output to out
-func (d *tmplDecorator) Decorate(out io.Writer) error {
+func (d *TmplDecorator) Decorate(out io.Writer) error {
 	tmpl, err := template.New("tmpl").Parse(d.tmpl)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create new output template for template %v", d.tmpl)
@@ -53,15 +53,15 @@ func (d *tmplDecorator) Decorate(out io.Writer) error {
 	return nil
 }
 
-type tableDecorator struct {
+type TableDecorator struct {
 	v      interface{}
 	header string
 	tmpl   string
 }
 
-//TableDecorator is a decorator that writes a table using golang's templating
-func TableDecorator(v interface{}, header, tmpl string) *tableDecorator {
-	return &tableDecorator{
+//NewTableDecorator is a decorator that writes a table using golang's templating
+func NewTableDecorator(v interface{}, header, tmpl string) *TableDecorator {
+	return &TableDecorator{
 		v:      v,
 		header: header,
 		tmpl:   tmpl,
@@ -69,9 +69,11 @@ func TableDecorator(v interface{}, header, tmpl string) *tableDecorator {
 }
 
 //Decorate writes the table to out
-func (d *tableDecorator) Decorate(out io.Writer) error {
+func (d *TableDecorator) Decorate(out io.Writer) error {
 	w := tabwriter.NewWriter(out, 0, 0, 3, ' ', tabwriter.TabIndent)
-	fmt.Fprintln(w, d.header)
+	if d.header != "" {
+		fmt.Fprintln(w, d.header)
+	}
 	tmpl, err := template.New("tmpl").Parse(d.tmpl)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create new output template for template %v", d.tmpl)

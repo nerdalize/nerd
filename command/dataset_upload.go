@@ -91,9 +91,9 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	tmpl := "$.DatasetID"
 	jsonTmpl := "{\"dataset_id\":\"{{$.DatasetID}}}\"}"
 	cmd.outputter.Output(format.DecMap{
-		format.OutputTypePretty: format.TmplDecorator(dataset, tmpl),
-		format.OutputTypeRaw:    format.TmplDecorator(dataset, tmpl),
-		format.OutputTypeJSON:   format.TmplDecorator(dataset, jsonTmpl),
+		format.OutputTypePretty: format.NewTmplDecorator(dataset, tmpl),
+		format.OutputTypeRaw:    format.NewTmplDecorator(dataset, tmpl),
+		format.OutputTypeJSON:   format.NewTmplDecorator(dataset, jsonTmpl),
 	})
 	return nil
 }

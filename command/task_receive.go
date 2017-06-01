@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	nerdaws "github.com/nerdalize/nerd/nerd/aws"
 	"github.com/pkg/errors"
@@ -55,6 +54,6 @@ func (cmd *TaskReceive) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	logrus.Infof("Task Receiving: %v", out)
+	cmd.outputter.Logger.Printf("Task Receiving: %v", out)
 	return nil
 }

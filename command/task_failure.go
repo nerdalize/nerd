@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
 )
@@ -53,6 +52,6 @@ func (cmd *TaskFailure) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	logrus.Infof("Task Failure: %v", out)
+	cmd.outputter.Logger.Printf("Task Failure: %v", out)
 	return nil
 }

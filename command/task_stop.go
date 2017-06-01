@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
 )
@@ -53,6 +52,6 @@ func (cmd *TaskStop) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	logrus.Infof("Task Stop: %v", out)
+	cmd.outputter.Logger.Printf("Task Stop: %v", out)
 	return nil
 }

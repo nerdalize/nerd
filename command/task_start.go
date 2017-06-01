@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mattn/go-isatty"
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
@@ -83,6 +82,6 @@ func (cmd *TaskStart) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	logrus.Infof("Task Start: %v", out)
+	cmd.outputter.Logger.Printf("Task Start: %v", out)
 	return nil
 }
