@@ -79,13 +79,13 @@ The structure of the config and the defaults are show below:
 {
         "auth": {
                 "api_endpoint": "http://auth.nerdalize.com", # URL of authentication server
-                "public_key": "-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEAkYbLnam4wo+heLlTZEeh1ZWsfruz9nk\nkyvc4LwKZ8pez5KYY76H1ox+AfUlWOEq+bExypcFfEIrJkf/JXa7jpzkOWBDF9Sa\nOWbQHMK+vvUXieCJvCc9Vj084ABwLBgX\n-----END PUBLIC KEY-----", # Public key used to verify JWT signature
+                "public_key": "-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAErLB6Ygk5SySopnXqnpeDpCvTnvCdPfZQ\n0tTPJ05oyXAvqPRKWoCkGzfFXpRi8hRljc6DpAdBili46Ov4oe5R/tMgeTORoDxB\nVJ32GVRqDwyuSkSVA8tg7HnktD5/PTnt\n-----END PUBLIC KEY-----\n", # Public key used to verify JWT signature
                 "client_id": "GuoeRJLYOXzVa9ydPjKi83lCctWtXpNHuiy46Yux", #OAuth client ID
                 "oauth_localserver": "localhost:9876", #address of local oauth server
                 "oauth_success_url": "https://cloud.nerdalize.com" #redirect URL after successful login
         },
         "enable_logging": false, # When set to true, all output will be logged to ~/.nerd/log
-        "nerd_api_endpoint": "https://batch.nerdalize.com" # URL of nerdalize API (NCE)
+        "nerd_api_endpoint": "https://batch.nerdalize.com/v1/" # URL of nerdalize API (NCE)
 }
 ```
 
