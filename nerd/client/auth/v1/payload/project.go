@@ -9,5 +9,5 @@ type ListProjectsOutput struct {
 type Project struct {
 	ID   int    `json:"id"`
 	URL  string `json:"url"`
-	Code string `json:"code"`
+	Slug string `json:"slug"`
 }

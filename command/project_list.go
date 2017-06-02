@@ -51,7 +51,7 @@ func (cmd *ProjectList) DoRun(args []string) (err error) {
 		HandleError(err)
 	}
 	for _, project := range projects.Projects {
-		fmt.Printf("%v\n", project.Code)
+		fmt.Printf("%v\n", project.Slug)
 	}
 
 	return nil
