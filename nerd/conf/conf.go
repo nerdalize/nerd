@@ -39,9 +39,9 @@ func Defaults() *Config {
 			OAuthSuccessURL:  "https://cloud.nerdalize.com",
 			ClientID:         "GuoeRJLYOXzVa9ydPjKi83lCctWtXpNHuiy46Yux",
 			PublicKey: `-----BEGIN PUBLIC KEY-----
-MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAErLB6Ygk5SySopnXqnpeDpCvTnvCdPfZQ
-0tTPJ05oyXAvqPRKWoCkGzfFXpRi8hRljc6DpAdBili46Ov4oe5R/tMgeTORoDxB
-VJ32GVRqDwyuSkSVA8tg7HnktD5/PTnt
+MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEBthEmchVCtA3ZPXqiCXdj+7/ZFuhxRgx
+grTxIHK+b0vEqKqA3O++ggD1GgjqtTfNLGUjLCE3KxyIN78TsK+HU4VVexTjlWXy
+WPtidD68xGD0JVPU1cSfu8iP0XzwgttG
 -----END PUBLIC KEY-----
 `,
 		},
