@@ -39,13 +39,14 @@ func Defaults() *Config {
 			OAuthSuccessURL:  "https://cloud.nerdalize.com",
 			ClientID:         "GuoeRJLYOXzVa9ydPjKi83lCctWtXpNHuiy46Yux",
 			PublicKey: `-----BEGIN PUBLIC KEY-----
-MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEAkYbLnam4wo+heLlTZEeh1ZWsfruz9nk
-kyvc4LwKZ8pez5KYY76H1ox+AfUlWOEq+bExypcFfEIrJkf/JXa7jpzkOWBDF9Sa
-OWbQHMK+vvUXieCJvCc9Vj084ABwLBgX
------END PUBLIC KEY-----`,
+MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAErLB6Ygk5SySopnXqnpeDpCvTnvCdPfZQ
+0tTPJ05oyXAvqPRKWoCkGzfFXpRi8hRljc6DpAdBili46Ov4oe5R/tMgeTORoDxB
+VJ32GVRqDwyuSkSVA8tg7HnktD5/PTnt
+-----END PUBLIC KEY-----
+`,
 		},
 		EnableLogging:   false,
-		NerdAPIEndpoint: "https://batch.nerdalize.com/v1",
+		NerdAPIEndpoint: "https://batch.nerdalize.com/v1/",
 	}
 }
 
