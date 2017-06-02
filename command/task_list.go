@@ -49,12 +49,13 @@ func (cmd *TaskList) DoRun(args []string) (err error) {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"WorkloadID", "TaskID", "Status"})
+	table.SetHeader([]string{"WorkloadID", "TaskID", "Status", "OutputDataset"})
 	for _, t := range out.Tasks {
 		row := []string{}
 		row = append(row, t.WorkloadID)
 		row = append(row, fmt.Sprintf("%d", t.TaskID))
 		row = append(row, t.Status)
+		row = append(row, t.OutputDatasetID)
 		table.Append(row)
 	}
 
