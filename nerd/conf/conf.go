@@ -73,6 +73,7 @@ func Read(location string) (*Config, error) {
 	return conf, nil
 }
 
+//FromJSON returns a Config object from a JSON string
 func FromJSON(in string) (*Config, error) {
 	v := Defaults()
 	return v, json.Unmarshal([]byte(in), v)
