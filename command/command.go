@@ -15,7 +15,9 @@ import (
 )
 
 const (
-	EnvConfigJSON  = "NERD_CONFIG_JSON"
+	//EnvConfigJSON can be used to pass the config file as a json encoded string
+	EnvConfigJSON = "NERD_CONFIG_JSON"
+	//EnvNerdProject can be used to set the nerd project
 	EnvNerdProject = "NERD_PROJECT"
 )
 

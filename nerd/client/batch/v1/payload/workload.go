@@ -37,7 +37,7 @@ type DescribeWorkloadOutput struct {
 	Env       map[string]string  `json:"env"`
 }
 
-//StartWorkloadInput is input for workload creation
+//CreateWorkloadInput is input for workload creation
 type CreateWorkloadInput struct {
 	ProjectID      string            `json:"project_id" valid:"required"`
 	Image          string            `json:"image" valid:"required"`
@@ -47,7 +47,7 @@ type CreateWorkloadInput struct {
 	Env            map[string]string `json:"env"`
 }
 
-//StartWorkloadOutput is output for workload creation
+//CreateWorkloadOutput is output for workload creation
 type CreateWorkloadOutput struct {
 	WorkloadSummary
 }

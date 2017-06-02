@@ -53,21 +53,21 @@ func (cmd *WorkloadWork) DoRun(args []string) (err error) {
 	}
 
 	var entrypoint, command []string
-	entrJsonStr, err := base64.StdEncoding.DecodeString(cmd.opts.EntrypointJSONB64)
+	entrJSONString, err := base64.StdEncoding.DecodeString(cmd.opts.EntrypointJSONB64)
 	if err != nil {
 		HandleError(errors.Wrapf(err, "failed to base64 decode entrypoint '%v'", cmd.opts.EntrypointJSONB64))
 	}
-	commandJsonStr, err := base64.StdEncoding.DecodeString(cmd.opts.CmdJSONB64)
+	commandJSONString, err := base64.StdEncoding.DecodeString(cmd.opts.CmdJSONB64)
 	if err != nil {
 		HandleError(errors.Wrapf(err, "failed to base64 decode cmd '%v'", cmd.opts.CmdJSONB64))
 	}
-	err = json.Unmarshal(entrJsonStr, &entrypoint)
+	err = json.Unmarshal(entrJSONString, &entrypoint)
 	if err != nil {
-		HandleError(errors.Wrapf(err, "failed to decode entrypoint '%s'", entrJsonStr))
+		HandleError(errors.Wrapf(err, "failed to decode entrypoint '%s'", entrJSONString))
 	}
-	err = json.Unmarshal(commandJsonStr, &command)
+	err = json.Unmarshal(commandJSONString, &command)
 	if err != nil {
-		HandleError(errors.Wrapf(err, "failed to decode cmd '%s'", commandJsonStr))
+		HandleError(errors.Wrapf(err, "failed to decode cmd '%s'", commandJSONString))
 	}
 
 	bclient, err := NewClient(cmd.config, cmd.session)

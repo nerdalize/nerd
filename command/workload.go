@@ -24,6 +24,7 @@ func WorkloadFactory() (cli.Command, error) {
 	return cmd, nil
 }
 
+//HelpTemplate provides a template for the help command, which excludes the "workload work" command
 func (cmd *Workload) HelpTemplate() string {
 	return `
 {{.Help}}{{if gt (len .Subcommands) 0}}

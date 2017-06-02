@@ -26,6 +26,7 @@ func ProjectFactory() (cli.Command, error) {
 	return cmd, nil
 }
 
+//HelpTemplate provides a template for the help command, which excludes the "expel" and "place" subcommands
 func (cmd *Project) HelpTemplate() string {
 	return fmt.Sprintf(`
 {{.Help}}{{if gt (len .Subcommands) 0}}
