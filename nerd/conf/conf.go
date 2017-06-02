@@ -37,7 +37,7 @@ func Defaults() *Config {
 			APIEndpoint:      "https://auth.nerdalize.com/v1/",
 			OAuthLocalServer: "localhost:9876",
 			OAuthSuccessURL:  "https://cloud.nerdalize.com",
-			ClientID:         "GuoeRJLYOXzVa9ydPjKi83lCctWtXpNHuiy46Yux",
+			ClientID:         "Po2PHR7YOIEQojfHy3zfOMulby9QGVSvcD9bO3S3",
 			PublicKey: `-----BEGIN PUBLIC KEY-----
 MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEBthEmchVCtA3ZPXqiCXdj+7/ZFuhxRgx
 grTxIHK+b0vEqKqA3O++ggD1GgjqtTfNLGUjLCE3KxyIN78TsK+HU4VVexTjlWXy
