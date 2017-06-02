@@ -34,7 +34,7 @@ type AuthConfig struct {
 func Defaults() *Config {
 	return &Config{
 		Auth: AuthConfig{
-			APIEndpoint:      "http://auth.nerdalize.com/v1/",
+			APIEndpoint:      "https://auth.nerdalize.com/v1/",
 			OAuthLocalServer: "localhost:9876",
 			OAuthSuccessURL:  "https://cloud.nerdalize.com",
 			ClientID:         "GuoeRJLYOXzVa9ydPjKi83lCctWtXpNHuiy46Yux",
