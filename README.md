@@ -78,7 +78,7 @@ The structure of the config and the defaults are show below:
 ```bash
 {
         "auth": {
-                "api_endpoint": "http://auth.nerdalize.com", # URL of authentication server
+                "api_endpoint": "http://auth.nerdalize.com/v1/", # URL of authentication server
                 "public_key": "-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEBthEmchVCtA3ZPXqiCXdj+7/ZFuhxRgx\ngrTxIHK+b0vEqKqA3O++ggD1GgjqtTfNLGUjLCE3KxyIN78TsK+HU4VVexTjlWXy\nWPtidD68xGD0JVPU1cSfu8iP0XzwgttG\n-----END PUBLIC KEY-----\n", # Public key used to verify JWT signature
                 "client_id": "GuoeRJLYOXzVa9ydPjKi83lCctWtXpNHuiy46Yux", #OAuth client ID
                 "oauth_localserver": "localhost:9876", #address of local oauth server
