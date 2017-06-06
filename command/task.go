@@ -26,6 +26,7 @@ func TaskFactory() (cli.Command, error) {
 	return cmd, nil
 }
 
+//HelpTemplate provides a template for the help command, which excludes the "failure", "heartbeat", "receive", and "success" subcommands
 func (cmd *Task) HelpTemplate() string {
 	return fmt.Sprintf(`
 {{.Help}}{{if gt (len .Subcommands) 0}}

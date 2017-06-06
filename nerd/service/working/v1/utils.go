@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 )
 
+//RemoveContents removes all contents of a directory
 func RemoveContents(dir string) error {
 	d, err := os.Open(dir)
 	if err != nil {
@@ -25,6 +26,7 @@ func RemoveContents(dir string) error {
 	return nil
 }
 
+//IsEmptyDir checks if a directory contains files
 func IsEmptyDir(name string) (bool, error) {
 	f, err := os.Open(name)
 	if err != nil {

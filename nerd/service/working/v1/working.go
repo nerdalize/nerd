@@ -173,7 +173,8 @@ func (w *Worker) startRunExec(ctx context.Context, run *v1payload.Run) {
 		w.logs.Printf("[INFO] run process exited succesfully")
 		outputDatasetID := ""
 		if w.uploadConf != nil {
-			if empty, err := IsEmptyDir(w.uploadConf.LocalDir); !empty && err == nil {
+			var empty bool
+			if empty, err = IsEmptyDir(w.uploadConf.LocalDir); !empty && err == nil {
 				w.logs.Printf("[INFO] uploading output data")
 				var ds *v1payload.DatasetSummary
 				ds, err = v1datatransfer.Upload(ctx, *w.uploadConf)

@@ -49,6 +49,7 @@ func (cmd *ProjectList) DoRun(args []string) (err error) {
 	if err != nil {
 		return errors.Wrap(err, "failed to list projects")
 	}
+
 	header := "ID\tCode"
 	pretty := "{{range $i, $x := $.Projects}}{{$x.ID}}\t{{$x.Code}}\n{{end}}"
 	raw := "{{range $i, $x := $.Projects}}{{$x.ID}}\t{{$x.Code}}\t{{$x.URL}}\n{{end}}"

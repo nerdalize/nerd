@@ -78,9 +78,9 @@ The structure of the config and the defaults are show below:
 ```bash
 {
         "auth": {
-                "api_endpoint": "http://auth.nerdalize.com", # URL of authentication server
-                "public_key": "-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEAkYbLnam4wo+heLlTZEeh1ZWsfruz9nk\nkyvc4LwKZ8pez5KYY76H1ox+AfUlWOEq+bExypcFfEIrJkf/JXa7jpzkOWBDF9Sa\nOWbQHMK+vvUXieCJvCc9Vj084ABwLBgX\n-----END PUBLIC KEY-----", # Public key used to verify JWT signature
-                "client_id": "GuoeRJLYOXzVa9ydPjKi83lCctWtXpNHuiy46Yux", #OAuth client ID
+                "api_endpoint": "http://auth.nerdalize.com/v1/", # URL of authentication server
+                "public_key": "-----BEGIN PUBLIC KEY-----\nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEBthEmchVCtA3ZPXqiCXdj+7/ZFuhxRgx\ngrTxIHK+b0vEqKqA3O++ggD1GgjqtTfNLGUjLCE3KxyIN78TsK+HU4VVexTjlWXy\nWPtidD68xGD0JVPU1cSfu8iP0XzwgttG\n-----END PUBLIC KEY-----\n", # Public key used to verify JWT signature
+                "client_id": "Po2PHR7YOIEQojfHy3zfOMulby9QGVSvcD9bO3S3", #OAuth client ID
                 "oauth_localserver": "localhost:9876", #address of local oauth server
                 "oauth_success_url": "https://cloud.nerdalize.com" #redirect URL after successful login
         },
@@ -88,7 +88,7 @@ The structure of the config and the defaults are show below:
           "enabled": false,
           "file_location": "~/.nerd/log"
         },
-        "nerd_api_endpoint": "https://batch.nerdalize.com" # URL of nerdalize API (NCE)
+        "nerd_api_endpoint": "https://batch.nerdalize.com/v1/" # URL of nerdalize API (NCE)
 }
 ```
 

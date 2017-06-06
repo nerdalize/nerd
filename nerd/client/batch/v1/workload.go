@@ -14,7 +14,7 @@ type ClientWorkloadInterface interface {
 	DescribeWorkload(projectID, workloadID string) (output *v1payload.DescribeWorkloadOutput, err error)
 }
 
-//StartWorkload will start a workload
+//CreateWorkload will start a workload
 func (c *Client) CreateWorkload(projectID, image, inputDatasetID string, env map[string]string, instances int, useCuteur bool) (output *v1payload.CreateWorkloadOutput, err error) {
 	output = &v1payload.CreateWorkloadOutput{}
 	input := &v1payload.CreateWorkloadInput{

@@ -40,15 +40,16 @@ type LoggingConfig struct {
 func Defaults() *Config {
 	return &Config{
 		Auth: AuthConfig{
-			APIEndpoint:      "http://auth.nerdalize.com",
+			APIEndpoint:      "https://auth.nerdalize.com/v1/",
 			OAuthLocalServer: "localhost:9876",
 			OAuthSuccessURL:  "https://cloud.nerdalize.com",
-			ClientID:         "GuoeRJLYOXzVa9ydPjKi83lCctWtXpNHuiy46Yux",
+			ClientID:         "Po2PHR7YOIEQojfHy3zfOMulby9QGVSvcD9bO3S3",
 			PublicKey: `-----BEGIN PUBLIC KEY-----
-MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEAkYbLnam4wo+heLlTZEeh1ZWsfruz9nk
-kyvc4LwKZ8pez5KYY76H1ox+AfUlWOEq+bExypcFfEIrJkf/JXa7jpzkOWBDF9Sa
-OWbQHMK+vvUXieCJvCc9Vj084ABwLBgX
------END PUBLIC KEY-----`,
+MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEBthEmchVCtA3ZPXqiCXdj+7/ZFuhxRgx
+grTxIHK+b0vEqKqA3O++ggD1GgjqtTfNLGUjLCE3KxyIN78TsK+HU4VVexTjlWXy
+WPtidD68xGD0JVPU1cSfu8iP0XzwgttG
+-----END PUBLIC KEY-----
+`,
 		},
 		Logging: LoggingConfig{
 			Enabled:      false,
