@@ -42,11 +42,11 @@ func (cmd *WorkloadStop) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	out, err := bclient.StopWorkload(ss.Project.Name, args[0])
+	_, err = bclient.StopWorkload(ss.Project.Name, args[0])
 	if err != nil {
 		return HandleError(err)
 	}
 
-	cmd.outputter.Logger.Printf("Workload stopped: %v", out)
+	cmd.outputter.Logger.Printf("Workload '%s' was stopped", args[0])
 	return nil
 }

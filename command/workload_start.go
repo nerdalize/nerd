@@ -103,6 +103,6 @@ func (cmd *WorkloadStart) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	cmd.outputter.Logger.Printf("Workload Started: %v", workload)
+	cmd.outputter.Logger.Printf("Workload created with ID: %s", workload.WorkloadID)
 	return nil
 }

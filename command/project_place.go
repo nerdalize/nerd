@@ -59,11 +59,11 @@ func (cmd *ProjectPlace) DoRun(args []string) (err error) {
 	password := cmd.opts.Password
 	insecure := cmd.opts.Insecure
 
-	out, err := bclient.PlaceProject(ss.Project.Name, host, token, "", username, password, insecure)
+	_, err = bclient.PlaceProject(ss.Project.Name, host, token, "", username, password, insecure)
 	if err != nil {
 		return HandleError(err)
 	}
 
-	cmd.outputter.Logger.Printf("Placement created: %v", out)
+	cmd.outputter.Logger.Printf("Succesfully placed project")
 	return nil
 }

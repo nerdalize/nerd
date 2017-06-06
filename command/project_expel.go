@@ -36,11 +36,11 @@ func (cmd *ProjectExpel) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	out, err := bclient.ExpelProject(ss.Project.Name)
+	_, err = bclient.ExpelProject(ss.Project.Name)
 	if err != nil {
 		return HandleError(err)
 	}
 
-	cmd.outputter.Logger.Printf("Placement removed: %v", out)
+	cmd.outputter.Logger.Printf("Succesfully removed project placement")
 	return nil
 }

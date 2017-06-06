@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+//JSONDecorator decorates by parsing JSON
 type JSONDecorator struct {
 	v interface{}
 }
@@ -27,6 +28,7 @@ func (d *JSONDecorator) Decorate(out io.Writer) error {
 	return enc.Encode(d.v)
 }
 
+//TmplDecorator decorates by simply executing a template
 type TmplDecorator struct {
 	v    interface{}
 	tmpl string
@@ -53,6 +55,7 @@ func (d *TmplDecorator) Decorate(out io.Writer) error {
 	return nil
 }
 
+//TableDecorator will attempt to structure a table
 type TableDecorator struct {
 	v      interface{}
 	header string

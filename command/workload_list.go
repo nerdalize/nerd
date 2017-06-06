@@ -1,12 +1,8 @@
 package command
 
 import (
-	"os"
-	"time"
-
-	humanize "github.com/dustin/go-humanize"
 	"github.com/mitchellh/cli"
-	"github.com/olekukonko/tablewriter"
+	"github.com/nerdalize/nerd/command/format"
 	"github.com/pkg/errors"
 )
 
@@ -46,17 +42,14 @@ func (cmd *WorkloadList) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ProjectID", "WorkloadID", "Image", "Created"})
-	for _, t := range out.Workloads {
-		row := []string{}
-		row = append(row, t.ProjectID)
-		row = append(row, t.WorkloadID)
-		row = append(row, t.Image)
-		row = append(row, humanize.Time(time.Unix(t.CreatedAt, 0)))
-		table.Append(row)
-	}
+	header := "WorkloadID\tImage\tInput\tCreated"
+	pretty := "{{range $i, $x := $.Workloads}}{{$x.WorkloadID}}\t{{$x.Image}}\t{{$x.InputDatasetID}}\t{{$x.CreatedAt}}\n{{end}}"
+	raw := "{{range $i, $x := $.Workloads}}{{$x.WorkloadID}}\t{{$x.Image}}\t{{$x.InputDatasetID}}\t{{$x.CreatedAt}}\n{{end}}"
+	cmd.outputter.Output(format.DecMap{
+		format.OutputTypePretty: format.NewTableDecorator(out, header, pretty),
+		format.OutputTypeRaw:    format.NewTmplDecorator(out, raw),
+		format.OutputTypeJSON:   format.NewJSONDecorator(out.Workloads),
+	})
 
-	table.Render()
 	return nil
 }

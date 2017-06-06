@@ -1,15 +1,8 @@
 package command
 
 import (
-	"context"
-	"os"
-	"time"
-
-	humanize "github.com/dustin/go-humanize"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/nerd/aws"
-	v1datatransfer "github.com/nerdalize/nerd/nerd/service/datatransfer/v1"
-	"github.com/olekukonko/tablewriter"
+	"github.com/nerdalize/nerd/command/format"
 	"github.com/pkg/errors"
 )
 
@@ -43,34 +36,20 @@ func (cmd *DatasetList) DoRun(args []string) (err error) {
 	if err != nil {
 		return HandleError(err)
 	}
-	dataOps, err := aws.NewDataClient(
-		aws.NewNerdalizeCredentials(bclient, ss.Project.Name),
-		ss.Project.AWSRegion,
-	)
-	if err != nil {
-		HandleError(errors.Wrap(err, "could not create aws dataops client"))
-	}
-	out, err := bclient.ListDatasets(ss.Project.Name)
+
+	datasets, err := bclient.ListDatasets(ss.Project.Name)
 	if err != nil {
 		return HandleError(err)
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ProjectID", "DatasetID", "Created", "Size"})
-	for _, t := range out.Datasets {
-		var size int64
-		size, err = v1datatransfer.GetRemoteDatasetSize(context.Background(), bclient, dataOps, ss.Project.Name, t.DatasetID)
-		if err != nil {
-			HandleError(err)
-		}
-		row := []string{}
-		row = append(row, t.ProjectID)
-		row = append(row, t.DatasetID)
-		row = append(row, humanize.Time(time.Unix(t.CreatedAt, 0)))
-		row = append(row, humanize.Bytes(uint64(size)))
-		table.Append(row)
-	}
+	header := "DatasetID\tCreated"
+	pretty := "{{range $i, $x := $.Datasets}}{{$x.DatasetID}}\t{{$x.CreatedAt}}\n{{end}}"
+	raw := "{{range $i, $x := $.Datasets}}{{$x.DatasetID}}\t{{$x.CreatedAt}}\n{{end}}"
+	cmd.outputter.Output(format.DecMap{
+		format.OutputTypePretty: format.NewTableDecorator(datasets, header, pretty),
+		format.OutputTypeRaw:    format.NewTmplDecorator(datasets, raw),
+		format.OutputTypeJSON:   format.NewJSONDecorator(datasets.Datasets),
+	})
 
-	table.Render()
 	return nil
 }
