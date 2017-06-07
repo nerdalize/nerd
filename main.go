@@ -20,7 +20,7 @@ func init() {
 	nerd.VersionMessage(version)
 }
 
-func main() {
+func create() *cli.CLI {
 	c := cli.NewCLI(name, fmt.Sprintf("%s (%s)", version, commit))
 	c.Args = os.Args[1:]
 	c.Commands = map[string]cli.CommandFactory{
@@ -71,8 +71,11 @@ func main() {
 		"task describe",
 	}
 	c.HelpFunc = cli.FilteredHelpFunc(include, cli.BasicHelpFunc(name))
+	return c
+}
 
-	status, err := c.Run()
+func main() {
+	status, err := create().Run()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s: %s", name, err)
 	}

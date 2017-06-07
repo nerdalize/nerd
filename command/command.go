@@ -16,20 +16,27 @@ import (
 	"github.com/nerdalize/nerd/nerd/conf"
 )
 
+var (
+	//SharedOptionsGroup are options shared by all commands
+	SharedOptionsGroup = "output options"
+)
+
 const (
 	//EnvConfigJSON can be used to pass the config file as a json encoded string
 	EnvConfigJSON = "NERD_CONFIG_JSON"
+
 	//EnvNerdProject can be used to set the nerd project
 	EnvNerdProject = "NERD_PROJECT"
 )
 
 var errShowHelp = errors.New("show error")
 
-func newCommand(title, synopsis, help string, opts interface{}) (*command, error) {
+func newCommand(usage, synopsis, help string, opts interface{}) (*command, error) {
 	cmd := &command{
+		usage:    usage,
 		help:     help,
 		synopsis: synopsis,
-		parser:   flags.NewNamedParser(title, flags.Default),
+		parser:   flags.NewNamedParser(usage, flags.Default),
 		ui: &cli.BasicUi{
 			Reader: os.Stdin,
 			Writer: os.Stderr,
@@ -50,7 +57,7 @@ func newCommand(title, synopsis, help string, opts interface{}) (*command, error
 			Debug:  cmd.setDebug,
 		},
 	}
-	_, err := cmd.parser.AddGroup("output options", "output options", confOpts)
+	_, err := cmd.parser.AddGroup(SharedOptionsGroup, SharedOptionsGroup, confOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -59,6 +66,7 @@ func newCommand(title, synopsis, help string, opts interface{}) (*command, error
 
 //command is an abstract implementation for embedding in concrete commands and allows basic command functionality to be reused.
 type command struct {
+	usage     string
 	help      string        //extended help message, show when --help a command
 	synopsis  string        //short help message, shown on the command overview
 	parser    *flags.Parser //option parser that will be used when parsing args
@@ -69,20 +77,30 @@ type command struct {
 	runFunc   func(args []string) error
 }
 
-//Will write help text for when a user uses --help, it automatically renders all option groups of the flags.Parser (augmented with default values). It will show an extended help message if it is not empty, else it shows the synopsis.
-func (c *command) Help() string {
-	buf := bytes.NewBuffer(nil)
-	c.parser.WriteHelp(buf)
+func (c *command) Options() *flags.Parser {
+	return c.parser
+}
 
+func (c *command) Usage() string {
+	return c.usage
+}
+
+func (c *command) Description() string {
 	txt := c.help
 	if txt == "" {
 		txt = c.Synopsis()
 	}
+	return txt
+}
 
+//Will write help text for when a user uses --help, it automatically renders all option groups of the flags.Parser (augmented with default values). It will show an extended help message if it is not empty, else it shows the synopsis.
+func (c *command) Help() string {
+	buf := bytes.NewBuffer(nil)
+	c.parser.WriteHelp(buf)
 	return fmt.Sprintf(`
 %s
 
-%s`, txt, buf.String())
+%s`, c.Description(), buf.String())
 }
 
 //Short explanation of the command as passed in the struction initialization

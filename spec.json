@@ -1,0 +1,295 @@
+{
+	"global_options": [
+		{
+			"long_name": "config-file",
+			"description": "location of config file",
+			"default_value": [
+				""
+			],
+			"choices": null
+		},
+		{
+			"long_name": "session-file",
+			"description": "location of session file",
+			"default_value": [
+				""
+			],
+			"choices": null
+		},
+		{
+			"long_name": "debug",
+			"short_name": "d",
+			"description": "show debug output",
+			"default_value": [
+				"false"
+			],
+			"choices": null
+		},
+		{
+			"long_name": "output",
+			"description": "format of the output",
+			"default_value": [
+				"pretty"
+			],
+			"choices": [
+				"pretty",
+				"raw",
+				"json"
+			]
+		}
+	],
+	"commands": {
+		"dataset": {
+			"usage": "nerd dataset \u003csubcommand\u003e",
+			"synopsis": "upload and download datasets for tasks to use",
+			"description": "upload and download datasets for tasks to use",
+			"options": {}
+		},
+		"dataset download": {
+			"usage": "nerd dataset download \u003cdataset-id\u003e \u003coutput-dir\u003e",
+			"synopsis": "download data from the cloud to a local directory",
+			"description": "download data from the cloud to a local directory",
+			"options": {}
+		},
+		"dataset list": {
+			"usage": "nerd dataset list",
+			"synopsis": "show a list of all datasets",
+			"description": "show a list of all datasets",
+			"options": {}
+		},
+		"dataset upload": {
+			"usage": "nerd upload \u003cpath\u003e",
+			"synopsis": "upload data to the cloud and create a new dataset",
+			"description": "upload data to the cloud and create a new dataset",
+			"options": {}
+		},
+		"login": {
+			"usage": "nerd login",
+			"synopsis": "start a new authorized session",
+			"description": "start a new authorized session",
+			"options": {}
+		},
+		"project": {
+			"usage": "nerd project \u003csubcommand\u003e",
+			"synopsis": "set and list projects",
+			"description": "set and list projects",
+			"options": {}
+		},
+		"project expel": {
+			"usage": "nerd project expel",
+			"synopsis": "move the current project away from its current cluster",
+			"description": "move the current project away from its current cluster",
+			"options": {}
+		},
+		"project list": {
+			"usage": "nerd project list",
+			"synopsis": "list all your projects",
+			"description": "list all your projects",
+			"options": {}
+		},
+		"project place": {
+			"usage": "nerd project place \u003chost\u003e",
+			"synopsis": "place the current project on a compute cluster",
+			"description": "place the current project on a compute cluster",
+			"options": {
+				"options": [
+					{
+						"long_name": "token",
+						"description": "placement that authenticates using JWT",
+						"default_value": [
+							""
+						],
+						"choices": null
+					},
+					{
+						"long_name": "username",
+						"description": "username for placement that authenticates using username/password",
+						"default_value": [
+							""
+						],
+						"choices": null
+					},
+					{
+						"long_name": "password",
+						"description": "password for placement that authenticates using username/password",
+						"default_value": [
+							""
+						],
+						"choices": null
+					},
+					{
+						"long_name": "insecure",
+						"description": "disable checking of server certificate",
+						"default_value": null,
+						"choices": null
+					}
+				]
+			}
+		},
+		"project set": {
+			"usage": "nerd project set",
+			"synopsis": "set current working project",
+			"description": "set current working project",
+			"options": {}
+		},
+		"task": {
+			"usage": "nerd task \u003csubcommand\u003e",
+			"synopsis": "manage the lifecycle of compute tasks",
+			"description": "manage the lifecycle of compute tasks",
+			"options": {}
+		},
+		"task describe": {
+			"usage": "nerd task describe \u003cworkload-id\u003e \u003ctask-id\u003e",
+			"synopsis": "return more information about a specific task",
+			"description": "return more information about a specific task",
+			"options": {}
+		},
+		"task failure": {
+			"usage": "nerd task failure \u003cworkload-id\u003e \u003ctask-id\u003e \u003crun-token\u003e \u003cerror-code\u003e \u003cerr-message\u003e",
+			"synopsis": "mark a task run as being failed",
+			"description": "mark a task run as being failed",
+			"options": {}
+		},
+		"task heartbeat": {
+			"usage": "nerd task heartbeat \u003cworkload-id\u003e \u003ctask-id\u003e \u003crun-token\u003e",
+			"synopsis": "indicate that a task run is still in progress",
+			"description": "indicate that a task run is still in progress",
+			"options": {}
+		},
+		"task list": {
+			"usage": "nerd task list \u003cworkload-id\u003e",
+			"synopsis": "show a list of all task currently in a queue",
+			"description": "show a list of all task currently in a queue",
+			"options": {}
+		},
+		"task receive": {
+			"usage": "nerd task receive \u003cworkload-id\u003e",
+			"synopsis": "wait for a new task run to be available on a queue",
+			"description": "wait for a new task run to be available on a queue",
+			"options": {}
+		},
+		"task start": {
+			"usage": "nerd task start \u003cworkload-id\u003e -- [cmd [args...]]",
+			"synopsis": "start a new task for a workload",
+			"description": "start a new task for a workload",
+			"options": {
+				"options": [
+					{
+						"long_name": "env",
+						"short_name": "e",
+						"description": "environment variables to",
+						"default_value": null,
+						"choices": null
+					}
+				]
+			}
+		},
+		"task stop": {
+			"usage": "nerd task stop \u003cworkload-id\u003e \u003ctask-id\u003e",
+			"synopsis": "abort any run(s) of the specified task on a queue",
+			"description": "abort any run(s) of the specified task on a queue",
+			"options": {}
+		},
+		"task success": {
+			"usage": "nerd task success \u003cworkload-id\u003e \u003ctask-id\u003e \u003crun-token\u003e \u003cresult\u003e",
+			"synopsis": "mark a task run as having succeeded",
+			"description": "mark a task run as having succeeded",
+			"options": {}
+		},
+		"workload": {
+			"usage": "nerd workload \u003csubcommand\u003e",
+			"synopsis": "control compute capacity for working on tasks",
+			"description": "control compute capacity for working on tasks",
+			"options": {}
+		},
+		"workload describe": {
+			"usage": "nerd workload describe \u003cworkload-id\u003e",
+			"synopsis": "return more information about a specific workload",
+			"description": "return more information about a specific workload",
+			"options": {}
+		},
+		"workload download": {
+			"usage": "nerd workload download \u003cworkload-id\u003e \u003coutput-dir\u003e",
+			"synopsis": "download output data of a workload",
+			"description": "download output data of a workload",
+			"options": {}
+		},
+		"workload list": {
+			"usage": "nerd workload list",
+			"synopsis": "show a list of all workloads in the current project",
+			"description": "show a list of all workloads in the current project",
+			"options": {}
+		},
+		"workload start": {
+			"usage": "nerd workload start \u003cimage\u003e",
+			"synopsis": "provision a new workload to provide compute",
+			"description": "provision a new workload to provide compute",
+			"options": {
+				"options": [
+					{
+						"long_name": "env",
+						"short_name": "e",
+						"description": "environment variables",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "input-dataset",
+						"short_name": "d",
+						"description": "input dataset ID, will be available in /input in your container",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "instances",
+						"short_name": "i",
+						"description": "number of working instances",
+						"default_value": [
+							"1"
+						],
+						"choices": null
+					}
+				]
+			}
+		},
+		"workload stop": {
+			"usage": "nerd workload stop \u003cworkload-id\u003e",
+			"synopsis": "stop a workload from providing compute capacity",
+			"description": "stop a workload from providing compute capacity",
+			"options": {}
+		},
+		"workload work": {
+			"usage": "nerd workload work \u003cworkload-id\u003e",
+			"synopsis": "start working tasks of a queue locally",
+			"description": "start working tasks of a queue locally",
+			"options": {
+				"options": [
+					{
+						"long_name": "entrypoint-json-base64",
+						"description": "work entrypoint, first json and then base64 encoded",
+						"default_value": [
+							"W10="
+						],
+						"choices": null
+					},
+					{
+						"long_name": "cmd-json-base64",
+						"description": "work cmd, first json and then base64 encoded",
+						"default_value": [
+							"W10="
+						],
+						"choices": null
+					},
+					{
+						"long_name": "output-dir",
+						"description": "when set, data in --output-dir will be uploaded after each task run",
+						"default_value": [
+							""
+						],
+						"choices": null
+					}
+				]
+			}
+		}
+	}
+}
