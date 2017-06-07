@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/command/format"
 	"github.com/pkg/errors"
 )
 
@@ -52,6 +53,18 @@ func (cmd *TaskDescribe) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	cmd.outputter.Logger.Printf("Task Description: %+v", out)
+	tmpl := `ID:	{{.TaskID}}
+Cmd:	{{.Cmd}}
+Output:	{{.OutputDatasetID}}
+Status:	{{.Status}}
+Created:	{{.TaskID}}
+`
+
+	cmd.outputter.Output(format.DecMap{
+		format.OutputTypePretty: format.NewTableDecorator(out, "Workload Details:", tmpl),
+		format.OutputTypeRaw:    format.NewTmplDecorator(out, tmpl),
+		format.OutputTypeJSON:   format.NewJSONDecorator(out),
+	})
+
 	return nil
 }

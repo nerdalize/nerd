@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/command/format"
 	"github.com/pkg/errors"
 )
 
@@ -41,11 +42,23 @@ func (cmd *WorkloadDescribe) DoRun(args []string) (err error) {
 	if err != nil {
 		return HandleError(err)
 	}
+
 	out, err := bclient.DescribeWorkload(ss.Project.Name, args[0])
 	if err != nil {
 		return HandleError(err)
 	}
 
-	cmd.outputter.Logger.Printf("Workload Description: %+v", out)
+	tmpl := `ID:			{{.WorkloadID}}
+Image:			{{.Image}}
+Input:			{{.InputDatasetID}}
+Created:			{{.CreatedAt}}
+	`
+
+	cmd.outputter.Output(format.DecMap{
+		format.OutputTypePretty: format.NewTableDecorator(out, "Workload Details:", tmpl),
+		format.OutputTypeRaw:    format.NewTmplDecorator(out, tmpl),
+		format.OutputTypeJSON:   format.NewJSONDecorator(out),
+	})
+
 	return nil
 }

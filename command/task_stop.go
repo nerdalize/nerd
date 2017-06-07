@@ -47,11 +47,12 @@ func (cmd *TaskStop) DoRun(args []string) (err error) {
 	if err != nil {
 		return HandleError(err)
 	}
-	out, err := bclient.StopTask(ss.Project.Name, args[0], taskID)
+
+	_, err = bclient.StopTask(ss.Project.Name, args[0], taskID)
 	if err != nil {
 		return HandleError(err)
 	}
 
-	cmd.outputter.Logger.Printf("Task Stop: %v", out)
+	cmd.outputter.Logger.Printf("Stopped task with ID: %d", taskID)
 	return nil
 }

@@ -2,10 +2,9 @@ package command
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/mitchellh/cli"
-	"github.com/olekukonko/tablewriter"
+	"github.com/nerdalize/nerd/command/format"
 	"github.com/pkg/errors"
 )
 
@@ -48,17 +47,14 @@ func (cmd *TaskList) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"WorkloadID", "TaskID", "Status", "OutputDataset"})
-	for _, t := range out.Tasks {
-		row := []string{}
-		row = append(row, t.WorkloadID)
-		row = append(row, fmt.Sprintf("%d", t.TaskID))
-		row = append(row, t.Status)
-		row = append(row, t.OutputDatasetID)
-		table.Append(row)
-	}
+	header := "TaskID\tCmd\tOutput\tStatus"
+	pretty := "{{range $i, $x := $.Tasks}}{{$x.TaskID}}\t{{$x.Cmd}}\t{{$x.OutputDatasetID}}\t{{$x.Status}}\n{{end}}"
+	raw := "{{range $i, $x := $.Tasks}}{{$x.TaskID}}\t{{$x.Cmd}}\t{{$x.OutputDatasetID}}\t{{$x.Status}}\n{{end}}"
+	cmd.outputter.Output(format.DecMap{
+		format.OutputTypePretty: format.NewTableDecorator(out, header, pretty),
+		format.OutputTypeRaw:    format.NewTmplDecorator(out, raw),
+		format.OutputTypeJSON:   format.NewJSONDecorator(out.Tasks),
+	})
 
-	table.Render()
 	return nil
 }

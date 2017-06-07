@@ -77,11 +77,12 @@ func (cmd *TaskStart) DoRun(args []string) (err error) {
 	if err != nil {
 		return HandleError(err)
 	}
+
 	out, err := bclient.StartTask(ss.Project.Name, args[0], tcmd, tenv, buf.Bytes())
 	if err != nil {
 		return HandleError(err)
 	}
 
-	cmd.outputter.Logger.Printf("Task Start: %v", out)
+	cmd.outputter.Logger.Printf("Started task with ID: %d", out.TaskID)
 	return nil
 }
