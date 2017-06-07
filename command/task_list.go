@@ -47,9 +47,9 @@ func (cmd *TaskList) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	header := "TaskID\tCmd\tOutput\tStatus"
-	pretty := "{{range $i, $x := $.Tasks}}{{$x.TaskID}}\t{{$x.Cmd}}\t{{$x.OutputDatasetID}}\t{{$x.Status}}\n{{end}}"
-	raw := "{{range $i, $x := $.Tasks}}{{$x.TaskID}}\t{{$x.Cmd}}\t{{$x.OutputDatasetID}}\t{{$x.Status}}\n{{end}}"
+	header := "TaskID\tCmd\tOutput\tStatus\tCreated"
+	pretty := "{{range $i, $x := $.Tasks}}{{$x.TaskID}}\t{{$x.Cmd}}\t{{$x.OutputDatasetID}}\t{{$x.Status}}\t{{$x.TaskID | fmtUnixNanoAgo}}\n{{end}}"
+	raw := "{{range $i, $x := $.Tasks}}{{$x.TaskID}}\t{{$x.Cmd}}\t{{$x.OutputDatasetID}}\t{{$x.Status}}\t{{$x.TaskID}}\n{{end}}"
 	cmd.outputter.Output(format.DecMap{
 		format.OutputTypePretty: format.NewTableDecorator(out, header, pretty),
 		format.OutputTypeRaw:    format.NewTmplDecorator(out, raw),

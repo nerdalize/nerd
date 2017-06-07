@@ -48,15 +48,21 @@ func (cmd *WorkloadDescribe) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	tmpl := `ID:			{{.WorkloadID}}
+	tmplPretty := `ID:			{{.WorkloadID}}
 Image:			{{.Image}}
 Input:			{{.InputDatasetID}}
-Created:			{{.CreatedAt}}
+Created:			{{.CreatedAt | fmtUnixAgo}}
+	`
+
+	tmplRaw := `ID:			{{.WorkloadID}}
+	Image:			{{.Image}}
+	Input:			{{.InputDatasetID}}
+	Created:			{{.CreatedAt}}
 	`
 
 	cmd.outputter.Output(format.DecMap{
-		format.OutputTypePretty: format.NewTableDecorator(out, "Workload Details:", tmpl),
-		format.OutputTypeRaw:    format.NewTmplDecorator(out, tmpl),
+		format.OutputTypePretty: format.NewTableDecorator(out, "Workload Details:", tmplPretty),
+		format.OutputTypeRaw:    format.NewTmplDecorator(out, tmplRaw),
 		format.OutputTypeJSON:   format.NewJSONDecorator(out),
 	})
 

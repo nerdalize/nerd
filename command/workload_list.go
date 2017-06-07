@@ -43,7 +43,7 @@ func (cmd *WorkloadList) DoRun(args []string) (err error) {
 	}
 
 	header := "WorkloadID\tImage\tInput\tCreated"
-	pretty := "{{range $i, $x := $.Workloads}}{{$x.WorkloadID}}\t{{$x.Image}}\t{{$x.InputDatasetID}}\t{{$x.CreatedAt}}\n{{end}}"
+	pretty := "{{range $i, $x := $.Workloads}}{{$x.WorkloadID}}\t{{$x.Image}}\t{{$x.InputDatasetID}}\t{{$x.CreatedAt | fmtUnixAgo }}\n{{end}}"
 	raw := "{{range $i, $x := $.Workloads}}{{$x.WorkloadID}}\t{{$x.Image}}\t{{$x.InputDatasetID}}\t{{$x.CreatedAt}}\n{{end}}"
 	cmd.outputter.Output(format.DecMap{
 		format.OutputTypePretty: format.NewTableDecorator(out, header, pretty),

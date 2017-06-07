@@ -43,7 +43,7 @@ func (cmd *DatasetList) DoRun(args []string) (err error) {
 	}
 
 	header := "DatasetID\tCreated"
-	pretty := "{{range $i, $x := $.Datasets}}{{$x.DatasetID}}\t{{$x.CreatedAt}}\n{{end}}"
+	pretty := "{{range $i, $x := $.Datasets}}{{$x.DatasetID}}\t{{$x.CreatedAt | fmtUnixAgo }}\n{{end}}"
 	raw := "{{range $i, $x := $.Datasets}}{{$x.DatasetID}}\t{{$x.CreatedAt}}\n{{end}}"
 	cmd.outputter.Output(format.DecMap{
 		format.OutputTypePretty: format.NewTableDecorator(datasets, header, pretty),

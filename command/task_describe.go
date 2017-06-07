@@ -53,7 +53,14 @@ func (cmd *TaskDescribe) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	tmpl := `ID:	{{.TaskID}}
+	tmplPretty := `ID:	{{.TaskID}}
+Cmd:	{{.Cmd}}
+Output:	{{.OutputDatasetID}}
+Status:	{{.Status}}
+Created:	{{.TaskID | fmtUnixNanoAgo }}
+`
+
+	tmplRaw := `ID:	{{.TaskID}}
 Cmd:	{{.Cmd}}
 Output:	{{.OutputDatasetID}}
 Status:	{{.Status}}
@@ -61,8 +68,8 @@ Created:	{{.TaskID}}
 `
 
 	cmd.outputter.Output(format.DecMap{
-		format.OutputTypePretty: format.NewTableDecorator(out, "Workload Details:", tmpl),
-		format.OutputTypeRaw:    format.NewTmplDecorator(out, tmpl),
+		format.OutputTypePretty: format.NewTableDecorator(out, "Workload Details:", tmplPretty),
+		format.OutputTypeRaw:    format.NewTmplDecorator(out, tmplRaw),
 		format.OutputTypeJSON:   format.NewJSONDecorator(out),
 	})
 

@@ -6,7 +6,9 @@ import (
 	"html/template"
 	"io"
 	"text/tabwriter"
+	"time"
 
+	humanize "github.com/dustin/go-humanize"
 	"github.com/pkg/errors"
 )
 
@@ -77,10 +79,21 @@ func (d *TableDecorator) Decorate(out io.Writer) error {
 	if d.header != "" {
 		fmt.Fprintln(w, d.header)
 	}
-	tmpl, err := template.New("tmpl").Parse(d.tmpl)
+
+	funcMap := template.FuncMap{
+		"fmtUnixAgo": func(t int64) string {
+			return humanize.Time(time.Unix(t, 0))
+		},
+		"fmtUnixNanoAgo": func(t int64) string {
+			return humanize.Time(time.Unix(0, t))
+		},
+	}
+
+	tmpl, err := template.New("tmpl").Funcs(funcMap).Parse(d.tmpl)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create new output template for template %v", d.tmpl)
 	}
+
 	err = tmpl.Execute(w, d.v)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse output into template")
