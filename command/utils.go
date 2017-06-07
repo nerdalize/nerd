@@ -5,12 +5,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strings"
 
 	pb "gopkg.in/cheggaaa/pb.v1"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/command/format"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
 	v1batch "github.com/nerdalize/nerd/nerd/client/batch/v1"
 	"github.com/nerdalize/nerd/nerd/conf"
@@ -20,17 +19,8 @@ import (
 	"github.com/restic/chunker"
 )
 
-type stdoutkw struct{}
-
-//Write writes a key to stdout.
-func (kw *stdoutkw) Write(k string) (err error) {
-	// _, err = fmt.Fprintf(os.Stdout, "%v\n", k)
-	logrus.Info(k)
-	return nil
-}
-
 //NewClient creates a new batch Client.
-func NewClient(c *conf.Config, session *conf.Session) (*v1batch.Client, error) {
+func NewClient(c *conf.Config, session *conf.Session, outputter *format.Outputter) (*v1batch.Client, error) {
 	key, err := jwt.ParseECDSAPublicKeyFromPemBytes([]byte(c.Auth.PublicKey))
 	if err != nil {
 		return nil, errors.Wrap(err, "ECDSA Public Key is invalid")
@@ -45,11 +35,11 @@ func NewClient(c *conf.Config, session *conf.Session) (*v1batch.Client, error) {
 	}
 	authOpsClient := v1auth.NewOpsClient(v1auth.OpsClientConfig{
 		Base:   authbase,
-		Logger: logrus.StandardLogger(),
+		Logger: outputter.Logger,
 	})
 	authTokenClient := v1auth.NewTokenClient(v1auth.TokenClientConfig{
 		Base:   authbase,
-		Logger: logrus.StandardLogger(),
+		Logger: outputter.Logger,
 	})
 	return v1batch.NewClient(v1batch.ClientConfig{
 		JWTProvider: v1batch.NewChainedJWTProvider(
@@ -57,12 +47,12 @@ func NewClient(c *conf.Config, session *conf.Session) (*v1batch.Client, error) {
 			jwt.NewConfigProvider(key, session, authTokenClient),
 			jwt.NewAuthAPIProvider(key, session, v1auth.NewClient(v1auth.ClientConfig{
 				Base:               authbase,
-				Logger:             logrus.StandardLogger(),
+				Logger:             outputter.Logger,
 				OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, c.Auth.ClientID, session),
 			})),
 		),
 		Base:   base,
-		Logger: logrus.StandardLogger(),
+		Logger: outputter.Logger,
 	}), nil
 }
 
@@ -94,40 +84,38 @@ func ErrorCauser(err error) error {
 	return err
 }
 
-//batchErrMsg returns a human-readble error message for batch HTTPErrors
-func batchErrMsg(err *v1batch.HTTPError) string {
+//batchErr returns a human-readble error message for batch HTTPErrors
+func batchErr(err *v1batch.HTTPError) error {
 	switch err.StatusCode {
 	case http.StatusUnprocessableEntity:
 		if len(err.Err.Fields) > 0 {
-			return fmt.Sprintf("Validation error: %v", err.Err.Fields)
+			return fmt.Errorf("Validation error: %v", err.Err.Fields)
 		}
 	case http.StatusNotFound:
-		return fmt.Sprint("The specified resource does not exist")
+		return fmt.Errorf("The specified resource does not exist")
 	}
-	return fmt.Sprintf("unknown server error (%v)", err.StatusCode)
+	return fmt.Errorf("unknown server error (%v)", err.StatusCode)
 }
 
 //HandleError handles the way errors are presented to the user.
-func HandleError(err error) {
+func HandleError(err error) error {
 	if errors.Cause(err) == oauth.ErrTokenRevoked {
-		logrus.Info("Your login session has expired. Please login using 'nerd login'")
-	} else if errors.Cause(err) == oauth.ErrTokenUnset {
-		logrus.Info("You are not logged in. Please login using 'nerd login'")
-	} else if herr, ok := errors.Cause(err).(*v1batch.HTTPError); ok {
-		logrus.Info(batchErrMsg(herr))
-	} else if errors.Cause(err) != nil { // when there's are more than 1 message on the message stack, only print the top one for user friendlyness.
-		logrus.Info(strings.Replace(err.Error(), ": "+ErrorCauser(ErrorCauser(err)).Error(), "", 1))
-	} else {
-		logrus.Info(err)
+		return fmt.Errorf("Your login session has expired. Please login using 'nerd login'")
 	}
-	logrus.Debugf("Underlying error: %+v", err)
-	logrus.Exit(-1)
+	if errors.Cause(err) == oauth.ErrTokenUnset {
+		return fmt.Errorf("You are not logged in. Please login using 'nerd login'")
+	}
+	if herr, ok := errors.Cause(err).(*v1batch.HTTPError); ok {
+		return batchErr(herr)
+	}
+	return err
 }
 
 //ProgressBar creates a new CLI progess bar and adds input from the progressCh to the bar.
-func ProgressBar(total int64, progressCh <-chan int64, doneCh chan<- struct{}) {
+func ProgressBar(w io.Writer, total int64, progressCh <-chan int64, doneCh chan<- struct{}) {
 	bar := pb.New64(total)
 	bar.SetUnits(pb.U_BYTES)
+	bar.Output = w
 	bar.Start()
 	for elem := range progressCh {
 		bar.Add64(elem)

@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -55,37 +54,36 @@ func (cmd *WorkloadWork) DoRun(args []string) (err error) {
 	var entrypoint, command []string
 	entrJSONString, err := base64.StdEncoding.DecodeString(cmd.opts.EntrypointJSONB64)
 	if err != nil {
-		HandleError(errors.Wrapf(err, "failed to base64 decode entrypoint '%v'", cmd.opts.EntrypointJSONB64))
+		return HandleError(errors.Wrapf(err, "failed to base64 decode entrypoint '%v'", cmd.opts.EntrypointJSONB64))
 	}
 	commandJSONString, err := base64.StdEncoding.DecodeString(cmd.opts.CmdJSONB64)
 	if err != nil {
-		HandleError(errors.Wrapf(err, "failed to base64 decode cmd '%v'", cmd.opts.CmdJSONB64))
+		return HandleError(errors.Wrapf(err, "failed to base64 decode cmd '%v'", cmd.opts.CmdJSONB64))
 	}
 	err = json.Unmarshal(entrJSONString, &entrypoint)
 	if err != nil {
-		HandleError(errors.Wrapf(err, "failed to decode entrypoint '%s'", entrJSONString))
+		return HandleError(errors.Wrapf(err, "failed to decode entrypoint '%s'", entrJSONString))
 	}
 	err = json.Unmarshal(commandJSONString, &command)
 	if err != nil {
-		HandleError(errors.Wrapf(err, "failed to decode cmd '%s'", commandJSONString))
+		return HandleError(errors.Wrapf(err, "failed to decode cmd '%s'", commandJSONString))
 	}
 
-	bclient, err := NewClient(cmd.config, cmd.session)
+	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
-		HandleError(errors.Wrap(err, "failed to create client"))
+		return HandleError(errors.Wrap(err, "failed to create client"))
 	}
 
 	ss, err := cmd.session.Read()
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 	creds := nerdaws.NewNerdalizeCredentials(bclient, ss.Project.Name)
 	qops, err := nerdaws.NewQueueClient(creds, ss.Project.AWSRegion)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
-	logger := log.New(os.Stderr, "worker/", log.Lshortfile)
 	conf := v1working.DefaultConf()
 
 	var worker *v1working.Worker
@@ -95,7 +93,7 @@ func (cmd *WorkloadWork) DoRun(args []string) (err error) {
 			ss.Project.AWSRegion,
 		)
 		if err != nil {
-			HandleError(errors.Wrap(err, "could not create aws dataops client"))
+			return HandleError(errors.Wrap(err, "could not create aws dataops client"))
 		}
 		uploadConf := &v1datatransfer.UploadConfig{
 			BatchClient: bclient,
@@ -104,9 +102,9 @@ func (cmd *WorkloadWork) DoRun(args []string) (err error) {
 			ProjectID:   ss.Project.Name,
 			Concurrency: 64,
 		}
-		worker = v1working.NewWorker(logger, bclient, qops, ss.Project.Name, args[0], entrypoint, command, uploadConf, conf)
+		worker = v1working.NewWorker(cmd.outputter.Logger, bclient, qops, ss.Project.Name, args[0], entrypoint, command, uploadConf, conf)
 	} else {
-		worker = v1working.NewWorker(logger, bclient, qops, ss.Project.Name, args[0], entrypoint, command, nil, conf)
+		worker = v1working.NewWorker(cmd.outputter.Logger, bclient, qops, ss.Project.Name, args[0], entrypoint, command, nil, conf)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

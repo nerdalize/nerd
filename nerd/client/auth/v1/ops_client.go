@@ -3,6 +3,7 @@ package v1auth
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -29,7 +30,7 @@ type OpsClientInterface interface {
 type OpsClientConfig struct {
 	Doer   Doer
 	Base   *url.URL
-	Logger client.Logger
+	Logger *log.Logger
 }
 
 //NewOpsClient creates a new OpsClient.

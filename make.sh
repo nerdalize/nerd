@@ -19,7 +19,7 @@ function run_build { #compile versioned executable and place it in $GOPATH/bin
 }
 
 function run_test { #unit test project
-	go test -v ./command
+	go test -v ./command/...
   go test -v ./nerd/...
 }
 

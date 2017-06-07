@@ -1,11 +1,10 @@
 package command
 
 import (
-	"fmt"
 	"net/url"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/command/format"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
 	"github.com/nerdalize/nerd/nerd/oauth"
 	"github.com/pkg/errors"
@@ -34,25 +33,31 @@ func ProjectListFactory() (cli.Command, error) {
 func (cmd *ProjectList) DoRun(args []string) (err error) {
 	authbase, err := url.Parse(cmd.config.Auth.APIEndpoint)
 	if err != nil {
-		HandleError(errors.Wrapf(err, "auth endpoint '%v' is not a valid URL", cmd.config.Auth.APIEndpoint))
+		return errors.Wrapf(err, "auth endpoint '%v' is not a valid URL", cmd.config.Auth.APIEndpoint)
 	}
 	authOpsClient := v1auth.NewOpsClient(v1auth.OpsClientConfig{
 		Base:   authbase,
-		Logger: logrus.StandardLogger(),
+		Logger: cmd.outputter.Logger,
 	})
 	client := v1auth.NewClient(v1auth.ClientConfig{
 		Base:               authbase,
-		Logger:             logrus.StandardLogger(),
+		Logger:             cmd.outputter.Logger,
 		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.ClientID, cmd.session),
 	})
 
 	projects, err := client.ListProjects()
 	if err != nil {
-		HandleError(err)
+		return errors.Wrap(err, "failed to list projects")
 	}
-	for _, project := range projects.Projects {
-		fmt.Printf("%v\n", project.Slug)
-	}
+
+	header := "ID\tSlug"
+	pretty := "{{range $i, $x := $.Projects}}{{$x.ID}}\t{{$x.Slug}}\n{{end}}"
+	raw := "{{range $i, $x := $.Projects}}{{$x.ID}}\t{{$x.Slug}}\t{{$x.URL}}\n{{end}}"
+	cmd.outputter.Output(format.DecMap{
+		format.OutputTypePretty: format.NewTableDecorator(projects, header, pretty),
+		format.OutputTypeRaw:    format.NewTmplDecorator(projects, raw),
+		format.OutputTypeJSON:   format.NewJSONDecorator(projects.Projects),
+	})
 
 	return nil
 }

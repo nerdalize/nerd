@@ -3,14 +3,16 @@ package command
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/pkg/errors"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	homedir "github.com/mitchellh/go-homedir"
+	"github.com/nerdalize/nerd/command/format"
 	"github.com/nerdalize/nerd/nerd/conf"
 )
 
@@ -32,6 +34,7 @@ func newCommand(title, synopsis, help string, opts interface{}) (*command, error
 			Reader: os.Stdin,
 			Writer: os.Stderr,
 		},
+		outputter: format.NewOutputter(os.Stdout, os.Stderr, log.New(os.Stderr, "", 0)),
 	}
 	if opts != nil {
 		_, err := cmd.parser.AddGroup("options", "options", opts)
@@ -43,8 +46,8 @@ func newCommand(title, synopsis, help string, opts interface{}) (*command, error
 		ConfigFile:  cmd.setConfig,
 		SessionFile: cmd.setSession,
 		OutputOpts: OutputOpts{
-			VerboseOutput: setVerbose,
-			JSONOutput:    cmd.setJSON,
+			Output: cmd.setOutput,
+			Debug:  cmd.setDebug,
 		},
 	}
 	_, err := cmd.parser.AddGroup("output options", "output options", confOpts)
@@ -56,14 +59,14 @@ func newCommand(title, synopsis, help string, opts interface{}) (*command, error
 
 //command is an abstract implementation for embedding in concrete commands and allows basic command functionality to be reused.
 type command struct {
-	help       string        //extended help message, show when --help a command
-	synopsis   string        //short help message, shown on the command overview
-	parser     *flags.Parser //option parser that will be used when parsing args
-	ui         cli.Ui
-	config     *conf.Config
-	jsonOutput bool
-	session    *conf.Session
-	runFunc    func(args []string) error
+	help      string        //extended help message, show when --help a command
+	synopsis  string        //short help message, shown on the command overview
+	parser    *flags.Parser //option parser that will be used when parsing args
+	ui        cli.Ui
+	config    *conf.Config
+	outputter *format.Outputter
+	session   *conf.Session
+	runFunc   func(args []string) error
 }
 
 //Will write help text for when a user uses --help, it automatically renders all option groups of the flags.Parser (augmented with default values). It will show an extended help message if it is not empty, else it shows the synopsis.
@@ -101,7 +104,7 @@ func (c *command) Run(args []string) int {
 		if err == errShowHelp {
 			return cli.RunResultHelp
 		}
-		c.ui.Error(err.Error())
+		c.outputter.WriteError(err)
 		return 1
 	}
 
@@ -123,24 +126,38 @@ func (c *command) setConfig(loc string) {
 		var err error
 		loc, err = conf.GetDefaultConfigLocation()
 		if err != nil {
-			fmt.Fprint(os.Stderr, errors.Wrap(err, "failed to find config location"))
+			c.outputter.WriteError(errors.Wrap(err, "failed to find config location"))
 			os.Exit(-1)
 		}
-		os.MkdirAll(filepath.Dir(loc), 0755)
-		f, err := os.OpenFile(loc, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
-		if err != nil && !os.IsExist(err) {
-			fmt.Fprint(os.Stderr, errors.Wrapf(err, "failed to create config file %v", loc))
+		err = createFile(loc, "{}")
+		if err != nil {
+			c.outputter.WriteError(errors.Wrapf(err, "failed to create config file %v", loc))
 			os.Exit(-1)
 		}
-		f.Write([]byte("{}"))
-		f.Close()
 	}
 	conf, err := conf.Read(loc)
 	if err != nil {
-		fmt.Fprint(os.Stderr, errors.Wrap(err, "failed to read config file"))
+		c.outputter.WriteError(errors.Wrap(err, "failed to read config file"))
 		os.Exit(-1)
 	}
 	c.config = conf
+	if conf.Logging.Enabled {
+		logPath, err := homedir.Expand(conf.Logging.FileLocation)
+		if err != nil {
+			c.outputter.WriteError(errors.Wrap(err, "failed to find home directory"))
+			os.Exit(-1)
+		}
+		err = createFile(logPath, "")
+		if err != nil {
+			c.outputter.WriteError(errors.Wrapf(err, "failed to create log file %v", logPath))
+			os.Exit(-1)
+		}
+		err = c.outputter.SetLogToDisk(logPath)
+		if err != nil {
+			c.outputter.WriteError(errors.Wrap(err, "failed to set logging"))
+			os.Exit(-1)
+		}
+	}
 }
 
 //setSession sets the cmd.session field according to the session file location
@@ -149,16 +166,14 @@ func (c *command) setSession(loc string) {
 		var err error
 		loc, err = conf.GetDefaultSessionLocation()
 		if err != nil {
-			fmt.Fprint(os.Stderr, errors.Wrap(err, "failed to find session location"))
+			c.outputter.WriteError(errors.Wrap(err, "failed to find session location"))
 			os.Exit(-1)
 		}
-		os.MkdirAll(filepath.Dir(loc), 0755)
-		f, err := os.OpenFile(loc, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
-		if err != nil && !os.IsExist(err) {
-			fmt.Fprint(os.Stderr, errors.Wrapf(err, "failed to create session file %v", loc))
+		err = createFile(loc, "{}")
+		if err != nil {
+			c.outputter.WriteError(errors.Wrapf(err, "failed to create session file %v", loc))
+			os.Exit(-1)
 		}
-		f.Write([]byte("{}"))
-		f.Close()
 	}
 	c.session = conf.NewSession(loc)
 	if proj := os.Getenv(EnvNerdProject); proj != "" {
@@ -166,18 +181,34 @@ func (c *command) setSession(loc string) {
 	}
 }
 
-//setVerbose sets verbose output formatting
-func setVerbose(verbose bool) {
-	if verbose {
-		logrus.SetFormatter(new(logrus.TextFormatter))
-		logrus.SetLevel(logrus.DebugLevel)
+//setDebug sets debug output formatting
+func (c *command) setDebug(debug bool) {
+	c.outputter.SetDebug(debug)
+}
+
+//setOutput specifies the type of output
+func (c *command) setOutput(output string) {
+	switch output {
+	case "json":
+		c.outputter.SetOutputType(format.OutputTypeJSON)
+	case "raw":
+		c.outputter.SetOutputType(format.OutputTypeRaw)
+	case "pretty":
+		fallthrough
+	default:
+		c.outputter.SetOutputType(format.OutputTypePretty)
 	}
 }
 
-//setJSON sets json output formatting
-func (c *command) setJSON(json bool) {
-	c.jsonOutput = json
-	if json {
-		logrus.SetFormatter(new(logrus.JSONFormatter))
+func createFile(path, content string) error {
+	os.MkdirAll(filepath.Dir(path), 0755)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
+	if err != nil && !os.IsExist(err) {
+		return err
 	}
+	if err == nil {
+		f.Write([]byte(content))
+	}
+	f.Close()
+	return nil
 }

@@ -28,12 +28,12 @@ func TaskFactory() (cli.Command, error) {
 
 //HelpTemplate provides a template for the help command, which excludes the "failure", "heartbeat", "receive", and "success" subcommands
 func (cmd *Task) HelpTemplate() string {
-	return fmt.Sprintf(`
-{{.Help}}{{if gt (len .Subcommands) 0}}
+	return fmt.Sprintf(`{{.Help}}{{if gt (len .Subcommands) 0}}
 Subcommands:
 {{- range $value := .Subcommands }}{{if and (and (ne "%v" $value.Name) (ne "%v" $value.Name)) (and (ne "%v" $value.Name) (ne "%v" $value.Name))}}
     {{ $value.NameAligned }}    {{ $value.Synopsis }}{{ end }}{{ end }}
 {{- end }}
+
 `, "failure", "heartbeat", "receive", "success")
 }
 

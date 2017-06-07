@@ -1,10 +1,10 @@
-hash: 085695e6b164637e868d35102fefd079e90154131bfce4041547b297668c53f9
-updated: 2017-05-10T12:03:27.444552023+02:00
+hash: fd32589101cc9f59ca555e743bcc010813df3b56f99ad8a51c50ecb1dfb13fcd
+updated: 2017-06-01T15:29:50.32879297+02:00
 imports:
 - name: github.com/armon/go-radix
   version: 4239b77079c7b5d1243b7b4736304ce8ddb6f0f2
 - name: github.com/aws/aws-sdk-go
-  version: 49c7a5e645b5eca5aabd1fd6a676dbddaf7b2a1a
+  version: d43439f542aac478e400c879d32e567a406d172b
   subpackages:
   - aws
   - aws/awserr
@@ -46,6 +46,8 @@ imports:
   version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
   subpackages:
   - query
+- name: github.com/hashicorp/logutils
+  version: 0dc08b1671f34c4250ce212759ebd880f743d883
 - name: github.com/jessevdk/go-flags
   version: 4e64e4a4e2552194cf594243e23aa9baf3b4297e
 - name: github.com/jmespath/go-jmespath
@@ -64,8 +66,6 @@ imports:
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/restic/chunker
   version: bb2ecf9a98e35a0b336ffc23fc515fb6e7961577
-- name: github.com/Sirupsen/logrus
-  version: 0208149b40d863d2c1a2f8fe5753096a9cf2cc8b
 - name: github.com/skratchdot/open-golang
   version: 75fb7ed4208cf72d323d7d02fd1a5964a7a9073c
   subpackages:

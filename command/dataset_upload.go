@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/command/format"
 	"github.com/nerdalize/nerd/nerd/aws"
 	v1datatransfer "github.com/nerdalize/nerd/nerd/service/datatransfer/v1"
 	"github.com/pkg/errors"
@@ -46,34 +46,34 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 
 	fi, err := os.Stat(dataPath)
 	if err != nil {
-		HandleError(errors.Errorf("argument '%v' is not a valid file or directory", dataPath))
+		return errors.Errorf("argument '%v' is not a valid file or directory", dataPath)
 	} else if !fi.IsDir() {
-		HandleError(errors.Errorf("provided path '%s' is not a directory", dataPath))
+		return errors.Errorf("provided path '%s' is not a directory", dataPath)
 	}
 
 	// Clients
-	batchclient, err := NewClient(cmd.config, cmd.session)
+	batchclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
-		HandleError(err)
+		return err
 	}
 	ss, err := cmd.session.Read()
 	if err != nil {
-		HandleError(err)
+		return err
 	}
 	dataOps, err := aws.NewDataClient(
 		aws.NewNerdalizeCredentials(batchclient, ss.Project.Name),
 		ss.Project.AWSRegion,
 	)
 	if err != nil {
-		HandleError(errors.Wrap(err, "could not create aws dataops client"))
+		return errors.Wrap(err, "could not create aws dataops client")
 	}
 	progressCh := make(chan int64)
 	progressBarDoneCh := make(chan struct{})
 	size, err := v1datatransfer.GetLocalDatasetSize(context.Background(), dataPath)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
-	go ProgressBar(size, progressCh, progressBarDoneCh)
+	go ProgressBar(cmd.outputter.ErrW(), size, progressCh, progressBarDoneCh)
 	uploadConf := v1datatransfer.UploadConfig{
 		BatchClient: batchclient,
 		DataOps:     dataOps,
@@ -83,11 +83,17 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		ProgressCh:  progressCh,
 	}
 
-	datasetID, err := v1datatransfer.Upload(context.Background(), uploadConf)
+	dataset, err := v1datatransfer.Upload(context.Background(), uploadConf)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 	<-progressBarDoneCh
-	logrus.Infof("Created dataset with ID '%v'", datasetID)
+	tmpl := "Upload complete! ID of new dataset: '{{$.DatasetID}}'\n"
+	jsonTmpl := "{\"dataset_id\":\"{{$.DatasetID}}}\"}"
+	cmd.outputter.Output(format.DecMap{
+		format.OutputTypePretty: format.NewTmplDecorator(dataset, tmpl),
+		format.OutputTypeRaw:    format.NewTmplDecorator(dataset, tmpl),
+		format.OutputTypeJSON:   format.NewTmplDecorator(dataset, jsonTmpl),
+	})
 	return nil
 }

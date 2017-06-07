@@ -2,10 +2,10 @@ package nerd
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/dghubble/sling"
 	"github.com/pkg/errors"
 )
@@ -39,27 +39,27 @@ func VersionMessage(current string) {
 	s := sling.New().Get(GHReleasesURL)
 	_, err := s.Receive(&releases, e)
 	if err != nil {
-		logrus.Debug(errors.Wrap(err, "failed to access GitHub releases page"))
+		fmt.Fprintln(os.Stderr, errors.Wrap(err, "failed to access GitHub releases page"))
 		return
 	}
 	if e.Message != "" {
-		logrus.Debugf("Recieved GitHub error message: %v (%v)", e.Message, e.URL)
+		fmt.Fprintf(os.Stderr, "Recieved GitHub error message: %v (%v)\n", e.Message, e.URL)
 		return
 	}
 	if len(releases) > 0 {
 		latest := releases[0]
 		latestVersion, err := ParseSemVer(strings.Replace(latest.Name, "v", "", 1))
 		if err != nil {
-			logrus.Debug(errors.Wrap(err, "failed to parse latest semantic version"))
+			fmt.Fprintln(os.Stderr, errors.Wrap(err, "failed to parse latest semantic version"))
 			return
 		}
 		currentVersion, err := ParseSemVer(current)
 		if err != nil {
-			logrus.Debug(errors.Wrap(err, "failed to parse current semantic version"))
+			fmt.Fprintln(os.Stderr, errors.Wrap(err, "failed to parse current semantic version"))
 			return
 		}
 		if latestVersion.GreaterThan(currentVersion) {
-			logrus.Infof("A new version (%v) of the nerd CLI is available. Your current version is %v. Please visit %v to get the latest version.", latestVersion.ToString(), currentVersion.ToString(), latest.HTMLURL)
+			fmt.Fprintf(os.Stderr, "A new version (%v) of the nerd CLI is available. Your current version is %v. Please visit %v to get the latest version.\n", latestVersion.ToString(), currentVersion.ToString(), latest.HTMLURL)
 		}
 	}
 }

@@ -3,8 +3,8 @@ package command
 import (
 	"fmt"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/command/format"
 	"github.com/pkg/errors"
 )
 
@@ -33,20 +33,38 @@ func (cmd *WorkloadDescribe) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	bclient, err := NewClient(cmd.config, cmd.session)
+	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	ss, err := cmd.session.Read()
 	if err != nil {
-		HandleError(err)
-	}
-	out, err := bclient.DescribeWorkload(ss.Project.Name, args[0])
-	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
-	logrus.Infof("Workload Description: %+v", out)
+	out, err := bclient.DescribeWorkload(ss.Project.Name, args[0])
+	if err != nil {
+		return HandleError(err)
+	}
+
+	tmplPretty := `ID:			{{.WorkloadID}}
+Image:			{{.Image}}
+Input:			{{.InputDatasetID}}
+Created:			{{.CreatedAt | fmtUnixAgo}}
+	`
+
+	tmplRaw := `ID:			{{.WorkloadID}}
+	Image:			{{.Image}}
+	Input:			{{.InputDatasetID}}
+	Created:			{{.CreatedAt}}
+	`
+
+	cmd.outputter.Output(format.DecMap{
+		format.OutputTypePretty: format.NewTableDecorator(out, "Workload Details:", tmplPretty),
+		format.OutputTypeRaw:    format.NewTmplDecorator(out, tmplRaw),
+		format.OutputTypeJSON:   format.NewJSONDecorator(out),
+	})
+
 	return nil
 }

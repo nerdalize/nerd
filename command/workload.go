@@ -26,12 +26,12 @@ func WorkloadFactory() (cli.Command, error) {
 
 //HelpTemplate provides a template for the help command, which excludes the "workload work" command
 func (cmd *Workload) HelpTemplate() string {
-	return `
-{{.Help}}{{if gt (len .Subcommands) 0}}
+	return `{{.Help}}{{if gt (len .Subcommands) 0}}
 Subcommands:
 {{- range $value := .Subcommands }}{{if ne "work" $value.Name}}
     {{ $value.NameAligned }}    {{ $value.Synopsis }}{{ end }}{{ end }}
 {{- end }}
+
 `
 }
 

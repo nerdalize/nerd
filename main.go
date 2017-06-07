@@ -17,7 +17,6 @@ var (
 )
 
 func init() {
-	nerd.SetupLogging()
 	nerd.VersionMessage(version)
 }
 

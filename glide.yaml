@@ -21,8 +21,6 @@ import:
   version: febf2d34b54a69ce7530036c7503b1c9fbfdf0bb
 - package: github.com/dustin/go-humanize      #humanize time format (x secs ago)
   version: 259d2a102b871d17f30e3cd9881a642961a1e486
-- package: github.com/Sirupsen/logrus         #Logging
-  version: v0.11.4
 - package: github.com/restic/chunker          #content-defined-chunking
   version: v0.1.0
 - package: gopkg.in/cheggaaa/pb.v1            #progress bar ui
@@ -33,3 +31,5 @@ import:
   version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
 - package: github.com/skratchdot/open-golang  #open pages in a web browser
   version: 75fb7ed4208cf72d323d7d02fd1a5964a7a9073c
+- package: github.com/hashicorp/logutils      #filter logger output
+  version: 0dc08b1671f34c4250ce212759ebd880f743d883

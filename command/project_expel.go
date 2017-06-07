@@ -1,7 +1,6 @@
 package command
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
 )
@@ -27,21 +26,21 @@ func ProjectExpelFactory() (cli.Command, error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *ProjectExpel) DoRun(args []string) (err error) {
-	bclient, err := NewClient(cmd.config, cmd.session)
+	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	ss, err := cmd.session.Read()
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
-	out, err := bclient.ExpelProject(ss.Project.Name)
+	_, err = bclient.ExpelProject(ss.Project.Name)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
-	logrus.Infof("Placement removed: %v", out)
+	cmd.outputter.Logger.Printf("Succesfully removed project placement")
 	return nil
 }

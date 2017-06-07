@@ -8,7 +8,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/aws"
 	v1datatransfer "github.com/nerdalize/nerd/nerd/service/datatransfer/v1"
@@ -48,37 +47,37 @@ func (cmd *WorkloadDownload) DoRun(args []string) (err error) {
 	if err != nil && os.IsNotExist(err) {
 		err = os.MkdirAll(outputDir, OutputDirPermissions)
 		if err != nil {
-			HandleError(errors.Errorf("The provided path '%s' does not exist and could not be created.", outputDir))
+			return HandleError(errors.Errorf("The provided path '%s' does not exist and could not be created.", outputDir))
 		}
 		fi, err = os.Stat(outputDir)
 	}
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	} else if !fi.IsDir() {
-		HandleError(errors.Errorf("The provided path '%s' is not a directory", outputDir))
+		return HandleError(errors.Errorf("The provided path '%s' is not a directory", outputDir))
 	}
 
 	// Clients
-	batchclient, err := NewClient(cmd.config, cmd.session)
+	batchclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 	ss, err := cmd.session.Read()
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 	dataOps, err := aws.NewDataClient(
 		aws.NewNerdalizeCredentials(batchclient, ss.Project.Name),
 		ss.Project.AWSRegion,
 	)
 	if err != nil {
-		HandleError(errors.Wrap(err, "could not create aws dataops client"))
+		return HandleError(errors.Wrap(err, "could not create aws dataops client"))
 	}
 
 	// Gather dataset IDs
 	tasks, err := batchclient.ListTasks(ss.Project.Name, workloadID, true)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	for _, task := range tasks.Tasks {
@@ -90,7 +89,7 @@ func (cmd *WorkloadDownload) DoRun(args []string) (err error) {
 		localDir := path.Join(outputDir, taskDir)
 		err := os.Mkdir(localDir, OutputDirPermissions)
 		if os.IsExist(err) {
-			logrus.Infof("Dataset %v for task %v already exists\n", task.OutputDatasetID, task.TaskID)
+			cmd.outputter.Logger.Printf("Dataset %v for task %v already exists\n", task.OutputDatasetID, task.TaskID)
 			continue
 		}
 		downloadConf := v1datatransfer.DownloadConfig{
@@ -101,19 +100,19 @@ func (cmd *WorkloadDownload) DoRun(args []string) (err error) {
 			DatasetID:   task.OutputDatasetID,
 			Concurrency: DownloadConcurrency,
 		}
-		logrus.Infof("Downloading dataset with ID '%v'", task.OutputDatasetID)
+		cmd.outputter.Logger.Printf("Downloading dataset with ID '%v'", task.OutputDatasetID)
 		progressCh := make(chan int64)
 		progressBarDoneCh := make(chan struct{})
 		var size int64
 		size, err = v1datatransfer.GetRemoteDatasetSize(context.Background(), batchclient, dataOps, ss.Project.Name, task.OutputDatasetID)
 		if err != nil {
-			HandleError(err)
+			return HandleError(err)
 		}
-		go ProgressBar(size, progressCh, progressBarDoneCh)
+		go ProgressBar(cmd.outputter.ErrW(), size, progressCh, progressBarDoneCh)
 		downloadConf.ProgressCh = progressCh
 		err = v1datatransfer.Download(context.Background(), downloadConf)
 		if err != nil {
-			HandleError(errors.Wrapf(err, "failed to download dataset '%v'", task.OutputDatasetID))
+			return HandleError(errors.Wrapf(err, "failed to download dataset '%v'", task.OutputDatasetID))
 		}
 		<-progressBarDoneCh
 	}

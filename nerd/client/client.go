@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httputil"
 )
@@ -52,36 +53,30 @@ func (e Error) Format(s fmt.State, verb rune) {
 	}
 }
 
-//Logger is the log interface used by clients in the client package.
-type Logger interface {
-	Debugf(format string, args ...interface{})
-	Error(args ...interface{})
-}
-
 //LogRequest is a util to log an HTTP request.
-func LogRequest(req *http.Request, logger Logger) {
+func LogRequest(req *http.Request, logger *log.Logger) {
 	txt, err := httputil.DumpRequest(req, true)
 	// retry without printing the body
 	if err != nil {
 		txt, err = httputil.DumpRequest(req, false)
 	}
 	if err == nil {
-		logger.Debugf("HTTP Request:\n%s", txt)
+		logger.Printf("[DEBUG] HTTP Request:\n%s\n", txt)
 	} else {
-		logger.Error("Failed to log HTTP request")
+		logger.Printf("[DEBUG] Failed to log HTTP request '%v'", err)
 	}
 }
 
 //LogResponse is a util to log an HTTP response.
-func LogResponse(res *http.Response, logger Logger) {
+func LogResponse(res *http.Response, logger *log.Logger) {
 	txt, err := httputil.DumpResponse(res, true)
 	// retry without printing the body
 	if err != nil {
 		txt, err = httputil.DumpResponse(res, false)
 	}
 	if err == nil {
-		logger.Debugf("HTTP Response:\n%s", txt)
+		logger.Printf("[DEBUG] HTTP Response:\n%s\n", txt)
 	} else {
-		logger.Error("Failed to log HTTP response")
+		logger.Printf("[DEBUG] Failed to log HTTP response '%v'", err)
 	}
 }

@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
 )
@@ -33,21 +32,21 @@ func (cmd *WorkloadStop) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	bclient, err := NewClient(cmd.config, cmd.session)
+	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	ss, err := cmd.session.Read()
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
-	out, err := bclient.StopWorkload(ss.Project.Name, args[0])
+	_, err = bclient.StopWorkload(ss.Project.Name, args[0])
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
-	logrus.Infof("Workload stopped: %v", out)
+	cmd.outputter.Logger.Printf("Workload '%s' was stopped", args[0])
 	return nil
 }

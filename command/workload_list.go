@@ -1,12 +1,8 @@
 package command
 
 import (
-	"os"
-	"time"
-
-	humanize "github.com/dustin/go-humanize"
 	"github.com/mitchellh/cli"
-	"github.com/olekukonko/tablewriter"
+	"github.com/nerdalize/nerd/command/format"
 	"github.com/pkg/errors"
 )
 
@@ -31,32 +27,29 @@ func WorkloadListFactory() (cli.Command, error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *WorkloadList) DoRun(args []string) (err error) {
-	bclient, err := NewClient(cmd.config, cmd.session)
+	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	ss, err := cmd.session.Read()
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	out, err := bclient.ListWorkloads(ss.Project.Name)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ProjectID", "WorkloadID", "Image", "Created"})
-	for _, t := range out.Workloads {
-		row := []string{}
-		row = append(row, t.ProjectID)
-		row = append(row, t.WorkloadID)
-		row = append(row, t.Image)
-		row = append(row, humanize.Time(time.Unix(t.CreatedAt, 0)))
-		table.Append(row)
-	}
+	header := "WorkloadID\tImage\tInput\tCreated"
+	pretty := "{{range $i, $x := $.Workloads}}{{$x.WorkloadID}}\t{{$x.Image}}\t{{$x.InputDatasetID}}\t{{$x.CreatedAt | fmtUnixAgo }}\n{{end}}"
+	raw := "{{range $i, $x := $.Workloads}}{{$x.WorkloadID}}\t{{$x.Image}}\t{{$x.InputDatasetID}}\t{{$x.CreatedAt}}\n{{end}}"
+	cmd.outputter.Output(format.DecMap{
+		format.OutputTypePretty: format.NewTableDecorator(out, header, pretty),
+		format.OutputTypeRaw:    format.NewTmplDecorator(out, raw),
+		format.OutputTypeJSON:   format.NewJSONDecorator(out.Workloads),
+	})
 
-	table.Render()
 	return nil
 }

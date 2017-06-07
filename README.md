@@ -84,7 +84,10 @@ The structure of the config and the defaults are show below:
                 "oauth_localserver": "localhost:9876", #address of local oauth server
                 "oauth_success_url": "https://cloud.nerdalize.com" #redirect URL after successful login
         },
-        "enable_logging": false, # When set to true, all output will be logged to ~/.nerd/log
+        "logging": { # write all command output to a log file
+          "enabled": false,
+          "file_location": "~/.nerd/log"
+        },
         "nerd_api_endpoint": "https://batch.nerdalize.com/v1/" # URL of nerdalize API (NCE)
 }
 ```

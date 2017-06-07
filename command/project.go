@@ -28,12 +28,12 @@ func ProjectFactory() (cli.Command, error) {
 
 //HelpTemplate provides a template for the help command, which excludes the "expel" and "place" subcommands
 func (cmd *Project) HelpTemplate() string {
-	return fmt.Sprintf(`
-{{.Help}}{{if gt (len .Subcommands) 0}}
+	return fmt.Sprintf(`{{.Help}}{{if gt (len .Subcommands) 0}}
 Subcommands:
 {{- range $value := .Subcommands }}{{if and (ne "%v" $value.Name) (ne "%v" $value.Name)}}
     {{ $value.NameAligned }}    {{ $value.Synopsis }}{{ end }}{{ end }}
 {{- end }}
+
 `, "place", "expel")
 }
 

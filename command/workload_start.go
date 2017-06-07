@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
 	"github.com/nerdalize/nerd/nerd/jwt"
@@ -52,40 +51,40 @@ func (cmd *WorkloadStart) DoRun(args []string) (err error) {
 	//fetching a worker JWT
 	authbase, err := url.Parse(cmd.config.Auth.APIEndpoint)
 	if err != nil {
-		HandleError(errors.Wrapf(err, "auth endpoint '%v' is not a valid URL", cmd.config.Auth.APIEndpoint))
+		return HandleError(errors.Wrapf(err, "auth endpoint '%v' is not a valid URL", cmd.config.Auth.APIEndpoint))
 	}
 
 	authOpsClient := v1auth.NewOpsClient(v1auth.OpsClientConfig{
 		Base:   authbase,
-		Logger: logrus.StandardLogger(),
+		Logger: cmd.outputter.Logger,
 	})
 
 	authclient := v1auth.NewClient(v1auth.ClientConfig{
 		Base:               authbase,
-		Logger:             logrus.StandardLogger(),
+		Logger:             cmd.outputter.Logger,
 		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.ClientID, cmd.session),
 	})
 
 	ss, err := cmd.session.Read()
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	workerJWT, err := authclient.GetWorkerJWT(ss.Project.Name, v1auth.NCEScope)
 	if err != nil {
-		HandleError(errors.Wrap(err, "failed to get worker JWT"))
+		return HandleError(errors.Wrap(err, "failed to get worker JWT"))
 	}
 
-	bclient, err := NewClient(cmd.config, cmd.session)
+	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	wenv := map[string]string{}
 	for _, l := range cmd.opts.Env {
 		split := strings.SplitN(l, "=", 2)
 		if len(split) < 2 {
-			HandleError(fmt.Errorf("invalid environment variable format, expected 'FOO=bar' fromat, got: %v", l))
+			return HandleError(fmt.Errorf("invalid environment variable format, expected 'FOO=bar' fromat, got: %v", l))
 		}
 		wenv[split[0]] = split[1]
 	}
@@ -94,16 +93,16 @@ func (cmd *WorkloadStart) DoRun(args []string) (err error) {
 	wenv[jwt.NerdSecretEnvVar] = workerJWT.Secret
 	configJSON, err := json.Marshal(cmd.config)
 	if err != nil {
-		HandleError(errors.Wrap(err, "failed to marshal config"))
+		return HandleError(errors.Wrap(err, "failed to marshal config"))
 	}
 	wenv[EnvConfigJSON] = string(configJSON)
 	wenv[EnvNerdProject] = ss.Project.Name
 
 	workload, err := bclient.CreateWorkload(ss.Project.Name, args[0], cmd.opts.InputDataset, wenv, cmd.opts.Instances, true)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
-	logrus.Infof("Workload Started: %v", workload)
+	cmd.outputter.Logger.Printf("Workload created with ID: %s", workload.WorkloadID)
 	return nil
 }

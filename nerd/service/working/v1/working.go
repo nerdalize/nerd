@@ -176,9 +176,23 @@ func (w *Worker) startRunExec(ctx context.Context, run *v1payload.Run) {
 			var empty bool
 			if empty, err = IsEmptyDir(w.uploadConf.LocalDir); !empty && err == nil {
 				w.logs.Printf("[INFO] uploading output data")
-				if outputDatasetID, err = v1datatransfer.Upload(ctx, *w.uploadConf); err != nil {
+				var ds *v1payload.DatasetSummary
+				ds, err = v1datatransfer.Upload(ctx, *w.uploadConf)
+				if err != nil {
 					w.logs.Printf("[ERROR] failed to upload output dataset: %+v", err)
+					if _, err = w.batch.SendRunFailure(
+						run.ProjectID,
+						run.WorkloadID,
+						run.TaskID,
+						run.Token,
+						"0",
+						"failed to output upload dataset",
+					); err != nil {
+						w.logs.Printf("[ERROR] failed to send run failure: %+v", err)
+					}
+					return
 				}
+				outputDatasetID = ds.DatasetID
 				if err = RemoveContents(w.uploadConf.LocalDir); err != nil {
 					w.logs.Printf("[ERROR] failed to clear output directory '%v', shutting down", err)
 					cancel()

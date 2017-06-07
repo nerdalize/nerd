@@ -35,7 +35,7 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 
 	err = cmd.session.WriteProject(args[0], conf.DefaultAWSRegion)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	return nil

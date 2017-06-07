@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
 )
@@ -44,14 +43,14 @@ func (cmd *ProjectPlace) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	bclient, err := NewClient(cmd.config, cmd.session)
+	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	ss, err := cmd.session.Read()
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	host := args[0]
@@ -60,11 +59,11 @@ func (cmd *ProjectPlace) DoRun(args []string) (err error) {
 	password := cmd.opts.Password
 	insecure := cmd.opts.Insecure
 
-	out, err := bclient.PlaceProject(ss.Project.Name, host, token, "", username, password, insecure)
+	_, err = bclient.PlaceProject(ss.Project.Name, host, token, "", username, password, insecure)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
-	logrus.Infof("Placement created: %v", out)
+	cmd.outputter.Logger.Printf("Succesfully placed project")
 	return nil
 }

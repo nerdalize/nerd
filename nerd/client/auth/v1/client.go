@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"sync"
@@ -33,7 +34,7 @@ type ClientConfig struct {
 	Doer               Doer
 	Base               *url.URL
 	OAuthTokenProvider OAuthTokenProvider
-	Logger             client.Logger
+	Logger             *log.Logger
 }
 
 // Doer executes http requests.  It is implemented by *http.Client.

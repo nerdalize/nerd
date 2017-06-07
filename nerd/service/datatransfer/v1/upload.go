@@ -5,6 +5,7 @@ import (
 	"io"
 
 	v1batch "github.com/nerdalize/nerd/nerd/client/batch/v1"
+	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
 	v1data "github.com/nerdalize/nerd/nerd/service/datatransfer/v1/client"
 	"github.com/pkg/errors"
 )
@@ -20,13 +21,13 @@ type UploadConfig struct {
 }
 
 //Upload uploads a dataset
-func Upload(ctx context.Context, conf UploadConfig) (string, error) {
+func Upload(ctx context.Context, conf UploadConfig) (*v1payload.DatasetSummary, error) {
 	if conf.ProgressCh != nil {
 		defer close(conf.ProgressCh)
 	}
 	ds, err := conf.BatchClient.CreateDataset(conf.ProjectID)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to create dataset")
+		return nil, errors.Wrap(err, "failed to create dataset")
 	}
 	dataClient := v1data.NewClient(conf.DataOps)
 	up := &uploadProcess{
@@ -38,7 +39,7 @@ func Upload(ctx context.Context, conf UploadConfig) (string, error) {
 		concurrency:       conf.Concurrency,
 		progressCh:        conf.ProgressCh,
 	}
-	return ds.DatasetID, up.start(ctx)
+	return &ds.DatasetSummary, up.start(ctx)
 }
 
 //GetLocalDatasetSize calculates the total size in bytes of the archived version of a directory on disk

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
 )
@@ -34,25 +33,25 @@ func (cmd *TaskSuccess) DoRun(args []string) (err error) {
 		return fmt.Errorf("not enough arguments, see --help")
 	}
 
-	bclient, err := NewClient(cmd.config, cmd.session)
+	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	taskID, err := strconv.ParseInt(args[1], 10, 64)
 	if err != nil {
-		HandleError(errors.Wrap(err, "invalid task ID, must be a number"))
+		return HandleError(errors.Wrap(err, "invalid task ID, must be a number"))
 	}
 
 	ss, err := cmd.session.Read()
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 	out, err := bclient.SendRunSuccess(ss.Project.Name, args[0], taskID, args[2], args[3], args[4])
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
-	logrus.Infof("Task Success: %v", out)
+	cmd.outputter.Logger.Printf("Task Success: %v", out)
 	return nil
 }
