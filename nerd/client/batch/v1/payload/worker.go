@@ -14,3 +14,13 @@ type WorkerSummary struct {
 	Status     string             `json:"status"`
 	Conditions []*WorkerCondition `json:"conditions"`
 }
+
+//WorkerLogsInput is for fetching worker logs
+type WorkerLogsInput struct {
+	WorkerID string `json:"worker_id"`
+}
+
+//WorkerLogsOutput contains raw log data from the cluster
+type WorkerLogsOutput struct {
+	Data []byte `json:"data"`
+}
