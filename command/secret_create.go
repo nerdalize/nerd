@@ -41,10 +41,7 @@ func SecretCreateFactory() (cli.Command, error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *SecretCreate) DoRun(args []string) (err error) {
-	isPullSecret := cmd.opts.DockerServer != "" &&
-		cmd.opts.DockerUsername != "" &&
-		cmd.opts.DockerPassword != "" &&
-		cmd.opts.DockerEmail != ""
+	isPullSecret := cmd.opts.DockerUsername != "" && cmd.opts.DockerPassword != ""
 
 	if len(args) < 3 && !isPullSecret {
 		return fmt.Errorf("not enough arguments, see --help")
