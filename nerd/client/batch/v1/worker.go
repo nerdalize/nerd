@@ -20,5 +20,5 @@ func (c *Client) WorkerLogs(projectID, workloadID, workerID string) (output *v1p
 		WorkerID:   workerID,
 	}
 
-	return output, c.doRequest(http.MethodGet, createPath(projectID, workloadsEndpoint, "workers", workerID, "logs"), input, output)
+	return output, c.doRequest(http.MethodGet, createPath(projectID, workloadsEndpoint, workloadID, "workers", workerID, "logs"), input, output)
 }
