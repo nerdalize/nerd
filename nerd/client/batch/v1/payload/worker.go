@@ -17,7 +17,9 @@ type WorkerSummary struct {
 
 //WorkerLogsInput is for fetching worker logs
 type WorkerLogsInput struct {
-	WorkerID string `json:"worker_id"`
+	ProjectID  string `json:"project_id"`
+	WorkloadID string `json:"workload_id"`
+	WorkerID   string `json:"worker_id"`
 }
 
 //WorkerLogsOutput contains raw log data from the cluster
