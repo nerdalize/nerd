@@ -2,13 +2,14 @@ package v1payload
 
 //WorkloadSummary is a smaller representation of a workload
 type WorkloadSummary struct {
-	ProjectID      string `json:"project_id"`
-	WorkloadID     string `json:"workload_id"`
-	QueueURL       string `json:"queue_url"`
-	Image          string `json:"image"`
-	Instances      int    `json:"instances"`
-	InputDatasetID string `json:"input_dataset_id"`
-	CreatedAt      int64  `json:"created_at"`
+	ProjectID      string           `json:"project_id"`
+	WorkloadID     string           `json:"workload_id"`
+	QueueURL       string           `json:"queue_url"`
+	Image          string           `json:"image"`
+	NrOfWorkers    int              `json:"nr_of_workers"`
+	InputDatasetID string           `json:"input_dataset_id"`
+	CreatedAt      int64            `json:"created_at"`
+	Workers        []*WorkerSummary `json:"workers"`
 }
 
 //ListWorkloadsInput is input for workload listing
@@ -41,7 +42,7 @@ type DescribeWorkloadOutput struct {
 type CreateWorkloadInput struct {
 	ProjectID      string            `json:"project_id" valid:"required"`
 	Image          string            `json:"image" valid:"required"`
-	Instances      int               `json:"instances" valid:"required"`
+	NrOfWorkers    int               `json:"nr_of_workers" valid:"required"`
 	InputDatasetID string            `json:"input_dataset_id"`
 	UseCuteur      bool              `json:"use_cuteur"`
 	Env            map[string]string `json:"env"`
