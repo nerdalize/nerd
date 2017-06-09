@@ -52,12 +52,14 @@ func (cmd *WorkloadDescribe) DoRun(args []string) (err error) {
 Image:			{{.Image}}
 Input:			{{.InputDatasetID}}
 Created:			{{.CreatedAt | fmtUnixAgo}}
+Workers:			{{range $i, $x := $.Workers}}{{$x.WorkerID}} ({{$x.Status}}) {{end}}
 	`
 
 	tmplRaw := `ID:			{{.WorkloadID}}
 	Image:			{{.Image}}
 	Input:			{{.InputDatasetID}}
 	Created:			{{.CreatedAt}}
+	Workers:			{{range $i, $x := $.Workers}}{{$x.WorkerID}} ({{$x.Status}}) {{end}}
 	`
 
 	cmd.outputter.Output(format.DecMap{
