@@ -66,8 +66,14 @@ func (cmd *WorkloadDownload) DoRun(args []string) (err error) {
 	if err != nil {
 		return HandleError(err)
 	}
+
+	projectID, err := ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
+
 	dataOps, err := aws.NewDataClient(
-		aws.NewNerdalizeCredentials(batchclient, ss.Project.Name),
+		aws.NewNerdalizeCredentials(batchclient, projectID),
 		ss.Project.AWSRegion,
 	)
 	if err != nil {

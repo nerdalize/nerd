@@ -42,7 +42,13 @@ func (cmd *TaskList) DoRun(args []string) (err error) {
 	if err != nil {
 		return HandleError(err)
 	}
-	out, err := bclient.ListTasks(ss.Project.Name, args[0], false)
+
+	projectID, err := ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
+
+	out, err := bclient.ListTasks(projectID, args[0], false)
 	if err != nil {
 		return HandleError(err)
 	}

@@ -78,7 +78,12 @@ func (cmd *TaskStart) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	out, err := bclient.StartTask(ss.Project.Name, args[0], tcmd, tenv, buf.Bytes())
+	projectID, err := ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
+
+	out, err := bclient.StartTask(projectID, args[0], tcmd, tenv, buf.Bytes())
 	if err != nil {
 		return HandleError(err)
 	}

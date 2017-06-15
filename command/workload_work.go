@@ -78,7 +78,13 @@ func (cmd *WorkloadWork) DoRun(args []string) (err error) {
 	if err != nil {
 		return HandleError(err)
 	}
-	creds := nerdaws.NewNerdalizeCredentials(bclient, ss.Project.Name)
+
+	projectID, err := ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
+
+	creds := nerdaws.NewNerdalizeCredentials(bclient, projectID)
 	qops, err := nerdaws.NewQueueClient(creds, ss.Project.AWSRegion)
 	if err != nil {
 		return HandleError(err)
@@ -89,7 +95,7 @@ func (cmd *WorkloadWork) DoRun(args []string) (err error) {
 	var worker *v1working.Worker
 	if cmd.opts.OutputDir != "" {
 		dataOps, err := nerdaws.NewDataClient(
-			nerdaws.NewNerdalizeCredentials(bclient, ss.Project.Name),
+			nerdaws.NewNerdalizeCredentials(bclient, projectID),
 			ss.Project.AWSRegion,
 		)
 		if err != nil {
@@ -99,12 +105,12 @@ func (cmd *WorkloadWork) DoRun(args []string) (err error) {
 			BatchClient: bclient,
 			DataOps:     dataOps,
 			LocalDir:    cmd.opts.OutputDir,
-			ProjectID:   ss.Project.Name,
+			ProjectID:   projectID,
 			Concurrency: 64,
 		}
-		worker = v1working.NewWorker(cmd.outputter.Logger, bclient, qops, ss.Project.Name, args[0], entrypoint, command, uploadConf, conf)
+		worker = v1working.NewWorker(cmd.outputter.Logger, bclient, qops, projectID, args[0], entrypoint, command, uploadConf, conf)
 	} else {
-		worker = v1working.NewWorker(cmd.outputter.Logger, bclient, qops, ss.Project.Name, args[0], entrypoint, command, nil, conf)
+		worker = v1working.NewWorker(cmd.outputter.Logger, bclient, qops, projectID, args[0], entrypoint, command, nil, conf)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

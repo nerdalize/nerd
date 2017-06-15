@@ -37,7 +37,12 @@ func (cmd *WorkloadList) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	out, err := bclient.ListWorkloads(ss.Project.Name)
+	projectID, err := ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
+
+	out, err := bclient.ListWorkloads(projectID)
 	if err != nil {
 		return HandleError(err)
 	}

@@ -43,13 +43,19 @@ func (cmd *TaskReceive) DoRun(args []string) (err error) {
 	if err != nil {
 		return HandleError(err)
 	}
-	creds := nerdaws.NewNerdalizeCredentials(bclient, ss.Project.Name)
+
+	projectID, err := ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
+
+	creds := nerdaws.NewNerdalizeCredentials(bclient, projectID)
 	qops, err := nerdaws.NewQueueClient(creds, ss.Project.AWSRegion)
 	if err != nil {
 		return HandleError(err)
 	}
 
-	out, err := bclient.ReceiveTaskRuns(ss.Project.Name, args[0], time.Minute*3, qops)
+	out, err := bclient.ReceiveTaskRuns(projectID, args[0], time.Minute*3, qops)
 	if err != nil {
 		return HandleError(err)
 	}

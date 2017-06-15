@@ -43,7 +43,12 @@ func (cmd *WorkerLogs) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	out, err := bclient.WorkerLogs(ss.Project.Name, args[0], args[1])
+	projectID, err := ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
+
+	out, err := bclient.WorkerLogs(projectID, args[0], args[1])
 	if err != nil {
 		return HandleError(err)
 	}

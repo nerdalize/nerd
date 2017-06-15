@@ -48,7 +48,12 @@ func (cmd *TaskStop) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	_, err = bclient.StopTask(ss.Project.Name, args[0], taskID)
+	projectID, err := ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
+
+	_, err = bclient.StopTask(projectID, args[0], taskID)
 	if err != nil {
 		return HandleError(err)
 	}

@@ -70,7 +70,12 @@ func (cmd *WorkloadStart) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	workerJWT, err := authclient.GetWorkerJWT(ss.Project.Name, v1auth.NCEScope)
+	projectID, err := ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
+
+	workerJWT, err := authclient.GetWorkerJWT(projectID, v1auth.NCEScope)
 	if err != nil {
 		return HandleError(errors.Wrap(err, "failed to get worker JWT"))
 	}

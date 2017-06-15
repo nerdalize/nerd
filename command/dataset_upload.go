@@ -60,8 +60,14 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 	if err != nil {
 		return err
 	}
+
+	projectID, err := ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
+
 	dataOps, err := aws.NewDataClient(
-		aws.NewNerdalizeCredentials(batchclient, ss.Project.Name),
+		aws.NewNerdalizeCredentials(batchclient, projectID),
 		ss.Project.AWSRegion,
 	)
 	if err != nil {
@@ -78,7 +84,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		BatchClient: batchclient,
 		DataOps:     dataOps,
 		LocalDir:    dataPath,
-		ProjectID:   ss.Project.Name,
+		ProjectID:   projectID,
 		Concurrency: 64,
 		ProgressCh:  progressCh,
 	}

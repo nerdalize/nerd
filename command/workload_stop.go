@@ -42,7 +42,12 @@ func (cmd *WorkloadStop) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	_, err = bclient.StopWorkload(ss.Project.Name, args[0])
+	projectID, err := ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
+
+	_, err = bclient.StopWorkload(projectID, args[0])
 	if err != nil {
 		return HandleError(err)
 	}
