@@ -224,7 +224,6 @@ func (w *Worker) startReceivingRuns(ctx context.Context) <-chan runReceive {
 			case <-ctx.Done():
 				return
 			default:
-
 				//@TODO we should allow context to be passed on to the batch client to allow cancelling of tcp connections
 				out, err := w.batch.ReceiveTaskRuns(w.pid, w.wid, w.conf.ReceiveTimeout, w.qops)
 				if err != nil {
@@ -257,7 +256,7 @@ func (w *Worker) Start(ctx context.Context) {
 			}
 
 			w.logs.Printf("[INFO] Received run: %#v", r.run)
-			go w.startRunExec(ctx, r.run)
+			w.startRunExec(ctx, r.run)
 
 		case <-ctx.Done():
 			return
