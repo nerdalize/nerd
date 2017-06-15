@@ -53,13 +53,18 @@ func (cmd *ProjectPlace) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
+	projectID, err := ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
+
 	host := args[0]
 	token := cmd.opts.Token
 	username := cmd.opts.Username
 	password := cmd.opts.Password
 	insecure := cmd.opts.Insecure
 
-	_, err = bclient.PlaceProject(ss.Project.Name, host, token, "", username, password, insecure)
+	_, err = bclient.PlaceProject(projectID, host, token, "", username, password, insecure)
 	if err != nil {
 		return HandleError(err)
 	}

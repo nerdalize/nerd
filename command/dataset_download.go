@@ -70,8 +70,14 @@ func (cmd *Download) DoRun(args []string) (err error) {
 	if err != nil {
 		return HandleError(err)
 	}
+
+	projectID, err := ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
+
 	dataOps, err := aws.NewDataClient(
-		aws.NewNerdalizeCredentials(batchclient, ss.Project.Name),
+		aws.NewNerdalizeCredentials(batchclient, projectID),
 		ss.Project.AWSRegion,
 	)
 	if err != nil {
@@ -83,23 +89,26 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		BatchClient: batchclient,
 		DataOps:     dataOps,
 		LocalDir:    outputDir,
-		ProjectID:   ss.Project.Name,
+		ProjectID:   projectID,
 		DatasetID:   datasetID,
 		Concurrency: 64,
 	}
+
 	progressCh := make(chan int64)
 	progressBarDoneCh := make(chan struct{})
 	var size int64
-	size, err = v1datatransfer.GetRemoteDatasetSize(context.Background(), batchclient, dataOps, ss.Project.Name, datasetID)
+	size, err = v1datatransfer.GetRemoteDatasetSize(context.Background(), batchclient, dataOps, projectID, datasetID)
 	if err != nil {
 		return HandleError(err)
 	}
+
 	go ProgressBar(cmd.outputter.ErrW(), size, progressCh, progressBarDoneCh)
 	downloadConf.ProgressCh = progressCh
 	err = v1datatransfer.Download(context.Background(), downloadConf)
 	if err != nil {
 		return HandleError(errors.Wrapf(err, "failed to download dataset '%v'", datasetID))
 	}
+
 	<-progressBarDoneCh
 	return nil
 }

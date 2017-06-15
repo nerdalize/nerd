@@ -47,7 +47,13 @@ func (cmd *TaskFailure) DoRun(args []string) (err error) {
 	if err != nil {
 		return HandleError(err)
 	}
-	out, err := bclient.SendRunFailure(ss.Project.Name, args[0], taskID, args[2], args[3], args[4])
+
+	projectID, err := ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
+
+	out, err := bclient.SendRunFailure(projectID, args[0], taskID, args[2], args[3], args[4])
 	if err != nil {
 		return HandleError(err)
 	}

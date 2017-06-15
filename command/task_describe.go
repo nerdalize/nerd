@@ -48,7 +48,13 @@ func (cmd *TaskDescribe) DoRun(args []string) (err error) {
 	if err != nil {
 		return HandleError(err)
 	}
-	out, err := bclient.DescribeTask(ss.Project.Name, args[0], taskID)
+
+	projectID, err := ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
+
+	out, err := bclient.DescribeTask(projectID, args[0], taskID)
 	if err != nil {
 		return HandleError(err)
 	}

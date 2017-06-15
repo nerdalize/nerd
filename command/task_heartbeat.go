@@ -47,7 +47,13 @@ func (cmd *TaskHeartbeat) DoRun(args []string) (err error) {
 	if err != nil {
 		return HandleError(err)
 	}
-	out, err := bclient.SendRunHeartbeat(ss.Project.Name, args[0], taskID, args[2])
+
+	projectID, err := ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
+
+	out, err := bclient.SendRunHeartbeat(projectID, args[0], taskID, args[2])
 	if err != nil {
 		return HandleError(err)
 	}

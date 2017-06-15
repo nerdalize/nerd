@@ -37,7 +37,12 @@ func (cmd *DatasetList) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	datasets, err := bclient.ListDatasets(ss.Project.Name)
+	projectID, err := ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
+
+	datasets, err := bclient.ListDatasets(projectID)
 	if err != nil {
 		return HandleError(err)
 	}
