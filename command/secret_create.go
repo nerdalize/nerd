@@ -37,7 +37,7 @@ func SecretCreateFactory() (cli.Command, error) {
 	cmd.runFunc = cmd.DoRun
 
 	return cmd, nil
-}
+}ndle
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *SecretCreate) DoRun(args []string) (err error) {
@@ -51,12 +51,12 @@ func (cmd *SecretCreate) DoRun(args []string) (err error) {
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	ss, err := cmd.session.Read()
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	var out *v1payload.CreateSecretOutput
@@ -68,12 +68,12 @@ func (cmd *SecretCreate) DoRun(args []string) (err error) {
 			cmd.opts.DockerPassword,
 			cmd.opts.DockerEmail)
 		if err != nil {
-			HandleError(err)
+			return HandleError(err)
 		}
 	} else {
 		out, err = bclient.CreateSecret(ss.Project.Name, args[0], args[1], args[2])
 		if err != nil {
-			HandleError(err)
+			return HandleError(err)
 		}
 	}
 

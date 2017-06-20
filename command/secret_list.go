@@ -31,16 +31,16 @@ func SecretListFactory() (cli.Command, error) {
 func (cmd *SecretList) DoRun(args []string) (err error) {
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	ss, err := cmd.session.Read()
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 	out, err := bclient.ListSecrets(ss.Project.Name)
 	if err != nil {
-		HandleError(err)
+		return HandleError(err)
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
