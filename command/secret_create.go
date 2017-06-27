@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
@@ -11,10 +12,9 @@ import (
 
 // SecretCreateOpts describes the options to the SecretCreate command
 type SecretCreateOpts struct {
-	DockerServer   string `long:"docker-server" default:"" default-mask:"" description:"https://index.docker.io/v1/': Server location for Docker registry"`
-	DockerUsername string `long:"docker-username" default:"" default-mask:"" description:"Username for Docker registry authentication"`
-	DockerPassword string `long:"docker-password" default:"" default-mask:"" description:"Password for Docker registry authentication"`
-	DockerEmail    string `long:"docker-email" default:"" default-mask:"" description:"email for Docker registry"`
+	Username string `long:"username" default:"" default-mask:"" description:"Username for Docker registry authentication"`
+	Password string `long:"password" default:"" default-mask:"" description:"Password for Docker registry authentication"`
+	Type     string `long:"type" default:"opaque" default-mask:"" description:"Type of secret to display, defaults to opaque."`
 }
 
 //SecretCreate command
@@ -26,7 +26,7 @@ type SecretCreate struct {
 //SecretCreateFactory returns a factory method for the join command
 func SecretCreateFactory() (cli.Command, error) {
 	opts := &SecretCreateOpts{}
-	comm, err := newCommand("nerd secret create <name> [key] [value]", "create secrets to be used by workers", "", opts)
+	comm, err := newCommand("nerd secret create <name> key=val", "create secrets to be used by workers", "", opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -37,16 +37,12 @@ func SecretCreateFactory() (cli.Command, error) {
 	cmd.runFunc = cmd.DoRun
 
 	return cmd, nil
-}ndle
+}
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *SecretCreate) DoRun(args []string) (err error) {
-	isPullSecret := cmd.opts.DockerUsername != "" && cmd.opts.DockerPassword != ""
-
-	if len(args) < 3 && !isPullSecret {
-		return fmt.Errorf("not enough arguments, see --help")
-	} else if len(args) < 1 {
-		return fmt.Errorf("please provide a pull secret name")
+	if len(args) < 2 && cmd.opts.Type == "opaque" {
+		return fmt.Errorf("please provide a secret name and key value pair")
 	}
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
@@ -59,19 +55,23 @@ func (cmd *SecretCreate) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
+	secretName := args[0]
 	var out *v1payload.CreateSecretOutput
-	if isPullSecret {
+	if cmd.opts.Type == "registry" {
 		out, err = bclient.CreatePullSecret(ss.Project.Name,
-			args[0],
-			cmd.opts.DockerServer,
-			cmd.opts.DockerUsername,
-			cmd.opts.DockerPassword,
-			cmd.opts.DockerEmail)
+			secretName,
+			cmd.opts.Username,
+			cmd.opts.Password,
+		)
 		if err != nil {
 			return HandleError(err)
 		}
 	} else {
-		out, err = bclient.CreateSecret(ss.Project.Name, args[0], args[1], args[2])
+		secretKv := strings.Split(args[1], "=")
+		if len(secretKv) < 2 {
+			return HandleError(fmt.Errorf("provide a valid key value pair (key=value)"))
+		}
+		out, err = bclient.CreateSecret(ss.Project.Name, secretName, secretKv[0], secretKv[1])
 		if err != nil {
 			return HandleError(err)
 		}

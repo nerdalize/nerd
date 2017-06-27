@@ -22,21 +22,21 @@ func (c *Client) CreateSecret(projectID, name, key, value string) (output *v1pay
 		Name:      name,
 		Key:       key,
 		Value:     value,
+		Type:      v1payload.SecretTypeOpaque,
 	}
 
 	return output, c.doRequest(http.MethodPost, createPath(projectID, secretsEndpoint), input, output)
 }
 
 // CreatePullSecret will create a pull secret
-func (c *Client) CreatePullSecret(projectID, name, dockerServer, dockerUsername, dockerPassword, dockerEmail string) (output *v1payload.CreateSecretOutput, err error) {
+func (c *Client) CreatePullSecret(projectID, name, dockerUsername, dockerPassword string) (output *v1payload.CreateSecretOutput, err error) {
 	output = &v1payload.CreateSecretOutput{}
 	input := &v1payload.CreateSecretInput{
 		ProjectID:      projectID,
 		Name:           name,
-		DockerServer:   dockerServer,
+		Type:           v1payload.SecretTypeRegistry,
 		DockerUsername: dockerUsername,
 		DockerPassword: dockerPassword,
-		DockerEmail:    dockerEmail,
 	}
 
 	return output, c.doRequest(http.MethodPost, createPath(projectID, secretsEndpoint), input, output)

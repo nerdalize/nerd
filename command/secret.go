@@ -12,7 +12,7 @@ type Secret struct {
 
 // SecretFactory returns a factory method for the join command
 func SecretFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd secret <subcommand>", "set and list secrets", "", nil)
+	comm, err := newCommand("nerd secret <subcommand> {opaque, registry}", "set and list secrets", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

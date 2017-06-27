@@ -8,19 +8,27 @@ import (
 	"github.com/pkg/errors"
 )
 
-// SecretList command
+// SecretListOpts describes the options to the SecretList command
+type SecretListOpts struct {
+	Type string `long:"type" default:"all" default-mask:"" description:"Type of secret to display, defaults to all."`
+}
+
+//SecretList command
 type SecretList struct {
 	*command
+	opts *SecretListOpts
 }
 
 // SecretListFactory returns a factory method for the join command
 func SecretListFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd secret list", "show a list of all secrets in the current project", "", nil)
+	opts := &SecretListOpts{}
+	comm, err := newCommand("nerd secret list", "show a list of all secrets in the current project", "", opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
 	cmd := &SecretList{
 		command: comm,
+		opts:    opts,
 	}
 	cmd.runFunc = cmd.DoRun
 
@@ -44,13 +52,11 @@ func (cmd *SecretList) DoRun(args []string) (err error) {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ProjectID", "Name", "Key", "Value"})
+	table.SetHeader([]string{"Name", "Type"})
 	for _, t := range out.Secrets {
 		row := []string{}
-		row = append(row, t.ProjectID)
 		row = append(row, t.Name)
-		row = append(row, t.Key)
-		row = append(row, t.Value)
+		row = append(row, t.Type)
 		table.Append(row)
 	}
 

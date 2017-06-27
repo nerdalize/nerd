@@ -1,5 +1,10 @@
 package v1payload
 
+const (
+	SecretTypeRegistry string = "registry"
+	SecretTypeOpaque   string = "opaque"
+)
+
 // CreateSecretInput is the input for creating a secret
 type CreateSecretInput struct {
 	ProjectID      string `json:"project_id" valid:"required"`
@@ -8,14 +13,14 @@ type CreateSecretInput struct {
 	Value          string `json:"value"`
 	DockerUsername string `json:"dockerUsername"`
 	DockerPassword string `json:"dockerPassword"`
-	Type           string `json:"type" valid:"required"`
+	Type           string `json:"type" valid:"required,in(opaque|registry)"`
 }
 
 // CreateSecretOutput is the output from creating a secret
 type CreateSecretOutput struct {
 	ProjectID string `json:"project_id" valid:"required"`
 	Name      string `json:"name" valid:"required"`
-	Type      string `json:"type" valid:"required"`
+	Type      string `json:"type" valid:"required,in(opaque|registry)"`
 }
 
 // DescribeSecretInput is the input for describing a secret
@@ -48,13 +53,12 @@ type DeleteSecretOutput struct {
 type SecretSummary struct {
 	ProjectID string `json:"project_id" valid:"required"`
 	Name      string `json:"name" valid:"required"`
-	Type      string `json:"type" valid:"required"`
+	Type      string `json:"type" valid:"required,in(opaque|registry)"`
 }
 
 // ListSecretsInput is the input for listing secrets
 type ListSecretsInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
-	Type      string `json:"type"`
 }
 
 // ListSecretsOutput is the output from listing secrets
