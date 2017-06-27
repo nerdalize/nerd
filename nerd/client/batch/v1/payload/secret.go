@@ -6,22 +6,16 @@ type CreateSecretInput struct {
 	Name           string `json:"name" valid:"required"`
 	Key            string `json:"key"`
 	Value          string `json:"value"`
-	DockerServer   string `json:"dockerServer"`
 	DockerUsername string `json:"dockerUsername"`
 	DockerPassword string `json:"dockerPassword"`
-	DockerEmail    string `json:"dockerEmail"`
+	Type           string `json:"type" valid:"required"`
 }
 
 // CreateSecretOutput is the output from creating a secret
 type CreateSecretOutput struct {
-	ProjectID      string `json:"project_id" valid:"required"`
-	Name           string `json:"name" valid:"required"`
-	Key            string `json:"key"`
-	Value          string `json:"value"`
-	DockerServer   string `json:"dockerServer"`
-	DockerUsername string `json:"dockerUsername"`
-	DockerPassword string `json:"dockerPassword"`
-	DockerEmail    string `json:"dockerEmail"`
+	ProjectID string `json:"project_id" valid:"required"`
+	Name      string `json:"name" valid:"required"`
+	Type      string `json:"type" valid:"required"`
 }
 
 // DescribeSecretInput is the input for describing a secret
@@ -36,10 +30,8 @@ type DescribeSecretOutput struct {
 	Name           string `json:"name" valid:"required"`
 	Key            string `json:"key"`
 	Value          string `json:"value"`
-	DockerServer   string `json:"dockerServer"`
 	DockerUsername string `json:"dockerUsername"`
 	DockerPassword string `json:"dockerPassword"`
-	DockerEmail    string `json:"dockerEmail"`
 }
 
 // DeleteSecretInput is the input for deleting a secret
@@ -54,19 +46,15 @@ type DeleteSecretOutput struct {
 
 //SecretSummary is summary of a secret
 type SecretSummary struct {
-	ProjectID      string `json:"project_id" valid:"required"`
-	Name           string `json:"name" valid:"required"`
-	Key            string `json:"key"`
-	Value          string `json:"value"`
-	DockerServer   string `json:"dockerServer"`
-	DockerUsername string `json:"dockerUsername"`
-	DockerPassword string `json:"dockerPassword"`
-	DockerEmail    string `json:"dockerEmail"`
+	ProjectID string `json:"project_id" valid:"required"`
+	Name      string `json:"name" valid:"required"`
+	Type      string `json:"type" valid:"required"`
 }
 
 // ListSecretsInput is the input for listing secrets
 type ListSecretsInput struct {
 	ProjectID string `json:"project_id" valid:"required"`
+	Type      string `json:"type"`
 }
 
 // ListSecretsOutput is the output from listing secrets
