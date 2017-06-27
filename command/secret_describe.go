@@ -2,9 +2,10 @@ package command
 
 import (
 	"fmt"
+	"os"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
+	"github.com/olekukonko/tablewriter"
 	"github.com/pkg/errors"
 )
 
@@ -47,6 +48,18 @@ func (cmd *SecretDescribe) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	logrus.Infof("Secret Description: %+v", out)
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Name", "Type", "Key", "Value", "Username", "Password"})
+	row := []string{}
+	row = append(row, out.Name)
+	row = append(row, out.Type)
+	row = append(row, out.Key)
+	row = append(row, out.Value)
+	row = append(row, out.DockerUsername)
+	row = append(row, out.DockerPassword)
+	table.Append(row)
+
+	table.Render()
+
 	return nil
 }

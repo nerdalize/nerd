@@ -2,11 +2,12 @@ package command
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
+	"github.com/olekukonko/tablewriter"
 	"github.com/pkg/errors"
 )
 
@@ -41,9 +42,6 @@ func SecretCreateFactory() (cli.Command, error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *SecretCreate) DoRun(args []string) (err error) {
-	if len(args) < 2 && cmd.opts.Type == "opaque" {
-		return fmt.Errorf("please provide a secret name and key value pair")
-	}
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
@@ -57,7 +55,7 @@ func (cmd *SecretCreate) DoRun(args []string) (err error) {
 
 	secretName := args[0]
 	var out *v1payload.CreateSecretOutput
-	if cmd.opts.Type == "registry" {
+	if cmd.opts.Type == v1payload.SecretTypeRegistry {
 		out, err = bclient.CreatePullSecret(ss.Project.Name,
 			secretName,
 			cmd.opts.Username,
@@ -66,7 +64,10 @@ func (cmd *SecretCreate) DoRun(args []string) (err error) {
 		if err != nil {
 			return HandleError(err)
 		}
-	} else {
+	} else if cmd.opts.Type == v1payload.SecretTypeOpaque {
+		if len(args) < 2 {
+			return HandleError(fmt.Errorf("provide a valid key value pair: key=value"))
+		}
 		secretKv := strings.Split(args[1], "=")
 		if len(secretKv) < 2 {
 			return HandleError(fmt.Errorf("provide a valid key value pair (key=value)"))
@@ -75,8 +76,17 @@ func (cmd *SecretCreate) DoRun(args []string) (err error) {
 		if err != nil {
 			return HandleError(err)
 		}
+	} else {
+		return HandleError(fmt.Errorf("invalid secret type '%s', available options are 'registry', and 'opaque'", cmd.opts.Type))
 	}
 
-	logrus.Infof("Secret Creation: %v", out)
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Name", "Type"})
+	row := []string{}
+	row = append(row, out.Name)
+	row = append(row, out.Type)
+	table.Append(row)
+
+	table.Render()
 	return nil
 }

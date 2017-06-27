@@ -37,6 +37,7 @@ type DescribeSecretOutput struct {
 	Value          string `json:"value"`
 	DockerUsername string `json:"dockerUsername"`
 	DockerPassword string `json:"dockerPassword"`
+	Type           string `json:"type" valid:"required,in(opaque|registry)"`
 }
 
 // DeleteSecretInput is the input for deleting a secret
