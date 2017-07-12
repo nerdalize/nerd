@@ -50,7 +50,7 @@ func tardir(ctx context.Context, dir string, w io.Writer) (err error) {
 			}
 
 			n, err := io.Copy(tw, f)
-			// fmt.Printf("%v %v\n", path, n)
+
 			if err != nil {
 				return errors.Wrapf(err, "failed to write tar file for '%s'", rel)
 			}
@@ -148,6 +148,7 @@ func safeFilePath(p string, perm os.FileMode) (*os.File, error) {
 
 //countBytes counts all bytes from a reader.
 func countBytes(ctx context.Context, r io.Reader) (total int64, err error) {
+	done := false
 	buf := make([]byte, 512*1024)
 	for {
 		select {
@@ -157,14 +158,21 @@ func countBytes(ctx context.Context, r io.Reader) (total int64, err error) {
 			n, err := io.ReadFull(r, buf)
 			if err == io.ErrUnexpectedEOF {
 				err = nil
+				done = true
 			}
 			if err == io.EOF {
-				return total, nil
+				err = nil
+				done = true
 			}
 			if err != nil {
-				return 0, errors.Wrap(err, "failed to read part of tar")
+				err = errors.Wrap(err, "failed to read part of tar")
+				done = true
 			}
 			total = total + int64(n)
+
+			if done {
+				return total, err
+			}
 		}
 	}
 }
