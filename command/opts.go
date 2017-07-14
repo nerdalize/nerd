@@ -2,7 +2,7 @@ package command
 
 //OutputOpts are options that are related to CLI output.
 type OutputOpts struct {
-	Debug  func(bool)   `long:"debug" short:"d" default:"false" optional:"true" optional-value:"true" description:"show debug output"`
+	Debug  func(bool)   `long:"debug" short:"d" default:"false" optional:"true" optional-value:"true" description:"show debug output" env:"NERD_DEBUG"`
 	Output func(string) `long:"output" default:"pretty" description:"format of the output" choice:"pretty" choice:"raw" choice:"json"`
 }
 
