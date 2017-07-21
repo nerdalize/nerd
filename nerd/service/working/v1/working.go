@@ -229,7 +229,7 @@ func (w *Worker) startReceivingRuns(ctx context.Context) <-chan runReceive {
 				out, err := w.batch.ReceiveTaskRuns(w.pid, w.wid, w.conf.ReceiveTimeout, w.qops)
 				if err != nil {
 					runCh <- runReceive{err: err}
-					continue
+					return //@TODO we fail the worker at this point
 				}
 
 				for _, run := range out {
