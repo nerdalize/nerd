@@ -97,7 +97,7 @@ func (w *Worker) startRunExecHeartbeat(procCtx context.Context, cancelProc conte
 				w.logs.Printf("[ERROR] failed to send run heartbeat: %v", err)
 			} else if out != nil && out.HasExpired {
 				w.logs.Printf("[ERROR] task has expired, killing task...")
-				// cancelProc() @TODO enable
+				cancelProc()
 			}
 
 		}
@@ -121,7 +121,7 @@ func (w *Worker) startRunExec(ctx context.Context, run *v1payload.Run) {
 		w.logs.Print("[ERROR] no run command was specified")
 		return
 	}
-	cmd := exec.Command(command[0], command[1:]...)
+	cmd := exec.CommandContext(ctx, command[0], command[1:]...)
 	cmd.Stdin = bytes.NewBuffer(run.Stdin)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
