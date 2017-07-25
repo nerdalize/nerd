@@ -85,7 +85,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		DataOps:     dataOps,
 		LocalDir:    dataPath,
 		ProjectID:   projectID,
-		Concurrency: 64,
+		Concurrency: UploadConcurrency,
 		ProgressCh:  progressCh,
 	}
 
