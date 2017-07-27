@@ -16,9 +16,9 @@ var (
 	commit  = "0000000"
 )
 
-func init() {
-	nerd.VersionMessage(version)
-}
+// func init() {
+// 	nerd.VersionMessage(version)
+// }
 
 func create() *cli.CLI {
 	c := cli.NewCLI(name, fmt.Sprintf("%s (%s)", version, commit))

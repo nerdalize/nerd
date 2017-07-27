@@ -39,7 +39,6 @@ func (p *uploadProcess) start(ctx context.Context) error {
 
 	// pipeline: tar | count | chunk+upload | index
 	tarCountPipe := newPipe()
-	defer tarCountPipe.w.Close()
 	countChunksPipe := newPipe()
 	chunksIndexPipe := newPipe()
 	countReader := io.TeeReader(tarCountPipe.r, countChunksPipe.w)
@@ -47,39 +46,44 @@ func (p *uploadProcess) start(ctx context.Context) error {
 	doneCh := make(chan error, 4)
 	countCh := make(chan countResult, 1)
 
-	// heartbeat
-	go sendHeartbeat(ctx, cancel, doneCh, p.batchClient, p.dataset.ProjectID, p.dataset.DatasetID, p.heartbeatInterval)
+	// Fixed it?????
 
-	// chunks | index
+	// tar
 	go func() {
-		doneCh <- uploadIndex(ctx, p.dataClient, chunksIndexPipe.r, p.dataset.Bucket, p.dataset.DatasetRoot)
-	}()
-	// count | chunks
-	go func() {
-		defer chunksIndexPipe.w.Close()
-		kw := v1data.NewIndexWriter(chunksIndexPipe.w)
-		err := uploadChunks(ctx, p.dataClient, countChunksPipe.r, kw, p.dataset.Bucket, p.dataset.ProjectRoot, p.concurrency, p.progressCh)
+		err := tardir(ctx, p.localDir, tarCountPipe.w)
 		if err != nil {
 			doneCh <- err
 		}
+		tarCountPipe.w.Close()
 	}()
 	// tar | count
 	go func() {
+
 		total, err := countBytes(ctx, countReader)
 		countCh <- countResult{
 			err:   err,
 			total: total,
 		}
+
+		countChunksPipe.w.Close()
 	}()
-	// tar
+	// count | chunks
 	go func() {
-		defer tarCountPipe.w.Close()
-		defer countChunksPipe.w.Close()
-		err := tardir(ctx, p.localDir, tarCountPipe.w)
+		kw := v1data.NewIndexWriter(chunksIndexPipe.w)
+		err := uploadChunks(ctx, p.dataClient, countChunksPipe.r, kw, p.dataset.Bucket, p.dataset.ProjectRoot, p.concurrency, p.progressCh)
+
 		if err != nil {
 			doneCh <- err
 		}
+
+		chunksIndexPipe.w.Close()
 	}()
+	// chunks | index
+	go func() {
+		doneCh <- uploadIndex(ctx, p.dataClient, chunksIndexPipe.r, p.dataset.Bucket, p.dataset.DatasetRoot)
+	}()
+	// heartbeat
+	go sendHeartbeat(ctx, cancel, doneCh, p.batchClient, p.dataset.ProjectID, p.dataset.DatasetID, p.heartbeatInterval)
 
 	err := <-doneCh
 	if err != nil {
@@ -120,6 +124,7 @@ func uploadChunks(ctx context.Context, dataClient *v1data.Client, r io.Reader, k
 		err   error
 	}
 
+	// Chunk upload to s3
 	work := func(it *item) {
 		k := v1data.Key(sha256.Sum256(it.chunk)) //hash
 		key := path.Join(root, k.ToString())

@@ -96,6 +96,7 @@ func (w *Worker) startRunExecHeartbeat(procCtx context.Context, cancelProc conte
 			if out, err := w.batch.SendRunHeartbeat(run.ProjectID, run.WorkloadID, run.TaskID, run.Token); err != nil {
 				w.logs.Printf("[ERROR] failed to send run heartbeat: %v", err)
 			} else if out != nil && out.HasExpired {
+				w.logs.Printf("[ERROR] task has expired, killing task...")
 				cancelProc()
 			}
 
@@ -228,7 +229,7 @@ func (w *Worker) startReceivingRuns(ctx context.Context) <-chan runReceive {
 				out, err := w.batch.ReceiveTaskRuns(w.pid, w.wid, w.conf.ReceiveTimeout, w.qops)
 				if err != nil {
 					runCh <- runReceive{err: err}
-					continue
+					return //@TODO we fail the worker at this point
 				}
 
 				for _, run := range out {

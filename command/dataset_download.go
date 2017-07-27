@@ -15,7 +15,7 @@ const (
 	//OutputDirPermissions are the output directory's permissions.
 	OutputDirPermissions = 0755
 	//DownloadConcurrency is the amount of concurrent download threads.
-	DownloadConcurrency = 64
+	DownloadConcurrency = 10
 )
 
 //Download command
@@ -91,7 +91,7 @@ func (cmd *Download) DoRun(args []string) (err error) {
 		LocalDir:    outputDir,
 		ProjectID:   projectID,
 		DatasetID:   datasetID,
-		Concurrency: 64,
+		Concurrency: DownloadConcurrency,
 	}
 
 	progressCh := make(chan int64)
