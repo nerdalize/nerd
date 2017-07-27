@@ -3,8 +3,8 @@
 package applicationautoscaling_test
 
 import (
-	"bytes"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -14,7 +14,7 @@ import (
 )
 
 var _ time.Duration
-var _ bytes.Buffer
+var _ strings.Reader
 var _ aws.Config
 
 func parseTime(layout, value string) *time.Time {
@@ -249,6 +249,8 @@ func ExampleApplicationAutoScaling_PutScalingPolicy_shared00() {
 				fmt.Println(applicationautoscaling.ErrCodeObjectNotFoundException, aerr.Error())
 			case applicationautoscaling.ErrCodeConcurrentUpdateException:
 				fmt.Println(applicationautoscaling.ErrCodeConcurrentUpdateException, aerr.Error())
+			case applicationautoscaling.ErrCodeFailedResourceAccessException:
+				fmt.Println(applicationautoscaling.ErrCodeFailedResourceAccessException, aerr.Error())
 			case applicationautoscaling.ErrCodeInternalServiceException:
 				fmt.Println(applicationautoscaling.ErrCodeInternalServiceException, aerr.Error())
 			default:
@@ -303,6 +305,8 @@ func ExampleApplicationAutoScaling_PutScalingPolicy_shared01() {
 				fmt.Println(applicationautoscaling.ErrCodeObjectNotFoundException, aerr.Error())
 			case applicationautoscaling.ErrCodeConcurrentUpdateException:
 				fmt.Println(applicationautoscaling.ErrCodeConcurrentUpdateException, aerr.Error())
+			case applicationautoscaling.ErrCodeFailedResourceAccessException:
+				fmt.Println(applicationautoscaling.ErrCodeFailedResourceAccessException, aerr.Error())
 			case applicationautoscaling.ErrCodeInternalServiceException:
 				fmt.Println(applicationautoscaling.ErrCodeInternalServiceException, aerr.Error())
 			default:
