@@ -1,8 +1,11 @@
 package v1payload
 
 const (
+	//SecretTypeRegistry is the type for registring images
 	SecretTypeRegistry string = "registry"
-	SecretTypeOpaque   string = "opaque"
+
+	//SecretTypeOpaque is the type that allows secrets that are opaque
+	SecretTypeOpaque string = "opaque"
 )
 
 // CreateSecretInput is the input for creating a secret
