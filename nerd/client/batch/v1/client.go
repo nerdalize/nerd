@@ -24,6 +24,7 @@ const (
 	tokensEndpoint     = "tokens"
 	datasetEndpoint    = "datasets"
 	workloadsEndpoint  = "workloads"
+	secretsEndpoint    = "secrets"
 	placementsEndpoint = "placements"
 )
 
@@ -53,6 +54,7 @@ type ClientInterface interface {
 	ClientUploadInterface
 	ClientPlacementInterface
 	ClientWorkerInterface
+	ClientSecretInterface
 }
 
 // Force compile errors when Client doesn't implement ClientInterface.

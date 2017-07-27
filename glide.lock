@@ -1,10 +1,10 @@
 hash: fd32589101cc9f59ca555e743bcc010813df3b56f99ad8a51c50ecb1dfb13fcd
-updated: 2017-06-01T15:29:50.32879297+02:00
+updated: 2017-06-07T16:15:34.130225573+02:00
 imports:
 - name: github.com/armon/go-radix
   version: 4239b77079c7b5d1243b7b4736304ce8ddb6f0f2
 - name: github.com/aws/aws-sdk-go
-  version: d43439f542aac478e400c879d32e567a406d172b
+  version: 512bdaf8bec30abd545b440447cebb57b53d3af9
   subpackages:
   - aws
   - aws/awserr
@@ -22,6 +22,7 @@ imports:
   - aws/request
   - aws/session
   - aws/signer/v4
+  - internal/shareddefaults
   - private/protocol
   - private/protocol/query
   - private/protocol/query/queryutil
@@ -66,6 +67,8 @@ imports:
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/restic/chunker
   version: bb2ecf9a98e35a0b336ffc23fc515fb6e7961577
+- name: github.com/Sirupsen/logrus
+  version: 68cec9f21fbf3ea8d8f98c044bc6ce05f17b267a
 - name: github.com/skratchdot/open-golang
   version: 75fb7ed4208cf72d323d7d02fd1a5964a7a9073c
   subpackages:
