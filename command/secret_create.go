@@ -27,7 +27,7 @@ type SecretCreate struct {
 //SecretCreateFactory returns a factory method for the join command
 func SecretCreateFactory() (cli.Command, error) {
 	opts := &SecretCreateOpts{}
-	comm, err := newCommand("nerd secret create <name> key=val", "create secrets to be used by workers", "", opts)
+	comm, err := newCommand("nerd secret create <name> [key=val]", "create secrets to be used by workers", "", opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -42,6 +42,9 @@ func SecretCreateFactory() (cli.Command, error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *SecretCreate) DoRun(args []string) (err error) {
+	if len(args) < 1 {
+		return fmt.Errorf("not enough arguments, see --help")
+	}
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)
 	if err != nil {
