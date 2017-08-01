@@ -3,6 +3,7 @@ package v1payload
 //TaskSummary is a small version of
 type TaskSummary struct {
 	TaskID          int64    `json:"task_id"`
+	TTL             int64    `json:"ttl"`
 	WorkloadID      string   `json:"workload_id"`
 	Status          string   `json:"status,omitempty"`
 	OutputDatasetID string   `json:"output_dataset_id"`

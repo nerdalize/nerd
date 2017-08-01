@@ -36,8 +36,8 @@ func create() *cli.CLI {
 		"worker logs":       command.WorkerLogsFactory,
 		"dataset":           command.DatasetFactory,
 		"dataset upload":    command.DatasetUploadFactory,
-		"dataset list":      command.DatasetListFactory,
 		"dataset download":  command.DatasetDownloadFactory,
+		"dataset list":      command.DatasetListFactory,
 		"project":           command.ProjectFactory,
 		"project place":     command.ProjectPlaceFactory,
 		"project expel":     command.ProjectExpelFactory,
@@ -52,6 +52,11 @@ func create() *cli.CLI {
 		"task heartbeat":    command.TaskHeartbeatFactory,
 		"task success":      command.TaskSuccessFactory,
 		"task failure":      command.TaskFailureFactory,
+		"secret":            command.SecretFactory,
+		"secret list":       command.SecretListFactory,
+		"secret describe":   command.SecretDescribeFactory,
+		"secret create":     command.SecretCreateFactory,
+		"secret delete":     command.SecretDeleteFactory,
 	}
 	include := []string{
 		"login",
@@ -73,6 +78,11 @@ func create() *cli.CLI {
 		"task start",
 		"task stop",
 		"task describe",
+		"secret",
+		"secret list",
+		"secret describe",
+		"secret create",
+		"secret delete",
 	}
 	c.HelpFunc = cli.FilteredHelpFunc(include, cli.BasicHelpFunc(name))
 	return c
