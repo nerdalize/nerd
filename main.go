@@ -16,14 +16,25 @@ var (
 	commit  = "0000000"
 )
 
-// func init() {
-// 	nerd.VersionMessage(version)
-// }
-
 func create() *cli.CLI {
+
+	//as seen in github.com/hashicorp/terraform/main.go
+	args := os.Args[1:]
+	for _, arg := range args {
+		if arg == "-v" || arg == "-version" || arg == "--version" {
+			newArgs := make([]string, len(args)+1)
+			newArgs[0] = "version"
+			copy(newArgs[1:], args)
+			args = newArgs
+			break
+		}
+	}
+
+	//setup the cli
 	c := cli.NewCLI(name, fmt.Sprintf("%s (%s)", version, commit))
-	c.Args = os.Args[1:]
+	c.Args = args
 	c.Commands = map[string]cli.CommandFactory{
+		"version":           command.CreateVersionFactory(version, commit),
 		"login":             command.LoginFactory,
 		"workload":          command.WorkloadFactory,
 		"workload start":    command.WorkloadStartFactory,
@@ -60,6 +71,7 @@ func create() *cli.CLI {
 	}
 	include := []string{
 		"login",
+		"version",
 		"workload",
 		"workload start",
 		"workload stop",
