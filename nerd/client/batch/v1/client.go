@@ -26,6 +26,7 @@ const (
 	workloadsEndpoint  = "workloads"
 	secretsEndpoint    = "secrets"
 	placementsEndpoint = "placements"
+	plansEndpoint      = "plans"
 )
 
 //Client is a client for the Nerdalize API.
@@ -168,7 +169,10 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 	return nil
 }
 
-//createPath is a convienent wrapper for creating a resource path prefixed by the project namespace.
+//createPath is a convenient wrapper for creating a resource path prefixed by the project namespace.
 func createPath(projectID string, elem ...string) string {
-	return path.Join(projectsPrefix, projectID, path.Join(elem...))
+	if len(projectID) > 0 {
+		return path.Join(projectsPrefix, projectID, path.Join(elem...))
+	}
+	return path.Join(elem...)
 }
