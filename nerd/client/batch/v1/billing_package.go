@@ -8,16 +8,16 @@ import (
 
 // ClientBillingPackageInterface is an interface so client billing package calls can be mocked.
 type ClientBillingPackageInterface interface {
-	CreateBillingPackage(projectID, billingPackageID string, requestsCPU float64) (output *v1payload.CreateBillingPackageOutput, err error)
+	CreateBillingPackage(projectID, billingPackageID, requestsCPU string) (output *v1payload.CreateBillingPackageOutput, err error)
 	RemoveBillingPackage(projectID, billingPackageID string) (output *v1payload.RemoveBillingPackageOutput, err error)
 	DeleteBillingPackage(billingPackageID string) (output *v1payload.DeleteBillingPackageOutput, err error)
 	DescribeBillingPackage(projectID, billingPackageID string) (output *v1payload.DescribeBillingPackageOutput, err error)
 	ListBillingPackages(projectID string) (output *v1payload.ListBillingPackagesOutput, err error)
-	UpdateBillingPackage(projectID, billingPackageID string, requestsCPU, requestsMemory float64) (output *v1payload.UpdateBillingPackageOutput, err error)
+	UpdateBillingPackage(projectID, billingPackageID, requestsCPU, requestsMemory string) (output *v1payload.UpdateBillingPackageOutput, err error)
 }
 
 // CreateBillingPackage will create a billing package for the precised project.
-func (c *Client) CreateBillingPackage(projectID, billingPackageID string, requestsCPU float64) (output *v1payload.CreateBillingPackageOutput, err error) {
+func (c *Client) CreateBillingPackage(projectID, billingPackageID, requestsCPU string) (output *v1payload.CreateBillingPackageOutput, err error) {
 	output = &v1payload.CreateBillingPackageOutput{}
 	input := &v1payload.CreateBillingPackageInput{
 		ProjectID:        projectID,
@@ -70,7 +70,7 @@ func (c *Client) DescribeBillingPackage(projectID string) (output *v1payload.Des
 }
 
 // UpdateBillingPackage returns a billing package with an updated cpu request.
-func (c *Client) UpdateBillingPackage(projectID, billingPackageID string, requestsCPU, requestsMemory float64) (output *v1payload.UpdateBillingPackageOutput, err error) {
+func (c *Client) UpdateBillingPackage(projectID, billingPackageID, requestsCPU, requestsMemory string) (output *v1payload.UpdateBillingPackageOutput, err error) {
 	output = &v1payload.UpdateBillingPackageOutput{}
 	input := &v1payload.UpdateBillingPackageInput{
 		ProjectID:        projectID,
