@@ -20,7 +20,8 @@ type ClientBillingPackageInterface interface {
 func (c *Client) CreateBillingPackage(projectID, billingPackageID, requestsCPU string) (output *v1payload.CreateBillingPackageOutput, err error) {
 	output = &v1payload.CreateBillingPackageOutput{}
 	input := &v1payload.CreateBillingPackageInput{
-		RequestsCPU: requestsCPU,
+		BillingPackageID: billingPackageID,
+		RequestsCPU:      requestsCPU,
 	}
 
 	return output, c.doRequest(http.MethodPost, createPath(projectID, billingPackagesEndpoint), input, output)

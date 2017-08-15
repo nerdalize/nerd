@@ -3,6 +3,7 @@ package v1payload
 // CreateBillingPackageInput is the input for assigning a billing package to a project.
 // This results in the creation of a quota in the right namespace.
 type CreateBillingPackageInput struct {
+	BillingPackageID string `json:"billing_package_id"`
 	RequestsCPU      string `json:"requests_cpu"`
 }
 
