@@ -56,6 +56,7 @@ type ClientInterface interface {
 	ClientPlacementInterface
 	ClientWorkerInterface
 	ClientSecretInterface
+	ClientBillingPackageInterface
 }
 
 // Force compile errors when Client doesn't implement ClientInterface.
