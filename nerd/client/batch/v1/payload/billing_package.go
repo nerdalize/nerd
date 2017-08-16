@@ -7,6 +7,7 @@ import "k8s.io/apimachinery/pkg/api/resource"
 type CreateBillingPackageInput struct {
 	BillingPackageID string `json:"billing_package_id"`
 	RequestsCPU      string `json:"requests_cpu"`
+	RequestsMemory   string `json:"requests_memory"`
 }
 
 // CreateBillingPackageOutput is the output from assigning a billing package to a project.

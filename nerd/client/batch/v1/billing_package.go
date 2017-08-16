@@ -8,7 +8,7 @@ import (
 
 // ClientBillingPackageInterface is an interface so client billing package calls can be mocked.
 type ClientBillingPackageInterface interface {
-	CreateBillingPackage(projectID, billingPackageID, requestsCPU string) (output *v1payload.CreateBillingPackageOutput, err error)
+	CreateBillingPackage(projectID, billingPackageID, requestsCPU, requestsMemory string) (output *v1payload.CreateBillingPackageOutput, err error)
 	RemoveBillingPackage(projectID, billingPackageID string) (output *v1payload.RemoveBillingPackageOutput, err error)
 	DeleteBillingPackage(billingPackageID string) (output *v1payload.DeleteBillingPackageOutput, err error)
 	DescribeBillingPackage(projectID, billingPackageID string) (output *v1payload.DescribeBillingPackageOutput, err error)
@@ -17,11 +17,12 @@ type ClientBillingPackageInterface interface {
 }
 
 // CreateBillingPackage will create a billing package for the precised project.
-func (c *Client) CreateBillingPackage(projectID, billingPackageID, requestsCPU string) (output *v1payload.CreateBillingPackageOutput, err error) {
+func (c *Client) CreateBillingPackage(projectID, billingPackageID, requestsCPU, requestsMemory string) (output *v1payload.CreateBillingPackageOutput, err error) {
 	output = &v1payload.CreateBillingPackageOutput{}
 	input := &v1payload.CreateBillingPackageInput{
 		BillingPackageID: billingPackageID,
 		RequestsCPU:      requestsCPU,
+		RequestsMemory:   requestsMemory,
 	}
 
 	return output, c.doRequest(http.MethodPost, createPath(projectID, billingPackagesEndpoint), input, output)
