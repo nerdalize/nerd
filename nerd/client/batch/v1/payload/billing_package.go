@@ -66,7 +66,8 @@ type DeleteBillingPackageOutput struct {
 
 //BillingPackageSummary is summary of a billing package
 type BillingPackageSummary struct {
-	ProjectID        string `json:"project_id" valid:"required"`
+	RequestsCPU      string `json:"requests_cpu" valid:"required"`
+	RequestsMemory   string `json:"requests_memory" valid:"required`
 	BillingPackageID string `json:"billing_package_id" valid:"required"`
 }
 
@@ -76,6 +77,10 @@ type ListBillingPackagesInput struct {
 
 // ListBillingPackagesOutput is the output from listing billing packages of a project
 type ListBillingPackagesOutput struct {
-	ProjectID       string                   `json:"project_id" valid:"required"`
-	BillingPackages []*BillingPackageSummary `json:"billing_packages" valid:"required"`
+	ProjectID          string                   `json:"project_id" valid:"required"`
+	BillingPackages    []*BillingPackageSummary `json:"billing_packages" valid:"required"`
+	UsedRequestsCPU    string                   `json:"used_requests_cpu" valid:"required`
+	UsedRequestsMemory string                   `json:"used_requests_memory" valid:"required`
+	UsedLimitsCPU      string                   `json:"used_limits_cpu" valid:"required`
+	UsedLimitsMemory   string                   `json:"used_limits_memory" valid:"required`
 }
