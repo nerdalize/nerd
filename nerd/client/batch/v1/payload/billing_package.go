@@ -31,23 +31,6 @@ type UpdateBillingPackageOutput struct {
 	RequestsMemory   string `json:"requests_memory"`
 }
 
-// DescribeBillingPackageInput is the input for describing a billing package.
-// Parameters are fetched through the url
-type DescribeBillingPackageInput struct {
-}
-
-// DescribeBillingPackageOutput is the output from describing a billingPackage.
-// Same as the DescribeBillingPackageInput, a billing package is not always
-// assigned to a project so the projectID can be empty.
-type DescribeBillingPackageOutput struct {
-	ProjectID        string `json:"project_id"`
-	BillingPackageID string `json:"billing_package_id" valid:"required"`
-	RequestsCPU      string `json:"requests_cpu"`
-	RequestsMemory   string `json:"requests_memory"`
-	UsedCPU          string `json:"used_cpu"`
-	UsedMemory       string `json:"used_memory"`
-}
-
 // RemoveBillingPackageInput is the input for removing a billing package from a project
 type RemoveBillingPackageInput struct {
 }
@@ -77,10 +60,16 @@ type ListBillingPackagesInput struct {
 
 // ListBillingPackagesOutput is the output from listing billing packages of a project
 type ListBillingPackagesOutput struct {
-	ProjectID          string                   `json:"project_id" valid:"required"`
-	BillingPackages    []*BillingPackageSummary `json:"billing_packages" valid:"required"`
-	UsedRequestsCPU    string                   `json:"used_requests_cpu" valid:"required`
-	UsedRequestsMemory string                   `json:"used_requests_memory" valid:"required`
-	UsedLimitsCPU      string                   `json:"used_limits_cpu" valid:"required`
-	UsedLimitsMemory   string                   `json:"used_limits_memory" valid:"required`
+	ProjectID       string                   `json:"project_id" valid:"required"`
+	BillingPackages []*BillingPackageSummary `json:"billing_packages" valid:"required"`
+	Total           *Resource
+	Used            *Resource
+}
+
+// Resource is a general struct that will be used in our list payloads.
+type Resource struct {
+	RequestsCPU    string `json:"requests_cpu" valid:"required"`
+	RequestsMemory string `json:"requests_memory" valid:"required`
+	LimitsCPU      string `json:"limits_cpu" valid:"required"`
+	LimitsMemory   string `json:"limits_memory" valid:"required"`
 }
