@@ -11,7 +11,6 @@ type ClientBillingPackageInterface interface {
 	CreateBillingPackage(projectID, billingPackageID, requestsCPU, requestsMemory string) (output *v1payload.CreateBillingPackageOutput, err error)
 	RemoveBillingPackage(projectID, billingPackageID string) (output *v1payload.RemoveBillingPackageOutput, err error)
 	DeleteBillingPackage(billingPackageID string) (output *v1payload.DeleteBillingPackageOutput, err error)
-	DescribeBillingPackage(projectID, billingPackageID string) (output *v1payload.DescribeBillingPackageOutput, err error)
 	ListBillingPackages(projectID string) (output *v1payload.ListBillingPackagesOutput, err error)
 	UpdateBillingPackage(projectID, billingPackageID, requestsCPU, requestsMemory string) (output *v1payload.UpdateBillingPackageOutput, err error)
 }
@@ -50,14 +49,6 @@ func (c *Client) ListBillingPackages(projectID string) (output *v1payload.ListBi
 	input := &v1payload.ListBillingPackagesInput{}
 
 	return output, c.doRequest(http.MethodGet, createPath(projectID, billingPackagesEndpoint), input, output)
-}
-
-// DescribeBillingPackage returns detailed information of a billing package.
-func (c *Client) DescribeBillingPackage(projectID, billingPackageID string) (output *v1payload.DescribeBillingPackageOutput, err error) {
-	output = &v1payload.DescribeBillingPackageOutput{}
-	input := &v1payload.DescribeBillingPackageInput{}
-
-	return output, c.doRequest(http.MethodGet, createPath(projectID, billingPackagesEndpoint, billingPackageID), input, output)
 }
 
 // UpdateBillingPackage returns a billing package with an updated cpu request.
