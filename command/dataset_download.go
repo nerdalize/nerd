@@ -2,7 +2,6 @@ package command
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/mitchellh/cli"
@@ -40,7 +39,7 @@ func DatasetDownloadFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *Download) DoRun(args []string) (err error) {
 	if len(args) < 2 {
-		return fmt.Errorf("not enough arguments, see --help")
+		return errors.Wrap(errShowHelp, "Not enough arguments, see below for usage.")
 	}
 
 	datasetID := args[0]

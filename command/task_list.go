@@ -1,8 +1,6 @@
 package command
 
 import (
-	"fmt"
-
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/command/format"
 	"github.com/pkg/errors"
@@ -30,7 +28,7 @@ func TaskListFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *TaskList) DoRun(args []string) (err error) {
 	if len(args) < 1 {
-		return fmt.Errorf("not enough arguments, see --help")
+		return errors.Wrap(errShowHelp, "Not enough arguments, see below for usage.")
 	}
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)

@@ -1,8 +1,6 @@
 package command
 
 import (
-	"fmt"
-
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
@@ -30,7 +28,7 @@ func ProjectSetFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *ProjectSet) DoRun(args []string) (err error) {
 	if len(args) < 1 {
-		return fmt.Errorf("not enough arguments, see --help")
+		return errors.Wrap(errShowHelp, "Not enough arguments, see below for usage.")
 	}
 
 	err = cmd.session.WriteProject(args[0], conf.DefaultAWSRegion)

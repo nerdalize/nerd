@@ -2,7 +2,6 @@ package command
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/mitchellh/cli"
@@ -39,7 +38,7 @@ func DatasetUploadFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *Upload) DoRun(args []string) (err error) {
 	if len(args) < 1 {
-		return fmt.Errorf("not enough arguments, see --help")
+		return errors.Wrap(errShowHelp, "Not enough arguments, see below for usage.")
 	}
 
 	dataPath := args[0]
