@@ -11,9 +11,9 @@ type SecretDelete struct {
 	*command
 }
 
-// SecretDeleteFactory returns a factory method for the join command
+// SecretDeleteFactory returns a factory method for the secret delete command
 func SecretDeleteFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd secret <type> delete <name>", "remove a secret", "", nil)
+	comm, err := newCommand("nerd secret <type> delete <name>", "Remove a secret.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

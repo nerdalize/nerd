@@ -26,7 +26,7 @@ type TaskStart struct {
 //TaskStartFactory returns a factory method for the join command
 func TaskStartFactory() (cli.Command, error) {
 	opts := &TaskStartOpts{}
-	comm, err := newCommand("nerd task start <workload-id> -- [cmd [args...]]", "start a new task for a workload", "", opts)
+	comm, err := newCommand("nerd task start <workload-id> -- [cmd [args...]]", "Start a new task for a workload.", "", opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

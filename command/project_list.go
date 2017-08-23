@@ -17,7 +17,7 @@ type ProjectList struct {
 
 //ProjectListFactory returns a factory method for the join command
 func ProjectListFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd project list", "list all your projects", "", nil)
+	comm, err := newCommand("nerd project list", "List all your projects.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

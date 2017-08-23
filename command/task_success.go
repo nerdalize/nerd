@@ -14,7 +14,7 @@ type TaskSuccess struct {
 
 //TaskSuccessFactory returns a factory method for the join command
 func TaskSuccessFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd task success <workload-id> <task-id> <run-token> <result>", "mark a task run as having succeeded", "", nil)
+	comm, err := newCommand("nerd task success <workload-id> <task-id> <run-token> <result>", "Mark a task run as having succeeded.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

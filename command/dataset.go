@@ -12,7 +12,7 @@ type Dataset struct {
 
 //DatasetFactory returns a factory method for the join command
 func DatasetFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd dataset <subcommand>", "upload and download datasets for tasks to use", "", nil)
+	comm, err := newCommand("nerd dataset <subcommand>", "Upload and download datasets for tasks to use.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

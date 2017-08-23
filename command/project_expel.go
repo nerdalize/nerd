@@ -12,7 +12,7 @@ type ProjectExpel struct {
 
 //ProjectExpelFactory returns a factory method for the join command
 func ProjectExpelFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd project expel", "move the current project away from its current cluster", "", nil)
+	comm, err := newCommand("nerd project expel", "Move the current project away from its current cluster.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

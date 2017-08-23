@@ -13,7 +13,7 @@ type TaskList struct {
 
 //TaskListFactory returns a factory method for the join command
 func TaskListFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd task list <workload-id>", "show a list of all task currently in a queue", "", nil)
+	comm, err := newCommand("nerd task list <workload-id>", "Show a list of all task currently in a queue.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

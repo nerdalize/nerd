@@ -13,7 +13,7 @@ type WorkloadDescribe struct {
 
 //WorkloadDescribeFactory returns a factory method for the join command
 func WorkloadDescribeFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd workload describe <workload-id>", "return more information about a specific workload", "", nil)
+	comm, err := newCommand("nerd workload describe <workload-id>", "Return more information about a specific workload.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

@@ -27,7 +27,7 @@ type SecretCreate struct {
 //SecretCreateFactory returns a factory method for the join command
 func SecretCreateFactory() (cli.Command, error) {
 	opts := &SecretCreateOpts{}
-	comm, err := newCommand("nerd secret create <name> [key=val]", "create secrets to be used by workers", "", opts)
+	comm, err := newCommand("nerd secret create <name> [key=val]", "Create secrets to be used by workers.", "", opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

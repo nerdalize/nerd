@@ -13,9 +13,9 @@ type SecretDescribe struct {
 	*command
 }
 
-//SecretDescribeFactory returns a factory method for the join command
+//SecretDescribeFactory returns a factory method for the secret describe command
 func SecretDescribeFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd secret describe <name>", "show more information about a specific secret", "", nil)
+	comm, err := newCommand("nerd secret describe <name>", "Show more information about a specific secret.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

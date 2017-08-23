@@ -13,7 +13,7 @@ type ProjectSet struct {
 
 //ProjectSetFactory returns a factory method for the join command
 func ProjectSetFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd project set", "set current working project", "", nil)
+	comm, err := newCommand("nerd project set", "Set current working project.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

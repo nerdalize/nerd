@@ -31,7 +31,7 @@ type WorkloadStart struct {
 //WorkloadStartFactory returns a factory method for the join command
 func WorkloadStartFactory() (cli.Command, error) {
 	opts := &WorkloadStartOpts{}
-	comm, err := newCommand("nerd workload start <image>", "provision a new workload to provide compute", "", opts)
+	comm, err := newCommand("nerd workload start <image>", "Provision a new workload to provide compute.", "", opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

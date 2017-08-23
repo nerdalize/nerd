@@ -19,7 +19,7 @@ import (
 
 var (
 	//SharedOptionsGroup are options shared by all commands
-	SharedOptionsGroup = "output options"
+	SharedOptionsGroup = "Output options"
 )
 
 const (

@@ -18,7 +18,7 @@ type Version struct {
 //CreateVersionFactory returns a factory method for the join command
 func CreateVersionFactory(version, commit string) cli.CommandFactory {
 	return func() (cli.Command, error) {
-		comm, err := newCommand("nerd version", "check the current version", "", nil)
+		comm, err := newCommand("nerd version", "Check the current version.", "", nil)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create command")
 		}

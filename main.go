@@ -21,7 +21,7 @@ func create() *cli.CLI {
 	//as seen in github.com/hashicorp/terraform/main.go
 	args := os.Args[1:]
 	for _, arg := range args {
-		if arg == "-v" || arg == "-version" || arg == "--version" {
+		if arg == "-V" || arg == "-version" || arg == "--version" {
 			newArgs := make([]string, len(args)+1)
 			newArgs[0] = "version"
 			copy(newArgs[1:], args)

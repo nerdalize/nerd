@@ -12,7 +12,7 @@ type WorkloadStop struct {
 
 //WorkloadStopFactory returns a factory method for the join command
 func WorkloadStopFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd workload stop <workload-id>", "stop a workload from providing compute capacity", "", nil)
+	comm, err := newCommand("nerd workload stop <workload-id>", "Stop a workload from providing compute capacity.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

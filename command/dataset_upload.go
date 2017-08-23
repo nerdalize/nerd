@@ -23,7 +23,7 @@ type Upload struct {
 
 //DatasetUploadFactory returns a factory method for the join command
 func DatasetUploadFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd upload <path>", "upload data to the cloud and create a new dataset", "", nil)
+	comm, err := newCommand("nerd upload <path>", "Upload data to the cloud and create a new dataset.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

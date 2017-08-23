@@ -13,7 +13,7 @@ type WorkloadList struct {
 
 //WorkloadListFactory returns a factory method for the join command
 func WorkloadListFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd workload list", "show a list of all workloads in the current project", "", nil)
+	comm, err := newCommand("nerd workload list", "Show a list of all workloads in the current project.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

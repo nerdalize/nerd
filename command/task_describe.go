@@ -15,7 +15,7 @@ type TaskDescribe struct {
 
 //TaskDescribeFactory returns a factory method for the join command
 func TaskDescribeFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd task describe <workload-id> <task-id>", "return more information about a specific task", "", nil)
+	comm, err := newCommand("nerd task describe <workload-id> <task-id>", "Return more information about a specific task.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

@@ -15,7 +15,7 @@ type WorkerLogs struct {
 
 //WorkerLogsFactory returns a factory method for the join command
 func WorkerLogsFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd worker logs <workload-id> <worker-id>", "return recent logs from a worker", "", nil)
+	comm, err := newCommand("nerd worker logs <workload-id> <worker-id>", "Return recent logs from a worker.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

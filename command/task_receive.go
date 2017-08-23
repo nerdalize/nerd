@@ -15,7 +15,7 @@ type TaskReceive struct {
 
 //TaskReceiveFactory returns a factory method for the join command
 func TaskReceiveFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd task receive <workload-id>", "wait for a new task run to be available on a queue", "", nil)
+	comm, err := newCommand("nerd task receive <workload-id>", "Wait for a new task run to be available on a queue.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
