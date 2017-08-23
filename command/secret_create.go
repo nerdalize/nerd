@@ -24,7 +24,7 @@ type SecretCreate struct {
 	opts *SecretCreateOpts
 }
 
-//SecretCreateFactory returns a factory method for the join command
+//SecretCreateFactory returns a factory method for the secret create command
 func SecretCreateFactory() (cli.Command, error) {
 	opts := &SecretCreateOpts{}
 	comm, err := newCommand("nerd secret create <name> [key=val]", "Create secrets to be used by workers.", "", opts)

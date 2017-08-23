@@ -19,7 +19,7 @@ type SecretList struct {
 	opts *SecretListOpts
 }
 
-// SecretListFactory returns a factory method for the join command
+// SecretListFactory returns a factory method for the secret list command
 func SecretListFactory() (cli.Command, error) {
 	opts := &SecretListOpts{}
 	comm, err := newCommand("nerd secret list", "Show a list of all secrets in the current project.", "", opts)
