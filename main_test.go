@@ -45,7 +45,7 @@ func TestDocGeneration(t *testing.T) {
 	}
 
 	for name, cmdFn := range cli.Commands {
-		if isSysCmd(name) {
+		if !isNotSysCmd(name) {
 			continue
 		}
 		cmd, err := cmdFn()
@@ -112,12 +112,8 @@ func TestDocGeneration(t *testing.T) {
 
 }
 
-func isSysCmd(name string) bool {
-	sys := [...]string{
-		"task success", "task heartbeat", "task failure", "task receive",
-		"project place", "project expel", "workload work",
-	}
-	for _, cmd := range sys {
+func isNotSysCmd(name string) bool {
+	for _, cmd := range include {
 		if name == cmd {
 			return true
 		}

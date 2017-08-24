@@ -14,6 +14,35 @@ var (
 	name    = "nerd"
 	version = nerd.BuiltFromSourceVersion
 	commit  = "0000000"
+	include = []string{
+		"login",
+		"version",
+		"workload",
+		"workload start",
+		"workload stop",
+		"workload list",
+		"workload describe",
+		"workload download",
+		"worker",
+		"worker logs",
+		"dataset",
+		"dataset upload",
+		"dataset list",
+		"dataset download",
+		"project",
+		"project set",
+		"project list",
+		"task",
+		"task list",
+		"task start",
+		"task stop",
+		"task describe",
+		"secret",
+		"secret list",
+		"secret describe",
+		"secret create",
+		"secret delete",
+	}
 )
 
 func create() *cli.CLI {
@@ -69,33 +98,7 @@ func create() *cli.CLI {
 		"secret create":     command.SecretCreateFactory,
 		"secret delete":     command.SecretDeleteFactory,
 	}
-	include := []string{
-		"login",
-		"version",
-		"workload",
-		"workload start",
-		"workload stop",
-		"workload list",
-		"workload describe",
-		"worker",
-		"worker logs",
-		"dataset",
-		"dataset upload",
-		"dataset download",
-		"project",
-		"project set",
-		"project list",
-		"task",
-		"task list",
-		"task start",
-		"task stop",
-		"task describe",
-		"secret",
-		"secret list",
-		"secret describe",
-		"secret create",
-		"secret delete",
-	}
+
 	c.HelpFunc = cli.FilteredHelpFunc(include, cli.BasicHelpFunc(name))
 	return c
 }
