@@ -1,7 +1,6 @@
 package command
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/mitchellh/cli"
@@ -15,7 +14,7 @@ type TaskHeartbeat struct {
 
 //TaskHeartbeatFactory returns a factory method for the join command
 func TaskHeartbeatFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd task heartbeat <workload-id> <task-id> <run-token>", "indicate that a task run is still in progress", "", nil)
+	comm, err := newCommand("nerd task heartbeat <workload-id> <task-id> <run-token>", "Indicate that a task run is still in progress.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -30,7 +29,7 @@ func TaskHeartbeatFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *TaskHeartbeat) DoRun(args []string) (err error) {
 	if len(args) < 3 {
-		return fmt.Errorf("not enough arguments, see --help")
+		return errShowHelp("Not enough arguments, see below for usage.")
 	}
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)

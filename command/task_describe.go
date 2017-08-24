@@ -1,7 +1,6 @@
 package command
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/mitchellh/cli"
@@ -16,7 +15,7 @@ type TaskDescribe struct {
 
 //TaskDescribeFactory returns a factory method for the join command
 func TaskDescribeFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd task describe <workload-id> <task-id>", "return more information about a specific task", "", nil)
+	comm, err := newCommand("nerd task describe <workload-id> <task-id>", "Return more information about a specific task.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -31,7 +30,7 @@ func TaskDescribeFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *TaskDescribe) DoRun(args []string) (err error) {
 	if len(args) < 2 {
-		return fmt.Errorf("not enough arguments, see --help")
+		return errShowHelp("Not enough arguments, see below for usage.")
 	}
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)

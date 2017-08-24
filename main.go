@@ -14,6 +14,35 @@ var (
 	name    = "nerd"
 	version = nerd.BuiltFromSourceVersion
 	commit  = "0000000"
+	include = []string{
+		"login",
+		"version",
+		"workload",
+		"workload start",
+		"workload stop",
+		"workload list",
+		"workload describe",
+		"workload download",
+		"worker",
+		"worker logs",
+		"dataset",
+		"dataset upload",
+		"dataset list",
+		"dataset download",
+		"project",
+		"project set",
+		"project list",
+		"task",
+		"task list",
+		"task start",
+		"task stop",
+		"task describe",
+		"secret",
+		"secret list",
+		"secret describe",
+		"secret create",
+		"secret delete",
+	}
 )
 
 func create() *cli.CLI {
@@ -21,7 +50,7 @@ func create() *cli.CLI {
 	//as seen in github.com/hashicorp/terraform/main.go
 	args := os.Args[1:]
 	for _, arg := range args {
-		if arg == "-v" || arg == "-version" || arg == "--version" {
+		if arg == "-V" || arg == "-version" || arg == "--version" {
 			newArgs := make([]string, len(args)+1)
 			newArgs[0] = "version"
 			copy(newArgs[1:], args)
@@ -69,33 +98,7 @@ func create() *cli.CLI {
 		"secret create":     command.SecretCreateFactory,
 		"secret delete":     command.SecretDeleteFactory,
 	}
-	include := []string{
-		"login",
-		"version",
-		"workload",
-		"workload start",
-		"workload stop",
-		"workload list",
-		"workload describe",
-		"worker",
-		"worker logs",
-		"dataset",
-		"dataset upload",
-		"dataset download",
-		"project",
-		"project set",
-		"project list",
-		"task",
-		"task list",
-		"task start",
-		"task stop",
-		"task describe",
-		"secret",
-		"secret list",
-		"secret describe",
-		"secret create",
-		"secret delete",
-	}
+
 	c.HelpFunc = cli.FilteredHelpFunc(include, cli.BasicHelpFunc(name))
 	return c
 }

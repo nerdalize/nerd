@@ -13,7 +13,7 @@ type DatasetList struct {
 
 //DatasetListFactory returns a factory method for the join command
 func DatasetListFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd dataset list", "show a list of all datasets", "", nil)
+	comm, err := newCommand("nerd dataset list", "Show a list of all datasets.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

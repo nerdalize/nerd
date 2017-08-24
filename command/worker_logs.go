@@ -15,7 +15,7 @@ type WorkerLogs struct {
 
 //WorkerLogsFactory returns a factory method for the join command
 func WorkerLogsFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd worker logs <workload-id> <worker-id>", "return recent logs from a worker", "", nil)
+	comm, err := newCommand("nerd worker logs <workload-id> <worker-id>", "Return recent logs from a worker.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -30,7 +30,7 @@ func WorkerLogsFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *WorkerLogs) DoRun(args []string) (err error) {
 	if len(args) < 2 {
-		return fmt.Errorf("not enough arguments, see --help")
+		return errShowHelp("Not enough arguments, see below for usage.")
 	}
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)

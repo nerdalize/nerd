@@ -25,7 +25,7 @@ type Login struct {
 
 //LoginFactory returns a factory method for the join command
 func LoginFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd login", "start a new authorized session", "", nil)
+	comm, err := newCommand("nerd login", "Start a new authorized session.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

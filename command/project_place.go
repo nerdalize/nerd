@@ -1,8 +1,6 @@
 package command
 
 import (
-	"fmt"
-
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
 )
@@ -24,7 +22,7 @@ type ProjectPlace struct {
 //ProjectPlaceFactory returns a factory method for the join command
 func ProjectPlaceFactory() (cli.Command, error) {
 	opts := &ProjectPlaceOpts{}
-	comm, err := newCommand("nerd project place <host>", "place the current project on a compute cluster", "", opts)
+	comm, err := newCommand("nerd project place <host>", "Place the current project on a compute cluster.", "", opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -40,7 +38,7 @@ func ProjectPlaceFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *ProjectPlace) DoRun(args []string) (err error) {
 	if len(args) < 1 {
-		return fmt.Errorf("not enough arguments, see --help")
+		return errShowHelp("Not enough arguments, see below for usage.")
 	}
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)

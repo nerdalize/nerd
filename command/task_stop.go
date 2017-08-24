@@ -1,7 +1,6 @@
 package command
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/mitchellh/cli"
@@ -15,7 +14,7 @@ type TaskStop struct {
 
 //TaskStopFactory returns a factory method for the join command
 func TaskStopFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd task stop <workload-id> <task-id>", "abort any run(s) of the specified task on a queue", "", nil)
+	comm, err := newCommand("nerd task stop <workload-id> <task-id>", "Abort any run(s) of the specified task on a queue.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -30,7 +29,7 @@ func TaskStopFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *TaskStop) DoRun(args []string) (err error) {
 	if len(args) < 2 {
-		return fmt.Errorf("not enough arguments, see --help")
+		return errShowHelp("Not enough arguments, see below for usage.")
 	}
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)

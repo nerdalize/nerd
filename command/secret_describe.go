@@ -1,7 +1,6 @@
 package command
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/mitchellh/cli"
@@ -14,9 +13,9 @@ type SecretDescribe struct {
 	*command
 }
 
-//SecretDescribeFactory returns a factory method for the join command
+//SecretDescribeFactory returns a factory method for the secret describe command
 func SecretDescribeFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd secret describe <name>", "show more information about a specific secret", "", nil)
+	comm, err := newCommand("nerd secret describe <name>", "Show more information about a specific secret.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -31,7 +30,7 @@ func SecretDescribeFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *SecretDescribe) DoRun(args []string) (err error) {
 	if len(args) < 1 {
-		return fmt.Errorf("not enough arguments, see --help")
+		return errShowHelp("Not enough arguments, see below for usage.")
 	}
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)

@@ -1,5 +1,5 @@
 # Nerdalize Scientific Compute
-Your personal nerd that takes care of running scientific compute on the [Nerdalize cloud](http://nerdalize.com/cloud/).
+Your personal nerd that takes care of running scientific compute on the [Nerdalize cloud](https://www.nerdalize.com/).
 
 _NOTE: This project is currently experimental and not functional._
 
@@ -42,12 +42,9 @@ $ nerd task start w-96fac375 -- -i /input/video2.mov -acodec copy -vcodec copy /
 
 # get status of tasks
 $ nerd task list w-96fac375
-+------------+------------+---------+
-| WORKLOADID |   TASKID   | STATUS  |
-+------------+------------+---------+
-| w-96fac375 | t-14962176 | SUCCESS |
-| w-96fac375 | t-89491732 | PENDING |
-+------------+------------+---------+
+TaskID      Cmd                                                                 Output      Status    Created
+t-14962176  [-i /input/video1.mov -acodec copy -vcodec copy /output/video1.avi] video1.avi  SUCCESS   1 minute ago
+t-89491732  [-i /input/video2.mov -acodec copy -vcodec copy /output/video2.avi]             PENDING   1 minute ago
 
 # when all tasks are done we can download the output
 $ nerd workload download w-96fac375 ~/Desktop/videos_out
@@ -65,7 +62,7 @@ Each command accepts at least the following options:
 ```
 --config-file=  location of config file [$NERD_CONFIG_FILE]
 --session-file= location of session file [$NERD_SESSION_FILE]
--v, --verbose=      show verbose output (default: false)
+-v, --verbose=  show verbose output (default: false)
 --json-format=  show output in json format (default: false)
 ```
 

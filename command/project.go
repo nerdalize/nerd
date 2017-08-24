@@ -14,7 +14,7 @@ type Project struct {
 
 //ProjectFactory returns a factory method for the join command
 func ProjectFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd project <subcommand>", "set and list projects", "", nil)
+	comm, err := newCommand("nerd project <subcommand>", "Set and list projects.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -39,5 +39,5 @@ Subcommands:
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *Project) DoRun(args []string) (err error) {
-	return errShowHelp
+	return errShowHelp("Not enough arguments, see below for usage.")
 }

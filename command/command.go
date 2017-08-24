@@ -18,7 +18,7 @@ import (
 
 var (
 	//SharedOptionsGroup are options shared by all commands
-	SharedOptionsGroup = "output options"
+	SharedOptionsGroup = "Output options"
 )
 
 const (
@@ -29,7 +29,11 @@ const (
 	EnvNerdProject = "NERD_PROJECT"
 )
 
-var errShowHelp = errors.New("show error")
+// errShowHelp is used to retrieve the cause of an error.
+// If the cause type is errShowHelp, this will print the help for the (sub) command
+type errShowHelp string
+
+func (e errShowHelp) Error() string { return string(e) }
 
 func newCommand(usage, synopsis, help string, opts interface{}) (*command, error) {
 	cmd := &command{
@@ -119,11 +123,14 @@ func (c *command) Run(args []string) int {
 	}
 
 	if err := c.runFunc(args); err != nil {
-		if err == errShowHelp {
+		switch cause := errors.Cause(err).(type) {
+		case errShowHelp:
+			c.outputter.WriteError(cause)
 			return cli.RunResultHelp
+		default:
+			c.outputter.WriteError(err)
+			return 1
 		}
-		c.outputter.WriteError(err)
-		return 1
 	}
 
 	return 0

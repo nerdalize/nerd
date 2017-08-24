@@ -1,8 +1,6 @@
 package command
 
 import (
-	"fmt"
-
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/command/format"
 	"github.com/pkg/errors"
@@ -15,7 +13,7 @@ type TaskList struct {
 
 //TaskListFactory returns a factory method for the join command
 func TaskListFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd task list <workload-id>", "show a list of all task currently in a queue", "", nil)
+	comm, err := newCommand("nerd task list <workload-id>", "Show a list of all task currently in a queue.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -30,7 +28,7 @@ func TaskListFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *TaskList) DoRun(args []string) (err error) {
 	if len(args) < 1 {
-		return fmt.Errorf("not enough arguments, see --help")
+		return errShowHelp("Not enough arguments, see below for usage.")
 	}
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)

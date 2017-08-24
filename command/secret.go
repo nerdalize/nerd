@@ -10,9 +10,11 @@ type Secret struct {
 	*command
 }
 
-// SecretFactory returns a factory method for the join command
+var synopsisSecret = "Set and list secrets. A secret can be credentials for a Docker registry, or other sensitive information needed by your project."
+
+// SecretFactory returns a factory method for the secret command
 func SecretFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd secret <subcommand> {opaque, registry}", "set and list secrets", "", nil)
+	comm, err := newCommand("nerd secret <subcommand> {opaque, registry}", synopsisSecret, "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -26,5 +28,5 @@ func SecretFactory() (cli.Command, error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *Secret) DoRun(args []string) (err error) {
-	return errShowHelp
+	return errShowHelp("Not enough arguments, see below for usage.")
 }

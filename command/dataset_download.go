@@ -2,7 +2,6 @@ package command
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/mitchellh/cli"
@@ -25,7 +24,7 @@ type Download struct {
 
 //DatasetDownloadFactory returns a factory method for the join command
 func DatasetDownloadFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd dataset download <dataset-id> <output-dir>", "download data from the cloud to a local directory", "", nil)
+	comm, err := newCommand("nerd dataset download <dataset-id> <output-dir>", "Download data from the cloud to a local directory.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -40,7 +39,7 @@ func DatasetDownloadFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *Download) DoRun(args []string) (err error) {
 	if len(args) < 2 {
-		return fmt.Errorf("not enough arguments, see --help")
+		return errShowHelp("Not enough arguments, see below for usage.")
 	}
 
 	datasetID := args[0]

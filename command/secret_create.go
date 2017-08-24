@@ -15,7 +15,7 @@ import (
 type SecretCreateOpts struct {
 	Username string `long:"username" default:"" default-mask:"" description:"Username for Docker registry authentication"`
 	Password string `long:"password" default:"" default-mask:"" description:"Password for Docker registry authentication"`
-	Type     string `long:"type" default:"opaque" default-mask:"" description:"Type of secret to display, defaults to opaque."`
+	Type     string `long:"type" default:"opaque" default-mask:"" description:"Type of secret to display"`
 }
 
 //SecretCreate command
@@ -24,10 +24,10 @@ type SecretCreate struct {
 	opts *SecretCreateOpts
 }
 
-//SecretCreateFactory returns a factory method for the join command
+//SecretCreateFactory returns a factory method for the secret create command
 func SecretCreateFactory() (cli.Command, error) {
 	opts := &SecretCreateOpts{}
-	comm, err := newCommand("nerd secret create <name> [key=val]", "create secrets to be used by workers", "", opts)
+	comm, err := newCommand("nerd secret create <name> [key=val]", "Create secrets to be used by workers.", "", opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -43,7 +43,7 @@ func SecretCreateFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *SecretCreate) DoRun(args []string) (err error) {
 	if len(args) < 1 {
-		return fmt.Errorf("not enough arguments, see --help")
+		return errShowHelp("Not enough arguments, see below for usage.")
 	}
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)

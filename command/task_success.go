@@ -1,7 +1,6 @@
 package command
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/mitchellh/cli"
@@ -15,7 +14,7 @@ type TaskSuccess struct {
 
 //TaskSuccessFactory returns a factory method for the join command
 func TaskSuccessFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd task success <workload-id> <task-id> <run-token> <result>", "mark a task run as having succeeded", "", nil)
+	comm, err := newCommand("nerd task success <workload-id> <task-id> <run-token> <result>", "Mark a task run as having succeeded.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -30,7 +29,7 @@ func TaskSuccessFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *TaskSuccess) DoRun(args []string) (err error) {
 	if len(args) < 4 {
-		return fmt.Errorf("not enough arguments, see --help")
+		return errShowHelp("Not enough arguments, see below for usage.")
 	}
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)

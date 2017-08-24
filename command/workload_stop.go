@@ -1,8 +1,6 @@
 package command
 
 import (
-	"fmt"
-
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
 )
@@ -14,7 +12,7 @@ type WorkloadStop struct {
 
 //WorkloadStopFactory returns a factory method for the join command
 func WorkloadStopFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd workload stop <workload-id>", "stop a workload from providing compute capacity", "", nil)
+	comm, err := newCommand("nerd workload stop <workload-id>", "Stop a workload from providing compute capacity.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -29,7 +27,7 @@ func WorkloadStopFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *WorkloadStop) DoRun(args []string) (err error) {
 	if len(args) < 1 {
-		return fmt.Errorf("not enough arguments, see --help")
+		return errShowHelp("Not enough arguments, see below for usage.")
 	}
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)

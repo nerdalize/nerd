@@ -2,7 +2,6 @@ package command
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/mitchellh/cli"
@@ -24,7 +23,7 @@ type Upload struct {
 
 //DatasetUploadFactory returns a factory method for the join command
 func DatasetUploadFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd upload <path>", "upload data to the cloud and create a new dataset", "", nil)
+	comm, err := newCommand("nerd upload <path>", "Upload data to the cloud and create a new dataset.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -39,7 +38,7 @@ func DatasetUploadFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *Upload) DoRun(args []string) (err error) {
 	if len(args) < 1 {
-		return fmt.Errorf("not enough arguments, see --help")
+		return errShowHelp("Not enough arguments, see below for usage.")
 	}
 
 	dataPath := args[0]

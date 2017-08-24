@@ -45,6 +45,9 @@ func TestDocGeneration(t *testing.T) {
 	}
 
 	for name, cmdFn := range cli.Commands {
+		if !isNotSysCmd(name) {
+			continue
+		}
 		cmd, err := cmdFn()
 		if err != nil {
 			t.Fatalf("failed to create command for documentation purposes: %v", err)
@@ -56,7 +59,7 @@ func TestDocGeneration(t *testing.T) {
 		)
 
 		if doc, ok = cmd.(Documented); !ok {
-			t.Logf("command '%s' doesn't implemented documented interface, skipping", name)
+			t.Logf("command '%s' doesn't implement documented interface, skipping", name)
 			continue
 		}
 
@@ -107,4 +110,13 @@ func TestDocGeneration(t *testing.T) {
 		t.Fatalf("failed to encode: %+v", err)
 	}
 
+}
+
+func isNotSysCmd(name string) bool {
+	for _, cmd := range include {
+		if name == cmd {
+			return true
+		}
+	}
+	return false
 }

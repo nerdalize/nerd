@@ -1,8 +1,6 @@
 package command
 
 import (
-	"fmt"
-
 	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
@@ -13,9 +11,9 @@ type SecretDelete struct {
 	*command
 }
 
-// SecretDeleteFactory returns a factory method for the join command
+// SecretDeleteFactory returns a factory method for the secret delete command
 func SecretDeleteFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd secret <type> delete <name>", "remove a secret", "", nil)
+	comm, err := newCommand("nerd secret <type> delete <name>", "Remove a secret.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -30,7 +28,7 @@ func SecretDeleteFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *SecretDelete) DoRun(args []string) (err error) {
 	if len(args) < 1 {
-		return fmt.Errorf("not enough arguments, see --help")
+		return errShowHelp("Not enough arguments, see below for usage.")
 	}
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)

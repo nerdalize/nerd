@@ -14,7 +14,7 @@ type Task struct {
 
 //TaskFactory returns a factory method for the join command
 func TaskFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd task <subcommand>", "manage the lifecycle of compute tasks", "", nil)
+	comm, err := newCommand("nerd task <subcommand>", "Manage the lifecycle of compute tasks.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -39,5 +39,5 @@ Subcommands:
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *Task) DoRun(args []string) (err error) {
-	return errShowHelp
+	return errShowHelp("Not enough arguments, see below for usage.")
 }

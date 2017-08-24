@@ -21,7 +21,7 @@ type WorkloadDownload struct {
 
 //WorkloadDownloadFactory returns a factory method for the join command
 func WorkloadDownloadFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd workload download <workload-id> <output-dir>", "download output data of a workload", "", nil)
+	comm, err := newCommand("nerd workload download <workload-id> <output-dir>", "Download output data of a workload.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -36,7 +36,7 @@ func WorkloadDownloadFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *WorkloadDownload) DoRun(args []string) (err error) {
 	if len(args) < 2 {
-		return fmt.Errorf("not enough arguments, see --help")
+		return errShowHelp("Not enough arguments, see below for usage.")
 	}
 
 	workloadID := args[0]
