@@ -45,7 +45,7 @@ func TestDocGeneration(t *testing.T) {
 	}
 
 	for name, cmdFn := range cli.Commands {
-		if name == "project place" || name == "project expel" || name == "workload work" {
+		if isSysCmd(name) {
 			continue
 		}
 		cmd, err := cmdFn()
@@ -110,4 +110,17 @@ func TestDocGeneration(t *testing.T) {
 		t.Fatalf("failed to encode: %+v", err)
 	}
 
+}
+
+func isSysCmd(name string) bool {
+	sys := [...]string{
+		"task success", "task heartbeat", "task failure", "task receive",
+		"project place", "project expel", "workload work",
+	}
+	for _, cmd := range sys {
+		if name == cmd {
+			return true
+		}
+	}
+	return false
 }

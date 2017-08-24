@@ -166,28 +166,10 @@
 			"description": "Return more information about a specific task.",
 			"options": {}
 		},
-		"task failure": {
-			"usage": "nerd task failure \u003cworkload-id\u003e \u003ctask-id\u003e \u003crun-token\u003e \u003cerror-code\u003e \u003cerr-message\u003e",
-			"synopsis": "Mark a task run as being failed.",
-			"description": "Mark a task run as being failed.",
-			"options": {}
-		},
-		"task heartbeat": {
-			"usage": "nerd task heartbeat \u003cworkload-id\u003e \u003ctask-id\u003e \u003crun-token\u003e",
-			"synopsis": "Indicate that a task run is still in progress.",
-			"description": "Indicate that a task run is still in progress.",
-			"options": {}
-		},
 		"task list": {
 			"usage": "nerd task list \u003cworkload-id\u003e",
 			"synopsis": "Show a list of all task currently in a queue.",
 			"description": "Show a list of all task currently in a queue.",
-			"options": {}
-		},
-		"task receive": {
-			"usage": "nerd task receive \u003cworkload-id\u003e",
-			"synopsis": "Wait for a new task run to be available on a queue.",
-			"description": "Wait for a new task run to be available on a queue.",
 			"options": {}
 		},
 		"task start": {
@@ -210,12 +192,6 @@
 			"usage": "nerd task stop \u003cworkload-id\u003e \u003ctask-id\u003e",
 			"synopsis": "Abort any run(s) of the specified task on a queue.",
 			"description": "Abort any run(s) of the specified task on a queue.",
-			"options": {}
-		},
-		"task success": {
-			"usage": "nerd task success \u003cworkload-id\u003e \u003ctask-id\u003e \u003crun-token\u003e \u003cresult\u003e",
-			"synopsis": "Mark a task run as having succeeded.",
-			"description": "Mark a task run as having succeeded.",
 			"options": {}
 		},
 		"version": {
