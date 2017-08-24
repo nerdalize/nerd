@@ -39,5 +39,5 @@ Subcommands:
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *Project) DoRun(args []string) (err error) {
-	return errShowHelp("show help")
+	return errShowHelp("Not enough arguments, see below for usage.")
 }

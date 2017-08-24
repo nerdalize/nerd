@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/pkg/errors"
 
@@ -124,12 +123,9 @@ func (c *command) Run(args []string) int {
 	}
 
 	if err := c.runFunc(args); err != nil {
-		switch errors.Cause(err).(type) {
+		switch cause := errors.Cause(err).(type) {
 		case errShowHelp:
-			splits := strings.Split(err.Error(), ":")
-			if len(splits) >= 2 {
-				c.outputter.WriteError(errors.New(splits[0]))
-			}
+			c.outputter.WriteError(cause)
 			return cli.RunResultHelp
 		default:
 			c.outputter.WriteError(err)

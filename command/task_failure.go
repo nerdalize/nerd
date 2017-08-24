@@ -29,7 +29,7 @@ func TaskFailureFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *TaskFailure) DoRun(args []string) (err error) {
 	if len(args) < 5 {
-		return errors.Wrap(errShowHelp("show help"), "Not enough arguments, see below for usage.")
+		return errShowHelp("Not enough arguments, see below for usage.")
 	}
 
 	bclient, err := NewClient(cmd.config, cmd.session, cmd.outputter)

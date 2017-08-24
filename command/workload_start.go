@@ -47,7 +47,7 @@ func WorkloadStartFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *WorkloadStart) DoRun(args []string) (err error) {
 	if len(args) < 1 {
-		return errors.Wrap(errShowHelp("show help"), "Not enough arguments, see below for usage.")
+		return errShowHelp("Not enough arguments, see below for usage.")
 	}
 
 	//fetching a worker JWT
