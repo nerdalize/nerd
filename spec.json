@@ -74,56 +74,11 @@
 			"description": "Set and list projects.",
 			"options": {}
 		},
-		"project expel": {
-			"usage": "nerd project expel",
-			"synopsis": "Move the current project away from its current cluster.",
-			"description": "Move the current project away from its current cluster.",
-			"options": {}
-		},
 		"project list": {
 			"usage": "nerd project list",
 			"synopsis": "List all your projects.",
 			"description": "List all your projects.",
 			"options": {}
-		},
-		"project place": {
-			"usage": "nerd project place \u003chost\u003e",
-			"synopsis": "Place the current project on a compute cluster.",
-			"description": "Place the current project on a compute cluster.",
-			"options": {
-				"options": [
-					{
-						"long_name": "token",
-						"description": "placement that authenticates using JWT",
-						"default_value": [
-							""
-						],
-						"choices": null
-					},
-					{
-						"long_name": "username",
-						"description": "username for placement that authenticates using username/password",
-						"default_value": [
-							""
-						],
-						"choices": null
-					},
-					{
-						"long_name": "password",
-						"description": "password for placement that authenticates using username/password",
-						"default_value": [
-							""
-						],
-						"choices": null
-					},
-					{
-						"long_name": "insecure",
-						"description": "disable checking of server certificate",
-						"default_value": null,
-						"choices": null
-					}
-				]
-			}
 		},
 		"project set": {
 			"usage": "nerd project set",
@@ -161,7 +116,7 @@
 					},
 					{
 						"long_name": "type",
-						"description": "Type of secret to display, defaults to opaque.",
+						"description": "Type of secret to display",
 						"default_value": [
 							"opaque"
 						],
@@ -314,21 +269,21 @@
 					{
 						"long_name": "env",
 						"short_name": "e",
-						"description": "environment variables",
+						"description": "Environment variables",
 						"default_value": null,
 						"choices": null
 					},
 					{
 						"long_name": "input-dataset",
 						"short_name": "d",
-						"description": "input dataset ID, will be available in /input in your container",
+						"description": "Input dataset ID, will be available in /input in your container",
 						"default_value": null,
 						"choices": null
 					},
 					{
 						"long_name": "workers",
 						"short_name": "w",
-						"description": "number of workers that handle the workload",
+						"description": "Number of workers that handle the workload",
 						"default_value": [
 							"1"
 						],
@@ -337,7 +292,7 @@
 					{
 						"long_name": "instances",
 						"short_name": "i",
-						"description": "number of working instances",
+						"description": "Number of working instances",
 						"default_value": [
 							"1"
 						],
@@ -346,7 +301,7 @@
 					{
 						"long_name": "pull-secret",
 						"short_name": "p",
-						"description": "the pull secret will be used to fetch the private image",
+						"description": "The pull secret will be used to fetch the private image",
 						"default_value": null,
 						"choices": null
 					}
@@ -358,39 +313,6 @@
 			"synopsis": "Stop a workload from providing compute capacity.",
 			"description": "Stop a workload from providing compute capacity.",
 			"options": {}
-		},
-		"workload work": {
-			"usage": "nerd workload work \u003cworkload-id\u003e",
-			"synopsis": "Start working tasks of a queue locally.",
-			"description": "Start working tasks of a queue locally.",
-			"options": {
-				"options": [
-					{
-						"long_name": "entrypoint-json-base64",
-						"description": "work entrypoint, first json and then base64 encoded",
-						"default_value": [
-							"W10="
-						],
-						"choices": null
-					},
-					{
-						"long_name": "cmd-json-base64",
-						"description": "work cmd, first json and then base64 encoded",
-						"default_value": [
-							"W10="
-						],
-						"choices": null
-					},
-					{
-						"long_name": "output-dir",
-						"description": "when set, data in --output-dir will be uploaded after each task run",
-						"default_value": [
-							""
-						],
-						"choices": null
-					}
-				]
-			}
 		}
 	}
 }

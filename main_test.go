@@ -45,6 +45,9 @@ func TestDocGeneration(t *testing.T) {
 	}
 
 	for name, cmdFn := range cli.Commands {
+		if name == "project place" || name == "project expel" || name == "workload work" {
+			continue
+		}
 		cmd, err := cmdFn()
 		if err != nil {
 			t.Fatalf("failed to create command for documentation purposes: %v", err)
@@ -56,7 +59,7 @@ func TestDocGeneration(t *testing.T) {
 		)
 
 		if doc, ok = cmd.(Documented); !ok {
-			t.Logf("command '%s' doesn't implemented documented interface, skipping", name)
+			t.Logf("command '%s' doesn't implement documented interface, skipping", name)
 			continue
 		}
 

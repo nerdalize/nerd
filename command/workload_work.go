@@ -17,9 +17,9 @@ import (
 
 //WorkloadWorkOpts describes command options
 type WorkloadWorkOpts struct {
-	EntrypointJSONB64 string `long:"entrypoint-json-base64" default:"W10=" description:"work entrypoint, first json and then base64 encoded"`
-	CmdJSONB64        string `long:"cmd-json-base64" default:"W10=" description:"work cmd, first json and then base64 encoded"`
-	OutputDir         string `long:"output-dir" default:"" default-mask:"" description:"when set, data in --output-dir will be uploaded after each task run"`
+	EntrypointJSONB64 string `long:"entrypoint-json-base64" default:"W10=" description:"Work entrypoint, first json and then base64 encoded."`
+	CmdJSONB64        string `long:"cmd-json-base64" default:"W10=" description:"Work cmd, first json and then base64 encoded."`
+	OutputDir         string `long:"output-dir" default:"" default-mask:"" description:"When set, data in --output-dir will be uploaded after each task run."`
 }
 
 //WorkloadWork command

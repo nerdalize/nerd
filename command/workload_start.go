@@ -15,11 +15,11 @@ import (
 
 //WorkloadStartOpts describes command options
 type WorkloadStartOpts struct {
-	Env          []string `long:"env" short:"e" description:"environment variables"`
-	InputDataset string   `long:"input-dataset" short:"d" description:"input dataset ID, will be available in /input in your container"`
-	Workers      int      `long:"workers" short:"w" default:"1" description:"number of workers that handle the workload"`
-	Instances    int      `long:"instances" short:"i" default:"1" description:"number of working instances"`
-	PullSecret   string   `long:"pull-secret" short:"p" description:"the pull secret will be used to fetch the private image"`
+	Env          []string `long:"env" short:"e" description:"Environment variables"`
+	InputDataset string   `long:"input-dataset" short:"d" description:"Input dataset ID, will be available in /input in your container"`
+	Workers      int      `long:"workers" short:"w" default:"1" description:"Number of workers that handle the workload"`
+	Instances    int      `long:"instances" short:"i" default:"1" description:"Number of working instances"`
+	PullSecret   string   `long:"pull-secret" short:"p" description:"The pull secret will be used to fetch the private image"`
 }
 
 //WorkloadStart command

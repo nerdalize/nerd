@@ -15,7 +15,7 @@ import (
 type SecretCreateOpts struct {
 	Username string `long:"username" default:"" default-mask:"" description:"Username for Docker registry authentication"`
 	Password string `long:"password" default:"" default-mask:"" description:"Password for Docker registry authentication"`
-	Type     string `long:"type" default:"opaque" default-mask:"" description:"Type of secret to display, defaults to opaque."`
+	Type     string `long:"type" default:"opaque" default-mask:"" description:"Type of secret to display"`
 }
 
 //SecretCreate command
