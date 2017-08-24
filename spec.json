@@ -2,7 +2,7 @@
 	"global_options": [
 		{
 			"long_name": "config-file",
-			"description": "location of config file",
+			"description": "Location of config file",
 			"default_value": [
 				""
 			],
@@ -10,7 +10,7 @@
 		},
 		{
 			"long_name": "session-file",
-			"description": "location of session file",
+			"description": "Location of session file",
 			"default_value": [
 				""
 			],
@@ -18,8 +18,7 @@
 		},
 		{
 			"long_name": "debug",
-			"short_name": "d",
-			"description": "show debug output",
+			"description": "Show debug output",
 			"default_value": [
 				"false"
 			],
@@ -27,7 +26,7 @@
 		},
 		{
 			"long_name": "output",
-			"description": "format of the output",
+			"description": "Format of the output",
 			"default_value": [
 				"pretty"
 			],
@@ -41,56 +40,56 @@
 	"commands": {
 		"dataset": {
 			"usage": "nerd dataset \u003csubcommand\u003e",
-			"synopsis": "upload and download datasets for tasks to use",
-			"description": "upload and download datasets for tasks to use",
+			"synopsis": "Upload and download datasets for tasks to use.",
+			"description": "Upload and download datasets for tasks to use.",
 			"options": {}
 		},
 		"dataset download": {
 			"usage": "nerd dataset download \u003cdataset-id\u003e \u003coutput-dir\u003e",
-			"synopsis": "download data from the cloud to a local directory",
-			"description": "download data from the cloud to a local directory",
+			"synopsis": "Download data from the cloud to a local directory.",
+			"description": "Download data from the cloud to a local directory.",
 			"options": {}
 		},
 		"dataset list": {
 			"usage": "nerd dataset list",
-			"synopsis": "show a list of all datasets",
-			"description": "show a list of all datasets",
+			"synopsis": "Show a list of all datasets.",
+			"description": "Show a list of all datasets.",
 			"options": {}
 		},
 		"dataset upload": {
 			"usage": "nerd upload \u003cpath\u003e",
-			"synopsis": "upload data to the cloud and create a new dataset",
-			"description": "upload data to the cloud and create a new dataset",
+			"synopsis": "Upload data to the cloud and create a new dataset.",
+			"description": "Upload data to the cloud and create a new dataset.",
 			"options": {}
 		},
 		"login": {
 			"usage": "nerd login",
-			"synopsis": "start a new authorized session",
-			"description": "start a new authorized session",
+			"synopsis": "Start a new authorized session.",
+			"description": "Start a new authorized session.",
 			"options": {}
 		},
 		"project": {
 			"usage": "nerd project \u003csubcommand\u003e",
-			"synopsis": "set and list projects",
-			"description": "set and list projects",
+			"synopsis": "Set and list projects.",
+			"description": "Set and list projects.",
 			"options": {}
 		},
 		"project expel": {
 			"usage": "nerd project expel",
-			"synopsis": "move the current project away from its current cluster",
-			"description": "move the current project away from its current cluster",
+			"synopsis": "Move the current project away from its current cluster.",
+			"description": "Move the current project away from its current cluster.",
 			"options": {}
 		},
 		"project list": {
 			"usage": "nerd project list",
-			"synopsis": "list all your projects",
-			"description": "list all your projects",
+			"synopsis": "List all your projects.",
+			"description": "List all your projects.",
 			"options": {}
 		},
 		"project place": {
 			"usage": "nerd project place \u003chost\u003e",
-			"synopsis": "place the current project on a compute cluster",
-			"description": "place the current project on a compute cluster",
+			"synopsis": "Place the current project on a compute cluster.",
+			"description": "Place the current project on a compute cluster.",
 			"options": {
 				"options": [
 					{
@@ -128,50 +127,118 @@
 		},
 		"project set": {
 			"usage": "nerd project set",
-			"synopsis": "set current working project",
-			"description": "set current working project",
+			"synopsis": "Set current working project.",
+			"description": "Set current working project.",
 			"options": {}
+		},
+		"secret": {
+			"usage": "nerd secret \u003csubcommand\u003e {opaque, registry}",
+			"synopsis": "Set and list secrets. A secret can be credentials for a Docker registry, or other sensitive information needed by your project.",
+			"description": "Set and list secrets. A secret can be credentials for a Docker registry, or other sensitive information needed by your project.",
+			"options": {}
+		},
+		"secret create": {
+			"usage": "nerd secret create \u003cname\u003e [key=val]",
+			"synopsis": "Create secrets to be used by workers.",
+			"description": "Create secrets to be used by workers.",
+			"options": {
+				"options": [
+					{
+						"long_name": "username",
+						"description": "Username for Docker registry authentication",
+						"default_value": [
+							""
+						],
+						"choices": null
+					},
+					{
+						"long_name": "password",
+						"description": "Password for Docker registry authentication",
+						"default_value": [
+							""
+						],
+						"choices": null
+					},
+					{
+						"long_name": "type",
+						"description": "Type of secret to display, defaults to opaque.",
+						"default_value": [
+							"opaque"
+						],
+						"choices": null
+					}
+				]
+			}
+		},
+		"secret delete": {
+			"usage": "nerd secret \u003ctype\u003e delete \u003cname\u003e",
+			"synopsis": "Remove a secret.",
+			"description": "Remove a secret.",
+			"options": {}
+		},
+		"secret describe": {
+			"usage": "nerd secret describe \u003cname\u003e",
+			"synopsis": "Show more information about a specific secret.",
+			"description": "Show more information about a specific secret.",
+			"options": {}
+		},
+		"secret list": {
+			"usage": "nerd secret list",
+			"synopsis": "Show a list of all secrets in the current project.",
+			"description": "Show a list of all secrets in the current project.",
+			"options": {
+				"options": [
+					{
+						"long_name": "type",
+						"description": "Type of secret to display, defaults to all.",
+						"default_value": [
+							"all"
+						],
+						"choices": null
+					}
+				]
+			}
 		},
 		"task": {
 			"usage": "nerd task \u003csubcommand\u003e",
-			"synopsis": "manage the lifecycle of compute tasks",
-			"description": "manage the lifecycle of compute tasks",
+			"synopsis": "Manage the lifecycle of compute tasks.",
+			"description": "Manage the lifecycle of compute tasks.",
 			"options": {}
 		},
 		"task describe": {
 			"usage": "nerd task describe \u003cworkload-id\u003e \u003ctask-id\u003e",
-			"synopsis": "return more information about a specific task",
-			"description": "return more information about a specific task",
+			"synopsis": "Return more information about a specific task.",
+			"description": "Return more information about a specific task.",
 			"options": {}
 		},
 		"task failure": {
 			"usage": "nerd task failure \u003cworkload-id\u003e \u003ctask-id\u003e \u003crun-token\u003e \u003cerror-code\u003e \u003cerr-message\u003e",
-			"synopsis": "mark a task run as being failed",
-			"description": "mark a task run as being failed",
+			"synopsis": "Mark a task run as being failed.",
+			"description": "Mark a task run as being failed.",
 			"options": {}
 		},
 		"task heartbeat": {
 			"usage": "nerd task heartbeat \u003cworkload-id\u003e \u003ctask-id\u003e \u003crun-token\u003e",
-			"synopsis": "indicate that a task run is still in progress",
-			"description": "indicate that a task run is still in progress",
+			"synopsis": "Indicate that a task run is still in progress.",
+			"description": "Indicate that a task run is still in progress.",
 			"options": {}
 		},
 		"task list": {
 			"usage": "nerd task list \u003cworkload-id\u003e",
-			"synopsis": "show a list of all task currently in a queue",
-			"description": "show a list of all task currently in a queue",
+			"synopsis": "Show a list of all task currently in a queue.",
+			"description": "Show a list of all task currently in a queue.",
 			"options": {}
 		},
 		"task receive": {
 			"usage": "nerd task receive \u003cworkload-id\u003e",
-			"synopsis": "wait for a new task run to be available on a queue",
-			"description": "wait for a new task run to be available on a queue",
+			"synopsis": "Wait for a new task run to be available on a queue.",
+			"description": "Wait for a new task run to be available on a queue.",
 			"options": {}
 		},
 		"task start": {
 			"usage": "nerd task start \u003cworkload-id\u003e -- [cmd [args...]]",
-			"synopsis": "start a new task for a workload",
-			"description": "start a new task for a workload",
+			"synopsis": "Start a new task for a workload.",
+			"description": "Start a new task for a workload.",
 			"options": {
 				"options": [
 					{
@@ -186,44 +253,62 @@
 		},
 		"task stop": {
 			"usage": "nerd task stop \u003cworkload-id\u003e \u003ctask-id\u003e",
-			"synopsis": "abort any run(s) of the specified task on a queue",
-			"description": "abort any run(s) of the specified task on a queue",
+			"synopsis": "Abort any run(s) of the specified task on a queue.",
+			"description": "Abort any run(s) of the specified task on a queue.",
 			"options": {}
 		},
 		"task success": {
 			"usage": "nerd task success \u003cworkload-id\u003e \u003ctask-id\u003e \u003crun-token\u003e \u003cresult\u003e",
-			"synopsis": "mark a task run as having succeeded",
-			"description": "mark a task run as having succeeded",
+			"synopsis": "Mark a task run as having succeeded.",
+			"description": "Mark a task run as having succeeded.",
+			"options": {}
+		},
+		"version": {
+			"usage": "nerd version",
+			"synopsis": "Check the current version.",
+			"description": "Check the current version.",
+			"options": {}
+		},
+		"worker": {
+			"usage": "nerd worker \u003csubcommand\u003e",
+			"synopsis": "Control individual compute processes.",
+			"description": "Control individual compute processes.",
+			"options": {}
+		},
+		"worker logs": {
+			"usage": "nerd worker logs \u003cworkload-id\u003e \u003cworker-id\u003e",
+			"synopsis": "Return recent logs from a worker.",
+			"description": "Return recent logs from a worker.",
 			"options": {}
 		},
 		"workload": {
 			"usage": "nerd workload \u003csubcommand\u003e",
-			"synopsis": "control compute capacity for working on tasks",
-			"description": "control compute capacity for working on tasks",
+			"synopsis": "Control compute capacity for working on tasks.",
+			"description": "Control compute capacity for working on tasks.",
 			"options": {}
 		},
 		"workload describe": {
 			"usage": "nerd workload describe \u003cworkload-id\u003e",
-			"synopsis": "return more information about a specific workload",
-			"description": "return more information about a specific workload",
+			"synopsis": "Return more information about a specific workload.",
+			"description": "Return more information about a specific workload.",
 			"options": {}
 		},
 		"workload download": {
 			"usage": "nerd workload download \u003cworkload-id\u003e \u003coutput-dir\u003e",
-			"synopsis": "download output data of a workload",
-			"description": "download output data of a workload",
+			"synopsis": "Download output data of a workload.",
+			"description": "Download output data of a workload.",
 			"options": {}
 		},
 		"workload list": {
 			"usage": "nerd workload list",
-			"synopsis": "show a list of all workloads in the current project",
-			"description": "show a list of all workloads in the current project",
+			"synopsis": "Show a list of all workloads in the current project.",
+			"description": "Show a list of all workloads in the current project.",
 			"options": {}
 		},
 		"workload start": {
 			"usage": "nerd workload start \u003cimage\u003e",
-			"synopsis": "provision a new workload to provide compute",
-			"description": "provision a new workload to provide compute",
+			"synopsis": "Provision a new workload to provide compute.",
+			"description": "Provision a new workload to provide compute.",
 			"options": {
 				"options": [
 					{
@@ -241,6 +326,15 @@
 						"choices": null
 					},
 					{
+						"long_name": "workers",
+						"short_name": "w",
+						"description": "number of workers that handle the workload",
+						"default_value": [
+							"1"
+						],
+						"choices": null
+					},
+					{
 						"long_name": "instances",
 						"short_name": "i",
 						"description": "number of working instances",
@@ -248,20 +342,27 @@
 							"1"
 						],
 						"choices": null
+					},
+					{
+						"long_name": "pull-secret",
+						"short_name": "p",
+						"description": "the pull secret will be used to fetch the private image",
+						"default_value": null,
+						"choices": null
 					}
 				]
 			}
 		},
 		"workload stop": {
 			"usage": "nerd workload stop \u003cworkload-id\u003e",
-			"synopsis": "stop a workload from providing compute capacity",
-			"description": "stop a workload from providing compute capacity",
+			"synopsis": "Stop a workload from providing compute capacity.",
+			"description": "Stop a workload from providing compute capacity.",
 			"options": {}
 		},
 		"workload work": {
 			"usage": "nerd workload work \u003cworkload-id\u003e",
-			"synopsis": "start working tasks of a queue locally",
-			"description": "start working tasks of a queue locally",
+			"synopsis": "Start working tasks of a queue locally.",
+			"description": "Start working tasks of a queue locally.",
 			"options": {
 				"options": [
 					{
