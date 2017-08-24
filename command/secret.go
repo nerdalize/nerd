@@ -28,5 +28,5 @@ func SecretFactory() (cli.Command, error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *Secret) DoRun(args []string) (err error) {
-	return errShowHelp("show error")
+	return errShowHelp("show help")
 }

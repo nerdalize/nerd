@@ -36,7 +36,7 @@ func WorkloadDownloadFactory() (cli.Command, error) {
 //DoRun is called by run and allows an error to be returned
 func (cmd *WorkloadDownload) DoRun(args []string) (err error) {
 	if len(args) < 2 {
-		return errors.Wrap(errShowHelp("show error"), "Not enough arguments, see below for usage.")
+		return errors.Wrap(errShowHelp("show help"), "Not enough arguments, see below for usage.")
 	}
 
 	workloadID := args[0]
