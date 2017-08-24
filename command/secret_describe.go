@@ -1,10 +1,8 @@
 package command
 
 import (
-	"os"
-
 	"github.com/mitchellh/cli"
-	"github.com/olekukonko/tablewriter"
+	"github.com/nerdalize/nerd/command/format"
 	"github.com/pkg/errors"
 )
 
@@ -47,18 +45,23 @@ func (cmd *SecretDescribe) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Name", "Type", "Key", "Value", "Username", "Password"})
-	row := []string{}
-	row = append(row, out.Name)
-	row = append(row, out.Type)
-	row = append(row, out.Key)
-	row = append(row, out.Value)
-	row = append(row, out.DockerUsername)
-	row = append(row, out.DockerPassword)
-	table.Append(row)
+	tmplPretty := `Name:			{{.Name}}
+	Type:			{{.Type}}
+	Key:			{{.Key}}
+	Value:			{{.Value}}
+		`
 
-	table.Render()
+	tmplRaw := `ID:			{{.Name}}
+		Type:			{{.Type}}
+		Key:			{{.Key}}
+		Value:			{{.Value}}
+		`
+
+	cmd.outputter.Output(format.DecMap{
+		format.OutputTypePretty: format.NewTableDecorator(out, "Secret Details:", tmplPretty),
+		format.OutputTypeRaw:    format.NewTmplDecorator(out, tmplRaw),
+		format.OutputTypeJSON:   format.NewJSONDecorator(out),
+	})
 
 	return nil
 }

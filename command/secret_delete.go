@@ -1,7 +1,6 @@
 package command
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
 )
@@ -40,11 +39,12 @@ func (cmd *SecretDelete) DoRun(args []string) (err error) {
 	if err != nil {
 		return HandleError(err)
 	}
-	out, err := bclient.DeleteSecret(ss.Project.Name, args[0])
+
+	_, err = bclient.DeleteSecret(ss.Project.Name, args[0])
 	if err != nil {
 		return HandleError(err)
 	}
 
-	logrus.Infof("Secret Deletion: %v", out)
+	cmd.outputter.Logger.Printf("Secret successfully deleted")
 	return nil
 }

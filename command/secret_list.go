@@ -1,10 +1,8 @@
 package command
 
 import (
-	"os"
-
 	"github.com/mitchellh/cli"
-	"github.com/olekukonko/tablewriter"
+	"github.com/nerdalize/nerd/command/format"
 	"github.com/pkg/errors"
 )
 
@@ -51,15 +49,15 @@ func (cmd *SecretList) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Name", "Type"})
-	for _, t := range out.Secrets {
-		row := []string{}
-		row = append(row, t.Name)
-		row = append(row, t.Type)
-		table.Append(row)
-	}
+	header := "Secret name\tType"
+	pretty := "{{range $i, $x := $.Secrets}}{{$x.Name}}\t{{$x.Type}}\n{{end}}"
+	raw := "{{range $i, $x := $.Secrets}}{{$x.Name}}\t{{$x.Type}}\n{{end}}"
 
-	table.Render()
+	cmd.outputter.Output(format.DecMap{
+		format.OutputTypePretty: format.NewTableDecorator(out, header, pretty),
+		format.OutputTypeRaw:    format.NewTmplDecorator(out, raw),
+		format.OutputTypeJSON:   format.NewJSONDecorator(out.Secrets),
+	})
+
 	return nil
 }

@@ -2,12 +2,11 @@ package command
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/command/format"
 	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
-	"github.com/olekukonko/tablewriter"
 	"github.com/pkg/errors"
 )
 
@@ -83,13 +82,19 @@ func (cmd *SecretCreate) DoRun(args []string) (err error) {
 		return HandleError(fmt.Errorf("invalid secret type '%s', available options are 'registry', and 'opaque'", cmd.opts.Type))
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Name", "Type"})
-	row := []string{}
-	row = append(row, out.Name)
-	row = append(row, out.Type)
-	table.Append(row)
+	tmplPretty := `Name:	{{.Name}}
+	Type:	{{.Type}}
+		`
 
-	table.Render()
+	tmplRaw := `Name:	{{.Name}}
+		Type:	{{.Type}}
+		`
+
+	cmd.outputter.Output(format.DecMap{
+		format.OutputTypePretty: format.NewTableDecorator(out, "New Secret:", tmplPretty),
+		format.OutputTypeRaw:    format.NewTmplDecorator(out, tmplRaw),
+		format.OutputTypeJSON:   format.NewJSONDecorator(out),
+	})
+
 	return nil
 }
