@@ -50,9 +50,9 @@ func (cmd *ProjectList) DoRun(args []string) (err error) {
 		return errors.Wrap(err, "failed to list projects")
 	}
 
-	header := "Nr\tProject ID"
-	pretty := "{{range $i, $x := $.Projects}}{{$x.ID}}\t{{$x.Slug}}\n{{end}}"
-	raw := "{{range $i, $x := $.Projects}}{{$x.ID}}\t{{$x.Slug}}\t{{$x.URL}}\n{{end}}"
+	header := "Projects"
+	pretty := "{{range $i, $x := $.Projects}}{{$x.Slug}}\n{{end}}"
+	raw := "{{range $i, $x := $.Projects}}{{$x.Slug}}\t{{$x.URL}}\n{{end}}"
 	cmd.outputter.Output(format.DecMap{
 		format.OutputTypePretty: format.NewTableDecorator(projects, header, pretty),
 		format.OutputTypeRaw:    format.NewTmplDecorator(projects, raw),
