@@ -30,7 +30,11 @@ const (
 	EnvNerdProject = "NERD_PROJECT"
 )
 
-var errShowHelp = errors.New("show error")
+// errShowHelp is used to retrieve the cause of an error.
+// If the cause type is errShowHelp, this will print the help for the (sub) command
+type errShowHelp string
+
+func (e errShowHelp) Error() string { return string(e) }
 
 func newCommand(usage, synopsis, help string, opts interface{}) (*command, error) {
 	cmd := &command{
@@ -120,15 +124,17 @@ func (c *command) Run(args []string) int {
 	}
 
 	if err := c.runFunc(args); err != nil {
-		if strings.Contains(err.Error(), errShowHelp.Error()) {
+		switch errors.Cause(err).(type) {
+		case errShowHelp:
 			splits := strings.Split(err.Error(), ":")
 			if len(splits) >= 2 {
 				c.outputter.WriteError(errors.New(splits[0]))
 			}
 			return cli.RunResultHelp
+		default:
+			c.outputter.WriteError(err)
+			return 1
 		}
-		c.outputter.WriteError(err)
-		return 1
 	}
 
 	return 0

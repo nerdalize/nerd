@@ -37,5 +37,5 @@ Subcommands:
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *Workload) DoRun(args []string) (err error) {
-	return errShowHelp
+	return errShowHelp("show error")
 }
