@@ -2,7 +2,7 @@ package v1payload
 
 //ListProjectsOutput contains a list of projects
 type ListProjectsOutput struct {
-	Projects []Project
+	Projects []*Project
 }
 
 //Project represents a project

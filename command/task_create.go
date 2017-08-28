@@ -12,25 +12,25 @@ import (
 	"github.com/pkg/errors"
 )
 
-//TaskStartOpts describes command options
-type TaskStartOpts struct {
-	Env []string `long:"env" short:"e" description:"environment variables to"`
+//TaskCreateOpts describes command options
+type TaskCreateOpts struct {
+	Env []string `long:"env" short:"e" description:"environment variables to use"`
 }
 
-//TaskStart command
-type TaskStart struct {
+//TaskCreate command
+type TaskCreate struct {
 	*command
-	opts *TaskStartOpts
+	opts *TaskCreateOpts
 }
 
-//TaskStartFactory returns a factory method for the join command
-func TaskStartFactory() (cli.Command, error) {
-	opts := &TaskStartOpts{}
-	comm, err := newCommand("nerd task start <workload-id> -- [cmd [args...]]", "Start a new task for a workload.", "", opts)
+//TaskCreateFactory returns a factory method for the join command
+func TaskCreateFactory() (cli.Command, error) {
+	opts := &TaskCreateOpts{}
+	comm, err := newCommand("nerd task create <workload-id> -- [cmd [args...]]", "Create a new task for a workload.", "", opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
-	cmd := &TaskStart{
+	cmd := &TaskCreate{
 		command: comm,
 		opts:    opts,
 	}
@@ -40,7 +40,7 @@ func TaskStartFactory() (cli.Command, error) {
 }
 
 //DoRun is called by run and allows an error to be returned
-func (cmd *TaskStart) DoRun(args []string) (err error) {
+func (cmd *TaskCreate) DoRun(args []string) (err error) {
 	if len(args) < 1 {
 		return errShowHelp("Not enough arguments, see below for usage.")
 	}
@@ -88,6 +88,6 @@ func (cmd *TaskStart) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	cmd.outputter.Logger.Printf("Started task with ID: %d", out.TaskID)
+	cmd.outputter.Logger.Printf("Created task with ID: %d", out.TaskID)
 	return nil
 }
