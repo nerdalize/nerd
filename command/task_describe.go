@@ -60,14 +60,14 @@ func (cmd *TaskDescribe) DoRun(args []string) (err error) {
 
 	tmplPretty := `ID:	{{.TaskID}}
 Cmd:	{{.Cmd}}
-Output:	{{.OutputDatasetID}}
+OutputID:	{{.OutputDatasetID}}
 Status:	{{.Status}}
 Created:	{{.TaskID | fmtUnixNanoAgo }}
 `
 
 	tmplRaw := `ID:	{{.TaskID}}
 Cmd:	{{.Cmd}}
-Output:	{{.OutputDatasetID}}
+OutputID:	{{.OutputDatasetID}}
 Status:	{{.Status}}
 Created:	{{.TaskID}}
 `
