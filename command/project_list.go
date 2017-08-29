@@ -48,7 +48,7 @@ func (cmd *ProjectList) DoRun(args []string) (err error) {
 
 	projects, err := client.ListProjects()
 	if err != nil {
-		return errors.Wrap(err, "failed to list projects")
+		return HandleError(err)
 	}
 
 	ss, err := cmd.session.Read()

@@ -84,7 +84,7 @@ func ErrorCauser(err error) error {
 	return err
 }
 
-//batchErr returns a human-readble error message for batch HTTPErrors
+//batchErr returns a human-readable error message for batch HTTPErrors
 func batchErr(err *v1batch.HTTPError) error {
 	switch err.StatusCode {
 	case http.StatusUnprocessableEntity:
