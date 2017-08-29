@@ -44,6 +44,12 @@ func (cmd *SecretList) DoRun(args []string) (err error) {
 	if err != nil {
 		return HandleError(err)
 	}
+
+	_, err = ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
+
 	out, err := bclient.ListSecrets(ss.Project.Name)
 	if err != nil {
 		return HandleError(err)

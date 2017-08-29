@@ -15,6 +15,7 @@ import (
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/jwt"
 	"github.com/nerdalize/nerd/nerd/oauth"
+	"github.com/nerdalize/nerd/nerd"
 	"github.com/pkg/errors"
 	"github.com/restic/chunker"
 )
@@ -99,10 +100,10 @@ func batchErr(err *v1batch.HTTPError) error {
 
 //HandleError handles the way errors are presented to the user.
 func HandleError(err error) error {
-	if errors.Cause(err) == oauth.ErrTokenRevoked {
+	if errors.Cause(err) == nerd.ErrTokenRevoked {
 		return fmt.Errorf("Your login session has expired. Please login using 'nerd login'")
 	}
-	if errors.Cause(err) == oauth.ErrTokenUnset {
+	if errors.Cause(err) == nerd.ErrTokenUnset {
 		return fmt.Errorf("You are not logged in. Please login using 'nerd login'")
 	}
 	if herr, ok := errors.Cause(err).(*v1batch.HTTPError); ok {

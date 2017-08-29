@@ -39,6 +39,10 @@ func (cmd *SecretDelete) DoRun(args []string) (err error) {
 	if err != nil {
 		return HandleError(err)
 	}
+	_, err = ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
 
 	_, err = bclient.DeleteSecret(ss.Project.Name, args[0])
 	if err != nil {

@@ -55,6 +55,11 @@ func (cmd *SecretCreate) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
+	_, err = ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
+
 	secretName := args[0]
 	var out *v1payload.CreateSecretOutput
 	if cmd.opts.Type == v1payload.SecretTypeRegistry {
