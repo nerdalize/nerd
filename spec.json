@@ -58,8 +58,8 @@
 		},
 		"dataset upload": {
 			"usage": "nerd dataset upload \u003cpath\u003e",
-			"synopsis": "Upload data to the cloud and create a new dataset.",
-			"description": "Upload data to the cloud and create a new dataset.",
+			"synopsis": "Upload data from a directory to the cloud and create a new dataset.",
+			"description": "Upload data from a directory to the cloud and create a new dataset.",
 			"options": {}
 		},
 		"login": {
