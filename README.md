@@ -34,15 +34,15 @@ $ nerd workload start jrottenberg/ffmpeg
     --input-dataset d-96fac377
 Started workload with ID 'w-96fac375'
 
-# start two tasks for this workload
+# create two tasks for this workload
 # this will start the jrottenberg/ffmpeg container twice with the given arguments
 # input dataset d-96fac377 will be available in /input, data in /output will be uploaded when the task has successfully executed
-$ nerd task start w-96fac375 -- -i /input/video1.mov -acodec copy -vcodec copy /output/video1.avi
-$ nerd task start w-96fac375 -- -i /input/video2.mov -acodec copy -vcodec copy /output/video2.avi
+$ nerd task create w-96fac375 -- -i /input/video1.mov -acodec copy -vcodec copy /output/video1.avi
+$ nerd task create w-96fac375 -- -i /input/video2.mov -acodec copy -vcodec copy /output/video2.avi
 
 # get status of tasks
 $ nerd task list w-96fac375
-TaskID      Cmd                                                                 Output      Status    Created
+TaskID      Cmd                                                                 OutputID    Status    Created
 t-14962176  [-i /input/video1.mov -acodec copy -vcodec copy /output/video1.avi] video1.avi  SUCCESS   1 minute ago
 t-89491732  [-i /input/video2.mov -acodec copy -vcodec copy /output/video2.avi]             PENDING   1 minute ago
 
@@ -62,8 +62,8 @@ Each command accepts at least the following options:
 ```
 --config-file=  location of config file [$NERD_CONFIG_FILE]
 --session-file= location of session file [$NERD_SESSION_FILE]
--v, --verbose=  show verbose output (default: false)
---json-format=  show output in json format (default: false)
+--debug=  show debug output [$NERD_DEBUG]
+--output=[pretty|raw|json] Format of the output (default: pretty)
 ```
 
 ## Power users
