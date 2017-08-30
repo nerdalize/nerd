@@ -12,6 +12,7 @@ Successful login. You can now select a project using 'nerd project'
 
 # list all projects
 $ nerd project list
+PROJECTS
 nerdalize-video
 nerdalize-weather
 
@@ -42,7 +43,7 @@ $ nerd task create w-96fac375 -- -i /input/video2.mov -acodec copy -vcodec copy 
 
 # get status of tasks
 $ nerd task list w-96fac375
-TaskID      Cmd                                                                 OutputID    Status    Created
+TASK ID     CMD                                                                 OUTPUT ID   STATUS    CREATED
 t-14962176  [-i /input/video1.mov -acodec copy -vcodec copy /output/video1.avi] video1.avi  SUCCESS   1 minute ago
 t-89491732  [-i /input/video2.mov -acodec copy -vcodec copy /output/video2.avi]             PENDING   1 minute ago
 
