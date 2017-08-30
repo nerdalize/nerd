@@ -55,7 +55,7 @@ func (cmd *SecretList) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	header := "Secret name\tType"
+	header := "SECRET NAME\tTYPE"
 	pretty := "{{range $i, $x := $.Secrets}}{{$x.Name}}\t{{$x.Type}}\n{{end}}"
 	raw := "{{range $i, $x := $.Secrets}}{{$x.Name}}\t{{$x.Type}}\n{{end}}"
 

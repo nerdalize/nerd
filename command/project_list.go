@@ -62,7 +62,7 @@ func (cmd *ProjectList) DoRun(args []string) (err error) {
 		}
 	}
 
-	header := "Projects:"
+	header := "PROJECTS"
 	pretty := "{{range $i, $x := $.Projects}}{{$x.Slug}}\n{{end}}"
 	raw := "{{range $i, $x := $.Projects}}{{$x.Slug}}\t{{$x.URL}}\n{{end}}"
 	cmd.outputter.Output(format.DecMap{

@@ -89,15 +89,15 @@
 		"secret": {
 			"usage": "nerd secret \u003csubcommand\u003e",
 			"synopsis": "Set and list secrets (opaque or for a registry).",
-			"description": "A secret can be set to access a Docker registry (type registry), or to store sensitive information.",
+			"description": "A secret can be set to access a Docker registry (type registry),\nor to store sensitive information.",
 			"options": {}
 		},
 		"secret create": {
-			"usage": "nerd secret create \u003cname\u003e [key=val]",
-			"synopsis": "Create secrets to be used by workers. Name for a registry secret should correspond to an actual registry (e.g docker.io).",
-			"description": "Create secrets to be used by workers. Name for a registry secret should correspond to an actual registry (e.g docker.io).",
+			"usage": "nerd secret create \u003cregistry\u003e --type registry --username \u003cuser\u003e --password \u003cpwd\u003e\n   OR\n  nerd secret create \u003cname-for-secret\u003e \u003ckey=value\u003e [more]",
+			"synopsis": "Create secrets.",
+			"description": "A secret can contain either credentials for a registry,\nor key-value pairs that will be made available in your worker.",
 			"options": {
-				"options": [
+				"Options": [
 					{
 						"long_name": "username",
 						"description": "Username for Docker registry authentication",
@@ -126,7 +126,7 @@
 			}
 		},
 		"secret delete": {
-			"usage": "nerd secret \u003ctype\u003e delete \u003cname\u003e",
+			"usage": "nerd secret delete \u003cname\u003e",
 			"synopsis": "Remove a secret.",
 			"description": "Remove a secret.",
 			"options": {}
@@ -142,7 +142,7 @@
 			"synopsis": "Show a list of all secrets in the current project.",
 			"description": "Show a list of all secrets in the current project.",
 			"options": {
-				"options": [
+				"Options": [
 					{
 						"long_name": "type",
 						"description": "Type of secret to display, defaults to all.",
@@ -165,7 +165,7 @@
 			"synopsis": "Create a new task for a workload.",
 			"description": "Create a new task for a workload.",
 			"options": {
-				"options": [
+				"Options": [
 					{
 						"long_name": "env",
 						"short_name": "e",
@@ -241,7 +241,7 @@
 			"synopsis": "Provision a new workload to provide compute.",
 			"description": "Provision a new workload to provide compute.",
 			"options": {
-				"options": [
+				"Options": [
 					{
 						"long_name": "env",
 						"short_name": "e",

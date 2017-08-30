@@ -18,8 +18,12 @@ type SecretCreateOpts struct {
 }
 
 var (
-	secretCreateUsage    = "nerd secret create <name> [key=val]"
-	secretCreateSynopsis = "Create secrets to be used by workers. Name for a registry secret should correspond to an actual registry (e.g docker.io)."
+	secretCreateUsage = `nerd secret create <registry> --type registry --username <user> --password <pwd>
+   OR
+  nerd secret create <name-for-secret> <key=value> [more]`
+	secretCreateSynopsis = "Create secrets."
+	secretCreateHelp     = `A secret can contain either credentials for a registry,
+or key-value pairs that will be made available in your worker.`
 )
 
 //SecretCreate command
@@ -31,7 +35,7 @@ type SecretCreate struct {
 //SecretCreateFactory returns a factory method for the secret create command
 func SecretCreateFactory() (cli.Command, error) {
 	opts := &SecretCreateOpts{}
-	comm, err := newCommand(secretCreateUsage, secretCreateSynopsis, "", opts)
+	comm, err := newCommand(secretCreateUsage, secretCreateSynopsis, secretCreateHelp, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
