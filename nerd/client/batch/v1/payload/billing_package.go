@@ -3,7 +3,9 @@ package v1payload
 // CreateBillingPackageInput is the input for assigning a billing package to a project.
 // This results in the creation of a quota in the right namespace.
 type CreateBillingPackageInput struct {
+	BillingPackageID string `json:"billing_package_id"`
 	RequestsCPU      string `json:"requests_cpu"`
+	RequestsMemory   string `json:"requests_memory"`
 }
 
 // CreateBillingPackageOutput is the output from assigning a billing package to a project.
@@ -16,6 +18,7 @@ type CreateBillingPackageOutput struct {
 
 // UpdateBillingPackageInput is the input for updating the billing package capacity
 type UpdateBillingPackageInput struct {
+	OnDemand       bool   `json:"on_demand"`
 	RequestsCPU    string `json:"requests_cpu"`
 	RequestsMemory string `json:"requests_memory"`
 }
@@ -26,23 +29,6 @@ type UpdateBillingPackageOutput struct {
 	BillingPackageID string `json:"billing_package_id" valid:"required"`
 	RequestsCPU      string `json:"requests_cpu"`
 	RequestsMemory   string `json:"requests_memory"`
-}
-
-// DescribeBillingPackageInput is the input for describing a billing package.
-// Parameters are fetched through the url
-type DescribeBillingPackageInput struct {
-}
-
-// DescribeBillingPackageOutput is the output from describing a billingPackage.
-// Same as the DescribeBillingPackageInput, a billing package is not always
-// assigned to a project so the projectID can be empty.
-type DescribeBillingPackageOutput struct {
-	ProjectID        string `json:"project_id"`
-	BillingPackageID string `json:"billing_package_id" valid:"required"`
-	RequestsCPU      string `json:"requests_cpu"`
-	RequestsMemory   string `json:"requests_memory"`
-	UsedCPU          string `json:"used_cpu"`
-	UsedMemory       string `json:"used_memory"`
 }
 
 // RemoveBillingPackageInput is the input for removing a billing package from a project
@@ -63,7 +49,8 @@ type DeleteBillingPackageOutput struct {
 
 //BillingPackageSummary is summary of a billing package
 type BillingPackageSummary struct {
-	ProjectID        string `json:"project_id" valid:"required"`
+	RequestsCPU      string `json:"requests_cpu" valid:"required"`
+	RequestsMemory   string `json:"requests_memory" valid:"required`
 	BillingPackageID string `json:"billing_package_id" valid:"required"`
 }
 
@@ -75,4 +62,14 @@ type ListBillingPackagesInput struct {
 type ListBillingPackagesOutput struct {
 	ProjectID       string                   `json:"project_id" valid:"required"`
 	BillingPackages []*BillingPackageSummary `json:"billing_packages" valid:"required"`
+	Total           *Resource
+	Used            *Resource
+}
+
+// Resource is a general struct that will be used in our list payloads.
+type Resource struct {
+	RequestsCPU    string `json:"requests_cpu" valid:"required"`
+	RequestsMemory string `json:"requests_memory" valid:"required`
+	LimitsCPU      string `json:"limits_cpu" valid:"required"`
+	LimitsMemory   string `json:"limits_memory" valid:"required"`
 }
