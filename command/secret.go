@@ -11,7 +11,7 @@ type Secret struct {
 }
 
 var synopsisSecret = "Set and list secrets (opaque or for a registry)."
-var helpSecret = "A secret can be credentials for a Docker registry or can be used to store sensitive informations."
+var helpSecret = "A secret can be set to access a Docker registry (type registry), or to store sensitive information."
 
 // SecretFactory returns a factory method for the secret command
 func SecretFactory() (cli.Command, error) {

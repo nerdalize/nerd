@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/mitchellh/cli"
@@ -55,7 +56,13 @@ func (cmd *TaskDescribe) DoRun(args []string) (err error) {
 
 	out, err := bclient.DescribeTask(projectID, args[0], taskID)
 	if err != nil {
+		// TODO add a check to see if it's ErrTaskNotExist
 		return HandleError(err)
+	}
+
+	// This should be removed after universe improvement
+	if len(out.Status) == 0 && out.TaskID == 0 {
+		return HandleError(fmt.Errorf("Unable to find task. Please check the provided task-id and workload-id."))
 	}
 
 	tmplPretty := `ID:	{{.TaskID}}
