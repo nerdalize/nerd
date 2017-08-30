@@ -8,7 +8,8 @@ import (
 	"sync"
 	"time"
 
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/mitchellh/go-homedir"
+	"github.com/nerdalize/nerd/nerd"
 	"github.com/pkg/errors"
 )
 
@@ -24,21 +25,20 @@ type SessionSnapshot struct {
 	Project Project `json:"project,omitempty"`
 }
 
-var (
-	//ErrProjectIDNotSet is returned when no project id is set in the session
-	ErrProjectIDNotSet = errors.New("no project ID specified, use `nerd project set` to configure a project to work on")
-)
-
 //RequireProjectID returns the current project name from the session snapshot or error with ErrProjectIDNotSet
 func (ss *SessionSnapshot) RequireProjectID() (name string, err error) {
 	name = ss.Project.Name
+	if ss.OAuth.AccessToken == "" {
+		return "", nerd.ErrTokenUnset
+	}
+
 	if name == "" {
-		return "", ErrProjectIDNotSet
+		return "", nerd.ErrProjectIDNotSet
 	}
 	return name, nil
 }
 
-//OAuth contians oauth credentials
+//OAuth contains oauth credentials
 type OAuth struct {
 	AccessToken  string    `json:"access_token,omitempty"`
 	RefreshToken string    `json:"refresh_token,omitempty"`

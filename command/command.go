@@ -18,7 +18,7 @@ import (
 
 var (
 	//SharedOptionsGroup are options shared by all commands
-	SharedOptionsGroup = "Output options"
+	SharedOptionsGroup = "Other Options"
 )
 
 const (
@@ -48,7 +48,7 @@ func newCommand(usage, synopsis, help string, opts interface{}) (*command, error
 		outputter: format.NewOutputter(os.Stdout, os.Stderr, log.New(os.Stderr, "", 0)),
 	}
 	if opts != nil {
-		_, err := cmd.parser.AddGroup("options", "options", opts)
+		_, err := cmd.parser.AddGroup("Options", "Options", opts)
 		if err != nil {
 			return nil, err
 		}

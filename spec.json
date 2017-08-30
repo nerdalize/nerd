@@ -57,9 +57,9 @@
 			"options": {}
 		},
 		"dataset upload": {
-			"usage": "nerd upload \u003cpath\u003e",
-			"synopsis": "Upload data to the cloud and create a new dataset.",
-			"description": "Upload data to the cloud and create a new dataset.",
+			"usage": "nerd dataset upload \u003cpath\u003e",
+			"synopsis": "Upload data from a directory to the cloud and create a new dataset.",
+			"description": "Upload data from a directory to the cloud and create a new dataset.",
 			"options": {}
 		},
 		"login": {
@@ -87,17 +87,17 @@
 			"options": {}
 		},
 		"secret": {
-			"usage": "nerd secret \u003csubcommand\u003e {opaque, registry}",
-			"synopsis": "Set and list secrets. A secret can be credentials for a Docker registry, or other sensitive information needed by your project.",
-			"description": "Set and list secrets. A secret can be credentials for a Docker registry, or other sensitive information needed by your project.",
+			"usage": "nerd secret \u003csubcommand\u003e",
+			"synopsis": "Set and list secrets (opaque or for a registry).",
+			"description": "A secret can be set to access a Docker registry (type registry),\nor to store sensitive information.",
 			"options": {}
 		},
 		"secret create": {
-			"usage": "nerd secret create \u003cname\u003e [key=val]",
-			"synopsis": "Create secrets to be used by workers.",
-			"description": "Create secrets to be used by workers.",
+			"usage": "nerd secret create \u003cregistry\u003e --type registry --username \u003cuser\u003e --password \u003cpwd\u003e\n   OR\n  nerd secret create \u003cname-for-secret\u003e \u003ckey=value\u003e [more]",
+			"synopsis": "Create secrets.",
+			"description": "A secret can contain either credentials for a registry,\nor key-value pairs that will be made available in your worker.",
 			"options": {
-				"options": [
+				"Options": [
 					{
 						"long_name": "username",
 						"description": "Username for Docker registry authentication",
@@ -126,7 +126,7 @@
 			}
 		},
 		"secret delete": {
-			"usage": "nerd secret \u003ctype\u003e delete \u003cname\u003e",
+			"usage": "nerd secret delete \u003cname\u003e",
 			"synopsis": "Remove a secret.",
 			"description": "Remove a secret.",
 			"options": {}
@@ -142,7 +142,7 @@
 			"synopsis": "Show a list of all secrets in the current project.",
 			"description": "Show a list of all secrets in the current project.",
 			"options": {
-				"options": [
+				"Options": [
 					{
 						"long_name": "type",
 						"description": "Type of secret to display, defaults to all.",
@@ -160,6 +160,22 @@
 			"description": "Manage the lifecycle of compute tasks.",
 			"options": {}
 		},
+		"task create": {
+			"usage": "nerd task create \u003cworkload-id\u003e -- [cmd [args...]]",
+			"synopsis": "Create a new task for a workload.",
+			"description": "Create a new task for a workload.",
+			"options": {
+				"Options": [
+					{
+						"long_name": "env",
+						"short_name": "e",
+						"description": "environment variables to use",
+						"default_value": null,
+						"choices": null
+					}
+				]
+			}
+		},
 		"task describe": {
 			"usage": "nerd task describe \u003cworkload-id\u003e \u003ctask-id\u003e",
 			"synopsis": "Return more information about a specific task.",
@@ -171,22 +187,6 @@
 			"synopsis": "Show a list of all task currently in a queue.",
 			"description": "Show a list of all task currently in a queue.",
 			"options": {}
-		},
-		"task start": {
-			"usage": "nerd task start \u003cworkload-id\u003e -- [cmd [args...]]",
-			"synopsis": "Start a new task for a workload.",
-			"description": "Start a new task for a workload.",
-			"options": {
-				"options": [
-					{
-						"long_name": "env",
-						"short_name": "e",
-						"description": "environment variables to",
-						"default_value": null,
-						"choices": null
-					}
-				]
-			}
 		},
 		"task stop": {
 			"usage": "nerd task stop \u003cworkload-id\u003e \u003ctask-id\u003e",
@@ -241,7 +241,7 @@
 			"synopsis": "Provision a new workload to provide compute.",
 			"description": "Provision a new workload to provide compute.",
 			"options": {
-				"options": [
+				"Options": [
 					{
 						"long_name": "env",
 						"short_name": "e",
@@ -254,15 +254,6 @@
 						"short_name": "d",
 						"description": "Input dataset ID, will be available in /input in your container",
 						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "workers",
-						"short_name": "w",
-						"description": "Number of workers that handle the workload",
-						"default_value": [
-							"1"
-						],
 						"choices": null
 					},
 					{

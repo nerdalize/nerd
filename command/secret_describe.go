@@ -1,10 +1,8 @@
 package command
 
 import (
-	"os"
-
 	"github.com/mitchellh/cli"
-	"github.com/olekukonko/tablewriter"
+	"github.com/nerdalize/nerd/command/format"
 	"github.com/pkg/errors"
 )
 
@@ -29,6 +27,10 @@ func SecretDescribeFactory() (cli.Command, error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *SecretDescribe) DoRun(args []string) (err error) {
+	var (
+		tmplPretty, tmplRaw string
+	)
+
 	if len(args) < 1 {
 		return errShowHelp("Not enough arguments, see below for usage.")
 	}
@@ -42,23 +44,46 @@ func (cmd *SecretDescribe) DoRun(args []string) (err error) {
 	if err != nil {
 		return HandleError(err)
 	}
+	_, err = ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
+
 	out, err := bclient.DescribeSecret(ss.Project.Name, args[0])
 	if err != nil {
 		return HandleError(err)
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Name", "Type", "Key", "Value", "Username", "Password"})
-	row := []string{}
-	row = append(row, out.Name)
-	row = append(row, out.Type)
-	row = append(row, out.Key)
-	row = append(row, out.Value)
-	row = append(row, out.DockerUsername)
-	row = append(row, out.DockerPassword)
-	table.Append(row)
+	if out.Type == "Opaque" {
+		tmplPretty = `Name:		{{.Name}}
+Type:		{{.Type}}
+Key:		{{.Key}}
+Value:		{{.Value}}
+`
 
-	table.Render()
+		tmplRaw = `ID:		{{.Name}}
+Type:		{{.Type}}
+Key:		{{.Key}}
+Value:		{{.Value}}
+`
+	} else {
+		tmplPretty = `Name:		{{.Name}}
+		Type:		{{.Type}}
+		Key:		{{.Key}}
+		`
+
+		tmplRaw = `ID:		{{.Name}}
+Type:		{{.Type}}
+Key:		{{.Key}}
+`
+
+	}
+
+	cmd.outputter.Output(format.DecMap{
+		format.OutputTypePretty: format.NewTableDecorator(out, "Secret Details:", tmplPretty),
+		format.OutputTypeRaw:    format.NewTmplDecorator(out, tmplRaw),
+		format.OutputTypeJSON:   format.NewJSONDecorator(out),
+	})
 
 	return nil
 }

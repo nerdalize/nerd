@@ -1,10 +1,10 @@
 hash: fd32589101cc9f59ca555e743bcc010813df3b56f99ad8a51c50ecb1dfb13fcd
-updated: 2017-08-02T19:23:19.929833686+02:00
+updated: 2017-08-24T16:50:23.770042289+02:00
 imports:
 - name: github.com/armon/go-radix
-  version: 4239b77079c7b5d1243b7b4736304ce8ddb6f0f2
+  version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
-  version: b33b08175d12b795daa7726c5577b39d06a2551c
+  version: 85193e1d8a4a2df2f00ccdcd6a796673b1aec368
   subpackages:
   - aws
   - aws/awserr
@@ -67,8 +67,6 @@ imports:
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/restic/chunker
   version: bb2ecf9a98e35a0b336ffc23fc515fb6e7961577
-- name: github.com/sirupsen/logrus
-  version: 0208149b40d863d2c1a2f8fe5753096a9cf2cc8b
 - name: github.com/skratchdot/open-golang
   version: 75fb7ed4208cf72d323d7d02fd1a5964a7a9073c
   subpackages:

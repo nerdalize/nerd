@@ -47,7 +47,7 @@ func (cmd *WorkloadList) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	header := "WorkloadID\tImage\tInput\tCreated"
+	header := "WORKLOAD ID\tIMAGE\tINPUT\tCREATED"
 	pretty := "{{range $i, $x := $.Workloads}}{{$x.WorkloadID}}\t{{$x.Image}}\t{{$x.InputDatasetID}}\t{{$x.CreatedAt | fmtUnixAgo }}\n{{end}}"
 	raw := "{{range $i, $x := $.Workloads}}{{$x.WorkloadID}}\t{{$x.Image}}\t{{$x.InputDatasetID}}\t{{$x.CreatedAt}}\n{{end}}"
 	cmd.outputter.Output(format.DecMap{

@@ -1,7 +1,6 @@
 package command
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
 )
@@ -13,7 +12,7 @@ type SecretDelete struct {
 
 // SecretDeleteFactory returns a factory method for the secret delete command
 func SecretDeleteFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd secret <type> delete <name>", "Remove a secret.", "", nil)
+	comm, err := newCommand("nerd secret delete <name>", "Remove a secret.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -40,11 +39,16 @@ func (cmd *SecretDelete) DoRun(args []string) (err error) {
 	if err != nil {
 		return HandleError(err)
 	}
-	out, err := bclient.DeleteSecret(ss.Project.Name, args[0])
+	_, err = ss.RequireProjectID()
 	if err != nil {
 		return HandleError(err)
 	}
 
-	logrus.Infof("Secret Deletion: %v", out)
+	_, err = bclient.DeleteSecret(ss.Project.Name, args[0])
+	if err != nil {
+		return HandleError(err)
+	}
+
+	cmd.outputter.Logger.Printf("Secret successfully deleted")
 	return nil
 }

@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"net/url"
 
 	"github.com/mitchellh/cli"
@@ -47,10 +48,21 @@ func (cmd *ProjectList) DoRun(args []string) (err error) {
 
 	projects, err := client.ListProjects()
 	if err != nil {
-		return errors.Wrap(err, "failed to list projects")
+		return HandleError(err)
 	}
 
-	header := "Projects"
+	ss, err := cmd.session.Read()
+	if err != nil {
+		return HandleError(err)
+	}
+
+	for _, project := range projects.Projects {
+		if project.Slug == ss.Project.Name {
+			project.Slug = fmt.Sprintf("%s *", ss.Project.Name)
+		}
+	}
+
+	header := "PROJECTS"
 	pretty := "{{range $i, $x := $.Projects}}{{$x.Slug}}\n{{end}}"
 	raw := "{{range $i, $x := $.Projects}}{{$x.Slug}}\t{{$x.URL}}\n{{end}}"
 	cmd.outputter.Output(format.DecMap{

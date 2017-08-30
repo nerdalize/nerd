@@ -47,7 +47,7 @@ func (cmd *DatasetList) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	header := "DatasetID\tCreated"
+	header := "DATASET ID\tCREATED"
 	pretty := "{{range $i, $x := $.Datasets}}{{$x.DatasetID}}\t{{$x.CreatedAt | fmtUnixAgo }}\n{{end}}"
 	raw := "{{range $i, $x := $.Datasets}}{{$x.DatasetID}}\t{{$x.CreatedAt}}\n{{end}}"
 	cmd.outputter.Output(format.DecMap{

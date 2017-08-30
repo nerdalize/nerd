@@ -1,20 +1,14 @@
 package oauth
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/nerdalize/nerd/nerd"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
 )
-
-//ErrTokenRevoked is returned when trying to refresh a revoked token
-var ErrTokenRevoked = fmt.Errorf("ErrTokenRevoked")
-
-//ErrTokenUnset is returned when no oatuh access token was found in the config file
-var ErrTokenUnset = fmt.Errorf("ErrTokenUnset")
 
 //ConfigProvider provides a oauth access token from the config file. For the default file location please see TokenFilename().
 type ConfigProvider struct {
@@ -43,7 +37,7 @@ func (e *ConfigProvider) Retrieve() (string, error) {
 		return "", errors.Wrap(err, "failed to read config")
 	}
 	if ss.OAuth.AccessToken == "" {
-		return "", ErrTokenUnset
+		return "", nerd.ErrTokenUnset
 	}
 	e.SetExpiration(ss.OAuth.Expiration)
 	if e.IsExpired() {
@@ -61,7 +55,7 @@ func (e *ConfigProvider) refresh(refreshToken, clientID string) (string, error) 
 	out, err := e.Client.RefreshOAuthCredentials(refreshToken, clientID)
 	if err != nil {
 		if herr, ok := err.(*v1auth.HTTPError); ok && herr.StatusCode == http.StatusUnauthorized {
-			return "", ErrTokenRevoked
+			return "", nerd.ErrTokenRevoked
 		}
 		return "", errors.Wrap(err, "failed to get oauth credentials")
 	}

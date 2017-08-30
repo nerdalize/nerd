@@ -2,12 +2,11 @@ package command
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/command/format"
 	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
-	"github.com/olekukonko/tablewriter"
 	"github.com/pkg/errors"
 )
 
@@ -18,6 +17,15 @@ type SecretCreateOpts struct {
 	Type     string `long:"type" default:"opaque" default-mask:"" description:"Type of secret to display"`
 }
 
+var (
+	secretCreateUsage = `nerd secret create <registry> --type registry --username <user> --password <pwd>
+   OR
+  nerd secret create <name-for-secret> <key=value> [more]`
+	secretCreateSynopsis = "Create secrets."
+	secretCreateHelp     = `A secret can contain either credentials for a registry,
+or key-value pairs that will be made available in your worker.`
+)
+
 //SecretCreate command
 type SecretCreate struct {
 	*command
@@ -27,7 +35,7 @@ type SecretCreate struct {
 //SecretCreateFactory returns a factory method for the secret create command
 func SecretCreateFactory() (cli.Command, error) {
 	opts := &SecretCreateOpts{}
-	comm, err := newCommand("nerd secret create <name> [key=val]", "Create secrets to be used by workers.", "", opts)
+	comm, err := newCommand(secretCreateUsage, secretCreateSynopsis, secretCreateHelp, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -56,6 +64,11 @@ func (cmd *SecretCreate) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
+	_, err = ss.RequireProjectID()
+	if err != nil {
+		return HandleError(err)
+	}
+
 	secretName := args[0]
 	var out *v1payload.CreateSecretOutput
 	if cmd.opts.Type == v1payload.SecretTypeRegistry {
@@ -69,27 +82,36 @@ func (cmd *SecretCreate) DoRun(args []string) (err error) {
 		}
 	} else if cmd.opts.Type == v1payload.SecretTypeOpaque {
 		if len(args) < 2 {
-			return HandleError(fmt.Errorf("provide a valid key value pair: key=value"))
+			if strings.Contains(args[0], "=") {
+				return HandleError(errShowHelp("To create a secret, please provide a valid name.\nSee 'nerd secret create --help'."))
+			}
+			return HandleError(errShowHelp("To create a secret, please provide a valid key value pair: <key>=<value>.\nSee 'nerd secret create --help'."))
 		}
 		secretKv := strings.Split(args[1], "=")
 		if len(secretKv) < 2 {
-			return HandleError(fmt.Errorf("provide a valid key value pair (key=value)"))
+			return HandleError(fmt.Errorf("To create a secret, please provide a valid key value pair: <key>=<value>.\nSee 'nerd secret create --help'."))
 		}
 		out, err = bclient.CreateSecret(ss.Project.Name, secretName, secretKv[0], secretKv[1])
 		if err != nil {
 			return HandleError(err)
 		}
 	} else {
-		return HandleError(fmt.Errorf("invalid secret type '%s', available options are 'registry', and 'opaque'", cmd.opts.Type))
+		return HandleError(fmt.Errorf("Invalid secret type '%s', available options are 'registry', and 'opaque'", cmd.opts.Type))
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Name", "Type"})
-	row := []string{}
-	row = append(row, out.Name)
-	row = append(row, out.Type)
-	table.Append(row)
+	tmplPretty := `Name:	{{.Name}}
+	Type:	{{.Type}}
+		`
 
-	table.Render()
+	tmplRaw := `Name:	{{.Name}}
+		Type:	{{.Type}}
+		`
+
+	cmd.outputter.Output(format.DecMap{
+		format.OutputTypePretty: format.NewTableDecorator(out, "New Secret:", tmplPretty),
+		format.OutputTypeRaw:    format.NewTmplDecorator(out, tmplRaw),
+		format.OutputTypeJSON:   format.NewJSONDecorator(out),
+	})
+
 	return nil
 }
