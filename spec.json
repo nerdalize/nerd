@@ -87,15 +87,15 @@
 			"options": {}
 		},
 		"secret": {
-			"usage": "nerd secret \u003csubcommand\u003e {opaque, registry}",
-			"synopsis": "Set and list secrets. A secret can be credentials for a Docker registry, or other sensitive information needed by your project.",
-			"description": "Set and list secrets. A secret can be credentials for a Docker registry, or other sensitive information needed by your project.",
+			"usage": "nerd secret \u003csubcommand\u003e",
+			"synopsis": "Set and list secrets (opaque or for a registry).",
+			"description": "A secret can be set to access a Docker registry (type registry), or to store sensitive information.",
 			"options": {}
 		},
 		"secret create": {
 			"usage": "nerd secret create \u003cname\u003e [key=val]",
-			"synopsis": "Create secrets to be used by workers.",
-			"description": "Create secrets to be used by workers.",
+			"synopsis": "Create secrets to be used by workers. Name for a registry secret should correspond to an actual registry (e.g docker.io).",
+			"description": "Create secrets to be used by workers. Name for a registry secret should correspond to an actual registry (e.g docker.io).",
 			"options": {
 				"options": [
 					{
