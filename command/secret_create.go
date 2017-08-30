@@ -17,6 +17,11 @@ type SecretCreateOpts struct {
 	Type     string `long:"type" default:"opaque" default-mask:"" description:"Type of secret to display"`
 }
 
+var (
+	secretCreateUsage    = "nerd secret create <name> [key=val]"
+	secretCreateSynopsis = "Create secrets to be used by workers. Name for a registry secret should correspond to an actual registry (e.g docker.io)."
+)
+
 //SecretCreate command
 type SecretCreate struct {
 	*command
@@ -26,7 +31,7 @@ type SecretCreate struct {
 //SecretCreateFactory returns a factory method for the secret create command
 func SecretCreateFactory() (cli.Command, error) {
 	opts := &SecretCreateOpts{}
-	comm, err := newCommand("nerd secret create <name> [key=val]", "Create secrets to be used by workers.", "", opts)
+	comm, err := newCommand(secretCreateUsage, secretCreateSynopsis, "", opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
@@ -73,18 +78,21 @@ func (cmd *SecretCreate) DoRun(args []string) (err error) {
 		}
 	} else if cmd.opts.Type == v1payload.SecretTypeOpaque {
 		if len(args) < 2 {
-			return HandleError(fmt.Errorf("provide a valid key value pair: key=value"))
+			if strings.Contains(args[0], "=") {
+				return HandleError(errShowHelp("To create a secret, please provide a valid name.\nSee 'nerd secret create --help'."))
+			}
+			return HandleError(errShowHelp("To create a secret, please provide a valid key value pair: <key>=<value>.\nSee 'nerd secret create --help'."))
 		}
 		secretKv := strings.Split(args[1], "=")
 		if len(secretKv) < 2 {
-			return HandleError(fmt.Errorf("provide a valid key value pair (key=value)"))
+			return HandleError(fmt.Errorf("To create a secret, please provide a valid key value pair: <key>=<value>.\nSee 'nerd secret create --help'."))
 		}
 		out, err = bclient.CreateSecret(ss.Project.Name, secretName, secretKv[0], secretKv[1])
 		if err != nil {
 			return HandleError(err)
 		}
 	} else {
-		return HandleError(fmt.Errorf("invalid secret type '%s', available options are 'registry', and 'opaque'", cmd.opts.Type))
+		return HandleError(fmt.Errorf("Invalid secret type '%s', available options are 'registry', and 'opaque'", cmd.opts.Type))
 	}
 
 	tmplPretty := `Name:	{{.Name}}

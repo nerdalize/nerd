@@ -10,11 +10,12 @@ type Secret struct {
 	*command
 }
 
-var synopsisSecret = "Set and list secrets. A secret can be credentials for a Docker registry, or other sensitive information needed by your project."
+var synopsisSecret = "Set and list secrets (opaque or for a registry)."
+var helpSecret = "A secret can be credentials for a Docker registry or can be used to store sensitive informations."
 
 // SecretFactory returns a factory method for the secret command
 func SecretFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd secret <subcommand> {opaque, registry}", synopsisSecret, "", nil)
+	comm, err := newCommand("nerd secret <subcommand>", synopsisSecret, helpSecret, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

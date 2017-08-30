@@ -27,6 +27,10 @@ func SecretDescribeFactory() (cli.Command, error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *SecretDescribe) DoRun(args []string) (err error) {
+	var (
+		tmplPretty, tmplRaw string
+	)
+
 	if len(args) < 1 {
 		return errShowHelp("Not enough arguments, see below for usage.")
 	}
@@ -50,17 +54,30 @@ func (cmd *SecretDescribe) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	tmplPretty := `Name:			{{.Name}}
-	Type:			{{.Type}}
-	Key:			{{.Key}}
-	Value:			{{.Value}}
+	if out.Type == "Opaque" {
+		tmplPretty = `Name:		{{.Name}}
+Type:		{{.Type}}
+Key:		{{.Key}}
+Value:		{{.Value}}
+`
+
+		tmplRaw = `ID:		{{.Name}}
+Type:		{{.Type}}
+Key:		{{.Key}}
+Value:		{{.Value}}
+`
+	} else {
+		tmplPretty = `Name:		{{.Name}}
+		Type:		{{.Type}}
+		Key:		{{.Key}}
 		`
 
-	tmplRaw := `ID:			{{.Name}}
-		Type:			{{.Type}}
-		Key:			{{.Key}}
-		Value:			{{.Value}}
-		`
+		tmplRaw = `ID:		{{.Name}}
+Type:		{{.Type}}
+Key:		{{.Key}}
+`
+
+	}
 
 	cmd.outputter.Output(format.DecMap{
 		format.OutputTypePretty: format.NewTableDecorator(out, "Secret Details:", tmplPretty),
