@@ -3,6 +3,7 @@ package command
 import (
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 // SecretDelete command
