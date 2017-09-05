@@ -16,6 +16,24 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	tarSeparator = "/"
+)
+
+//normalized name takes an platform specific path and returns the normalized name
+//that will be used for the tar header
+func normalizeName(path string) (name string) {
+	parts := strings.Split(path, string(filepath.Separator))
+	return strings.Join(parts, tarSeparator)
+}
+
+//denormalizeName will take name as stored in the tar and return a platform specific
+//path
+func denormalizeName(name string) (path string) {
+	parts := strings.Split(name, tarSeparator)
+	return filepath.Join(parts...)
+}
+
 //tardir archives the given directory and writes bytes to w.
 func tardir(ctx context.Context, dir string, w io.Writer) (err error) {
 	tw := tar.NewWriter(w)
@@ -40,7 +58,7 @@ func tardir(ctx context.Context, dir string, w io.Writer) (err error) {
 			}
 
 			err = tw.WriteHeader(&tar.Header{
-				Name:    rel,
+				Name:    normalizeName(rel),
 				Mode:    int64(fi.Mode()),
 				ModTime: fi.ModTime(),
 				Size:    fi.Size(),
@@ -91,7 +109,7 @@ func untardir(ctx context.Context, dir string, r io.Reader) (err error) {
 				return errors.Wrap(err, "failed to read next tar header")
 			}
 
-			path := filepath.Join(dir, hdr.Name)
+			path := filepath.Join(dir, denormalizeName(hdr.Name))
 			err = os.MkdirAll(filepath.Dir(path), 0777)
 			if err != nil {
 				return errors.Wrap(err, "failed to create dirs")

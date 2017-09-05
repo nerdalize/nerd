@@ -6,6 +6,10 @@ import (
 	"testing"
 )
 
+func TestPathNormalization(t *testing.T) {
+
+}
+
 func TestSafeFilePath(t *testing.T) {
 	tmpPrefix := "download_test"
 	cases := []struct {
