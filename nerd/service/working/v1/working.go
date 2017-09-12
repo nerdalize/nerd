@@ -125,6 +125,10 @@ func (w *Worker) startRunExec(ctx context.Context, run *v1payload.Run) {
 	cmd.Stdin = bytes.NewBuffer(run.Stdin)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
+	for _, e := range os.Environ() {
+		cmd.Env = append(cmd.Env, e)
+	}
+
 	for k, v := range run.Env {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
 	}
