@@ -31,14 +31,14 @@ type UpdatePlanOutput struct {
 	RequestsMemory string `json:"requests_memory"`
 }
 
-// UpdatePlanInput is the input for updating the plan capacity
-type UpdatePlanInput struct {
+// DescribePlanInput is the input for describing the plan capacity
+type DescribePlanInput struct {
 	OnDemand       bool   `json:"on_demand"`
 	RequestsCPU    string `json:"requests_cpu"`
 	RequestsMemory string `json:"requests_memory"`
 }
 
-// DescribePlanOutput is the output for updating the plan capacity
+// DescribePlanOutput is the output for describing the plan capacity
 type DescribePlanOutput struct {
 	ProjectID      string `json:"project_id" valid:"required"`
 	PlanID         string `json:"plan_id" valid:"required"`
