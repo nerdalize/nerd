@@ -12,7 +12,7 @@ type ClientPlanInterface interface {
 	RemovePlan(projectID, planID string) (output *v1payload.RemovePlanOutput, err error)
 	DeletePlan(planID string) (output *v1payload.DeletePlanOutput, err error)
 	ListPlans(projectID string) (output *v1payload.ListPlansOutput, err error)
-	DescribePlan(planID string) (output *v1payload.DescribePlanOutput, err error)
+	DescribePlan(projectID, planID string) (output *v1payload.DescribePlanOutput, err error)
 	UpdatePlan(projectID, planID, requestsCPU, requestsMemory string) (output *v1payload.UpdatePlanOutput, err error)
 }
 
@@ -54,7 +54,7 @@ func (c *Client) ListPlans(projectID string) (output *v1payload.ListPlansOutput,
 
 // DescribePlan return useful information about a precised plan.
 // Useful information means reserved resources, actual state of these resources
-func (c *Client) DescribePlan(planID, projectID string) (output *v1payload.DescribePlanOutput) {
+func (c *Client) DescribePlan(projectID, planID string) (output *v1payload.DescribePlanOutput, err error) {
 	output = &v1payload.DescribePlanOutput{}
 	input := &v1payload.DescribePlanInput{}
 
