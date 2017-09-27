@@ -12,7 +12,7 @@ type PlanRemove struct {
 
 // PlanRemoveFactory returns a factory method for the plan remove command
 func PlanRemoveFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd plan remove <name>", "Remove a plan from your a project.", "", nil)
+	comm, err := newCommand("nerd plan remove <name>", "Remove a plan from your project.", "", nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}

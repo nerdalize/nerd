@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	planListUsage    = `nerd plan list --all`
+	planListUsage    = `nerd plan list`
 	planListSynopsis = "List displays your plans."
 	planListHelp     = `This command lists the plans applied to your project, but also the ones you have access to with your organization.`
 )
