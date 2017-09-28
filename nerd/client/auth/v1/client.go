@@ -18,6 +18,7 @@ const (
 	//TokenEndpoint is the endpoint from where to fetch the JWT.
 	tokenEndpoint    = "token"
 	projectsEndpoint = "projects"
+	plansEndpoint    = "plans"
 	//NCEScope is the JWT scope for the NCE service
 	NCEScope = "nce.nerdalize.com"
 )
@@ -147,6 +148,18 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 func (c *Client) ListProjects() (output *v1payload.ListProjectsOutput, err error) {
 	output = &v1payload.ListProjectsOutput{}
 	return output, c.doRequest(http.MethodGet, projectsEndpoint, nil, &output.Projects)
+}
+
+// ListPlans returns a list of plans the user has access to
+func (c *Client) ListPlans() (output *v1payload.ListPlansOutput, err error) {
+	output = &v1payload.ListPlansOutput{}
+	return output, c.doRequest(http.MethodGet, plansEndpoint, nil, &output.Plans)
+}
+
+// GetPlan returns a plan and its specs
+func (c *Client) GetPlan(planUID string) (output *v1payload.GetPlanOutput, err error) {
+	output = &v1payload.GetPlanOutput{}
+	return output, c.doRequest(http.MethodGet, fmt.Sprintf("%s%s", plansEndpoint, planUID), nil, output)
 }
 
 //GetJWT gets a JWT for a given scope

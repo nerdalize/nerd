@@ -93,7 +93,7 @@ func (cmd *Upload) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 	<-progressBarDoneCh
-	tmpl := "Upload complete! ID of new dataset: '{{$.DatasetID}}'\n"
+	tmpl := "Upload complete! New dataset ID: {{$.DatasetID}}\n"
 	jsonTmpl := "{\"dataset_id\":\"{{$.DatasetID}}}\"}"
 	cmd.outputter.Output(format.DecMap{
 		format.OutputTypePretty: format.NewTmplDecorator(dataset, tmpl),

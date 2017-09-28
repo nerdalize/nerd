@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"strings"
 	"text/tabwriter"
 	"time"
 
@@ -86,6 +87,16 @@ func (d *TableDecorator) Decorate(out io.Writer) error {
 		},
 		"fmtUnixNanoAgo": func(t int64) string {
 			return humanize.Time(time.Unix(0, t))
+		},
+		"testTruncate": func(s []string) string {
+			str := strings.Join(s, " ")
+			if len(str) == 0 {
+				return "[]"
+			}
+			if len(str) >= 25 {
+				return fmt.Sprintf("[%s...]", str[:25])
+			}
+			return fmt.Sprintf("[%s]")
 		},
 	}
 
