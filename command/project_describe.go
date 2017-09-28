@@ -1,6 +1,8 @@
 package command
 
 import (
+	"bytes"
+
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/command/format"
 	v1payload "github.com/nerdalize/nerd/nerd/client/batch/v1/payload"
@@ -51,27 +53,11 @@ func (cmd *ProjectDescribe) DoRun(args []string) (err error) {
 	if err != nil {
 		return HandleError(err)
 	}
-	header := "WORKLOAD ID\tIMAGE\tINPUT\tCREATED AT"
-	pretty := "{{range $i, $x := $.Workloads}}{{$x.WorkloadID}}\t{{$x.Image}}\t{{$x.InputDatasetID}}\t{{$x.CreatedAt | fmtUnixAgo }}\n{{end}}"
-	raw := "{{range $i, $x := $.Workloads}}{{$x.WorkloadID}}\t{{$x.Image}}\t{{$x.InputDatasetID}}\t{{$x.CreatedAt}}\n{{end}}"
-	cmd.outputter.Output(format.DecMap{
-		format.OutputTypePretty: format.NewTableDecorator(workloads, header, pretty),
-		format.OutputTypeRaw:    format.NewTmplDecorator(workloads, raw),
-		format.OutputTypeJSON:   format.NewJSONDecorator(workloads.Workloads),
-	})
 
 	datasets, err := bclient.ListDatasets(project)
 	if err != nil {
 		return HandleError(err)
 	}
-	header = "\nDATASET ID\tCREATED AT"
-	pretty = "{{range $i, $x := $.Datasets}}{{$x.DatasetID}}\t{{$x.CreatedAt | fmtUnixAgo }}\n{{end}}"
-	raw = "{{range $i, $x := $.Datasets}}{{$x.DatasetID}}\t{{$x.CreatedAt}}\n{{end}}"
-	cmd.outputter.Output(format.DecMap{
-		format.OutputTypePretty: format.NewTableDecorator(datasets, header, pretty),
-		format.OutputTypeRaw:    format.NewTmplDecorator(datasets, raw),
-		format.OutputTypeJSON:   format.NewJSONDecorator(datasets.Datasets),
-	})
 
 	var tasks []*v1payload.TaskSummary
 	for _, workload := range workloads.Workloads {
@@ -82,39 +68,49 @@ func (cmd *ProjectDescribe) DoRun(args []string) (err error) {
 		tasks = append(tasks, tmp.Tasks...)
 	}
 
-	header = "\nTASK ID\tWORKLOAD ID\tCMD\tOUTPUT ID\tSTATUS\tCREATED AT"
-	pretty = "{{range $i, $x := $}}{{$x.TaskID}}\t{{$x.WorkloadID}}\t{{$x.Cmd}}\t{{$x.OutputDatasetID}}\t{{$x.Status}}\t{{$x.TaskID | fmtUnixNanoAgo}}\n{{end}}"
-	raw = "{{range $i, $x := $}}{{$x.TaskID}}\t{{$x.WorkloadID}}\t{{$x.Cmd}}\t{{$x.OutputDatasetID}}\t{{$x.Status}}\t{{$x.TaskID}}\n{{end}}"
-	cmd.outputter.Output(format.DecMap{
-		format.OutputTypePretty: format.NewTableDecorator(tasks, header, pretty),
-		format.OutputTypeRaw:    format.NewTmplDecorator(tasks, raw),
-		format.OutputTypeJSON:   format.NewJSONDecorator(tasks),
-	})
-
 	secrets, err := bclient.ListSecrets(project)
 	if err != nil {
 		return HandleError(err)
 	}
-	header = "\nSECRET NAME\tTYPE"
-	pretty = "{{range $i, $x := $.Secrets}}{{$x.Name}}\t{{$x.Type}}\n{{end}}"
-	raw = "{{range $i, $x := $.Secrets}}{{$x.Name}}\t{{$x.Type}}\n{{end}}"
-	cmd.outputter.Output(format.DecMap{
-		format.OutputTypePretty: format.NewTableDecorator(secrets, header, pretty),
-		format.OutputTypeRaw:    format.NewTmplDecorator(secrets, raw),
-		format.OutputTypeJSON:   format.NewJSONDecorator(secrets.Secrets),
-	})
 
 	plans, err := bclient.ListPlans(project)
 	if err != nil {
 		return HandleError(err)
 	}
-	header = "\nPLANS"
-	pretty = "{{range $i, $x := $.Plans}}{{$x.UID}}\n{{end}}"
-	raw = "{{range $i, $x := $.Plans}}{{$x.UID}}\t{{$x.CPU}}\n{{end}}"
+
+	out := struct {
+		Workloads []*v1payload.WorkloadSummary
+		Tasks     []*v1payload.TaskSummary
+		Datasets  []*v1payload.DatasetSummary
+		Secrets   []*v1payload.SecretSummary
+		Plans     []*v1payload.PlanSummary
+	}{
+		workloads.Workloads,
+		tasks,
+		datasets.Datasets,
+		secrets.Secrets,
+		plans.Plans,
+	}
+
+	var pretty bytes.Buffer
+	pretty.WriteString("WORKLOAD ID\tIMAGE\tINPUT DATASET ID\tINSTANCES\tCREATED\n{{range $i, $x := $.Workloads}}{{$x.WorkloadID}}\t{{$x.Image}}\t{{$x.InputDatasetID}}\t{{$x.NrOfWorkers}}\t{{$x.CreatedAt | fmtUnixAgo }}\n{{end}}")
+	pretty.WriteString("\nTASK ID\tWORKLOAD ID\tCMD\tOUTPUT DATASET ID\tSTATUS\tCREATED\n{{range $i, $x := $.Tasks}}{{$x.TaskID}}\t{{$x.WorkloadID}}\t{{$x.Cmd | testTruncate }}\t{{$x.OutputDatasetID}}\t{{$x.Status}}\t{{$x.TaskID | fmtUnixNanoAgo}}\n{{end}}")
+	pretty.WriteString("\nDATASET ID\tCREATED\n{{range $i, $x := $.Datasets}}{{$x.DatasetID}}\t{{$x.CreatedAt | fmtUnixAgo }}\n{{end}}")
+	pretty.WriteString("\nSECRET NAME\tTYPE\n{{range $i, $x := $.Secrets}}{{$x.Name}}\t{{$x.Type}}\n{{end}}")
+	pretty.WriteString("\nPLAN ID\tCPU REQUEST\tMEMORY REQUEST\n{{range $i, $x := $.Plans}}{{$x.PlanID}}\t{{$x.RequestsCPU}}\t{{$x.RequestsMemory}}\n{{end}}")
+
+	var raw bytes.Buffer
+	raw.WriteString("WORKLOAD ID\tIMAGE\tINPUT DATASET ID\tINSTANCES\tCREATED\n{{range $i, $x := $.Workloads}}{{$x.WorkloadID}}\t{{$x.Image}}\t{{$x.InputDatasetID}}\t{{$x.NrOfWorkers}}\t{{$x.CreatedAt}}\n{{end}}")
+	raw.WriteString("\nDATASET ID\tCREATED\n{{range $i, $x := $.Datasets}}{{$x.DatasetID}}\t{{$x.CreatedAt}}\n{{end}}")
+	raw.WriteString("\nTASK ID\tWORKLOAD ID\tCMD\tOUTPUT DATASET ID\tSTATUS\tCREATED\n{{range $i, $x := $.Tasks}}{{$x.TaskID}}\t{{$x.WorkloadID}}\t{{$x.Cmd}}\t{{$x.OutputDatasetID}}\t{{$x.Status}}\t{{$x.TaskID}}\n{{end}}")
+	raw.WriteString("\nSECRET NAME\tTYPE\n{{range $i, $x := $.Secrets}}{{$x.Name}}\t{{$x.Type}}\n{{end}}")
+	raw.WriteString("\nPLAN ID\tCPU REQUEST\tMEMORY REQUEST\n{{range $i, $x := $.Plans}}{{$x.PlanID}}\t{{$x.RequestsCPU}}\t{{$x.RequestsMemory}}\n{{end}}")
+
 	cmd.outputter.Output(format.DecMap{
-		format.OutputTypePretty: format.NewTableDecorator(plans, header, pretty),
-		format.OutputTypeRaw:    format.NewTmplDecorator(plans, raw),
-		format.OutputTypeJSON:   format.NewJSONDecorator(plans.Plans),
+		format.OutputTypePretty: format.NewTableDecorator(out, "Project details", pretty.String()),
+		format.OutputTypeRaw:    format.NewTmplDecorator(out, raw.String()),
+		format.OutputTypeJSON:   format.NewJSONDecorator(out),
 	})
+
 	return nil
 }
