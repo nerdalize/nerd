@@ -77,9 +77,9 @@ func (cmd *PlanList) DoRun(args []string) (err error) {
 			}
 		}
 	}
-	header := "PLANS"
-	pretty := "{{range $i, $x := $.Plans}}{{$x.UID}}\n{{end}}"
-	raw := "{{range $i, $x := $.Plans}}{{$x.UID}}\t{{$x.CPU}}\n{{end}}"
+	header := "PLAN ID\tCPU REQUEST\tMEMORY REQUEST"
+	pretty := "{{range $i, $x := $.Plans}}{{$x.PlanID}}\t{{$x.RequestsCPU}}\t{{$x.RequestsMemory}}\n{{end}}"
+	raw := "{{range $i, $x := $.Plans}}{{$x.PlanID}}\t{{$x.RequestsCPU}}\t{{$x.RequestsMemory}}\n{{end}}"
 	cmd.outputter.Output(format.DecMap{
 		format.OutputTypePretty: format.NewTableDecorator(plans, header, pretty),
 		format.OutputTypeRaw:    format.NewTmplDecorator(plans, raw),

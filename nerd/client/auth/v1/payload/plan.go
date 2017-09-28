@@ -14,16 +14,15 @@ type GetPlanOutput struct {
 		Since    string `json:"since"`
 		Duration string `json:"duration"`
 	} `json:"usage"`
-	Capacity struct {
-		CPU    string `json:"cpu"`
-		Memory string `json:"memory"`
-	} `json:"capacity"`
-	Type string `json:"type"`
+	CapacityMemory string `json:"capacity_memory"`
+	CapacityCPU    string `json:"capacity_cpu"`
+	Type           string `json:"type"`
 }
 
 //Plan represents a plan.
 type Plan struct {
-	UID         string `json:"uid"`
-	URL         string `json:"url"`
-	ProjectSlug string `json:"project_slug"`
+	UID string `json:"uid"`
+	// Price       string `json:"price"`
+	// Type        string `json:"type"`
+	// ProjectSlug string `json:"project_slug"`
 }

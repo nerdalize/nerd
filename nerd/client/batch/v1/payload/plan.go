@@ -14,6 +14,7 @@ type CreatePlanOutput struct {
 	PlanID         string `json:"plan_id" valid:"required"`
 	RequestsCPU    string `json:"requests_cpu"`
 	RequestsMemory string `json:"requests_memory"`
+	Type           string `json:"type"`
 }
 
 // UpdatePlanInput is the input for updating the plan capacity
