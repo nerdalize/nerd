@@ -1,10 +1,10 @@
-hash: fd32589101cc9f59ca555e743bcc010813df3b56f99ad8a51c50ecb1dfb13fcd
-updated: 2017-08-24T16:50:23.770042289+02:00
+hash: c546d2d3a413a206c2f07d7f621a4b983b795c8a775e6cff30920360d9f4bc36
+updated: 2017-11-09T14:47:42.387507381+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
-  version: 85193e1d8a4a2df2f00ccdcd6a796673b1aec368
+  version: a201bf33b18ad4ab54344e4bc26b87eb6ad37b8e
   subpackages:
   - aws
   - aws/awserr
@@ -43,10 +43,21 @@ imports:
   version: 2268707a8f0843315e2004ee4f1d021dc08baedf
 - name: github.com/dustin/go-humanize
   version: 259d2a102b871d17f30e3cd9881a642961a1e486
+- name: github.com/golang/protobuf
+  version: 4bd1920723d7b7c925de087aa32e2187708897f7
+  subpackages:
+  - jsonpb
+  - proto
+  - ptypes
+  - ptypes/any
+  - ptypes/duration
+  - ptypes/timestamp
 - name: github.com/google/go-querystring
   version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
   subpackages:
   - query
+- name: github.com/gorilla/schema
+  version: e6c82218a8b3ed3cbeb5407429849c0b0b597d40
 - name: github.com/hashicorp/logutils
   version: 0dc08b1671f34c4250ce212759ebd880f743d883
 - name: github.com/jessevdk/go-flags
@@ -54,7 +65,7 @@ imports:
 - name: github.com/jmespath/go-jmespath
   version: bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d
 - name: github.com/mattn/go-isatty
-  version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
+  version: 6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c
 - name: github.com/mattn/go-runewidth
   version: 97311d9f7767e3d6f422ea06661bc2c7a19e8a5d
 - name: github.com/mitchellh/cli
@@ -71,6 +82,46 @@ imports:
   version: 75fb7ed4208cf72d323d7d02fd1a5964a7a9073c
   subpackages:
   - open
+- name: golang.org/x/net
+  version: 1c05540f6879653db88113bc4a2b70aec4bd491f
+  subpackages:
+  - context
+  - http2
+  - http2/hpack
+  - idna
+  - internal/timeseries
+  - lex/httplex
+  - trace
+- name: golang.org/x/text
+  version: b19bf474d317b857955b12035d2c5acb57ce8b01
+  subpackages:
+  - secure/bidirule
+  - transform
+  - unicode/bidi
+  - unicode/norm
+- name: google.golang.org/genproto
+  version: 11c7f9e547da6db876260ce49ea7536985904c9b
+  subpackages:
+  - googleapis/rpc/status
+- name: google.golang.org/grpc
+  version: 5ffe3083946d5603a0578721101dc8165b1d5b5f
+  subpackages:
+  - balancer
+  - codes
+  - connectivity
+  - credentials
+  - grpclb/grpc_lb_v1/messages
+  - grpclog
+  - internal
+  - keepalive
+  - metadata
+  - naming
+  - peer
+  - resolver
+  - stats
+  - status
+  - tap
+  - transport
 - name: gopkg.in/cheggaaa/pb.v1
   version: 0817e3a1f8de9e3c78b159699b3c07d53e24a963
 testImports: []

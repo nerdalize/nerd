@@ -3731,8 +3731,8 @@ type ContainerDefinition struct {
 	_ struct{} `type:"structure"`
 
 	// The command that is passed to the container. This parameter maps to Cmd in
-	// the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the COMMAND parameter to docker run (https://docs.docker.com/engine/reference/run/).
 	// For more information, see https://docs.docker.com/engine/reference/builder/#cmd
 	// (https://docs.docker.com/engine/reference/builder/#cmd).
@@ -3743,8 +3743,8 @@ type ContainerDefinition struct {
 	// amount of CPU to reserve for a container, and containers share unallocated
 	// CPU units with other containers on the instance with the same ratio as their
 	// allocated amount. This parameter maps to CpuShares in the Create a container
-	// (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --cpu-shares option to docker run (https://docs.docker.com/engine/reference/run/).
 	//
 	// You can determine the number of CPU units that are available per EC2 instance
@@ -3780,25 +3780,25 @@ type ContainerDefinition struct {
 	Cpu *int64 `locationName:"cpu" type:"integer"`
 
 	// When this parameter is true, networking is disabled within the container.
-	// This parameter maps to NetworkDisabled in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/).
+	// This parameter maps to NetworkDisabled in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/).
 	DisableNetworking *bool `locationName:"disableNetworking" type:"boolean"`
 
 	// A list of DNS search domains that are presented to the container. This parameter
-	// maps to DnsSearch in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// maps to DnsSearch in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --dns-search option to docker run (https://docs.docker.com/engine/reference/run/).
 	DnsSearchDomains []*string `locationName:"dnsSearchDomains" type:"list"`
 
 	// A list of DNS servers that are presented to the container. This parameter
-	// maps to Dns in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// maps to Dns in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --dns option to docker run (https://docs.docker.com/engine/reference/run/).
 	DnsServers []*string `locationName:"dnsServers" type:"list"`
 
 	// A key/value map of labels to add to the container. This parameter maps to
-	// Labels in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// Labels in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --label option to docker run (https://docs.docker.com/engine/reference/run/).
 	// This parameter requires version 1.18 of the Docker Remote API or greater
 	// on your container instance. To check the Docker Remote API version on your
@@ -3808,8 +3808,8 @@ type ContainerDefinition struct {
 
 	// A list of strings to provide custom labels for SELinux and AppArmor multi-level
 	// security systems. This parameter maps to SecurityOpt in the Create a container
-	// (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --security-opt option to docker run (https://docs.docker.com/engine/reference/run/).
 	//
 	// The Amazon ECS container agent running on a container instance must register
@@ -3825,16 +3825,16 @@ type ContainerDefinition struct {
 	// agent or enter your commands and arguments as command array items instead.
 	//
 	// The entry point that is passed to the container. This parameter maps to Entrypoint
-	// in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --entrypoint option to docker run (https://docs.docker.com/engine/reference/run/).
 	// For more information, see https://docs.docker.com/engine/reference/builder/#entrypoint
 	// (https://docs.docker.com/engine/reference/builder/#entrypoint).
 	EntryPoint []*string `locationName:"entryPoint" type:"list"`
 
 	// The environment variables to pass to a container. This parameter maps to
-	// Env in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// Env in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --env option to docker run (https://docs.docker.com/engine/reference/run/).
 	//
 	// We do not recommend using plain text environment variables for sensitive
@@ -3857,28 +3857,31 @@ type ContainerDefinition struct {
 
 	// A list of hostnames and IP address mappings to append to the /etc/hosts file
 	// on the container. This parameter maps to ExtraHosts in the Create a container
-	// (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --add-host option to docker run (https://docs.docker.com/engine/reference/run/).
 	ExtraHosts []*HostEntry `locationName:"extraHosts" type:"list"`
 
 	// The hostname to use for your container. This parameter maps to Hostname in
-	// the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --hostname option to docker run (https://docs.docker.com/engine/reference/run/).
 	Hostname *string `locationName:"hostname" type:"string"`
 
 	// The image used to start a container. This string is passed directly to the
 	// Docker daemon. Images in the Docker Hub registry are available by default.
-	// Other repositories are specified with repository-url/image:tag. Up to 255
-	// letters (uppercase and lowercase), numbers, hyphens, underscores, colons,
-	// periods, forward slashes, and number signs are allowed. This parameter maps
-	// to Image in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// Other repositories are specified with either repository-url/image:tag or
+	// repository-url/image@digest. Up to 255 letters (uppercase and lowercase),
+	// numbers, hyphens, underscores, colons, periods, forward slashes, and number
+	// signs are allowed. This parameter maps to Image in the Create a container
+	// (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the IMAGE parameter of docker run (https://docs.docker.com/engine/reference/run/).
 	//
-	//    * Images in Amazon ECR repositories use the full registry and repository
-	//    URI (for example, 012345678910.dkr.ecr.<region-name>.amazonaws.com/<repository-name>).
+	//    * Images in Amazon ECR repositories can be specified by either using the
+	//    full registry/repository:tag or registry/repository@digest. For example,
+	//    012345678910.dkr.ecr.<region-name>.amazonaws.com/<repository-name>:latest
+	//    or 012345678910.dkr.ecr.<region-name>.amazonaws.com/<repository-name>@sha256:94afd1f2e64d908bc90dbca0035a5b567EXAMPLE.
 	//
 	//
 	//    * Images in official repositories on Docker Hub use a single name (for
@@ -3898,8 +3901,8 @@ type ContainerDefinition struct {
 	// are allowed for each name and alias. For more information on linking Docker
 	// containers, see https://docs.docker.com/engine/userguide/networking/default_network/dockerlinks/
 	// (https://docs.docker.com/engine/userguide/networking/default_network/dockerlinks/).
-	// This parameter maps to Links in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// This parameter maps to Links in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --link option to docker run (https://docs.docker.com/engine/reference/run/).
 	//
 	// Containers that are collocated on a single container instance may be able
@@ -3908,9 +3911,13 @@ type ContainerDefinition struct {
 	// and VPC settings.
 	Links []*string `locationName:"links" type:"list"`
 
+	// Linux-specific modifications that are applied to the container, such as Linux
+	// KernelCapabilities.
+	LinuxParameters *LinuxParameters `locationName:"linuxParameters" type:"structure"`
+
 	// The log configuration specification for the container. This parameter maps
-	// to LogConfig in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// to LogConfig in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --log-driver option to docker run (https://docs.docker.com/engine/reference/run/).
 	// By default, containers use the same logging driver that the Docker daemon
 	// uses; however the container may use a different logging driver than the Docker
@@ -3940,8 +3947,8 @@ type ContainerDefinition struct {
 
 	// The hard limit (in MiB) of memory to present to the container. If your container
 	// attempts to exceed the memory specified here, the container is killed. This
-	// parameter maps to Memory in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// parameter maps to Memory in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --memory option to docker run (https://docs.docker.com/engine/reference/run/).
 	//
 	// You must specify a non-zero integer for one or both of memory or memoryReservation
@@ -3960,8 +3967,8 @@ type ContainerDefinition struct {
 	// it needs to, up to either the hard limit specified with the memory parameter
 	// (if applicable), or all of the available memory on the container instance,
 	// whichever comes first. This parameter maps to MemoryReservation in the Create
-	// a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --memory-reservation option to docker run (https://docs.docker.com/engine/reference/run/).
 	//
 	// You must specify a non-zero integer for one or both of memory or memoryReservation
@@ -3979,8 +3986,8 @@ type ContainerDefinition struct {
 	MemoryReservation *int64 `locationName:"memoryReservation" type:"integer"`
 
 	// The mount points for data volumes in your container. This parameter maps
-	// to Volumes in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// to Volumes in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --volume option to docker run (https://docs.docker.com/engine/reference/run/).
 	MountPoints []*MountPoint `locationName:"mountPoints" type:"list"`
 
@@ -3988,15 +3995,15 @@ type ContainerDefinition struct {
 	// in a task definition, the name of one container can be entered in the links
 	// of another container to connect the containers. Up to 255 letters (uppercase
 	// and lowercase), numbers, hyphens, and underscores are allowed. This parameter
-	// maps to name in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// maps to name in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --name option to docker run (https://docs.docker.com/engine/reference/run/).
 	Name *string `locationName:"name" type:"string"`
 
 	// The list of port mappings for the container. Port mappings allow containers
 	// to access ports on the host container instance to send or receive traffic.
-	// This parameter maps to PortBindings in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// This parameter maps to PortBindings in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --publish option to docker run (https://docs.docker.com/engine/reference/run/).
 	// If the network mode of a task definition is set to none, then you cannot
 	// specify port mappings. If the network mode of a task definition is set to
@@ -4011,21 +4018,21 @@ type ContainerDefinition struct {
 
 	// When this parameter is true, the container is given elevated privileges on
 	// the host container instance (similar to the root user). This parameter maps
-	// to Privileged in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// to Privileged in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --privileged option to docker run (https://docs.docker.com/engine/reference/run/).
 	Privileged *bool `locationName:"privileged" type:"boolean"`
 
 	// When this parameter is true, the container is given read-only access to its
 	// root file system. This parameter maps to ReadonlyRootfs in the Create a container
-	// (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --read-only option to docker run.
 	ReadonlyRootFilesystem *bool `locationName:"readonlyRootFilesystem" type:"boolean"`
 
 	// A list of ulimits to set in the container. This parameter maps to Ulimits
-	// in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --ulimit option to docker run (https://docs.docker.com/engine/reference/run/).
 	// Valid naming values are displayed in the Ulimit data type. This parameter
 	// requires version 1.18 of the Docker Remote API or greater on your container
@@ -4035,20 +4042,20 @@ type ContainerDefinition struct {
 	Ulimits []*Ulimit `locationName:"ulimits" type:"list"`
 
 	// The user name to use inside the container. This parameter maps to User in
-	// the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --user option to docker run (https://docs.docker.com/engine/reference/run/).
 	User *string `locationName:"user" type:"string"`
 
 	// Data volumes to mount from another container. This parameter maps to VolumesFrom
-	// in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --volumes-from option to docker run (https://docs.docker.com/engine/reference/run/).
 	VolumesFrom []*VolumeFrom `locationName:"volumesFrom" type:"list"`
 
 	// The working directory in which to run commands inside the container. This
-	// parameter maps to WorkingDir in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
-	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
+	// parameter maps to WorkingDir in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
 	// and the --workdir option to docker run (https://docs.docker.com/engine/reference/run/).
 	WorkingDirectory *string `locationName:"workingDirectory" type:"string"`
 }
@@ -4074,6 +4081,11 @@ func (s *ContainerDefinition) Validate() error {
 			if err := v.Validate(); err != nil {
 				invalidParams.AddNested(fmt.Sprintf("%s[%v]", "ExtraHosts", i), err.(request.ErrInvalidParams))
 			}
+		}
+	}
+	if s.LinuxParameters != nil {
+		if err := s.LinuxParameters.Validate(); err != nil {
+			invalidParams.AddNested("LinuxParameters", err.(request.ErrInvalidParams))
 		}
 	}
 	if s.LogConfiguration != nil {
@@ -4179,6 +4191,12 @@ func (s *ContainerDefinition) SetImage(v string) *ContainerDefinition {
 // SetLinks sets the Links field's value.
 func (s *ContainerDefinition) SetLinks(v []*string) *ContainerDefinition {
 	s.Links = v
+	return s
+}
+
+// SetLinuxParameters sets the LinuxParameters field's value.
+func (s *ContainerDefinition) SetLinuxParameters(v *LinuxParameters) *ContainerDefinition {
+	s.LinuxParameters = v
 	return s
 }
 
@@ -4576,18 +4594,18 @@ type CreateServiceInput struct {
 	// After you create a service, the load balancer name or target group ARN, container
 	// name, and container port specified in the service definition are immutable.
 	//
-	// For Elastic Load Balancing Classic load balancers, this object must contain
-	// the load balancer name, the container name (as it appears in a container
-	// definition), and the container port to access from the load balancer. When
-	// a task from this service is placed on a container instance, the container
-	// instance is registered with the load balancer specified here.
+	// For Classic Load Balancers, this object must contain the load balancer name,
+	// the container name (as it appears in a container definition), and the container
+	// port to access from the load balancer. When a task from this service is placed
+	// on a container instance, the container instance is registered with the load
+	// balancer specified here.
 	//
-	// For Elastic Load Balancing Application load balancers, this object must contain
-	// the load balancer target group ARN, the container name (as it appears in
-	// a container definition), and the container port to access from the load balancer.
-	// When a task from this service is placed on a container instance, the container
-	// instance and port combination is registered as a target in the target group
-	// specified here.
+	// For Application Load Balancers and Network Load Balancers, this object must
+	// contain the load balancer target group ARN, the container name (as it appears
+	// in a container definition), and the container port to access from the load
+	// balancer. When a task from this service is placed on a container instance,
+	// the container instance and port combination is registered as a target in
+	// the target group specified here.
 	LoadBalancers []*LoadBalancer `locationName:"loadBalancers" type:"list"`
 
 	// An array of placement constraint objects to use for tasks in your service.
@@ -5127,7 +5145,7 @@ type DeregisterContainerInstanceInput struct {
 	// of that task, on a different container instance if possible.
 	//
 	// Any containers in orphaned service tasks that are registered with a Classic
-	// load balancer or an Application load balancer target group are deregistered,
+	// Load Balancer or an Application Load Balancer target group are deregistered,
 	// and they will begin connection draining according to the settings on the
 	// load balancer or target group.
 	Force *bool `locationName:"force" type:"boolean"`
@@ -5635,6 +5653,65 @@ func (s *DescribeTasksOutput) SetTasks(v []*Task) *DescribeTasksOutput {
 	return s
 }
 
+// An object representing a container instance host device.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/ecs-2014-11-13/Device
+type Device struct {
+	_ struct{} `type:"structure"`
+
+	// The path inside the container at which to expose the host device.
+	ContainerPath *string `locationName:"containerPath" type:"string"`
+
+	// The path for the device on the host container instance.
+	//
+	// HostPath is a required field
+	HostPath *string `locationName:"hostPath" type:"string" required:"true"`
+
+	// The explicit permissions to provide to the container for the device. By default,
+	// the container will be able to read, write, and mknod the device.
+	Permissions []*string `locationName:"permissions" type:"list"`
+}
+
+// String returns the string representation
+func (s Device) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s Device) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *Device) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "Device"}
+	if s.HostPath == nil {
+		invalidParams.Add(request.NewErrParamRequired("HostPath"))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetContainerPath sets the ContainerPath field's value.
+func (s *Device) SetContainerPath(v string) *Device {
+	s.ContainerPath = &v
+	return s
+}
+
+// SetHostPath sets the HostPath field's value.
+func (s *Device) SetHostPath(v string) *Device {
+	s.HostPath = &v
+	return s
+}
+
+// SetPermissions sets the Permissions field's value.
+func (s *Device) SetPermissions(v []*string) *Device {
+	s.Permissions = v
+	return s
+}
+
 // Please also see https://docs.aws.amazon.com/goto/WebAPI/ecs-2014-11-13/DiscoverPollEndpointRequest
 type DiscoverPollEndpointInput struct {
 	_ struct{} `type:"structure"`
@@ -5826,6 +5903,72 @@ func (s *HostVolumeProperties) SetSourcePath(v string) *HostVolumeProperties {
 	return s
 }
 
+// The Linux capabilities for the container that are added to or dropped from
+// the default configuration provided by Docker. For more information on the
+// default capabilities and the non-default available capabilities, see Runtime
+// privilege and Linux capabilities (https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities)
+// in the Docker run reference. For more detailed information on these Linux
+// capabilities, see the capabilities(7) (http://man7.org/linux/man-pages/man7/capabilities.7.html)
+// Linux manual page.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/ecs-2014-11-13/KernelCapabilities
+type KernelCapabilities struct {
+	_ struct{} `type:"structure"`
+
+	// The Linux capabilities for the container that have been added to the default
+	// configuration provided by Docker. This parameter maps to CapAdd in the Create
+	// a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
+	// and the --cap-add option to docker run (https://docs.docker.com/engine/reference/run/).
+	//
+	// Valid values: "ALL" | "AUDIT_CONTROL" | "AUDIT_WRITE" | "BLOCK_SUSPEND" |
+	// "CHOWN" | "DAC_OVERRIDE" | "DAC_READ_SEARCH" | "FOWNER" | "FSETID" | "IPC_LOCK"
+	// | "IPC_OWNER" | "KILL" | "LEASE" | "LINUX_IMMUTABLE" | "MAC_ADMIN" | "MAC_OVERRIDE"
+	// | "MKNOD" | "NET_ADMIN" | "NET_BIND_SERVICE" | "NET_BROADCAST" | "NET_RAW"
+	// | "SETFCAP" | "SETGID" | "SETPCAP" | "SETUID" | "SYS_ADMIN" | "SYS_BOOT"
+	// | "SYS_CHROOT" | "SYS_MODULE" | "SYS_NICE" | "SYS_PACCT" | "SYS_PTRACE" |
+	// "SYS_RAWIO" | "SYS_RESOURCE" | "SYS_TIME" | "SYS_TTY_CONFIG" | "SYSLOG" |
+	// "WAKE_ALARM"
+	Add []*string `locationName:"add" type:"list"`
+
+	// The Linux capabilities for the container that have been removed from the
+	// default configuration provided by Docker. This parameter maps to CapDrop
+	// in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
+	// and the --cap-drop option to docker run (https://docs.docker.com/engine/reference/run/).
+	//
+	// Valid values: "ALL" | "AUDIT_CONTROL" | "AUDIT_WRITE" | "BLOCK_SUSPEND" |
+	// "CHOWN" | "DAC_OVERRIDE" | "DAC_READ_SEARCH" | "FOWNER" | "FSETID" | "IPC_LOCK"
+	// | "IPC_OWNER" | "KILL" | "LEASE" | "LINUX_IMMUTABLE" | "MAC_ADMIN" | "MAC_OVERRIDE"
+	// | "MKNOD" | "NET_ADMIN" | "NET_BIND_SERVICE" | "NET_BROADCAST" | "NET_RAW"
+	// | "SETFCAP" | "SETGID" | "SETPCAP" | "SETUID" | "SYS_ADMIN" | "SYS_BOOT"
+	// | "SYS_CHROOT" | "SYS_MODULE" | "SYS_NICE" | "SYS_PACCT" | "SYS_PTRACE" |
+	// "SYS_RAWIO" | "SYS_RESOURCE" | "SYS_TIME" | "SYS_TTY_CONFIG" | "SYSLOG" |
+	// "WAKE_ALARM"
+	Drop []*string `locationName:"drop" type:"list"`
+}
+
+// String returns the string representation
+func (s KernelCapabilities) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s KernelCapabilities) GoString() string {
+	return s.String()
+}
+
+// SetAdd sets the Add field's value.
+func (s *KernelCapabilities) SetAdd(v []*string) *KernelCapabilities {
+	s.Add = v
+	return s
+}
+
+// SetDrop sets the Drop field's value.
+func (s *KernelCapabilities) SetDrop(v []*string) *KernelCapabilities {
+	s.Drop = v
+	return s
+}
+
 // A key and value pair object.
 // Please also see https://docs.aws.amazon.com/goto/WebAPI/ecs-2014-11-13/KeyValuePair
 type KeyValuePair struct {
@@ -5859,6 +6002,78 @@ func (s *KeyValuePair) SetName(v string) *KeyValuePair {
 // SetValue sets the Value field's value.
 func (s *KeyValuePair) SetValue(v string) *KeyValuePair {
 	s.Value = &v
+	return s
+}
+
+// Linux-specific options that are applied to the container, such as Linux KernelCapabilities.
+// Please also see https://docs.aws.amazon.com/goto/WebAPI/ecs-2014-11-13/LinuxParameters
+type LinuxParameters struct {
+	_ struct{} `type:"structure"`
+
+	// The Linux capabilities for the container that are added to or dropped from
+	// the default configuration provided by Docker.
+	Capabilities *KernelCapabilities `locationName:"capabilities" type:"structure"`
+
+	// Any host devices to expose to the container. This parameter maps to Devices
+	// in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/#create-a-container)
+	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.27/)
+	// and the --device option to docker run (https://docs.docker.com/engine/reference/run/).
+	Devices []*Device `locationName:"devices" type:"list"`
+
+	// Run an init process inside the container that forwards signals and reaps
+	// processes. This parameter maps to the --init option to docker run (https://docs.docker.com/engine/reference/run/).
+	// This parameter requires version 1.25 of the Docker Remote API or greater
+	// on your container instance. To check the Docker Remote API version on your
+	// container instance, log into your container instance and run the following
+	// command: sudo docker version | grep "Server API version"
+	InitProcessEnabled *bool `locationName:"initProcessEnabled" type:"boolean"`
+}
+
+// String returns the string representation
+func (s LinuxParameters) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s LinuxParameters) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *LinuxParameters) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "LinuxParameters"}
+	if s.Devices != nil {
+		for i, v := range s.Devices {
+			if v == nil {
+				continue
+			}
+			if err := v.Validate(); err != nil {
+				invalidParams.AddNested(fmt.Sprintf("%s[%v]", "Devices", i), err.(request.ErrInvalidParams))
+			}
+		}
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetCapabilities sets the Capabilities field's value.
+func (s *LinuxParameters) SetCapabilities(v *KernelCapabilities) *LinuxParameters {
+	s.Capabilities = v
+	return s
+}
+
+// SetDevices sets the Devices field's value.
+func (s *LinuxParameters) SetDevices(v []*Device) *LinuxParameters {
+	s.Devices = v
+	return s
+}
+
+// SetInitProcessEnabled sets the InitProcessEnabled field's value.
+func (s *LinuxParameters) SetInitProcessEnabled(v bool) *LinuxParameters {
+	s.InitProcessEnabled = &v
 	return s
 }
 
@@ -6207,13 +6422,13 @@ type ListServicesInput struct {
 	// is assumed.
 	Cluster *string `locationName:"cluster" type:"string"`
 
-	// The maximum number of container instance results returned by ListServices
-	// in paginated output. When this parameter is used, ListServices only returns
-	// maxResults results in a single page along with a nextToken response element.
-	// The remaining results of the initial request can be seen by sending another
-	// ListServices request with the returned nextToken value. This value can be
-	// between 1 and 10. If this parameter is not used, then ListServices returns
-	// up to 10 results and a nextToken value if applicable.
+	// The maximum number of service results returned by ListServices in paginated
+	// output. When this parameter is used, ListServices only returns maxResults
+	// results in a single page along with a nextToken response element. The remaining
+	// results of the initial request can be seen by sending another ListServices
+	// request with the returned nextToken value. This value can be between 1 and
+	// 10. If this parameter is not used, then ListServices returns up to 10 results
+	// and a nextToken value if applicable.
 	MaxResults *int64 `locationName:"maxResults" type:"integer"`
 
 	// The nextToken value returned from a previous paginated ListServices request
@@ -6687,7 +6902,7 @@ type LoadBalancer struct {
 	// mapping.
 	ContainerPort *int64 `locationName:"containerPort" type:"integer"`
 
-	// The name of a Classic load balancer.
+	// The name of a load balancer.
 	LoadBalancerName *string `locationName:"loadBalancerName" type:"string"`
 
 	// The full Amazon Resource Name (ARN) of the Elastic Load Balancing target
@@ -9163,6 +9378,17 @@ const (
 
 	// DesiredStatusStopped is a DesiredStatus enum value
 	DesiredStatusStopped = "STOPPED"
+)
+
+const (
+	// DeviceCgroupPermissionRead is a DeviceCgroupPermission enum value
+	DeviceCgroupPermissionRead = "read"
+
+	// DeviceCgroupPermissionWrite is a DeviceCgroupPermission enum value
+	DeviceCgroupPermissionWrite = "write"
+
+	// DeviceCgroupPermissionMknod is a DeviceCgroupPermission enum value
+	DeviceCgroupPermissionMknod = "mknod"
 )
 
 const (

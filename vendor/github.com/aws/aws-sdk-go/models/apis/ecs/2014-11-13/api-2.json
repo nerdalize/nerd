@@ -578,6 +578,7 @@
         "environment":{"shape":"EnvironmentVariables"},
         "mountPoints":{"shape":"MountPointList"},
         "volumesFrom":{"shape":"VolumeFromList"},
+        "linuxParameters":{"shape":"LinuxParameters"},
         "hostname":{"shape":"String"},
         "user":{"shape":"String"},
         "workingDirectory":{"shape":"String"},
@@ -855,6 +856,31 @@
         "STOPPED"
       ]
     },
+    "Device":{
+      "type":"structure",
+      "required":["hostPath"],
+      "members":{
+        "hostPath":{"shape":"String"},
+        "containerPath":{"shape":"String"},
+        "permissions":{"shape":"DeviceCgroupPermissions"}
+      }
+    },
+    "DeviceCgroupPermission":{
+      "type":"string",
+      "enum":[
+        "read",
+        "write",
+        "mknod"
+      ]
+    },
+    "DeviceCgroupPermissions":{
+      "type":"list",
+      "member":{"shape":"DeviceCgroupPermission"}
+    },
+    "DevicesList":{
+      "type":"list",
+      "member":{"shape":"Device"}
+    },
     "DiscoverPollEndpointRequest":{
       "type":"structure",
       "members":{
@@ -918,11 +944,26 @@
       },
       "exception":true
     },
+    "KernelCapabilities":{
+      "type":"structure",
+      "members":{
+        "add":{"shape":"StringList"},
+        "drop":{"shape":"StringList"}
+      }
+    },
     "KeyValuePair":{
       "type":"structure",
       "members":{
         "name":{"shape":"String"},
         "value":{"shape":"String"}
+      }
+    },
+    "LinuxParameters":{
+      "type":"structure",
+      "members":{
+        "capabilities":{"shape":"KernelCapabilities"},
+        "devices":{"shape":"DevicesList"},
+        "initProcessEnabled":{"shape":"BoxedBoolean"}
       }
     },
     "ListAttributesRequest":{

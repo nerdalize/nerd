@@ -295,6 +295,8 @@
       "errors":[
         {"shape":"UnauthorizedException"},
         {"shape":"NotFoundException"},
+        {"shape":"ConflictException"},
+        {"shape":"BadRequestException"},
         {"shape":"TooManyRequestsException"}
       ]
     },
@@ -1823,6 +1825,7 @@
       "type":"string",
       "enum":[
         "TOKEN",
+        "REQUEST",
         "COGNITO_USER_POOLS"
       ]
     },
@@ -1939,8 +1942,7 @@
       "required":[
         "restApiId",
         "name",
-        "type",
-        "identitySource"
+        "type"
       ],
       "members":{
         "restApiId":{
@@ -2036,7 +2038,10 @@
         "certificateBody":{"shape":"String"},
         "certificatePrivateKey":{"shape":"String"},
         "certificateChain":{"shape":"String"},
-        "certificateArn":{"shape":"String"}
+        "certificateArn":{"shape":"String"},
+        "regionalCertificateName":{"shape":"String"},
+        "regionalCertificateArn":{"shape":"String"},
+        "endpointConfiguration":{"shape":"EndpointConfiguration"}
       }
     },
     "CreateModelRequest":{
@@ -2101,7 +2106,8 @@
         "description":{"shape":"String"},
         "version":{"shape":"String"},
         "cloneFrom":{"shape":"String"},
-        "binaryMediaTypes":{"shape":"ListOfString"}
+        "binaryMediaTypes":{"shape":"ListOfString"},
+        "endpointConfiguration":{"shape":"EndpointConfiguration"}
       }
     },
     "CreateStageRequest":{
@@ -2631,7 +2637,11 @@
         "certificateName":{"shape":"String"},
         "certificateArn":{"shape":"String"},
         "certificateUploadDate":{"shape":"Timestamp"},
-        "distributionDomainName":{"shape":"String"}
+        "regionalDomainName":{"shape":"String"},
+        "regionalCertificateName":{"shape":"String"},
+        "regionalCertificateArn":{"shape":"String"},
+        "distributionDomainName":{"shape":"String"},
+        "endpointConfiguration":{"shape":"EndpointConfiguration"}
       }
     },
     "DomainNames":{
@@ -2645,6 +2655,19 @@
       }
     },
     "Double":{"type":"double"},
+    "EndpointConfiguration":{
+      "type":"structure",
+      "members":{
+        "types":{"shape":"ListOfEndpointType"}
+      }
+    },
+    "EndpointType":{
+      "type":"string",
+      "enum":[
+        "REGIONAL",
+        "EDGE"
+      ]
+    },
     "ExportResponse":{
       "type":"structure",
       "members":{
@@ -3800,6 +3823,10 @@
       "type":"list",
       "member":{"shape":"DomainName"}
     },
+    "ListOfEndpointType":{
+      "type":"list",
+      "member":{"shape":"EndpointType"}
+    },
     "ListOfGatewayResponse":{
       "type":"list",
       "member":{"shape":"GatewayResponse"}
@@ -4275,7 +4302,8 @@
         "createdDate":{"shape":"Timestamp"},
         "version":{"shape":"String"},
         "warnings":{"shape":"ListOfString"},
-        "binaryMediaTypes":{"shape":"ListOfString"}
+        "binaryMediaTypes":{"shape":"ListOfString"},
+        "endpointConfiguration":{"shape":"EndpointConfiguration"}
       }
     },
     "RestApis":{

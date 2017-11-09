@@ -18,6 +18,23 @@ function run_build { #compile versioned executable and place it in $GOPATH/bin
     main.go
 }
 
+function run_gen { #regenerate requesters
+	command -v go >/dev/null 2>&1 || { echo "executable 'go' (the language sdk) must be installed" >&2; exit 1; }
+	command -v protoc >/dev/null 2>&1 || { echo "executable 'protoc' (protobuf compiler) must be installed" >&2; exit 1; }
+	command -v gg >/dev/null 2>&1 || { echo "executable 'gg' (grpc to http1.1) must be installed" >&2; exit 1; }
+
+	echo "--> generating gRPC definitions"
+	protoc \
+		--go_out=plugins=grpc:$(pwd)/nerd/client/cluster								\
+		--proto_path=$GOPATH/src/github.com/nerdalize/clusterd 					\
+		  $GOPATH/src/github.com/nerdalize/clusterd/svc/*.proto
+
+	echo "--> generating HTTP1.1 client from gRPC"
+	gg nerd/client/cluster/svc/*.pb.go
+
+		# @TODO how do we make sure grpc protobuf is configured write output to another directory
+}
+
 function run_test { #unit test project
 	go test -v ./command/...
   go test -v ./nerd/...
@@ -78,6 +95,7 @@ function run_dockerpush { #build and push docker container
 case $1 in
 	"build") run_build ;;
 	"test") run_test ;;
+	"gen") run_gen ;;
 	"release") run_release ;;
 	"publish") run_publish ;;
 	"docker") run_docker ;;

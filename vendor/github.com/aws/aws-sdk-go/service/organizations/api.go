@@ -65,6 +65,13 @@ func (c *Organizations) AcceptHandshakeRequest(input *AcceptHandshakeInput) (req
 //    * Invitation to join or Approve all features request handshakes: only
 //    a principal from the member account.
 //
+// The user who calls the API for an invitation to join must have the organizations:AcceptHandshake
+//    permission. If you enabled all features in the organization, then the
+//    user must also have the iam:CreateServiceLinkedRole permission so that
+//    Organizations can create the required service-linked role named OrgsServiceLinkedRoleName.
+//    For more information, see AWS Organizations and Service-Linked Roles (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_integration_services.html#orgs_integration_service-linked-roles)
+//    in the AWS Organizations User Guide.
+//
 //    * Enable all features final confirmation handshake: only a principal from
 //    the master account.
 //
@@ -104,6 +111,10 @@ func (c *Organizations) AcceptHandshakeRequest(input *AcceptHandshakeInput) (req
 //      * ACCOUNT_NUMBER_LIMIT_EXCEEDED: You attempted to exceed the limit on
 //      the number of accounts in an organization. Note: deleted and closed accounts
 //      still count toward your limit.
+//
+//   If you get an exception that indicates that you exceeded your account limits
+//      for the organization or that you can"t add an account because your organization
+//      is still initializing, please contact  AWS Customer Support (https://console.aws.amazon.com/support/home#/).
 //
 //      * HANDSHAKE_RATE_LIMIT_EXCEEDED: You attempted to exceed the number of
 //      handshakes you can send in one day.
@@ -208,6 +219,11 @@ func (c *Organizations) AcceptHandshakeRequest(input *AcceptHandshakeInput) (req
 //   * ErrCodeTooManyRequestsException "TooManyRequestsException"
 //   You've sent too many requests in too short a period of time. The limit helps
 //   protect against denial-of-service attacks. Try again later.
+//
+//   * ErrCodeAccessDeniedForDependencyException "AccessDeniedForDependencyException"
+//   The operation you attempted requires you to have the iam:CreateServiceLinkedRole
+//   so that Organizations can create the required service-linked role. You do
+//   not have that permission.
 //
 // Please also see https://docs.aws.amazon.com/goto/WebAPI/organizations-2016-11-28/AcceptHandshake
 func (c *Organizations) AcceptHandshake(input *AcceptHandshakeInput) (*AcceptHandshakeOutput, error) {
@@ -345,7 +361,10 @@ func (c *Organizations) AttachPolicyRequest(input *AttachPolicyInput) (req *requ
 //   example, attempting to removing the last SCP from an OU or root, inviting
 //   or creating too many accounts to the organization, or attaching too many
 //   policies to an account, OU, or root. This exception includes a reason that
-//   contains additional information about the violated limit:
+//   contains additional information about the violated limit.
+//
+//   Some of the reasons in the following list might not be applicable to this
+//   specific API or operation:
 //
 //   ACCOUNT_NUMBER_LIMIT_EXCEEDED: You attempted to exceed the limit on the number
 //   of accounts in an organization. If you need more accounts, contact AWS Support
@@ -356,6 +375,10 @@ func (c *Organizations) AttachPolicyRequest(input *AttachPolicyInput) (req *requ
 //   AWS Support to request an increase in the number of accounts.
 //
 //   Note: deleted and closed accounts still count toward your limit.
+//
+//   If you get an exception that indicates that you exceeded your account limits
+//   for the organization or that you can"t add an account because your organization
+//   is still initializing, please contact  AWS Customer Support (https://console.aws.amazon.com/support/home#/).
 //
 //      * HANDSHAKE_RATE_LIMIT_EXCEEDED: You attempted to exceed the number of
 //      handshakes you can send in one day.
@@ -380,20 +403,29 @@ func (c *Organizations) AttachPolicyRequest(input *AttachPolicyInput) (req *requ
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_EULA: You attempted to remove an account
 //      from the organization that does not yet have enough information to exist
 //      as a stand-alone account. This account requires you to first agree to
-//      the End-User License Agreement (EULA).
+//      the AWS Customer Agreement. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_PHONE_VERIFICATION: You attempted to remove
 //      an account from the organization that does not yet have enough information
 //      to exist as a stand-alone account. This account requires you to first
-//      complete phone verification.
+//      complete phone verification. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MASTER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To create an organization
 //      with this account, you first must associate a payment instrument, such
-//      as a credit card, with the account.
+//      as a credit card, with the account. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MEMBER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To complete this operation
 //      with this member account, you first must associate a payment instrument,
-//      such as a credit card, with the account.
+//      such as a credit card, with the account. Follow the steps at To leave
+//      an organization when all required account information has not yet been
+//      provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CREATION_RATE_LIMIT_EXCEEDED: You attempted to exceed the number
 //      of accounts that you can create in one day.
@@ -404,6 +436,10 @@ func (c *Organizations) AttachPolicyRequest(input *AttachPolicyInput) (req *requ
 //      For example, accounts with India addresses must be associated with the
 //      AISPL marketplace. All accounts in an organization must be associated
 //      with the same marketplace.
+//
+//      * MASTER_ACCOUNT_MISSING_CONTACT_INFO: To complete this operation, you
+//      must first provide contact a valid address and phone number for the master
+//      account. Then try the operation again.
 //
 //   * ErrCodeDuplicatePolicyAttachmentException "DuplicatePolicyAttachmentException"
 //   The selected policy is already attached to the specified target.
@@ -722,19 +758,35 @@ func (c *Organizations) CreateAccountRequest(input *CreateAccountInput) (req *re
 // later, you need the OperationId response element from this operation to provide
 // as a parameter to the DescribeCreateAccountStatus operation.
 //
-// AWS Organizations preconfigures the new member account with a role (named
-// OrganizationAccountAccessRole by default) that grants administrator permissions
-// to the new account. Principals in the master account can assume the role.
-// AWS Organizations clones the company name and address information for the
-// new account from the organization's master account.
+// The user who calls the API for an invitation to join must have the organizations:CreateAccount
+// permission. If you enabled all features in the organization, then the user
+// must also have the iam:CreateServiceLinkedRole permission so that Organizations
+// can create the required service-linked role named OrgsServiceLinkedRoleName.
+// For more information, see AWS Organizations and Service-Linked Roles (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_integration_services.html#orgs_integration_service-linked-roles)
+// in the AWS Organizations User Guide.
+//
+// The user in the master account who calls this API must also have the iam:CreateRole
+// permission because AWS Organizations preconfigures the new member account
+// with a role (named OrganizationAccountAccessRole) that grants users in the
+// master account administrator permissions in the new member account. Principals
+// in the master account can assume the role. AWS Organizations clones the company
+// name and address information for the new account from the organization's
+// master account.
+//
+// This operation can be called only from the organization's master account.
 //
 // For more information about creating accounts, see Creating an AWS Account
 // in Your Organization (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_create.html)
 // in the AWS Organizations User Guide.
 //
-// You cannot remove accounts that are created with this operation from an organization.
-// That also means that you cannot delete an organization that contains an account
-// that is created with this operation.
+// When you create an account in an organization using the AWS Organizations
+// console, API, or CLI commands, the information required for the account to
+// operate as a standalone account, such as a payment method and signing the
+// End User Licence Agreement (EULA) is not automatically collected. If you
+// must remove an account from your organization later, you can do so only after
+// you provide the missing information. Follow the steps at  To leave an organization
+// when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+// in the AWS Organizations User Guide.
 //
 // When you create a member account with this operation, you can choose whether
 // to create the account with the IAM User and Role Access to Billing Information
@@ -744,7 +796,9 @@ func (c *Organizations) CreateAccountRequest(input *CreateAccountInput) (req *re
 // information about how to disable this for an account, see Granting Access
 // to Your Billing Information and Tools (http://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/grantaccess.html).
 //
-// This operation can be called only from the organization's master account.
+// If you get an exception that indicates that you exceeded your account limits
+// for the organization or that you can"t add an account because your organization
+// is still initializing, please contact  AWS Customer Support (https://console.aws.amazon.com/support/home#/).
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -774,7 +828,10 @@ func (c *Organizations) CreateAccountRequest(input *CreateAccountInput) (req *re
 //   example, attempting to removing the last SCP from an OU or root, inviting
 //   or creating too many accounts to the organization, or attaching too many
 //   policies to an account, OU, or root. This exception includes a reason that
-//   contains additional information about the violated limit:
+//   contains additional information about the violated limit.
+//
+//   Some of the reasons in the following list might not be applicable to this
+//   specific API or operation:
 //
 //   ACCOUNT_NUMBER_LIMIT_EXCEEDED: You attempted to exceed the limit on the number
 //   of accounts in an organization. If you need more accounts, contact AWS Support
@@ -785,6 +842,10 @@ func (c *Organizations) CreateAccountRequest(input *CreateAccountInput) (req *re
 //   AWS Support to request an increase in the number of accounts.
 //
 //   Note: deleted and closed accounts still count toward your limit.
+//
+//   If you get an exception that indicates that you exceeded your account limits
+//   for the organization or that you can"t add an account because your organization
+//   is still initializing, please contact  AWS Customer Support (https://console.aws.amazon.com/support/home#/).
 //
 //      * HANDSHAKE_RATE_LIMIT_EXCEEDED: You attempted to exceed the number of
 //      handshakes you can send in one day.
@@ -809,20 +870,29 @@ func (c *Organizations) CreateAccountRequest(input *CreateAccountInput) (req *re
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_EULA: You attempted to remove an account
 //      from the organization that does not yet have enough information to exist
 //      as a stand-alone account. This account requires you to first agree to
-//      the End-User License Agreement (EULA).
+//      the AWS Customer Agreement. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_PHONE_VERIFICATION: You attempted to remove
 //      an account from the organization that does not yet have enough information
 //      to exist as a stand-alone account. This account requires you to first
-//      complete phone verification.
+//      complete phone verification. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MASTER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To create an organization
 //      with this account, you first must associate a payment instrument, such
-//      as a credit card, with the account.
+//      as a credit card, with the account. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MEMBER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To complete this operation
 //      with this member account, you first must associate a payment instrument,
-//      such as a credit card, with the account.
+//      such as a credit card, with the account. Follow the steps at To leave
+//      an organization when all required account information has not yet been
+//      provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CREATION_RATE_LIMIT_EXCEEDED: You attempted to exceed the number
 //      of accounts that you can create in one day.
@@ -833,6 +903,10 @@ func (c *Organizations) CreateAccountRequest(input *CreateAccountInput) (req *re
 //      For example, accounts with India addresses must be associated with the
 //      AISPL marketplace. All accounts in an organization must be associated
 //      with the same marketplace.
+//
+//      * MASTER_ACCOUNT_MISSING_CONTACT_INFO: To complete this operation, you
+//      must first provide contact a valid address and phone number for the master
+//      account. Then try the operation again.
 //
 //   * ErrCodeInvalidInputException "InvalidInputException"
 //   The requested operation failed because you provided invalid values for one
@@ -1008,7 +1082,10 @@ func (c *Organizations) CreateOrganizationRequest(input *CreateOrganizationInput
 //   example, attempting to removing the last SCP from an OU or root, inviting
 //   or creating too many accounts to the organization, or attaching too many
 //   policies to an account, OU, or root. This exception includes a reason that
-//   contains additional information about the violated limit:
+//   contains additional information about the violated limit.
+//
+//   Some of the reasons in the following list might not be applicable to this
+//   specific API or operation:
 //
 //   ACCOUNT_NUMBER_LIMIT_EXCEEDED: You attempted to exceed the limit on the number
 //   of accounts in an organization. If you need more accounts, contact AWS Support
@@ -1019,6 +1096,10 @@ func (c *Organizations) CreateOrganizationRequest(input *CreateOrganizationInput
 //   AWS Support to request an increase in the number of accounts.
 //
 //   Note: deleted and closed accounts still count toward your limit.
+//
+//   If you get an exception that indicates that you exceeded your account limits
+//   for the organization or that you can"t add an account because your organization
+//   is still initializing, please contact  AWS Customer Support (https://console.aws.amazon.com/support/home#/).
 //
 //      * HANDSHAKE_RATE_LIMIT_EXCEEDED: You attempted to exceed the number of
 //      handshakes you can send in one day.
@@ -1043,20 +1124,29 @@ func (c *Organizations) CreateOrganizationRequest(input *CreateOrganizationInput
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_EULA: You attempted to remove an account
 //      from the organization that does not yet have enough information to exist
 //      as a stand-alone account. This account requires you to first agree to
-//      the End-User License Agreement (EULA).
+//      the AWS Customer Agreement. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_PHONE_VERIFICATION: You attempted to remove
 //      an account from the organization that does not yet have enough information
 //      to exist as a stand-alone account. This account requires you to first
-//      complete phone verification.
+//      complete phone verification. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MASTER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To create an organization
 //      with this account, you first must associate a payment instrument, such
-//      as a credit card, with the account.
+//      as a credit card, with the account. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MEMBER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To complete this operation
 //      with this member account, you first must associate a payment instrument,
-//      such as a credit card, with the account.
+//      such as a credit card, with the account. Follow the steps at To leave
+//      an organization when all required account information has not yet been
+//      provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CREATION_RATE_LIMIT_EXCEEDED: You attempted to exceed the number
 //      of accounts that you can create in one day.
@@ -1067,6 +1157,10 @@ func (c *Organizations) CreateOrganizationRequest(input *CreateOrganizationInput
 //      For example, accounts with India addresses must be associated with the
 //      AISPL marketplace. All accounts in an organization must be associated
 //      with the same marketplace.
+//
+//      * MASTER_ACCOUNT_MISSING_CONTACT_INFO: To complete this operation, you
+//      must first provide contact a valid address and phone number for the master
+//      account. Then try the operation again.
 //
 //   * ErrCodeInvalidInputException "InvalidInputException"
 //   The requested operation failed because you provided invalid values for one
@@ -1128,6 +1222,11 @@ func (c *Organizations) CreateOrganizationRequest(input *CreateOrganizationInput
 //   * ErrCodeTooManyRequestsException "TooManyRequestsException"
 //   You've sent too many requests in too short a period of time. The limit helps
 //   protect against denial-of-service attacks. Try again later.
+//
+//   * ErrCodeAccessDeniedForDependencyException "AccessDeniedForDependencyException"
+//   The operation you attempted requires you to have the iam:CreateServiceLinkedRole
+//   so that Organizations can create the required service-linked role. You do
+//   not have that permission.
 //
 // Please also see https://docs.aws.amazon.com/goto/WebAPI/organizations-2016-11-28/CreateOrganization
 func (c *Organizations) CreateOrganization(input *CreateOrganizationInput) (*CreateOrganizationOutput, error) {
@@ -1234,7 +1333,10 @@ func (c *Organizations) CreateOrganizationalUnitRequest(input *CreateOrganizatio
 //   example, attempting to removing the last SCP from an OU or root, inviting
 //   or creating too many accounts to the organization, or attaching too many
 //   policies to an account, OU, or root. This exception includes a reason that
-//   contains additional information about the violated limit:
+//   contains additional information about the violated limit.
+//
+//   Some of the reasons in the following list might not be applicable to this
+//   specific API or operation:
 //
 //   ACCOUNT_NUMBER_LIMIT_EXCEEDED: You attempted to exceed the limit on the number
 //   of accounts in an organization. If you need more accounts, contact AWS Support
@@ -1245,6 +1347,10 @@ func (c *Organizations) CreateOrganizationalUnitRequest(input *CreateOrganizatio
 //   AWS Support to request an increase in the number of accounts.
 //
 //   Note: deleted and closed accounts still count toward your limit.
+//
+//   If you get an exception that indicates that you exceeded your account limits
+//   for the organization or that you can"t add an account because your organization
+//   is still initializing, please contact  AWS Customer Support (https://console.aws.amazon.com/support/home#/).
 //
 //      * HANDSHAKE_RATE_LIMIT_EXCEEDED: You attempted to exceed the number of
 //      handshakes you can send in one day.
@@ -1269,20 +1375,29 @@ func (c *Organizations) CreateOrganizationalUnitRequest(input *CreateOrganizatio
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_EULA: You attempted to remove an account
 //      from the organization that does not yet have enough information to exist
 //      as a stand-alone account. This account requires you to first agree to
-//      the End-User License Agreement (EULA).
+//      the AWS Customer Agreement. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_PHONE_VERIFICATION: You attempted to remove
 //      an account from the organization that does not yet have enough information
 //      to exist as a stand-alone account. This account requires you to first
-//      complete phone verification.
+//      complete phone verification. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MASTER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To create an organization
 //      with this account, you first must associate a payment instrument, such
-//      as a credit card, with the account.
+//      as a credit card, with the account. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MEMBER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To complete this operation
 //      with this member account, you first must associate a payment instrument,
-//      such as a credit card, with the account.
+//      such as a credit card, with the account. Follow the steps at To leave
+//      an organization when all required account information has not yet been
+//      provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CREATION_RATE_LIMIT_EXCEEDED: You attempted to exceed the number
 //      of accounts that you can create in one day.
@@ -1293,6 +1408,10 @@ func (c *Organizations) CreateOrganizationalUnitRequest(input *CreateOrganizatio
 //      For example, accounts with India addresses must be associated with the
 //      AISPL marketplace. All accounts in an organization must be associated
 //      with the same marketplace.
+//
+//      * MASTER_ACCOUNT_MISSING_CONTACT_INFO: To complete this operation, you
+//      must first provide contact a valid address and phone number for the master
+//      account. Then try the operation again.
 //
 //   * ErrCodeDuplicateOrganizationalUnitException "DuplicateOrganizationalUnitException"
 //   An organizational unit (OU) with the same name already exists.
@@ -1464,7 +1583,10 @@ func (c *Organizations) CreatePolicyRequest(input *CreatePolicyInput) (req *requ
 //   example, attempting to removing the last SCP from an OU or root, inviting
 //   or creating too many accounts to the organization, or attaching too many
 //   policies to an account, OU, or root. This exception includes a reason that
-//   contains additional information about the violated limit:
+//   contains additional information about the violated limit.
+//
+//   Some of the reasons in the following list might not be applicable to this
+//   specific API or operation:
 //
 //   ACCOUNT_NUMBER_LIMIT_EXCEEDED: You attempted to exceed the limit on the number
 //   of accounts in an organization. If you need more accounts, contact AWS Support
@@ -1475,6 +1597,10 @@ func (c *Organizations) CreatePolicyRequest(input *CreatePolicyInput) (req *requ
 //   AWS Support to request an increase in the number of accounts.
 //
 //   Note: deleted and closed accounts still count toward your limit.
+//
+//   If you get an exception that indicates that you exceeded your account limits
+//   for the organization or that you can"t add an account because your organization
+//   is still initializing, please contact  AWS Customer Support (https://console.aws.amazon.com/support/home#/).
 //
 //      * HANDSHAKE_RATE_LIMIT_EXCEEDED: You attempted to exceed the number of
 //      handshakes you can send in one day.
@@ -1499,20 +1625,29 @@ func (c *Organizations) CreatePolicyRequest(input *CreatePolicyInput) (req *requ
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_EULA: You attempted to remove an account
 //      from the organization that does not yet have enough information to exist
 //      as a stand-alone account. This account requires you to first agree to
-//      the End-User License Agreement (EULA).
+//      the AWS Customer Agreement. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_PHONE_VERIFICATION: You attempted to remove
 //      an account from the organization that does not yet have enough information
 //      to exist as a stand-alone account. This account requires you to first
-//      complete phone verification.
+//      complete phone verification. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MASTER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To create an organization
 //      with this account, you first must associate a payment instrument, such
-//      as a credit card, with the account.
+//      as a credit card, with the account. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MEMBER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To complete this operation
 //      with this member account, you first must associate a payment instrument,
-//      such as a credit card, with the account.
+//      such as a credit card, with the account. Follow the steps at To leave
+//      an organization when all required account information has not yet been
+//      provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CREATION_RATE_LIMIT_EXCEEDED: You attempted to exceed the number
 //      of accounts that you can create in one day.
@@ -1523,6 +1658,10 @@ func (c *Organizations) CreatePolicyRequest(input *CreatePolicyInput) (req *requ
 //      For example, accounts with India addresses must be associated with the
 //      AISPL marketplace. All accounts in an organization must be associated
 //      with the same marketplace.
+//
+//      * MASTER_ACCOUNT_MISSING_CONTACT_INFO: To complete this operation, you
+//      must first provide contact a valid address and phone number for the master
+//      account. Then try the operation again.
 //
 //   * ErrCodeDuplicatePolicyException "DuplicatePolicyException"
 //   A policy with the same name already exists.
@@ -1841,10 +1980,6 @@ func (c *Organizations) DeleteOrganizationRequest(input *DeleteOrganizationInput
 // Deletes the organization. You can delete an organization only by using credentials
 // from the master account. The organization must be empty of member accounts,
 // OUs, and policies.
-//
-// If you create any accounts using Organizations operations or the Organizations
-// console, you can't remove those accounts from the organization, which means
-// that you can't delete the organization.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -3254,7 +3389,10 @@ func (c *Organizations) DetachPolicyRequest(input *DetachPolicyInput) (req *requ
 //   example, attempting to removing the last SCP from an OU or root, inviting
 //   or creating too many accounts to the organization, or attaching too many
 //   policies to an account, OU, or root. This exception includes a reason that
-//   contains additional information about the violated limit:
+//   contains additional information about the violated limit.
+//
+//   Some of the reasons in the following list might not be applicable to this
+//   specific API or operation:
 //
 //   ACCOUNT_NUMBER_LIMIT_EXCEEDED: You attempted to exceed the limit on the number
 //   of accounts in an organization. If you need more accounts, contact AWS Support
@@ -3265,6 +3403,10 @@ func (c *Organizations) DetachPolicyRequest(input *DetachPolicyInput) (req *requ
 //   AWS Support to request an increase in the number of accounts.
 //
 //   Note: deleted and closed accounts still count toward your limit.
+//
+//   If you get an exception that indicates that you exceeded your account limits
+//   for the organization or that you can"t add an account because your organization
+//   is still initializing, please contact  AWS Customer Support (https://console.aws.amazon.com/support/home#/).
 //
 //      * HANDSHAKE_RATE_LIMIT_EXCEEDED: You attempted to exceed the number of
 //      handshakes you can send in one day.
@@ -3289,20 +3431,29 @@ func (c *Organizations) DetachPolicyRequest(input *DetachPolicyInput) (req *requ
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_EULA: You attempted to remove an account
 //      from the organization that does not yet have enough information to exist
 //      as a stand-alone account. This account requires you to first agree to
-//      the End-User License Agreement (EULA).
+//      the AWS Customer Agreement. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_PHONE_VERIFICATION: You attempted to remove
 //      an account from the organization that does not yet have enough information
 //      to exist as a stand-alone account. This account requires you to first
-//      complete phone verification.
+//      complete phone verification. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MASTER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To create an organization
 //      with this account, you first must associate a payment instrument, such
-//      as a credit card, with the account.
+//      as a credit card, with the account. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MEMBER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To complete this operation
 //      with this member account, you first must associate a payment instrument,
-//      such as a credit card, with the account.
+//      such as a credit card, with the account. Follow the steps at To leave
+//      an organization when all required account information has not yet been
+//      provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CREATION_RATE_LIMIT_EXCEEDED: You attempted to exceed the number
 //      of accounts that you can create in one day.
@@ -3313,6 +3464,10 @@ func (c *Organizations) DetachPolicyRequest(input *DetachPolicyInput) (req *requ
 //      For example, accounts with India addresses must be associated with the
 //      AISPL marketplace. All accounts in an organization must be associated
 //      with the same marketplace.
+//
+//      * MASTER_ACCOUNT_MISSING_CONTACT_INFO: To complete this operation, you
+//      must first provide contact a valid address and phone number for the master
+//      account. Then try the operation again.
 //
 //   * ErrCodeInvalidInputException "InvalidInputException"
 //   The requested operation failed because you provided invalid values for one
@@ -3450,7 +3605,7 @@ func (c *Organizations) DisablePolicyTypeRequest(input *DisablePolicyTypeInput) 
 
 // DisablePolicyType API operation for AWS Organizations.
 //
-// Disables an organizational control policy type in a root. A poicy of a certain
+// Disables an organizational control policy type in a root. A policy of a certain
 // type can be attached to entities in a root only if that type is enabled in
 // the root. After you perform this operation, you no longer can attach policies
 // of the specified type to that root or to any OU or account in that root.
@@ -3486,7 +3641,10 @@ func (c *Organizations) DisablePolicyTypeRequest(input *DisablePolicyTypeInput) 
 //   example, attempting to removing the last SCP from an OU or root, inviting
 //   or creating too many accounts to the organization, or attaching too many
 //   policies to an account, OU, or root. This exception includes a reason that
-//   contains additional information about the violated limit:
+//   contains additional information about the violated limit.
+//
+//   Some of the reasons in the following list might not be applicable to this
+//   specific API or operation:
 //
 //   ACCOUNT_NUMBER_LIMIT_EXCEEDED: You attempted to exceed the limit on the number
 //   of accounts in an organization. If you need more accounts, contact AWS Support
@@ -3497,6 +3655,10 @@ func (c *Organizations) DisablePolicyTypeRequest(input *DisablePolicyTypeInput) 
 //   AWS Support to request an increase in the number of accounts.
 //
 //   Note: deleted and closed accounts still count toward your limit.
+//
+//   If you get an exception that indicates that you exceeded your account limits
+//   for the organization or that you can"t add an account because your organization
+//   is still initializing, please contact  AWS Customer Support (https://console.aws.amazon.com/support/home#/).
 //
 //      * HANDSHAKE_RATE_LIMIT_EXCEEDED: You attempted to exceed the number of
 //      handshakes you can send in one day.
@@ -3521,20 +3683,29 @@ func (c *Organizations) DisablePolicyTypeRequest(input *DisablePolicyTypeInput) 
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_EULA: You attempted to remove an account
 //      from the organization that does not yet have enough information to exist
 //      as a stand-alone account. This account requires you to first agree to
-//      the End-User License Agreement (EULA).
+//      the AWS Customer Agreement. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_PHONE_VERIFICATION: You attempted to remove
 //      an account from the organization that does not yet have enough information
 //      to exist as a stand-alone account. This account requires you to first
-//      complete phone verification.
+//      complete phone verification. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MASTER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To create an organization
 //      with this account, you first must associate a payment instrument, such
-//      as a credit card, with the account.
+//      as a credit card, with the account. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MEMBER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To complete this operation
 //      with this member account, you first must associate a payment instrument,
-//      such as a credit card, with the account.
+//      such as a credit card, with the account. Follow the steps at To leave
+//      an organization when all required account information has not yet been
+//      provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CREATION_RATE_LIMIT_EXCEEDED: You attempted to exceed the number
 //      of accounts that you can create in one day.
@@ -3545,6 +3716,10 @@ func (c *Organizations) DisablePolicyTypeRequest(input *DisablePolicyTypeInput) 
 //      For example, accounts with India addresses must be associated with the
 //      AISPL marketplace. All accounts in an organization must be associated
 //      with the same marketplace.
+//
+//      * MASTER_ACCOUNT_MISSING_CONTACT_INFO: To complete this operation, you
+//      must first provide contact a valid address and phone number for the master
+//      account. Then try the operation again.
 //
 //   * ErrCodeInvalidInputException "InvalidInputException"
 //   The requested operation failed because you provided invalid values for one
@@ -3742,6 +3917,10 @@ func (c *Organizations) EnableAllFeaturesRequest(input *EnableAllFeaturesInput) 
 //      the number of accounts in an organization. Note: deleted and closed accounts
 //      still count toward your limit.
 //
+//   If you get an exception that indicates that you exceeded your account limits
+//      for the organization or that you can"t add an account because your organization
+//      is still initializing, please contact  AWS Customer Support (https://console.aws.amazon.com/support/home#/).
+//
 //      * HANDSHAKE_RATE_LIMIT_EXCEEDED: You attempted to exceed the number of
 //      handshakes you can send in one day.
 //
@@ -3930,7 +4109,10 @@ func (c *Organizations) EnablePolicyTypeRequest(input *EnablePolicyTypeInput) (r
 //   example, attempting to removing the last SCP from an OU or root, inviting
 //   or creating too many accounts to the organization, or attaching too many
 //   policies to an account, OU, or root. This exception includes a reason that
-//   contains additional information about the violated limit:
+//   contains additional information about the violated limit.
+//
+//   Some of the reasons in the following list might not be applicable to this
+//   specific API or operation:
 //
 //   ACCOUNT_NUMBER_LIMIT_EXCEEDED: You attempted to exceed the limit on the number
 //   of accounts in an organization. If you need more accounts, contact AWS Support
@@ -3941,6 +4123,10 @@ func (c *Organizations) EnablePolicyTypeRequest(input *EnablePolicyTypeInput) (r
 //   AWS Support to request an increase in the number of accounts.
 //
 //   Note: deleted and closed accounts still count toward your limit.
+//
+//   If you get an exception that indicates that you exceeded your account limits
+//   for the organization or that you can"t add an account because your organization
+//   is still initializing, please contact  AWS Customer Support (https://console.aws.amazon.com/support/home#/).
 //
 //      * HANDSHAKE_RATE_LIMIT_EXCEEDED: You attempted to exceed the number of
 //      handshakes you can send in one day.
@@ -3965,20 +4151,29 @@ func (c *Organizations) EnablePolicyTypeRequest(input *EnablePolicyTypeInput) (r
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_EULA: You attempted to remove an account
 //      from the organization that does not yet have enough information to exist
 //      as a stand-alone account. This account requires you to first agree to
-//      the End-User License Agreement (EULA).
+//      the AWS Customer Agreement. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_PHONE_VERIFICATION: You attempted to remove
 //      an account from the organization that does not yet have enough information
 //      to exist as a stand-alone account. This account requires you to first
-//      complete phone verification.
+//      complete phone verification. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MASTER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To create an organization
 //      with this account, you first must associate a payment instrument, such
-//      as a credit card, with the account.
+//      as a credit card, with the account. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MEMBER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To complete this operation
 //      with this member account, you first must associate a payment instrument,
-//      such as a credit card, with the account.
+//      such as a credit card, with the account. Follow the steps at To leave
+//      an organization when all required account information has not yet been
+//      provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CREATION_RATE_LIMIT_EXCEEDED: You attempted to exceed the number
 //      of accounts that you can create in one day.
@@ -3989,6 +4184,10 @@ func (c *Organizations) EnablePolicyTypeRequest(input *EnablePolicyTypeInput) (r
 //      For example, accounts with India addresses must be associated with the
 //      AISPL marketplace. All accounts in an organization must be associated
 //      with the same marketplace.
+//
+//      * MASTER_ACCOUNT_MISSING_CONTACT_INFO: To complete this operation, you
+//      must first provide contact a valid address and phone number for the master
+//      account. Then try the operation again.
 //
 //   * ErrCodeInvalidInputException "InvalidInputException"
 //   The requested operation failed because you provided invalid values for one
@@ -4135,14 +4334,18 @@ func (c *Organizations) InviteAccountToOrganizationRequest(input *InviteAccountT
 // is associated with the other account's owner. The invitation is implemented
 // as a Handshake whose details are in the response.
 //
-// You can invite AWS accounts only from the same reseller as the master account.
+// You can invite AWS accounts only from the same seller as the master account.
 // For example, if your organization's master account was created by Amazon
-// Internet Services Pvt. Ltd (AISPL), an AWS reseller in India, then you can
+// Internet Services Pvt. Ltd (AISPL), an AWS seller in India, then you can
 // only invite other AISPL accounts to your organization. You can't combine
-// accounts from AISPL and AWS. For more information, see Consolidated Billing
-// in India (http://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/useconsolidatedbilliing-India.html).
+// accounts from AISPL and AWS, or any other AWS seller. For more information,
+// see Consolidated Billing in India (http://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/useconsolidatedbilliing-India.html).
 //
 // This operation can be called only from the organization's master account.
+//
+// If you get an exception that indicates that you exceeded your account limits
+// for the organization or that you can"t add an account because your organization
+// is still initializing, please contact  AWS Customer Support (https://console.aws.amazon.com/support/home#/).
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -4174,6 +4377,10 @@ func (c *Organizations) InviteAccountToOrganizationRequest(input *InviteAccountT
 //      * ACCOUNT_NUMBER_LIMIT_EXCEEDED: You attempted to exceed the limit on
 //      the number of accounts in an organization. Note: deleted and closed accounts
 //      still count toward your limit.
+//
+//   If you get an exception that indicates that you exceeded your account limits
+//      for the organization or that you can"t add an account because your organization
+//      is still initializing, please contact  AWS Customer Support (https://console.aws.amazon.com/support/home#/).
 //
 //      * HANDSHAKE_RATE_LIMIT_EXCEEDED: You attempted to exceed the number of
 //      handshakes you can send in one day.
@@ -4354,8 +4561,18 @@ func (c *Organizations) LeaveOrganizationRequest(input *LeaveOrganizationInput) 
 // can do, including preventing them from successfully calling LeaveOrganization
 // and leaving the organization.
 //
-// If you created the account using the AWS Organizations console, the Organizations
-// API, or the Organizations CLI commands, then you cannot remove the account.
+// You can leave an organization as a member account only if the account is
+// configured with the information required to operate as a standalone account.
+// When you create an account in an organization using the AWS Organizations
+// console, API, or CLI commands, the information required of standalone accounts
+// is not automatically collected. For each account that you want to make standalone,
+// you must accept the End User License Agreement (EULA), choose a support plan,
+// provide and verify the required contact information, and provide a current
+// payment method. AWS uses the payment method to charge for any billable (not
+// free tier) AWS activity that occurs while the account is not attached to
+// an organization. Follow the steps at  To leave an organization when all required
+// account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+// in the AWS Organizations User Guide.
 //
 // You can leave an organization only after you enable IAM user access to billing
 // in your account. For more information, see Activating Access to the Billing
@@ -4395,7 +4612,10 @@ func (c *Organizations) LeaveOrganizationRequest(input *LeaveOrganizationInput) 
 //   example, attempting to removing the last SCP from an OU or root, inviting
 //   or creating too many accounts to the organization, or attaching too many
 //   policies to an account, OU, or root. This exception includes a reason that
-//   contains additional information about the violated limit:
+//   contains additional information about the violated limit.
+//
+//   Some of the reasons in the following list might not be applicable to this
+//   specific API or operation:
 //
 //   ACCOUNT_NUMBER_LIMIT_EXCEEDED: You attempted to exceed the limit on the number
 //   of accounts in an organization. If you need more accounts, contact AWS Support
@@ -4406,6 +4626,10 @@ func (c *Organizations) LeaveOrganizationRequest(input *LeaveOrganizationInput) 
 //   AWS Support to request an increase in the number of accounts.
 //
 //   Note: deleted and closed accounts still count toward your limit.
+//
+//   If you get an exception that indicates that you exceeded your account limits
+//   for the organization or that you can"t add an account because your organization
+//   is still initializing, please contact  AWS Customer Support (https://console.aws.amazon.com/support/home#/).
 //
 //      * HANDSHAKE_RATE_LIMIT_EXCEEDED: You attempted to exceed the number of
 //      handshakes you can send in one day.
@@ -4430,20 +4654,29 @@ func (c *Organizations) LeaveOrganizationRequest(input *LeaveOrganizationInput) 
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_EULA: You attempted to remove an account
 //      from the organization that does not yet have enough information to exist
 //      as a stand-alone account. This account requires you to first agree to
-//      the End-User License Agreement (EULA).
+//      the AWS Customer Agreement. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_PHONE_VERIFICATION: You attempted to remove
 //      an account from the organization that does not yet have enough information
 //      to exist as a stand-alone account. This account requires you to first
-//      complete phone verification.
+//      complete phone verification. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MASTER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To create an organization
 //      with this account, you first must associate a payment instrument, such
-//      as a credit card, with the account.
+//      as a credit card, with the account. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MEMBER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To complete this operation
 //      with this member account, you first must associate a payment instrument,
-//      such as a credit card, with the account.
+//      such as a credit card, with the account. Follow the steps at To leave
+//      an organization when all required account information has not yet been
+//      provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CREATION_RATE_LIMIT_EXCEEDED: You attempted to exceed the number
 //      of accounts that you can create in one day.
@@ -4454,6 +4687,10 @@ func (c *Organizations) LeaveOrganizationRequest(input *LeaveOrganizationInput) 
 //      For example, accounts with India addresses must be associated with the
 //      AISPL marketplace. All accounts in an organization must be associated
 //      with the same marketplace.
+//
+//      * MASTER_ACCOUNT_MISSING_CONTACT_INFO: To complete this operation, you
+//      must first provide contact a valid address and phone number for the master
+//      account. Then try the operation again.
 //
 //   * ErrCodeInvalidInputException "InvalidInputException"
 //   The requested operation failed because you provided invalid values for one
@@ -4807,6 +5044,8 @@ func (c *Organizations) ListAccountsForParentRequest(input *ListAccountsForParen
 // OUs. To get a list of all accounts in the organization, use the ListAccounts
 // operation.
 //
+// This operation can be called only from the organization's master account.
+//
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
 // the error.
@@ -5016,6 +5255,8 @@ func (c *Organizations) ListChildrenRequest(input *ListChildrenInput) (req *requ
 // Lists all of the OUs or accounts that are contained in the specified parent
 // OU or root. This operation, along with ListParents enables you to traverse
 // the tree structure that makes up this root.
+//
+// This operation can be called only from the organization's master account.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -7293,10 +7534,20 @@ func (c *Organizations) RemoveAccountFromOrganizationRequest(input *RemoveAccoun
 // This operation can be called only from the organization's master account.
 // Member accounts can remove themselves with LeaveOrganization instead.
 //
-// You can remove only accounts that were created outside your organization
-// and invited to join. If you created the account using the AWS Organizations
-// console, the Organizations API, or the Organizations CLI commands, then you
-// cannot remove the account.
+// You can remove an account from your organization only if the account is configured
+// with the information required to operate as a standalone account. When you
+// create an account in an organization using the AWS Organizations console,
+// API, or CLI commands, the information required of standalone accounts is
+// not automatically collected. For an account that you want to make standalone,
+// you must accept the End User License Agreement (EULA), choose a support plan,
+// provide and verify the required contact information, and provide a current
+// payment method. AWS uses the payment method to charge for any billable (not
+// free tier) AWS activity that occurs while the account is not attached to
+// an organization. To remove an account that does not yet have this information,
+// you must sign in as the member account and follow the steps at  To leave
+// an organization when all required account information has not yet been provided
+// (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+// in the AWS Organizations User Guide.
 //
 // You can remove a member account only after you enable IAM user access to
 // billing in the member account. For more information, see Activating Access
@@ -7336,7 +7587,10 @@ func (c *Organizations) RemoveAccountFromOrganizationRequest(input *RemoveAccoun
 //   example, attempting to removing the last SCP from an OU or root, inviting
 //   or creating too many accounts to the organization, or attaching too many
 //   policies to an account, OU, or root. This exception includes a reason that
-//   contains additional information about the violated limit:
+//   contains additional information about the violated limit.
+//
+//   Some of the reasons in the following list might not be applicable to this
+//   specific API or operation:
 //
 //   ACCOUNT_NUMBER_LIMIT_EXCEEDED: You attempted to exceed the limit on the number
 //   of accounts in an organization. If you need more accounts, contact AWS Support
@@ -7347,6 +7601,10 @@ func (c *Organizations) RemoveAccountFromOrganizationRequest(input *RemoveAccoun
 //   AWS Support to request an increase in the number of accounts.
 //
 //   Note: deleted and closed accounts still count toward your limit.
+//
+//   If you get an exception that indicates that you exceeded your account limits
+//   for the organization or that you can"t add an account because your organization
+//   is still initializing, please contact  AWS Customer Support (https://console.aws.amazon.com/support/home#/).
 //
 //      * HANDSHAKE_RATE_LIMIT_EXCEEDED: You attempted to exceed the number of
 //      handshakes you can send in one day.
@@ -7371,20 +7629,29 @@ func (c *Organizations) RemoveAccountFromOrganizationRequest(input *RemoveAccoun
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_EULA: You attempted to remove an account
 //      from the organization that does not yet have enough information to exist
 //      as a stand-alone account. This account requires you to first agree to
-//      the End-User License Agreement (EULA).
+//      the AWS Customer Agreement. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_PHONE_VERIFICATION: You attempted to remove
 //      an account from the organization that does not yet have enough information
 //      to exist as a stand-alone account. This account requires you to first
-//      complete phone verification.
+//      complete phone verification. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MASTER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To create an organization
 //      with this account, you first must associate a payment instrument, such
-//      as a credit card, with the account.
+//      as a credit card, with the account. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MEMBER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To complete this operation
 //      with this member account, you first must associate a payment instrument,
-//      such as a credit card, with the account.
+//      such as a credit card, with the account. Follow the steps at To leave
+//      an organization when all required account information has not yet been
+//      provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CREATION_RATE_LIMIT_EXCEEDED: You attempted to exceed the number
 //      of accounts that you can create in one day.
@@ -7395,6 +7662,10 @@ func (c *Organizations) RemoveAccountFromOrganizationRequest(input *RemoveAccoun
 //      For example, accounts with India addresses must be associated with the
 //      AISPL marketplace. All accounts in an organization must be associated
 //      with the same marketplace.
+//
+//      * MASTER_ACCOUNT_MISSING_CONTACT_INFO: To complete this operation, you
+//      must first provide contact a valid address and phone number for the master
+//      account. Then try the operation again.
 //
 //   * ErrCodeInvalidInputException "InvalidInputException"
 //   The requested operation failed because you provided invalid values for one
@@ -7725,7 +7996,10 @@ func (c *Organizations) UpdatePolicyRequest(input *UpdatePolicyInput) (req *requ
 //   example, attempting to removing the last SCP from an OU or root, inviting
 //   or creating too many accounts to the organization, or attaching too many
 //   policies to an account, OU, or root. This exception includes a reason that
-//   contains additional information about the violated limit:
+//   contains additional information about the violated limit.
+//
+//   Some of the reasons in the following list might not be applicable to this
+//   specific API or operation:
 //
 //   ACCOUNT_NUMBER_LIMIT_EXCEEDED: You attempted to exceed the limit on the number
 //   of accounts in an organization. If you need more accounts, contact AWS Support
@@ -7736,6 +8010,10 @@ func (c *Organizations) UpdatePolicyRequest(input *UpdatePolicyInput) (req *requ
 //   AWS Support to request an increase in the number of accounts.
 //
 //   Note: deleted and closed accounts still count toward your limit.
+//
+//   If you get an exception that indicates that you exceeded your account limits
+//   for the organization or that you can"t add an account because your organization
+//   is still initializing, please contact  AWS Customer Support (https://console.aws.amazon.com/support/home#/).
 //
 //      * HANDSHAKE_RATE_LIMIT_EXCEEDED: You attempted to exceed the number of
 //      handshakes you can send in one day.
@@ -7760,20 +8038,29 @@ func (c *Organizations) UpdatePolicyRequest(input *UpdatePolicyInput) (req *requ
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_EULA: You attempted to remove an account
 //      from the organization that does not yet have enough information to exist
 //      as a stand-alone account. This account requires you to first agree to
-//      the End-User License Agreement (EULA).
+//      the AWS Customer Agreement. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CANNOT_LEAVE_WITHOUT_PHONE_VERIFICATION: You attempted to remove
 //      an account from the organization that does not yet have enough information
 //      to exist as a stand-alone account. This account requires you to first
-//      complete phone verification.
+//      complete phone verification. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MASTER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To create an organization
 //      with this account, you first must associate a payment instrument, such
-//      as a credit card, with the account.
+//      as a credit card, with the account. Follow the steps at To leave an organization
+//      when all required account information has not yet been provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * MEMBER_ACCOUNT_PAYMENT_INSTRUMENT_REQUIRED: To complete this operation
 //      with this member account, you first must associate a payment instrument,
-//      such as a credit card, with the account.
+//      such as a credit card, with the account. Follow the steps at To leave
+//      an organization when all required account information has not yet been
+//      provided (http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_remove.html#leave-without-all-info)
+//      in the AWS Organizations User Guide.
 //
 //      * ACCOUNT_CREATION_RATE_LIMIT_EXCEEDED: You attempted to exceed the number
 //      of accounts that you can create in one day.
@@ -7784,6 +8071,10 @@ func (c *Organizations) UpdatePolicyRequest(input *UpdatePolicyInput) (req *requ
 //      For example, accounts with India addresses must be associated with the
 //      AISPL marketplace. All accounts in an organization must be associated
 //      with the same marketplace.
+//
+//      * MASTER_ACCOUNT_MISSING_CONTACT_INFO: To complete this operation, you
+//      must first provide contact a valid address and phone number for the master
+//      account. Then try the operation again.
 //
 //   * ErrCodeDuplicatePolicyException "DuplicatePolicyException"
 //   A policy with the same name already exists.
@@ -8247,7 +8538,10 @@ type CreateAccountInput struct {
 	AccountName *string `min:"1" type:"string" required:"true"`
 
 	// The email address of the owner to assign to the new member account. This
-	// email address must not already be associated with another AWS account.
+	// email address must not already be associated with another AWS account. You
+	// must use a valid email address to complete account creation. You cannot access
+	// the root user of the account or remove an account that was created with an
+	// invalid email address.
 	//
 	// Email is a required field
 	Email *string `min:"6" type:"string" required:"true"`
@@ -9443,7 +9737,7 @@ type DisablePolicyTypeInput struct {
 	PolicyType *string `type:"string" required:"true" enum:"PolicyType"`
 
 	// The unique identifier (ID) of the root in which you want to disable a policy
-	// type. You can get the ID from the ListPolicies operation.
+	// type. You can get the ID from the ListRoots operation.
 	//
 	// The regex pattern (http://wikipedia.org/wiki/regex) for a root ID string
 	// requires "r-" followed by from 4 to 32 lower-case letters or digits.
@@ -9648,7 +9942,21 @@ type Handshake struct {
 	_ struct{} `type:"structure"`
 
 	// The type of handshake, indicating what action occurs when the recipient accepts
-	// the handshake.
+	// the handshake. The following handshake types are supported:
+	//
+	//    * INVITE: This type of handshake represents a request to join an organization.
+	//    It is always sent from the master account to only non-member accounts.
+	//
+	//    * ENABLE_ALL_FEATURES: This type of handshake represents a request to
+	//    enable all features in an organization. It is always sent from the master
+	//    account to only invited member accounts. Created accounts do not receive
+	//    this because those accounts were created by the organization's master
+	//    account and approval is inferred.
+	//
+	//    * APPROVE_ALL_FEATURES: This type of handshake is sent from the Organizations
+	//    service when all member accounts have approved the ENABLE_ALL_FEATURES
+	//    invitation. It is sent only to the master account and signals the master
+	//    that it can finalize the process to enable all features.
 	Action *string `type:"string" enum:"ActionType"`
 
 	// The Amazon Resource Name (ARN) of a handshake.
@@ -9815,10 +10123,14 @@ type HandshakeParty struct {
 	//
 	// The regex pattern (http://wikipedia.org/wiki/regex) for handshake ID string
 	// requires "h-" followed by from 8 to 32 lower-case letters or digits.
-	Id *string `min:"1" type:"string"`
+	//
+	// Id is a required field
+	Id *string `min:"1" type:"string" required:"true"`
 
 	// The type of party.
-	Type *string `type:"string" enum:"HandshakePartyType"`
+	//
+	// Type is a required field
+	Type *string `type:"string" required:"true" enum:"HandshakePartyType"`
 }
 
 // String returns the string representation
@@ -9834,8 +10146,14 @@ func (s HandshakeParty) GoString() string {
 // Validate inspects the fields of the type to determine if they are valid.
 func (s *HandshakeParty) Validate() error {
 	invalidParams := request.ErrInvalidParams{Context: "HandshakeParty"}
+	if s.Id == nil {
+		invalidParams.Add(request.NewErrParamRequired("Id"))
+	}
 	if s.Id != nil && len(*s.Id) < 1 {
 		invalidParams.Add(request.NewErrParamMinLen("Id", 1))
+	}
+	if s.Type == nil {
+		invalidParams.Add(request.NewErrParamRequired("Type"))
 	}
 
 	if invalidParams.Len() > 0 {
@@ -9933,13 +10251,13 @@ type InviteAccountToOrganizationInput struct {
 	// If you use the AWS CLI, you can submit this as a single string, similar to
 	// the following example:
 	//
-	// --target id=123456789012,type=ACCOUNT
+	// --target Id=123456789012,Type=ACCOUNT
 	//
 	// If you specify "Type": "ACCOUNT", then you must provide the AWS account ID
 	// number as the Id. If you specify "Type": "EMAIL", then you must specify the
 	// email address that is associated with the account.
 	//
-	// --target id=bill@example.com,type=EMAIL
+	// --target Id=bill@example.com,Type=EMAIL
 	//
 	// Target is a required field
 	Target *HandshakeParty `type:"structure" required:"true"`
@@ -12261,6 +12579,11 @@ func (s *UpdatePolicyOutput) SetPolicy(v *Policy) *UpdatePolicyOutput {
 }
 
 const (
+	// AccessDeniedForDependencyExceptionReasonAccessDeniedDuringCreateServiceLinkedRole is a AccessDeniedForDependencyExceptionReason enum value
+	AccessDeniedForDependencyExceptionReasonAccessDeniedDuringCreateServiceLinkedRole = "ACCESS_DENIED_DURING_CREATE_SERVICE_LINKED_ROLE"
+)
+
+const (
 	// AccountJoinedMethodInvited is a AccountJoinedMethod enum value
 	AccountJoinedMethodInvited = "INVITED"
 
@@ -12285,6 +12608,9 @@ const (
 
 	// ActionTypeApproveAllFeatures is a ActionType enum value
 	ActionTypeApproveAllFeatures = "APPROVE_ALL_FEATURES"
+
+	// ActionTypeAddOrganizationsServiceLinkedRole is a ActionType enum value
+	ActionTypeAddOrganizationsServiceLinkedRole = "ADD_ORGANIZATIONS_SERVICE_LINKED_ROLE"
 )
 
 const (
@@ -12337,6 +12663,9 @@ const (
 
 	// ConstraintViolationExceptionReasonMasterAccountAddressDoesNotMatchMarketplace is a ConstraintViolationExceptionReason enum value
 	ConstraintViolationExceptionReasonMasterAccountAddressDoesNotMatchMarketplace = "MASTER_ACCOUNT_ADDRESS_DOES_NOT_MATCH_MARKETPLACE"
+
+	// ConstraintViolationExceptionReasonMasterAccountMissingContactInfo is a ConstraintViolationExceptionReason enum value
+	ConstraintViolationExceptionReasonMasterAccountMissingContactInfo = "MASTER_ACCOUNT_MISSING_CONTACT_INFO"
 )
 
 const (
@@ -12351,6 +12680,9 @@ const (
 
 	// CreateAccountFailureReasonInvalidEmail is a CreateAccountFailureReason enum value
 	CreateAccountFailureReasonInvalidEmail = "INVALID_EMAIL"
+
+	// CreateAccountFailureReasonConcurrentAccountModification is a CreateAccountFailureReason enum value
+	CreateAccountFailureReasonConcurrentAccountModification = "CONCURRENT_ACCOUNT_MODIFICATION"
 
 	// CreateAccountFailureReasonInternalFailure is a CreateAccountFailureReason enum value
 	CreateAccountFailureReasonInternalFailure = "INTERNAL_FAILURE"

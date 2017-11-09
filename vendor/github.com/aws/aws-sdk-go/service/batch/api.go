@@ -54,10 +54,10 @@ func (c *Batch) CancelJobRequest(input *CancelJobInput) (req *request.Request, o
 
 // CancelJob API operation for AWS Batch.
 //
-// Cancels jobs in an AWS Batch job queue. Jobs that are in the SUBMITTED, PENDING,
-// or RUNNABLE state are cancelled. Jobs that have progressed to STARTING or
-// RUNNING are not cancelled (but the API operation still succeeds, even if
-// no jobs are cancelled); these jobs must be terminated with the TerminateJob
+// Cancels a job in an AWS Batch job queue. Jobs that are in the SUBMITTED,
+// PENDING, or RUNNABLE state are cancelled. Jobs that have progressed to STARTING
+// or RUNNING are not cancelled (but the API operation still succeeds, even
+// if no job is cancelled); these jobs must be terminated with the TerminateJob
 // operation.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
@@ -147,11 +147,11 @@ func (c *Batch) CreateComputeEnvironmentRequest(input *CreateComputeEnvironmentI
 //
 // In a managed compute environment, AWS Batch manages the compute resources
 // within the environment, based on the compute resources that you specify.
-// Instances launched into a managed compute environment use the latest Amazon
-// ECS-optimized AMI. You can choose to use Amazon EC2 On-Demand instances in
-// your managed compute environment, or you can use Amazon EC2 Spot instances
-// that only launch when the Spot bid price is below a specified percentage
-// of the On-Demand price.
+// Instances launched into a managed compute environment use a recent, approved
+// version of the Amazon ECS-optimized AMI. You can choose to use Amazon EC2
+// On-Demand instances in your managed compute environment, or you can use Amazon
+// EC2 Spot instances that only launch when the Spot bid price is below a specified
+// percentage of the On-Demand price.
 //
 // In an unmanaged compute environment, you can manage your own compute resources.
 // This provides more compute resource configuration options, such as using
@@ -428,8 +428,8 @@ func (c *Batch) DeleteJobQueueRequest(input *DeleteJobQueueInput) (req *request.
 // DeleteJobQueue API operation for AWS Batch.
 //
 // Deletes the specified job queue. You must first disable submissions for a
-// queue with the UpdateJobQueue operation and terminate any jobs that have
-// not completed with the TerminateJob.
+// queue with the UpdateJobQueue operation. All jobs in the queue are terminated
+// when you delete a job queue.
 //
 // It is not necessary to disassociate compute environments from a queue before
 // submitting a DeleteJobQueue request.
@@ -942,7 +942,8 @@ func (c *Batch) ListJobsRequest(input *ListJobsInput) (req *request.Request, out
 // ListJobs API operation for AWS Batch.
 //
 // Returns a list of task jobs for a specified job queue. You can filter the
-// results by job status with the jobStatus parameter.
+// results by job status with the jobStatus parameter. If you do not specify
+// a status, only RUNNING jobs are returned.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -1195,7 +1196,7 @@ func (c *Batch) TerminateJobRequest(input *TerminateJobInput) (req *request.Requ
 
 // TerminateJob API operation for AWS Batch.
 //
-// Terminates jobs in a job queue. Jobs that are in the STARTING or RUNNING
+// Terminates a job in a job queue. Jobs that are in the STARTING or RUNNING
 // state are terminated, which causes them to transition to FAILED. Jobs that
 // have not progressed to the STARTING state are cancelled.
 //
@@ -1417,6 +1418,9 @@ type AttemptContainerDetail struct {
 	// The exit code for the job attempt. A non-zero exit code is considered a failure.
 	ExitCode *int64 `locationName:"exitCode" type:"integer"`
 
+	// The name of the CloudWatch Logs log stream associated with the container.
+	// The log group for AWS Batch jobs is /aws/batch/job. Each container attempt
+	// receives a log stream name when they reach the RUNNING status.
 	LogStreamName *string `locationName:"logStreamName" type:"string"`
 
 	// A short (255 max characters) human-readable string to provide additional
@@ -1424,7 +1428,8 @@ type AttemptContainerDetail struct {
 	Reason *string `locationName:"reason" type:"string"`
 
 	// The Amazon Resource Name (ARN) of the Amazon ECS task that is associated
-	// with the job attempt.
+	// with the job attempt. Each container attempt receives a task ARN when they
+	// reach the STARTING status.
 	TaskArn *string `locationName:"taskArn" type:"string"`
 }
 
@@ -1527,7 +1532,7 @@ func (s *AttemptDetail) SetStoppedAt(v int64) *AttemptDetail {
 type CancelJobInput struct {
 	_ struct{} `type:"structure"`
 
-	// A list of up to 100 job IDs to cancel.
+	// The AWS Batch job ID of the job to cancel.
 	//
 	// JobId is a required field
 	JobId *string `locationName:"jobId" type:"string" required:"true"`
@@ -1779,13 +1784,20 @@ type ComputeResource struct {
 	// environment.
 	ImageId *string `locationName:"imageId" type:"string"`
 
-	// The Amazon ECS instance role applied to Amazon EC2 instances in a compute
-	// environment.
+	// The Amazon ECS instance profile applied to Amazon EC2 instances in a compute
+	// environment. You can specify the short name or full Amazon Resource Name
+	// (ARN) of an instance profile. For example, ecsInstanceRole or arn:aws:iam::<aws_account_id>:instance-profile/ecsInstanceRole.
+	// For more information, see Amazon ECS Instance Role (http://docs.aws.amazon.com/batch/latest/userguide/instance_IAM_role.html)
+	// in the AWS Batch User Guide.
 	//
 	// InstanceRole is a required field
 	InstanceRole *string `locationName:"instanceRole" type:"string" required:"true"`
 
-	// The instances types that may launched.
+	// The instances types that may be launched. You can specify instance families
+	// to launch any instance type within those families (for example, c4 or p3),
+	// or you can specify specific sizes within a family (such as c4.8xlarge). You
+	// can also choose optimal to pick instance types (from the latest C, M, and
+	// R instance families) on the fly that match the demand of your job queues.
 	//
 	// InstanceTypes is a required field
 	InstanceTypes []*string `locationName:"instanceTypes" type:"list" required:"true"`
@@ -2001,6 +2013,9 @@ type ContainerDetail struct {
 	ContainerInstanceArn *string `locationName:"containerInstanceArn" type:"string"`
 
 	// The environment variables to pass to a container.
+	//
+	// Environment variables must not start with AWS_BATCH; this naming convention
+	// is reserved for variables that are set by the AWS Batch service.
 	Environment []*KeyValuePair `locationName:"environment" type:"list"`
 
 	// The exit code to return upon completion.
@@ -2012,6 +2027,9 @@ type ContainerDetail struct {
 	// The Amazon Resource Name (ARN) associated with the job upon execution.
 	JobRoleArn *string `locationName:"jobRoleArn" type:"string"`
 
+	// The name of the CloudWatch Logs log stream associated with the container.
+	// The log group for AWS Batch jobs is /aws/batch/job. Each container attempt
+	// receives a log stream name when they reach the RUNNING status.
 	LogStreamName *string `locationName:"logStreamName" type:"string"`
 
 	// The number of MiB of memory reserved for the job.
@@ -2033,7 +2051,8 @@ type ContainerDetail struct {
 	Reason *string `locationName:"reason" type:"string"`
 
 	// The Amazon Resource Name (ARN) of the Amazon ECS task that is associated
-	// with the container job.
+	// with the container job. Each container attempt receives a task ARN when they
+	// reach the STARTING status.
 	TaskArn *string `locationName:"taskArn" type:"string"`
 
 	// A list of ulimit values to set in the container.
@@ -2173,6 +2192,9 @@ type ContainerOverrides struct {
 	// The environment variables to send to the container. You can add new environment
 	// variables, which are added to the container at launch, or you can override
 	// the existing environment variables from the Docker image or the job definition.
+	//
+	// Environment variables must not start with AWS_BATCH; this naming convention
+	// is reserved for variables that are set by the AWS Batch service.
 	Environment []*KeyValuePair `locationName:"environment" type:"list"`
 
 	// The number of MiB of memory reserved for the job. This value overrides the
@@ -2239,6 +2261,9 @@ type ContainerProperties struct {
 	//
 	// We do not recommend using plain text environment variables for sensitive
 	// information, such as credential data.
+	//
+	// Environment variables must not start with AWS_BATCH; this naming convention
+	// is reserved for variables that are set by the AWS Batch service.
 	Environment []*KeyValuePair `locationName:"environment" type:"list"`
 
 	// The image used to start a container. This string is passed directly to the
@@ -2275,6 +2300,7 @@ type ContainerProperties struct {
 	// parameter maps to Memory in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
 	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
 	// and the --memory option to docker run (https://docs.docker.com/engine/reference/run/).
+	// You must specify at least 4 MiB of memory for a job.
 	//
 	// Memory is a required field
 	Memory *int64 `locationName:"memory" type:"integer" required:"true"`
@@ -2315,7 +2341,8 @@ type ContainerProperties struct {
 	// in the Create a container (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/#create-a-container)
 	// section of the Docker Remote API (https://docs.docker.com/engine/reference/api/docker_remote_api_v1.23/)
 	// and the --cpu-shares option to docker run (https://docs.docker.com/engine/reference/run/).
-	// Each vCPU is equivalent to 1,024 CPU shares.
+	// Each vCPU is equivalent to 1,024 CPU shares. You must specify at least 1
+	// vCPU.
 	//
 	// Vcpus is a required field
 	Vcpus *int64 `locationName:"vcpus" type:"integer" required:"true"`
@@ -2440,7 +2467,7 @@ type CreateComputeEnvironmentInput struct {
 	_ struct{} `type:"structure"`
 
 	// The name for your compute environment. Up to 128 letters (uppercase and lowercase),
-	// numbers, and underscores are allowed.
+	// numbers, hyphens, and underscores are allowed.
 	//
 	// ComputeEnvironmentName is a required field
 	ComputeEnvironmentName *string `locationName:"computeEnvironmentName" type:"string" required:"true"`
@@ -2451,6 +2478,16 @@ type CreateComputeEnvironmentInput struct {
 
 	// The full Amazon Resource Name (ARN) of the IAM role that allows AWS Batch
 	// to make calls to other AWS services on your behalf.
+	//
+	// If your specified role has a path other than /, then you must either specify
+	// the full role ARN (this is recommended) or prefix the role name with the
+	// path.
+	//
+	// Depending on how you created your AWS Batch service role, its ARN may contain
+	// the service-role path prefix. When you only specify the name of the service
+	// role, AWS Batch assumes that your ARN does not use the service-role path
+	// prefix. Because of this, we recommend that you specify the full ARN of your
+	// service role when you create compute environments.
 	//
 	// ServiceRole is a required field
 	ServiceRole *string `locationName:"serviceRole" type:"string" required:"true"`
@@ -2581,11 +2618,11 @@ type CreateJobQueueInput struct {
 	// JobQueueName is a required field
 	JobQueueName *string `locationName:"jobQueueName" type:"string" required:"true"`
 
-	// The priority of the job queue. Job queues with a higher priority (or a lower
+	// The priority of the job queue. Job queues with a higher priority (or a higher
 	// integer value for the priority parameter) are evaluated first when associated
-	// with same compute environment. Priority is determined in ascending order,
-	// for example, a job queue with a priority value of 1 is given scheduling preference
-	// over a job queue with a priority value of 10.
+	// with same compute environment. Priority is determined in descending order,
+	// for example, a job queue with a priority value of 10 is given scheduling
+	// preference over a job queue with a priority value of 1.
 	//
 	// Priority is a required field
 	Priority *int64 `locationName:"priority" type:"integer" required:"true"`
@@ -3713,7 +3750,8 @@ type ListJobsInput struct {
 	// JobQueue is a required field
 	JobQueue *string `locationName:"jobQueue" type:"string" required:"true"`
 
-	// The job status with which to filter jobs in the specified queue.
+	// The job status with which to filter jobs in the specified queue. If you do
+	// not specify a status, only RUNNING jobs are returned.
 	JobStatus *string `locationName:"jobStatus" type:"string" enum:"JobStatus"`
 
 	// The maximum number of results returned by ListJobs in paginated output. When
@@ -3873,7 +3911,8 @@ type RegisterJobDefinitionInput struct {
 	// parameter is required if the type parameter is container.
 	ContainerProperties *ContainerProperties `locationName:"containerProperties" type:"structure"`
 
-	// The name of the job definition to register.
+	// The name of the job definition to register. Up to 128 letters (uppercase
+	// and lowercase), numbers, hyphens, and underscores are allowed.
 	//
 	// JobDefinitionName is a required field
 	JobDefinitionName *string `locationName:"jobDefinitionName" type:"string" required:"true"`
@@ -4044,7 +4083,7 @@ type SubmitJobInput struct {
 	ContainerOverrides *ContainerOverrides `locationName:"containerOverrides" type:"structure"`
 
 	// A list of job IDs on which this job depends. A job can depend upon a maximum
-	// of 100 jobs.
+	// of 20 jobs.
 	DependsOn []*JobDependency `locationName:"dependsOn" type:"list"`
 
 	// The job definition used by this job. This value can be either a name:revision
@@ -4053,9 +4092,9 @@ type SubmitJobInput struct {
 	// JobDefinition is a required field
 	JobDefinition *string `locationName:"jobDefinition" type:"string" required:"true"`
 
-	// The name of the job. A name must be 1 to 128 characters in length.
-	//
-	// Pattern: ^[a-zA-Z0-9_]+$
+	// The name of the job. The first character must be alphanumeric, and up to
+	// 128 letters (uppercase and lowercase), numbers, hyphens, and underscores
+	// are allowed.
 	//
 	// JobName is a required field
 	JobName *string `locationName:"jobName" type:"string" required:"true"`
@@ -4190,7 +4229,7 @@ func (s *SubmitJobOutput) SetJobName(v string) *SubmitJobOutput {
 type TerminateJobInput struct {
 	_ struct{} `type:"structure"`
 
-	// Job IDs to be terminated. Up to 100 jobs can be specified.
+	// The AWS Batch job ID of the job to terminate.
 	//
 	// JobId is a required field
 	JobId *string `locationName:"jobId" type:"string" required:"true"`
@@ -4338,8 +4377,18 @@ type UpdateComputeEnvironmentInput struct {
 	// for a managed compute environment.
 	ComputeResources *ComputeResourceUpdate `locationName:"computeResources" type:"structure"`
 
-	// The name or full Amazon Resource Name (ARN) of the IAM role that allows AWS
-	// Batch to make calls to ECS, Auto Scaling, and EC2 on your behalf.
+	// The full Amazon Resource Name (ARN) of the IAM role that allows AWS Batch
+	// to make calls to other AWS services on your behalf.
+	//
+	// If your specified role has a path other than /, then you must either specify
+	// the full role ARN (this is recommended) or prefix the role name with the
+	// path.
+	//
+	// Depending on how you created your AWS Batch service role, its ARN may contain
+	// the service-role path prefix. When you only specify the name of the service
+	// role, AWS Batch assumes that your ARN does not use the service-role path
+	// prefix. Because of this, we recommend that you specify the full ARN of your
+	// service role when you create compute environments.
 	ServiceRole *string `locationName:"serviceRole" type:"string"`
 
 	// The state of the compute environment. Compute environments in the ENABLED
@@ -4442,11 +4491,11 @@ type UpdateJobQueueInput struct {
 	// JobQueue is a required field
 	JobQueue *string `locationName:"jobQueue" type:"string" required:"true"`
 
-	// The priority of the job queue. Job queues with a higher priority (or a lower
+	// The priority of the job queue. Job queues with a higher priority (or a higher
 	// integer value for the priority parameter) are evaluated first when associated
-	// with same compute environment. Priority is determined in ascending order,
-	// for example, a job queue with a priority value of 1 is given scheduling preference
-	// over a job queue with a priority value of 10.
+	// with same compute environment. Priority is determined in descending order,
+	// for example, a job queue with a priority value of 10 is given scheduling
+	// preference over a job queue with a priority value of 1.
 	Priority *int64 `locationName:"priority" type:"integer"`
 
 	// Describes the queue's ability to accept new jobs.

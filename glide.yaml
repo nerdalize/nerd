@@ -33,3 +33,14 @@ import:
   version: 75fb7ed4208cf72d323d7d02fd1a5964a7a9073c
 - package: github.com/hashicorp/logutils      #filter logger output
   version: 0dc08b1671f34c4250ce212759ebd880f743d883
+- package: google.golang.org/grpc
+  version: 1.7.2
+  subpackages:
+  - codes
+  - status
+- package: github.com/golang/protobuf
+  subpackages:
+  - jsonpb
+  - proto
+- package: github.com/gorilla/schema
+  version: e6c82218a8b3ed3cbeb5407429849c0b0b597d40
