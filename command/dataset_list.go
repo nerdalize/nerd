@@ -1,6 +1,8 @@
 package command
 
 import (
+	"sort"
+
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/command/format"
 	"github.com/pkg/errors"
@@ -46,6 +48,10 @@ func (cmd *DatasetList) DoRun(args []string) (err error) {
 	if err != nil {
 		return HandleError(err)
 	}
+
+	sort.Slice(datasets.Datasets, func (i int, j int) bool {
+		return datasets.Datasets[i].CreatedAt < datasets.Datasets[j].CreatedAt
+	})
 
 	header := "DATASET ID\tCREATED"
 	pretty := "{{range $i, $x := $.Datasets}}{{$x.DatasetID}}\t{{$x.CreatedAt | fmtUnixAgo }}\n{{end}}"
