@@ -23,7 +23,7 @@ func (c *Client) CreatePlan(projectID, PlanID, computeUnits string) (output *v1p
 		ComputeUnits: computeUnits,
 	}
 
-	return output, c.doRequest(http.MethodPost, createPath(projectID, PlansEndpoint), input, output)
+	return output, c.doRequest(http.MethodPost, createPath(projectID, plansEndpoint), input, output)
 }
 
 // RemovePlan will delete a plan from the precised project.
@@ -31,7 +31,7 @@ func (c *Client) RemovePlan(projectID, PlanID string) (output *v1payload.RemoveP
 	output = &v1payload.RemovePlanOutput{}
 	input := &v1payload.RemovePlanInput{}
 
-	return output, c.doRequest(http.MethodDelete, createPath(projectID, PlansEndpoint, PlanID), input, output)
+	return output, c.doRequest(http.MethodDelete, createPath(projectID, plansEndpoint, PlanID), input, output)
 }
 
 // DeletePlan will delete a plan with the provided .
@@ -39,7 +39,7 @@ func (c *Client) DeletePlan(PlanID string) (output *v1payload.DeletePlanOutput, 
 	output = &v1payload.DeletePlanOutput{}
 	input := &v1payload.DeletePlanInput{}
 
-	return output, c.doRequest(http.MethodDelete, createPath("", PlansEndpoint, PlanID), input, output)
+	return output, c.doRequest(http.MethodDelete, createPath("", plansEndpoint, PlanID), input, output)
 }
 
 // ListPlans will return all Plans for a particular project if precised.
@@ -47,7 +47,7 @@ func (c *Client) ListPlans(projectID string) (output *v1payload.ListPlansOutput,
 	output = &v1payload.ListPlansOutput{}
 	input := &v1payload.ListPlansInput{}
 
-	return output, c.doRequest(http.MethodGet, createPath(projectID, PlansEndpoint), input, output)
+	return output, c.doRequest(http.MethodGet, createPath(projectID, plansEndpoint), input, output)
 }
 
 // UpdatePlan returns a plan with an updated cpu request.
@@ -57,5 +57,5 @@ func (c *Client) UpdatePlan(projectID, PlanID, computeUnits string) (output *v1p
 		ComputeUnits: computeUnits,
 	}
 
-	return output, c.doRequest(http.MethodPut, createPath(projectID, PlansEndpoint, PlanID), input, output)
+	return output, c.doRequest(http.MethodPut, createPath(projectID, plansEndpoint, PlanID), input, output)
 }
