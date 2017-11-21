@@ -49,7 +49,7 @@ type CreateWorkloadInput struct {
 	UseCuteur      bool              `json:"use_cuteur"`
 	Env            map[string]string `json:"env"`
 	PullSecret     string            `json:"pull_secret"`
-	ComputeUnits   string            `json:"compute_units"`
+	ComputeUnits   uint64            `json:"compute_units"`
 }
 
 //CreateWorkloadOutput is output for workload creation
