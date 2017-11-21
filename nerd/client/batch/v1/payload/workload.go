@@ -9,6 +9,7 @@ type WorkloadSummary struct {
 	NrOfWorkers    int              `json:"nr_of_workers"`
 	InputDatasetID string           `json:"input_dataset_id"`
 	CreatedAt      int64            `json:"created_at"`
+	ComputeUnits   string           `json:"compute_units"`
 	Workers        []*WorkerSummary `json:"workers"`
 }
 
@@ -48,6 +49,7 @@ type CreateWorkloadInput struct {
 	UseCuteur      bool              `json:"use_cuteur"`
 	Env            map[string]string `json:"env"`
 	PullSecret     string            `json:"pull_secret"`
+	ComputeUnits   string            `json:"compute_units"`
 }
 
 //CreateWorkloadOutput is output for workload creation
