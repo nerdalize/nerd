@@ -1,10 +1,10 @@
-hash: c546d2d3a413a206c2f07d7f621a4b983b795c8a775e6cff30920360d9f4bc36
-updated: 2017-11-09T14:47:42.387507381+01:00
+hash: ec380bfb0f21bbff23eda70d9904dfbf42df17dc7e3175bf91c528f2658d5e4c
+updated: 2017-11-27T11:45:09.791628+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
-  version: a201bf33b18ad4ab54344e4bc26b87eb6ad37b8e
+  version: 0c22c3d22be15d3be3d22b8dedabbf5dd4304730
   subpackages:
   - aws
   - aws/awserr
@@ -43,21 +43,16 @@ imports:
   version: 2268707a8f0843315e2004ee4f1d021dc08baedf
 - name: github.com/dustin/go-humanize
   version: 259d2a102b871d17f30e3cd9881a642961a1e486
-- name: github.com/golang/protobuf
-  version: 4bd1920723d7b7c925de087aa32e2187708897f7
-  subpackages:
-  - jsonpb
-  - proto
-  - ptypes
-  - ptypes/any
-  - ptypes/duration
-  - ptypes/timestamp
 - name: github.com/google/go-querystring
   version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
   subpackages:
   - query
 - name: github.com/gorilla/schema
   version: e6c82218a8b3ed3cbeb5407429849c0b0b597d40
+- name: github.com/hashicorp/errwrap
+  version: 7554cd9344cec97297fa6649b055a8c98c2a1e55
+- name: github.com/hashicorp/go-multierror
+  version: 83588e72410abfbe4df460eeb6f30841ae47d4c4
 - name: github.com/hashicorp/logutils
   version: 0dc08b1671f34c4250ce212759ebd880f743d883
 - name: github.com/jessevdk/go-flags
@@ -69,59 +64,25 @@ imports:
 - name: github.com/mattn/go-runewidth
   version: 97311d9f7767e3d6f422ea06661bc2c7a19e8a5d
 - name: github.com/mitchellh/cli
-  version: fa17b36f6c61f1ddbbb08c9f6fde94b3c065a09d
+  version: 65fcae5817c8600da98ada9d7edf26dd1a84837b
 - name: github.com/mitchellh/go-homedir
   version: b8bc1bf767474819792c23f32d8286a45736f1c6
 - name: github.com/olekukonko/tablewriter
   version: febf2d34b54a69ce7530036c7503b1c9fbfdf0bb
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
+- name: github.com/posener/complete
+  version: dc2bc5a81accba8782bebea28628224643a8286a
+  subpackages:
+  - cmd
+  - cmd/install
+  - match
 - name: github.com/restic/chunker
   version: bb2ecf9a98e35a0b336ffc23fc515fb6e7961577
 - name: github.com/skratchdot/open-golang
   version: 75fb7ed4208cf72d323d7d02fd1a5964a7a9073c
   subpackages:
   - open
-- name: golang.org/x/net
-  version: 1c05540f6879653db88113bc4a2b70aec4bd491f
-  subpackages:
-  - context
-  - http2
-  - http2/hpack
-  - idna
-  - internal/timeseries
-  - lex/httplex
-  - trace
-- name: golang.org/x/text
-  version: b19bf474d317b857955b12035d2c5acb57ce8b01
-  subpackages:
-  - secure/bidirule
-  - transform
-  - unicode/bidi
-  - unicode/norm
-- name: google.golang.org/genproto
-  version: 11c7f9e547da6db876260ce49ea7536985904c9b
-  subpackages:
-  - googleapis/rpc/status
-- name: google.golang.org/grpc
-  version: 5ffe3083946d5603a0578721101dc8165b1d5b5f
-  subpackages:
-  - balancer
-  - codes
-  - connectivity
-  - credentials
-  - grpclb/grpc_lb_v1/messages
-  - grpclog
-  - internal
-  - keepalive
-  - metadata
-  - naming
-  - peer
-  - resolver
-  - stats
-  - status
-  - tap
-  - transport
 - name: gopkg.in/cheggaaa/pb.v1
   version: 0817e3a1f8de9e3c78b159699b3c07d53e24a963
 testImports: []
