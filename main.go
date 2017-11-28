@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/nerdalize/nerd/cmd"
 	"github.com/nerdalize/nerd/command"
-	"github.com/nerdalize/nerd/command/v2"
 	"github.com/nerdalize/nerd/nerd"
 
 	"github.com/mitchellh/cli"
@@ -62,8 +62,8 @@ func create() *cli.CLI {
 			"project expel":     command.ProjectExpelFactory,
 			"project set":       command.ProjectSetFactory,
 			"project list":      command.ProjectListFactory,
-			"job":               commandv2.JobFactory(),
-			"job create":        commandv2.JobRunFactory(),
+			"job":               cmd.JobFactory(),
+			"job run":           cmd.JobRunFactory(),
 			"task":              command.TaskFactory,
 			"task list":         command.TaskListFactory,
 			"task create":       command.TaskCreateFactory,

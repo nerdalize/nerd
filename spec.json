@@ -280,6 +280,39 @@
 			"synopsis": "Stop a workload from providing compute capacity.",
 			"description": "Stop a workload from providing compute capacity.",
 			"options": {}
+		},
+		"workload work": {
+			"usage": "nerd workload work \u003cworkload-id\u003e",
+			"synopsis": "Start working tasks of a queue locally.",
+			"description": "Start working tasks of a queue locally.",
+			"options": {
+				"Options": [
+					{
+						"long_name": "entrypoint-json-base64",
+						"description": "Work entrypoint, first json and then base64 encoded.",
+						"default_value": [
+							"W10="
+						],
+						"choices": null
+					},
+					{
+						"long_name": "cmd-json-base64",
+						"description": "Work cmd, first json and then base64 encoded.",
+						"default_value": [
+							"W10="
+						],
+						"choices": null
+					},
+					{
+						"long_name": "output-dir",
+						"description": "When set, data in --output-dir will be uploaded after each task run.",
+						"default_value": [
+							""
+						],
+						"choices": null
+					}
+				]
+			}
 		}
 	}
 }
