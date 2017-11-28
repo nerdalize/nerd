@@ -8,21 +8,22 @@ import (
 
 //ClientPlacementInterface is an interface for placement of project
 type ClientPlacementInterface interface {
-	PlaceProject(projectID, host, token, capem, username, password string, insecure bool) (output *v1payload.PlaceProjectOutput, err error)
+	PlaceProject(projectID, host, token, capem, username, password, computeUnits string, insecure bool) (output *v1payload.PlaceProjectOutput, err error)
 	ExpelProject(projectID string) (output *v1payload.ExpelProjectOutput, err error)
 }
 
 //PlaceProject will create queue
-func (c *Client) PlaceProject(projectID, host, token, capem, username, password string, insecure bool) (output *v1payload.PlaceProjectOutput, err error) {
+func (c *Client) PlaceProject(projectID, host, token, capem, username, password, computeUnits string, insecure bool) (output *v1payload.PlaceProjectOutput, err error) {
 	output = &v1payload.PlaceProjectOutput{}
 	input := &v1payload.PlaceProjectInput{
-		ProjectID: projectID,
-		Host:      host,
-		Token:     token,
-		CAPem:     capem,
-		Username:  username,
-		Password:  password,
-		Insecure:  insecure,
+		ProjectID:    projectID,
+		Host:         host,
+		Token:        token,
+		CAPem:        capem,
+		Username:     username,
+		Password:     password,
+		Insecure:     insecure,
+		ComputeUnits: computeUnits,
 	}
 
 	return output, c.doRequest(http.MethodPost, createPath(projectID, placementsEndpoint), input, output)
