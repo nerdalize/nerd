@@ -18,26 +18,32 @@ function run_build { #compile versioned executable and place it in $GOPATH/bin
     main.go
 }
 
-function run_gen { #regenerate requesters
-	command -v go >/dev/null 2>&1 || { echo "executable 'go' (the language sdk) must be installed" >&2; exit 1; }
-	command -v protoc >/dev/null 2>&1 || { echo "executable 'protoc' (protobuf compiler) must be installed" >&2; exit 1; }
-	command -v gg >/dev/null 2>&1 || { echo "executable 'gg' (grpc to http1.1) must be installed" >&2; exit 1; }
+function run_docs { #run godoc
+  command -v go >/dev/null 2>&1 || { echo "executable 'go' (the language sdk) must be installed" >&2; exit 1; }
 
-	echo "--> generating gRPC definitions"
-	protoc \
-		--go_out=plugins=grpc:$(pwd)/nerd/client/cluster								\
-		--proto_path=$GOPATH/src/github.com/nerdalize/clusterd 					\
-		  $GOPATH/src/github.com/nerdalize/clusterd/svc/*.proto
-
-	echo "--> generating HTTP1.1 client from gRPC"
-	gg nerd/client/cluster/svc/*.pb.go
-
-		# @TODO how do we make sure grpc protobuf is configured write output to another directory
+	echo "--> starting godoc service (http://localhost:6060/pkg/github.com/nerdalize/nerd)"
+	godoc -v -http=":6060"
 }
 
 function run_test { #unit test project
-	go test -v ./command/...
-  go test -v ./nerd/...
+	# go test -v ./command/...
+  # go test -v ./nerd/...
+
+	command -v go >/dev/null 2>&1 || { echo "executable 'go' (the language sdk) must be installed" >&2; exit 1; }
+	command -v minikube >/dev/null 2>&1 || { echo "executable 'minikube' (local kubernetes cluster) must be installed" >&2; exit 1; }
+
+	minikube_profile="clusterd-dev"
+	kube_version="v1.7.5"
+	if minikube status --profile=$minikube_profile | grep Running; then
+	    echo "--> minikube vm (profile: $minikube_profile) is already running (check: $kube_version), skipping restart"
+			minikube profile $minikube_profile
+	else
+			echo "--> starting minikube using the default 'vm-driver',to configure: https://github.com/kubernetes/minikube/issues/637)"
+		  minikube start --profile=$minikube_profile --kubernetes-version=$kube_version
+	fi
+
+	echo "--> running service tests"
+	go test -cover -v ./svc/...
 }
 
 function run_release { #cross compile new release builds
@@ -94,6 +100,7 @@ function run_dockerpush { #build and push docker container
 
 case $1 in
 	"build") run_build ;;
+	"docs") run_docs ;;
 	"test") run_test ;;
 	"gen") run_gen ;;
 	"release") run_release ;;

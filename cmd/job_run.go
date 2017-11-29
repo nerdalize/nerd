@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"time"
 
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/svc"
@@ -28,17 +29,27 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		return errors.New(MessageNotEnoughArguments)
 	}
 
-	kube, err := svc.NewKube(args[0])
+	var di svc.DI //@TODO get this from options and configurations
+
+	kube, err := svc.NewKube(di)
 	if err != nil {
 		return errors.Wrap(err, "failed to setup Kubernetes connection")
 	}
 
 	ctx := context.Background()
-	in := &svc.RunJobInput{}
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	defer cancel()
+
+	in := &svc.RunJobInput{
+	//@TODO fetch arguments
+	}
+
 	out, err := kube.RunJob(ctx, in)
 	if err != nil {
 		return errors.Wrap(err, "failed to run job")
 	}
+
+	//@TODO find a way of formatting the output
 
 	cmd.logs.Printf("%#v", out)
 	return nil
