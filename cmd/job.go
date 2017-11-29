@@ -12,7 +12,8 @@ type Job struct {
 //JobFactory creates the command
 func JobFactory() cli.CommandFactory {
 	cmd := &Job{}
-	cmd.command = createCommand(cmd.Execute, cmd.Description, cmd.Usage)
+	cmd.command = createCommand(cmd.Execute, cmd.Description, cmd.Usage, cmd)
+
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}

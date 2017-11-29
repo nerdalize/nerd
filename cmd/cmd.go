@@ -40,13 +40,20 @@ type command struct {
 	logs       *log.Logger
 }
 
-func createCommand(runFunc func([]string) error, helpFunc func() string, usageFunc func() string) *command {
-	return &command{
+func createCommand(runFunc func([]string) error, helpFunc func() string, usageFunc func() string, fgroup interface{}) *command {
+	c := &command{
 		flags.NewNamedParser(usageFunc(), flags.None),
 		runFunc,
 		helpFunc,
 		log.New(os.Stderr, "", 0),
 	}
+
+	_, err := c.flagParser.AddGroup("Options", "Options", fgroup)
+	if err != nil {
+		panic("failed to add option group: " + err.Error())
+	}
+
+	return c
 }
 
 func addFlagPredicts(fl complete.Flags, f *flags.Option) {

@@ -1,5 +1,5 @@
-# Nerdalize Scientific Compute
-Your personal nerd that takes care of running scientific compute on the [Nerdalize cloud](https://www.nerdalize.com/).
+# Nerd
+Your personal nerd that takes care of running jobs on the [Nerdalize cloud](https://www.nerdalize.com/).
 
 _NOTE: This project is currently experimental and not functional._
 

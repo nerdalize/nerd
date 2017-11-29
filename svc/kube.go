@@ -12,12 +12,12 @@ type Kube struct {
 }
 
 //NewKube will setup the Kubernetes service
-func NewKube(di DI, ns string) (k *Kube, err error) {
+func NewKube(di DI, ns string) (k *Kube) {
 	k = &Kube{
 		ns:  ns,
 		api: di.Kube(),
 		val: di.Validator(),
 	}
 
-	return k, nil
+	return k
 }

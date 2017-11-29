@@ -11,13 +11,15 @@ import (
 
 //JobRun command
 type JobRun struct {
+	KubeOpts
+
 	*command
 }
 
 //JobRunFactory creates the command
 func JobRunFactory() cli.CommandFactory {
 	cmd := &JobRun{}
-	cmd.command = createCommand(cmd.Execute, cmd.Description, cmd.Usage)
+	cmd.command = createCommand(cmd.Execute, cmd.Description, cmd.Usage, cmd)
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -29,12 +31,10 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		return errors.New(MessageNotEnoughArguments)
 	}
 
-	var di svc.DI   //@TODO get this from options and configurations
-	ns := "default" //@TODO get this from options, args and conf
-
-	kube, err := svc.NewKube(di, ns)
+	kopts := cmd.KubeOpts
+	deps, err := NewDeps(kopts)
 	if err != nil {
-		return errors.Wrap(err, "failed to setup Kubernetes connection")
+		return errors.Wrap(err, "failed to configure")
 	}
 
 	ctx := context.Background()
@@ -46,6 +46,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		//@TODO add more options and args
 	}
 
+	kube := svc.NewKube(deps, kopts.Namespace)
 	out, err := kube.RunJob(ctx, in)
 	if err != nil {
 		return errors.Wrap(err, "failed to run job")

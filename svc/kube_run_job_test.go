@@ -46,28 +46,16 @@ func TestRunJob(t *testing.T) {
 			IsOutput: func(tb testing.TB, out *svc.RunJobOutput) {
 				assert(tb, out != nil, "output should not be nil")
 				assert(tb, regexp.MustCompile(`^j-.+$`).MatchString(out.Name), "name should have a prefix but not be empty after the prefix")
-
-				// assert(t, out.Name != "", "job name should not be empty")
-				// assert(t, stirng, msg)
 			},
 		},
-
-		// {
-		// 	Name:   "when no namespace is available, it should return a specific error",
-		// 	Ctx:    context.Background(),
-		// 	Input:  nil,
-		// 	Output: nil,
-		// 	Error:  nil,
-		// },
+		//@TODO test the usecase of the usecase that doesn't exist
 	} {
 		t.Run(c.Name, func(t *testing.T) {
 			di := testDI(t)
 			ns, clean := testNamespace(t, di.Kube())
 			defer clean()
 
-			kube, err := svc.NewKube(di, ns)
-			ok(t, err)
-
+			kube := svc.NewKube(di, ns)
 			out, err := kube.RunJob(c.Ctx, c.Input)
 			if c.IsErr != nil {
 				assert(t, c.IsErr(err), fmt.Sprintf("unexpected '%#v' to match: %#v", err, runtime.FuncForPC(reflect.ValueOf(c.IsErr).Pointer()).Name()))
