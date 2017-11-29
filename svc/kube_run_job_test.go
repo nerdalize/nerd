@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"regexp"
 	"runtime"
 	"testing"
 
@@ -12,19 +13,45 @@ import (
 
 func TestRunJob(t *testing.T) {
 	for _, c := range []struct {
-		Name   string
-		Ctx    context.Context
-		Input  *svc.RunJobInput
-		Output *svc.RunJobOutput
-		IsErr  func(error) bool
+		Name     string
+		Ctx      context.Context
+		Input    *svc.RunJobInput
+		Output   *svc.RunJobOutput
+		IsOutput func(tb testing.TB, out *svc.RunJobOutput)
+		IsErr    func(error) bool
 	}{
 		{
-			Name:   "when a zero value input is provided it should return a no input error",
-			Ctx:    context.Background(),
-			Input:  nil,
-			Output: nil,
-			IsErr:  svc.IsNoInputErr,
+			Name:  "when a zero value input is provided it should return a no input error",
+			Ctx:   context.Background(),
+			Input: nil,
+			IsErr: svc.IsNoInputErr,
+			IsOutput: func(tb testing.TB, out *svc.RunJobOutput) {
+				assert(tb, out == nil, "output should be nil")
+			},
 		},
+		{
+			Name:  "when input is provided that is invalid it should return a validation error",
+			Ctx:   context.Background(),
+			Input: &svc.RunJobInput{},
+			IsErr: svc.IsValidationErr,
+			IsOutput: func(tb testing.TB, out *svc.RunJobOutput) {
+				assert(tb, out == nil, "output should be nil")
+			},
+		},
+		{
+			Name:  "when a job is started with just an image it should generate a name and return it",
+			Ctx:   context.Background(),
+			Input: &svc.RunJobInput{Image: "hello-world"},
+			IsErr: isNilErr,
+			IsOutput: func(tb testing.TB, out *svc.RunJobOutput) {
+				assert(tb, out != nil, "output should not be nil")
+				assert(tb, regexp.MustCompile(`^j-.+$`).MatchString(out.Name), "name should have a prefix but not be empty after the prefix")
+
+				// assert(t, out.Name != "", "job name should not be empty")
+				// assert(t, stirng, msg)
+			},
+		},
+
 		// {
 		// 	Name:   "when no namespace is available, it should return a specific error",
 		// 	Ctx:    context.Background(),
@@ -35,12 +62,20 @@ func TestRunJob(t *testing.T) {
 	} {
 		t.Run(c.Name, func(t *testing.T) {
 			di := testDI(t)
-			kube, err := svc.NewKube(di)
+			ns, clean := testNamespace(t, di.Kube())
+			defer clean()
+
+			kube, err := svc.NewKube(di, ns)
 			ok(t, err)
 
 			out, err := kube.RunJob(c.Ctx, c.Input)
-			assert(t, c.IsErr(err), fmt.Sprintf("unexpected '%#v' to match: %#v", err, runtime.FuncForPC(reflect.ValueOf(c.IsErr).Pointer()).Name()))
-			equals(t, c.Output, out)
+			if c.IsErr != nil {
+				assert(t, c.IsErr(err), fmt.Sprintf("unexpected '%#v' to match: %#v", err, runtime.FuncForPC(reflect.ValueOf(c.IsErr).Pointer()).Name()))
+			}
+
+			if c.IsOutput != nil {
+				c.IsOutput(t, out)
+			}
 		})
 	}
 

@@ -35,6 +35,8 @@ import:
   version: 0dc08b1671f34c4250ce212759ebd880f743d883
 - package: github.com/gorilla/schema
   version: e6c82218a8b3ed3cbeb5407429849c0b0b597d40
+- package: github.com/go-playground/validator
+  version: ~v9.9.0
 - package: k8s.io/client-go
   version: 5.0.0
   subpackages:

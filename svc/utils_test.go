@@ -8,9 +8,12 @@ import (
 	"strings"
 	"testing"
 
+	"k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"github.com/go-playground/validator"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/nerdalize/nerd/svc"
 )
@@ -21,10 +24,34 @@ func isNilErr(err error) bool {
 
 type testingDI struct {
 	kube kubernetes.Interface
+	val  svc.Validator
 }
 
 func (di *testingDI) Kube() kubernetes.Interface {
 	return di.kube
+}
+
+func (di *testingDI) Validator() svc.Validator {
+	return di.val
+}
+
+func testNamespaceName(tb testing.TB) string {
+	return fmt.Sprintf("%.63s", strings.ToLower(
+		strings.Replace(
+			strings.Replace(tb.Name(), "/", "-", -1), "_", "-", -1),
+	))
+}
+
+func testNamespace(tb testing.TB, kube kubernetes.Interface) (ns string, clean func()) {
+	n1, err := kube.CoreV1().Namespaces().Create(&v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{GenerateName: testNamespaceName(tb)},
+	})
+	ok(tb, err)
+
+	return n1.Name, func() {
+		err := kube.CoreV1().Namespaces().Delete(n1.Name, nil)
+		ok(tb, err)
+	}
 }
 
 func testDI(tb testing.TB) svc.DI {
@@ -43,6 +70,8 @@ func testDI(tb testing.TB) svc.DI {
 
 	tdi.kube, err = kubernetes.NewForConfig(kcfg)
 	ok(tb, err)
+
+	tdi.val = validator.New()
 
 	return tdi
 }

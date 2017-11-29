@@ -6,25 +6,18 @@ import (
 
 //Kube interacts with the kubernetes backend
 type Kube struct {
+	ns  string
 	api kubernetes.Interface
+	val Validator
 }
 
 //NewKube will setup the Kubernetes service
-func NewKube(di DI) (k *Kube, err error) {
+func NewKube(di DI, ns string) (k *Kube, err error) {
 	k = &Kube{
+		ns:  ns,
 		api: di.Kube(),
+		val: di.Validator(),
 	}
-
-	// kcfg, err := clientcmd.BuildConfigFromFlags("", confPath)
-	// if err != nil {
-	// 	return nil, errors.Wrap(err, "failed to build kubernetes configuration")
-	// }
-	//
-	// k = &Kube{}
-	// k.api, err = kubernetes.NewForConfig(kcfg)
-	// if err != nil {
-	// 	return nil, errors.Wrap(err, "failed initiate kubernetes client set")
-	// }
 
 	return k, nil
 }

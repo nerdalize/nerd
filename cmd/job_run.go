@@ -29,9 +29,10 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		return errors.New(MessageNotEnoughArguments)
 	}
 
-	var di svc.DI //@TODO get this from options and configurations
+	var di svc.DI   //@TODO get this from options and configurations
+	ns := "default" //@TODO get this from options, args and conf
 
-	kube, err := svc.NewKube(di)
+	kube, err := svc.NewKube(di, ns)
 	if err != nil {
 		return errors.Wrap(err, "failed to setup Kubernetes connection")
 	}
@@ -41,7 +42,8 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 	defer cancel()
 
 	in := &svc.RunJobInput{
-	//@TODO fetch arguments
+		Image: args[0],
+		//@TODO add more options and args
 	}
 
 	out, err := kube.RunJob(ctx, in)
