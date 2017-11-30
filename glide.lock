@@ -1,10 +1,10 @@
-hash: 47a9494ca5af8d3297cd283017ee20d9534a116fcf424629dc648042f914cfb8
-updated: 2017-11-29T11:57:09.948086+01:00
+hash: 275776b9db156683a173b8ca388918cb809d0480399a597f992e7cb0053430de
+updated: 2017-11-30T15:17:18.599907+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
-  version: 80bf27afd5602f55c398d43621b9900583df3661
+  version: 83e491e1ee74c797ee52c228b654601ba6702c31
   subpackages:
   - aws
   - aws/awserr
@@ -63,6 +63,12 @@ imports:
   version: 6aced65f8501fe1217321abf0749d354824ba2ff
 - name: github.com/go-openapi/swag
   version: 1d0bd113de87027671077d3c71eb3ac5d7dbba72
+- name: github.com/go-playground/locales
+  version: e4cbcb5d0652150d40ad0646651076b6bd2be4f6
+  subpackages:
+  - currency
+- name: github.com/go-playground/universal-translator
+  version: 71201497bace774495daed26a3874fd339e0b538
 - name: github.com/go-playground/validator
   version: 61caf9d3038e1af346dbf5c2e16f6678e1548364
 - name: github.com/gogo/protobuf
@@ -150,6 +156,8 @@ imports:
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/restic/chunker
   version: bb2ecf9a98e35a0b336ffc23fc515fb6e7961577
+- name: github.com/sirupsen/logrus
+  version: f006c2ac4710855cf0f916dd6b77acf6b048dc6e
 - name: github.com/skratchdot/open-golang
   version: 75fb7ed4208cf72d323d7d02fd1a5964a7a9073c
   subpackages:

@@ -34,6 +34,7 @@ type Kube struct {
 	ns     string
 	api    kubernetes.Interface
 	val    Validator
+	logs   Logger
 }
 
 //NewKube will setup the Kubernetes service
@@ -43,6 +44,7 @@ func NewKube(di DI, ns string) (k *Kube) {
 		ns:     ns,
 		api:    di.Kube(),
 		val:    di.Validator(),
+		logs:   di.Logger(),
 	}
 
 	return k
@@ -72,6 +74,8 @@ func (k *Kube) createResource(ctx context.Context, t KubeResourceType, v KubeMan
 	} else {
 		v.SetGenerateName(k.prefix + genfix)
 	}
+
+	k.logs.Debugf("creating %s '%s' in namespace '%s': %s", t, v.GetName(), k.ns, ctx)
 
 	err = c.Post().
 		Namespace(k.ns).

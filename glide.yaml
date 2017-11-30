@@ -25,6 +25,8 @@ import:
   version: v0.1.0
 - package: gopkg.in/cheggaaa/pb.v1            #progress bar ui
   version: v1.0.11
+- package: github.com/sirupsen/logrus
+  version: v1.0.3
 - package: github.com/dchest/safefile         #atomic file writes
   version: 855e8d98f1852d48dde521e0522408d1fe7e836a
 - package: github.com/google/go-querystring   #convert structs to query strings

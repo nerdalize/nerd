@@ -32,7 +32,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 	}
 
 	kopts := cmd.KubeOpts
-	deps, err := NewDeps(kopts)
+	deps, err := NewDeps(cmd.logs, kopts)
 	if err != nil {
 		return errors.Wrap(err, "failed to configure")
 	}
@@ -52,9 +52,8 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		return errors.Wrap(err, "failed to run job")
 	}
 
-	//@TODO find a way of formatting the output
-
-	cmd.logs.Printf("%#v", out)
+	cmd.logs.Printf("Submitted job: '%s'", out.Name)
+	cmd.logs.Printf("To see whats happening, use: 'nerd job inspect %s'", out.Name)
 	return nil
 }
 

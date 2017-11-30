@@ -16,6 +16,7 @@ import (
 	"github.com/go-playground/validator"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/nerdalize/nerd/svc"
+	"github.com/sirupsen/logrus"
 )
 
 func isNilErr(err error) bool {
@@ -25,6 +26,7 @@ func isNilErr(err error) bool {
 type testingDI struct {
 	kube kubernetes.Interface
 	val  svc.Validator
+	logs svc.Logger
 }
 
 func (di *testingDI) Kube() kubernetes.Interface {
@@ -33,6 +35,10 @@ func (di *testingDI) Kube() kubernetes.Interface {
 
 func (di *testingDI) Validator() svc.Validator {
 	return di.val
+}
+
+func (di *testingDI) Logger() svc.Logger {
+	return di.logs
 }
 
 func testNamespaceName(tb testing.TB) string {
@@ -68,6 +74,7 @@ func testDI(tb testing.TB) svc.DI {
 		tb.Skipf("kube config needs to contain 'minikube' for local testing")
 	}
 
+	tdi.logs = logrus.New()
 	tdi.kube, err = kubernetes.NewForConfig(kcfg)
 	ok(tb, err)
 

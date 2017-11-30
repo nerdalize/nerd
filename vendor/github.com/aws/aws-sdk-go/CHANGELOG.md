@@ -1,3 +1,48 @@
+Release v1.12.37 (2017-11-30)
+===
+
+### Service Client Updates
+* `service/Ardi`: Adds new service
+* `service/autoscaling`: Updates service API and documentation
+  * You can now use Auto Scaling with EC2 Launch Templates via the CreateAutoScalingGroup and UpdateAutoScalingGroup APIs.
+* `service/ec2`: Updates service API and documentation
+  * Adds the following updates: 1. T2 Unlimited enables high CPU performance for any period of time whenever required 2. You are now able to create and launch EC2 m5 and h1 instances
+* `service/lightsail`: Updates service API and documentation
+  * This release adds support for load balancer and TLS/SSL certificate management. This set of APIs allows customers to create, manage, and scale secure load balanced applications on Lightsail infrastructure. To provide support for customers who manage their DNS on Lightsail, we've added the ability create an Alias A type record which can point to a load balancer DNS name via the CreateDomainEntry API http://docs.aws.amazon.com/lightsail/2016-11-28/api-reference/API_CreateDomainEntry.html.
+* `service/ssm`: Updates service API and documentation
+  * This release updates AWS Systems Manager APIs to enable executing automations at controlled rate, target resources in a resource groups and execute entire automation at once or single step at a time. It is now also possible to use YAML, in addition to JSON, when creating Systems Manager documents.
+* `service/waf`: Updates service API and documentation
+  * This release adds support for rule group and managed rule group. Rule group is a container of rules that customers can create, put rules in it and associate the rule group to a WebACL. All rules in a rule group will function identically as they would if each rule was individually associated to the WebACL. Managed rule group is a pre-configured rule group composed by our security partners and made available via the AWS Marketplace. Customers can subscribe to these managed rule groups, associate the managed rule group to their WebACL and start using them immediately to protect their resources.
+* `service/waf-regional`: Updates service API and documentation
+
+Release v1.12.36 (2017-11-29)
+===
+
+### Service Client Updates
+* `service/DeepInsight`: Adds new service
+* `service/IronmanRuntime`: Adds new service
+* `service/Orchestra - Laser`: Adds new service
+* `service/SageMaker`: Adds new service
+* `service/Shine`: Adds new service
+* `service/archived.kinesisvideo`: Adds new service
+* `service/data.kinesisvideo`: Adds new service
+* `service/dynamodb`: Updates service API and documentation
+  * Amazon DynamoDB now supports the following features: Global Table and On-Demand Backup. Global Table is a fully-managed, multi-region, multi-master database. DynamoDB customers can now write anywhere and read anywhere with single-digit millisecond latency by performing database operations closest to where end users reside. Global Table also enables customers to disaster-proof their applications, keeping them running and data accessible even in the face of natural disasters or region disruptions. Customers can set up Global Table with just a few clicks in the AWS Management Console-no application rewrites required. On-Demand Backup capability is to protect data from loss due to application errors, and meet customers' archival needs for compliance and regulatory reasons. Customers can backup and restore their DynamoDB table data anytime, with a single-click in the AWS management console or a single API call. Backup and restore actions execute with zero impact on table performance or availability. For more information, see the Amazon DynamoDB Developer Guide.
+* `service/ecs`: Updates service API and documentation
+  * Amazon Elastic Container Service (Amazon ECS) released a new launch type for running containers on a serverless infrastructure. The Fargate launch type allows you to run your containerized applications without the need to provision and manage the backend infrastructure. Just register your task definition and Fargate launches the container for you.
+* `service/glacier`: Updates service API and documentation
+  * This release includes support for Glacier Select, a new feature that allows you to filter and analyze your Glacier archives and store the results in a user-specified S3 location.
+* `service/greengrass`: Updates service API and documentation
+  * Greengrass OTA feature allows updating Greengrass Core and Greengrass OTA Agent. Local Resource Access feature allows Greengrass Lambdas to access local resources such as peripheral devices and volumes.
+* `service/iot`: Updates service API and documentation
+  * This release adds support for a number of new IoT features, including AWS IoT Device Management (Jobs, Fleet Index and Thing Registration), Thing Groups, Policies on Thing Groups, Registry & Job Events, JSON Logs, Fine-Grained Logging Controls, Custom Authorization and AWS Service Authentication Using X.509 Certificates.
+* `service/kinesisvideo`: Adds new service
+  * Announcing Amazon Kinesis Video Streams, a fully managed video ingestion and storage service. Kinesis Video Streams makes it easy to securely stream video from connected devices to AWS for machine learning, analytics, and processing. You can also stream other time-encoded data like RADAR and LIDAR signals using Kinesis Video Streams.
+* `service/rekognition`: Updates service API, documentation, and paginators
+  * This release introduces Amazon Rekognition support for video analysis.
+* `service/s3`: Updates service API and documentation
+  * This release includes support for Glacier Select, a new feature that allows you to filter and analyze your Glacier storage class objects and store the results in a user-specified S3 location.
+
 Release v1.12.35 (2017-11-29)
 ===
 

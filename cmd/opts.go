@@ -23,10 +23,11 @@ type KubeOpts struct {
 type Deps struct {
 	val  svc.Validator
 	kube kubernetes.Interface
+	logs svc.Logger
 }
 
 //NewDeps uses options to setup dependencies
-func NewDeps(kopts KubeOpts) (*Deps, error) {
+func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
 	if kopts.KubeConfig == "" {
 		hdir, err := homedir.Dir()
 		if err != nil {
@@ -41,7 +42,10 @@ func NewDeps(kopts KubeOpts) (*Deps, error) {
 		return nil, errors.Wrap(err, "failed to build Kubernetes config from provided kube config path")
 	}
 
-	d := &Deps{}
+	d := &Deps{
+		logs: logs,
+	}
+
 	d.kube, err = kubernetes.NewForConfig(kcfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create Kubernetes configuration")
@@ -59,4 +63,9 @@ func (deps *Deps) Kube() kubernetes.Interface {
 //Validator provides the Validator dependency
 func (deps *Deps) Validator() svc.Validator {
 	return deps.val
+}
+
+//Logger provides the Logger dependency
+func (deps *Deps) Logger() svc.Logger {
+	return deps.logs
 }

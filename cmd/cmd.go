@@ -3,15 +3,13 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"io"
-	"log"
-	"os"
 	"reflect"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
 	"github.com/posener/complete"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -34,23 +32,33 @@ var (
 )
 
 type command struct {
+	globalOpts struct {
+		Debug bool `long:"debug" description:"show verbose debug information"`
+	}
+
 	flagParser *flags.Parser
 	runFunc    func(args []string) error
 	helpFunc   func() string
-	logs       *log.Logger
+	logs       *logrus.Logger
 }
 
 func createCommand(runFunc func([]string) error, helpFunc func() string, usageFunc func() string, fgroup interface{}) *command {
+	logs := logrus.New()
 	c := &command{
-		flags.NewNamedParser(usageFunc(), flags.None),
-		runFunc,
-		helpFunc,
-		log.New(os.Stderr, "", 0),
+		flagParser: flags.NewNamedParser(usageFunc(), flags.None),
+		runFunc:    runFunc,
+		helpFunc:   helpFunc,
+		logs:       logs,
 	}
 
 	_, err := c.flagParser.AddGroup("Options", "Options", fgroup)
 	if err != nil {
 		panic("failed to add option group: " + err.Error())
+	}
+
+	_, err = c.flagParser.AddGroup("Global Options", "Global Options", &c.globalOpts)
+	if err != nil {
+		panic("failed to add global option group: " + err.Error())
 	}
 
 	return c
@@ -96,7 +104,11 @@ func (cmd *command) Help() string {
 func (cmd *command) Run(args []string) int {
 	remaining, err := cmd.flagParser.ParseArgs(args)
 	if err != nil {
-		return fail(err, "failed to parse flags(s)")
+		return cmd.fail(err, "failed to parse flags(s)")
+	}
+
+	if cmd.globalOpts.Debug {
+		cmd.logs.Level = logrus.DebugLevel
 	}
 
 	if err := cmd.runFunc(remaining); err != nil {
@@ -104,18 +116,10 @@ func (cmd *command) Run(args []string) int {
 			return cli.RunResultHelp
 		}
 
-		return fail(err, "failed to run")
+		return cmd.fail(err, "error")
 	}
 
 	return 0
-}
-
-//Close can be used on defer and shows any errors through the logs
-func (cmd *command) Close(name string, cl io.Closer) {
-	err := cl.Close()
-	if err != nil {
-		cmd.logs.Printf("[ERRO] failure while shutting down '%s': %v", name, err)
-	}
 }
 
 // AutocompleteArgs returns the argument predictor for this command.
@@ -123,7 +127,7 @@ func (cmd *command) AutocompleteArgs() complete.Predictor {
 	return complete.PredictNothing
 }
 
-func fail(err error, message string) int {
-	fmt.Fprintf(os.Stderr, "[ERRO] %v\n", errors.Wrap(err, message))
+func (cmd *command) fail(err error, message string) int {
+	cmd.logs.Error(errors.Wrap(err, message))
 	return 255
 }
