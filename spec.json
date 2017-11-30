@@ -271,6 +271,13 @@
 						"description": "The pull secret will be used to fetch the private image",
 						"default_value": null,
 						"choices": null
+					},
+					{
+						"long_name": "size",
+						"short_name": "s",
+						"description": "The amount of resources you want to use for your workload, in compute units.",
+						"default_value": null,
+						"choices": null
 					}
 				]
 			}
