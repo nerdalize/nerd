@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"time"
 
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/svc"
@@ -38,7 +37,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 	}
 
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
 	defer cancel()
 
 	in := &svc.RunJobInput{

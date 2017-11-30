@@ -66,3 +66,16 @@ func IsAlreadyExistsErr(err error) bool {
 	te, ok := err.(iface)
 	return ok && te.IsAlreadyExists()
 }
+
+type errNamespaceNotExists struct{ error }
+
+func (e errNamespaceNotExists) IsNamespaceNotExists() bool { return true }
+
+//IsNamespaceNotExistsErr indicates that what is attempted to be created already exists
+func IsNamespaceNotExistsErr(err error) bool {
+	type iface interface {
+		IsNamespaceNotExists() bool
+	}
+	te, ok := err.(iface)
+	return ok && te.IsNamespaceNotExists()
+}

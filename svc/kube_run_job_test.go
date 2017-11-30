@@ -55,7 +55,6 @@ func TestRunJob(t *testing.T) {
 			Input:   &svc.RunJobInput{Image: "hello-world"},
 			IsErr:   svc.IsDeadlineErr,
 		},
-		//@TODO test the usecase of the job already exists
 	} {
 		t.Run(c.Name, func(t *testing.T) {
 			di := testDI(t)
@@ -77,16 +76,18 @@ func TestRunJob(t *testing.T) {
 			}
 		})
 	}
+}
 
-	// t.Run("when no namespace is available, it should return a specific error", func(t *testing.T) {
-	//
-	// })
-	//
-	// t.Run("name", func(t *testing.T) {
-	//
-	// })
+func TestRunJobWithoutTheNamespace(t *testing.T) {
+	di := testDI(t)
 
-	//@TODO test the case in which no namespace is available
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
+	defer cancel()
+
+	kube := svc.NewKube(di, "non-existing")
+	_, err := kube.RunJob(ctx, &svc.RunJobInput{Image: "hello-world", Name: "my-job"})
+	assert(t, svc.IsNamespaceNotExistsErr(err), "expected error to be namespace doesn't exist")
 }
 
 func TestRunJobWithNameThatAlreadyExists(t *testing.T) {

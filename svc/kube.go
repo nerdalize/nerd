@@ -21,8 +21,8 @@ var (
 	KubeResourceTypeJobs = KubeResourceType("jobs")
 )
 
-//KubeNameable allows our create abstraction to set names prior to creation
-type KubeNameable interface {
+//KubeManagedNames allows for Nerd to transparently manage resources based on names and there prefixes
+type KubeManagedNames interface {
 	GetName() string
 	SetName(name string)
 	SetGenerateName(name string)
@@ -39,7 +39,7 @@ type Kube struct {
 //NewKube will setup the Kubernetes service
 func NewKube(di DI, ns string) (k *Kube) {
 	k = &Kube{
-		prefix: "n.e.r.d-",
+		prefix: "nlz-nerd.",
 		ns:     ns,
 		api:    di.Kube(),
 		val:    di.Validator(),
@@ -50,8 +50,7 @@ func NewKube(di DI, ns string) (k *Kube) {
 
 //CreateResource will use the kube RESTClient to create a resource while using the context, adding the
 //Nerd prefix and handling errors specific to our domain.
-func (k *Kube) createResource(ctx context.Context, t KubeResourceType, v KubeNameable, name string) (err error) {
-
+func (k *Kube) createResource(ctx context.Context, t KubeResourceType, v KubeManagedNames, name string) (err error) {
 	vv, ok := v.(runtime.Object)
 	if !ok {
 		return errors.Errorf("provided value was not castable to runtime.Object")
@@ -90,6 +89,13 @@ func (k *Kube) createResource(ctx context.Context, t KubeResourceType, v KubeNam
 		if serr, ok := err.(*kuberr.StatusError); ok {
 			if kuberr.IsAlreadyExists(serr) {
 				return errAlreadyExists{err}
+			}
+
+			if kuberr.IsNotFound(serr) {
+				details := serr.ErrStatus.Details
+				if details.Kind == "namespaces" {
+					return errNamespaceNotExists{err}
+				}
 			}
 		}
 
