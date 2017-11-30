@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	flags "github.com/jessevdk/go-flags"
+	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/command"
 )
 
@@ -45,7 +46,7 @@ func TestDocGeneration(t *testing.T) {
 	}
 
 	for name, cmdFn := range cli.Commands {
-		if !isNotSysCmd(name) {
+		if !isNotSysCmd(cli, name) {
 			continue
 		}
 		cmd, err := cmdFn()
@@ -112,11 +113,11 @@ func TestDocGeneration(t *testing.T) {
 
 }
 
-func isNotSysCmd(name string) bool {
-	for _, cmd := range include {
+func isNotSysCmd(cli *cli.CLI, name string) bool {
+	for _, cmd := range cli.HiddenCommands {
 		if name == cmd {
-			return true
+			return false
 		}
 	}
-	return false
+	return true
 }

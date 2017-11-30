@@ -18,9 +18,32 @@ function run_build { #compile versioned executable and place it in $GOPATH/bin
     main.go
 }
 
+function run_docs { #run godoc
+  command -v go >/dev/null 2>&1 || { echo "executable 'go' (the language sdk) must be installed" >&2; exit 1; }
+
+	echo "--> starting godoc service (http://localhost:6060/pkg/github.com/nerdalize/nerd)"
+	godoc -v -http=":6060"
+}
+
 function run_test { #unit test project
-	go test -v ./command/...
-  go test -v ./nerd/...
+	# go test -v ./command/...
+  # go test -v ./nerd/...
+
+	command -v go >/dev/null 2>&1 || { echo "executable 'go' (the language sdk) must be installed" >&2; exit 1; }
+	command -v minikube >/dev/null 2>&1 || { echo "executable 'minikube' (local kubernetes cluster) must be installed" >&2; exit 1; }
+
+	minikube_profile="clusterd-dev"
+	kube_version="v1.7.5"
+	if minikube status --profile=$minikube_profile | grep Running; then
+	    echo "--> minikube vm (profile: $minikube_profile) is already running (check: $kube_version), skipping restart"
+			minikube profile $minikube_profile
+	else
+			echo "--> starting minikube using the default 'vm-driver',to configure: https://github.com/kubernetes/minikube/issues/637)"
+		  minikube start --profile=$minikube_profile --kubernetes-version=$kube_version
+	fi
+
+	echo "--> running service tests"
+	go test -cover -v ./svc/...
 }
 
 function run_release { #cross compile new release builds
@@ -77,7 +100,9 @@ function run_dockerpush { #build and push docker container
 
 case $1 in
 	"build") run_build ;;
+	"docs") run_docs ;;
 	"test") run_test ;;
+	"gen") run_gen ;;
 	"release") run_release ;;
 	"publish") run_publish ;;
 	"docker") run_docker ;;

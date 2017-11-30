@@ -5,6 +5,7 @@
     "endpointPrefix":"apigateway",
     "protocol":"rest-json",
     "serviceFullName":"Amazon API Gateway",
+    "serviceId":"API Gateway",
     "signatureVersion":"v4",
     "uid":"apigateway-2015-07-09"
   },
@@ -295,6 +296,8 @@
       "errors":[
         {"shape":"UnauthorizedException"},
         {"shape":"NotFoundException"},
+        {"shape":"ConflictException"},
+        {"shape":"BadRequestException"},
         {"shape":"TooManyRequestsException"}
       ]
     },
@@ -1752,6 +1755,13 @@
     }
   },
   "shapes":{
+    "AccessLogSettings":{
+      "type":"structure",
+      "members":{
+        "format":{"shape":"String"},
+        "destinationArn":{"shape":"String"}
+      }
+    },
     "Account":{
       "type":"structure",
       "members":{
@@ -1823,6 +1833,7 @@
       "type":"string",
       "enum":[
         "TOKEN",
+        "REQUEST",
         "COGNITO_USER_POOLS"
       ]
     },
@@ -1887,6 +1898,15 @@
         "FLUSH_IN_PROGRESS"
       ]
     },
+    "CanarySettings":{
+      "type":"structure",
+      "members":{
+        "percentTraffic":{"shape":"Double"},
+        "deploymentId":{"shape":"String"},
+        "stageVariableOverrides":{"shape":"MapOfStringToString"},
+        "useStageCache":{"shape":"Boolean"}
+      }
+    },
     "ClientCertificate":{
       "type":"structure",
       "members":{
@@ -1939,8 +1959,7 @@
       "required":[
         "restApiId",
         "name",
-        "type",
-        "identitySource"
+        "type"
       ],
       "members":{
         "restApiId":{
@@ -1990,7 +2009,8 @@
         "description":{"shape":"String"},
         "cacheClusterEnabled":{"shape":"NullableBoolean"},
         "cacheClusterSize":{"shape":"CacheClusterSize"},
-        "variables":{"shape":"MapOfStringToString"}
+        "variables":{"shape":"MapOfStringToString"},
+        "canarySettings":{"shape":"DeploymentCanarySettings"}
       }
     },
     "CreateDocumentationPartRequest":{
@@ -2036,7 +2056,10 @@
         "certificateBody":{"shape":"String"},
         "certificatePrivateKey":{"shape":"String"},
         "certificateChain":{"shape":"String"},
-        "certificateArn":{"shape":"String"}
+        "certificateArn":{"shape":"String"},
+        "regionalCertificateName":{"shape":"String"},
+        "regionalCertificateArn":{"shape":"String"},
+        "endpointConfiguration":{"shape":"EndpointConfiguration"}
       }
     },
     "CreateModelRequest":{
@@ -2101,7 +2124,8 @@
         "description":{"shape":"String"},
         "version":{"shape":"String"},
         "cloneFrom":{"shape":"String"},
-        "binaryMediaTypes":{"shape":"ListOfString"}
+        "binaryMediaTypes":{"shape":"ListOfString"},
+        "endpointConfiguration":{"shape":"EndpointConfiguration"}
       }
     },
     "CreateStageRequest":{
@@ -2123,7 +2147,8 @@
         "cacheClusterEnabled":{"shape":"Boolean"},
         "cacheClusterSize":{"shape":"CacheClusterSize"},
         "variables":{"shape":"MapOfStringToString"},
-        "documentationVersion":{"shape":"String"}
+        "documentationVersion":{"shape":"String"},
+        "canarySettings":{"shape":"CanarySettings"}
       }
     },
     "CreateUsagePlanKeyRequest":{
@@ -2539,6 +2564,14 @@
         "apiSummary":{"shape":"PathToMapOfMethodSnapshot"}
       }
     },
+    "DeploymentCanarySettings":{
+      "type":"structure",
+      "members":{
+        "percentTraffic":{"shape":"Double"},
+        "stageVariableOverrides":{"shape":"MapOfStringToString"},
+        "useStageCache":{"shape":"Boolean"}
+      }
+    },
     "Deployments":{
       "type":"structure",
       "members":{
@@ -2631,7 +2664,13 @@
         "certificateName":{"shape":"String"},
         "certificateArn":{"shape":"String"},
         "certificateUploadDate":{"shape":"Timestamp"},
-        "distributionDomainName":{"shape":"String"}
+        "regionalDomainName":{"shape":"String"},
+        "regionalHostedZoneId":{"shape":"String"},
+        "regionalCertificateName":{"shape":"String"},
+        "regionalCertificateArn":{"shape":"String"},
+        "distributionDomainName":{"shape":"String"},
+        "distributionHostedZoneId":{"shape":"String"},
+        "endpointConfiguration":{"shape":"EndpointConfiguration"}
       }
     },
     "DomainNames":{
@@ -2645,6 +2684,19 @@
       }
     },
     "Double":{"type":"double"},
+    "EndpointConfiguration":{
+      "type":"structure",
+      "members":{
+        "types":{"shape":"ListOfEndpointType"}
+      }
+    },
+    "EndpointType":{
+      "type":"string",
+      "enum":[
+        "REGIONAL",
+        "EDGE"
+      ]
+    },
     "ExportResponse":{
       "type":"structure",
       "members":{
@@ -3005,6 +3057,11 @@
           "shape":"NullableInteger",
           "location":"querystring",
           "locationName":"limit"
+        },
+        "locationStatus":{
+          "shape":"LocationStatusType",
+          "location":"querystring",
+          "locationName":"locationStatus"
         }
       }
     },
@@ -3722,6 +3779,7 @@
         "requestTemplates":{"shape":"MapOfStringToString"},
         "passthroughBehavior":{"shape":"String"},
         "contentHandling":{"shape":"ContentHandlingStrategy"},
+        "timeoutInMillis":{"shape":"Integer"},
         "cacheNamespace":{"shape":"String"},
         "cacheKeyParameters":{"shape":"ListOfString"},
         "integrationResponses":{"shape":"MapOfIntegrationResponse"}
@@ -3800,6 +3858,10 @@
       "type":"list",
       "member":{"shape":"DomainName"}
     },
+    "ListOfEndpointType":{
+      "type":"list",
+      "member":{"shape":"EndpointType"}
+    },
     "ListOfGatewayResponse":{
       "type":"list",
       "member":{"shape":"GatewayResponse"}
@@ -3859,6 +3921,13 @@
     "ListOfUsagePlanKey":{
       "type":"list",
       "member":{"shape":"UsagePlanKey"}
+    },
+    "LocationStatusType":{
+      "type":"string",
+      "enum":[
+        "DOCUMENTED",
+        "UNDOCUMENTED"
+      ]
     },
     "Long":{"type":"long"},
     "MapOfHeaderValues":{
@@ -4070,7 +4139,8 @@
         "passthroughBehavior":{"shape":"String"},
         "cacheNamespace":{"shape":"String"},
         "cacheKeyParameters":{"shape":"ListOfString"},
-        "contentHandling":{"shape":"ContentHandlingStrategy"}
+        "contentHandling":{"shape":"ContentHandlingStrategy"},
+        "timeoutInMillis":{"shape":"NullableInteger"}
       }
     },
     "PutIntegrationResponseRequest":{
@@ -4275,7 +4345,8 @@
         "createdDate":{"shape":"Timestamp"},
         "version":{"shape":"String"},
         "warnings":{"shape":"ListOfString"},
-        "binaryMediaTypes":{"shape":"ListOfString"}
+        "binaryMediaTypes":{"shape":"ListOfString"},
+        "endpointConfiguration":{"shape":"EndpointConfiguration"}
       }
     },
     "RestApis":{
@@ -4361,6 +4432,8 @@
         "methodSettings":{"shape":"MapOfMethodSettings"},
         "variables":{"shape":"MapOfStringToString"},
         "documentationVersion":{"shape":"String"},
+        "accessLogSettings":{"shape":"AccessLogSettings"},
+        "canarySettings":{"shape":"CanarySettings"},
         "createdDate":{"shape":"Timestamp"},
         "lastUpdatedDate":{"shape":"Timestamp"}
       }
