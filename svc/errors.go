@@ -79,3 +79,16 @@ func IsNamespaceNotExistsErr(err error) bool {
 	te, ok := err.(iface)
 	return ok && te.IsNamespaceNotExists()
 }
+
+type errInvalidName struct{ error }
+
+func (e errInvalidName) IsInvalidName() bool { return true }
+
+//IsInvalidNameErr indicates the provided name was invalid
+func IsInvalidNameErr(err error) bool {
+	type iface interface {
+		IsInvalidName() bool
+	}
+	te, ok := err.(iface)
+	return ok && te.IsInvalidName()
+}

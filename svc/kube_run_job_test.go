@@ -55,6 +55,12 @@ func TestRunJob(t *testing.T) {
 			Input:   &svc.RunJobInput{Image: "hello-world"},
 			IsErr:   svc.IsDeadlineErr,
 		},
+		{
+			Name:    "when a job is started with an invalid name it should return a invalid name error",
+			Timeout: time.Second * 5,
+			Input:   &svc.RunJobInput{Image: "hello-world", Name: "my-name-"},
+			IsErr:   svc.IsInvalidNameErr,
+		},
 	} {
 		t.Run(c.Name, func(t *testing.T) {
 			di := testDI(t)

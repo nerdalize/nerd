@@ -11,6 +11,7 @@ import (
 //JobRun command
 type JobRun struct {
 	KubeOpts
+	Name string `long:"name" short:"n" description:"assign a name to the job"`
 
 	*command
 }
@@ -42,7 +43,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 
 	in := &svc.RunJobInput{
 		Image: args[0],
-		//@TODO add more options and args
+		Name:  cmd.Name,
 	}
 
 	kube := svc.NewKube(deps, kopts.Namespace)

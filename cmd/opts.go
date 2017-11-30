@@ -15,7 +15,7 @@ import (
 //KubeOpts can be used to create a Kubernetes service
 type KubeOpts struct {
 	KubeConfig string        `long:"kube-config" description:"file at which Nerd will look for Kubernetes credentials" default-mask:"~/.kube/conf"`
-	Namespace  string        `short:"n" long:"namespace" description:"the Kubernetes namespace in which jobs will be managed" default-mask:"default" default:"default" required:"true"`
+	Namespace  string        `long:"namespace" description:"the Kubernetes namespace in which jobs will be managed" default-mask:"default" default:"default" required:"true"`
 	Timeout    time.Duration `long:"timeout" description:"duration for which Nerd will wait for Kubernetes" default-mask:"10s" default:"10s" required:"true"`
 }
 

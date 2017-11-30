@@ -97,6 +97,15 @@ func (k *Kube) createResource(ctx context.Context, t KubeResourceType, v KubeMan
 					return errNamespaceNotExists{err}
 				}
 			}
+
+			if kuberr.IsInvalid(serr) {
+				details := serr.ErrStatus.Details
+				for _, cause := range details.Causes {
+					if cause.Field == "metadata.name" {
+						return errInvalidName{err}
+					}
+				}
+			}
 		}
 
 		return errKubernetes{err} //generic kubernetes error
