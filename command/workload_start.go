@@ -19,6 +19,7 @@ type WorkloadStartOpts struct {
 	InputDataset string   `long:"input-dataset" short:"d" description:"Input dataset ID, will be available in /input in your container"`
 	Instances    int      `long:"instances" short:"i" default:"1" description:"Number of working instances"`
 	PullSecret   string   `long:"pull-secret" short:"p" description:"The pull secret will be used to fetch the private image"`
+	Size         uint64   `long:"size" short:"s" description:"The amount of resources you want to use for your workload, in compute units."`
 }
 
 //WorkloadStart command
@@ -104,7 +105,7 @@ func (cmd *WorkloadStart) DoRun(args []string) (err error) {
 	wenv[EnvConfigJSON] = string(configJSON)
 	wenv[EnvNerdProject] = ss.Project.Name
 
-	workload, err := bclient.CreateWorkload(ss.Project.Name, args[0], cmd.opts.InputDataset, cmd.opts.PullSecret, wenv, cmd.opts.Instances, true)
+	workload, err := bclient.CreateWorkload(ss.Project.Name, args[0], cmd.opts.InputDataset, cmd.opts.PullSecret, cmd.opts.Size, wenv, cmd.opts.Instances, true)
 	if err != nil {
 		return HandleError(err)
 	}

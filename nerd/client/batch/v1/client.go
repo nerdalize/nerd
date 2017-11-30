@@ -20,13 +20,13 @@ const (
 
 	projectsPrefix = "projects"
 
-	tasksEndpoint           = "tasks"
-	tokensEndpoint          = "tokens"
-	datasetEndpoint         = "datasets"
-	workloadsEndpoint       = "workloads"
-	secretsEndpoint         = "secrets"
-	placementsEndpoint      = "placements"
-	billingPackagesEndpoint = "packages"
+	tasksEndpoint      = "tasks"
+	tokensEndpoint     = "tokens"
+	datasetEndpoint    = "datasets"
+	workloadsEndpoint  = "workloads"
+	secretsEndpoint    = "secrets"
+	placementsEndpoint = "placements"
+	plansEndpoint      = "plans"
 )
 
 //Client is a client for the Nerdalize API.
@@ -56,7 +56,7 @@ type ClientInterface interface {
 	ClientPlacementInterface
 	ClientWorkerInterface
 	ClientSecretInterface
-	ClientBillingPackageInterface
+	ClientPlanInterface
 }
 
 // Force compile errors when Client doesn't implement ClientInterface.

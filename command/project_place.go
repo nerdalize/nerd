@@ -7,10 +7,11 @@ import (
 
 //ProjectPlaceOpts describes command options
 type ProjectPlaceOpts struct {
-	Token    string `long:"token" default:"" default-mask:"" description:"placement that authenticates using JWT"`
-	Username string `long:"username" default:"" default-mask:"" description:"username for placement that authenticates using username/password"`
-	Password string `long:"password" default:"" default-mask:"" description:"password for placement that authenticates using username/password"`
-	Insecure bool   `long:"insecure" default-mask:"" description:"disable checking of server certificate"`
+	Token        string `long:"token" default:"" default-mask:"" description:"placement that authenticates using JWT"`
+	Username     string `long:"username" default:"" default-mask:"" description:"username for placement that authenticates using username/password"`
+	Password     string `long:"password" default:"" default-mask:"" description:"password for placement that authenticates using username/password"`
+	Insecure     bool   `long:"insecure" default-mask:"" description:"disable checking of server certificate"`
+	ComputeUnits string `long:"compute_units" default:"2" description:"default size of a project"`
 }
 
 //ProjectPlace command
@@ -61,8 +62,9 @@ func (cmd *ProjectPlace) DoRun(args []string) (err error) {
 	username := cmd.opts.Username
 	password := cmd.opts.Password
 	insecure := cmd.opts.Insecure
+	computeUnits := cmd.opts.ComputeUnits
 
-	_, err = bclient.PlaceProject(projectID, host, token, "", username, password, insecure)
+	_, err = bclient.PlaceProject(projectID, host, token, "", username, password, computeUnits, insecure)
 	if err != nil {
 		return HandleError(err)
 	}
