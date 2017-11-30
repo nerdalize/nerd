@@ -30,18 +30,8 @@ func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, 
 		return nil, errValidation{err}
 	}
 
-	//@TODO add a nerd prefix
-
-	jobMeta := metav1.ObjectMeta{
-		Name: in.Name,
-	}
-
-	if jobMeta.Name == "" {
-		jobMeta.GenerateName = "j-"
-	}
-
 	job := &batchv1.Job{
-		ObjectMeta: jobMeta,
+		ObjectMeta: metav1.ObjectMeta{},
 		Spec: batchv1.JobSpec{
 			Template: v1.PodTemplateSpec{
 				Spec: v1.PodSpec{
@@ -57,7 +47,7 @@ func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, 
 		},
 	}
 
-	err = k.CreateResource(ctx, KubeResourceTypeJobs, job)
+	err = k.createResource(ctx, KubeResourceTypeJobs, job, in.Name)
 	if err != nil {
 		return nil, err
 	}
