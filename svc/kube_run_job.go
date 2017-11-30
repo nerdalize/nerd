@@ -3,8 +3,6 @@ package svc
 import (
 	"context"
 
-	"github.com/pkg/errors"
-
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,6 +11,7 @@ import (
 //RunJobInput is the input to RunJob
 type RunJobInput struct {
 	Image string `validate:"min=1"`
+	Name  string `validate:"printascii"`
 }
 
 //RunJobOutput is the output to RunJob
@@ -31,10 +30,18 @@ func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, 
 		return nil, errValidation{err}
 	}
 
+	//@TODO add a nerd prefix
+
+	jobMeta := metav1.ObjectMeta{
+		Name: in.Name,
+	}
+
+	if jobMeta.Name == "" {
+		jobMeta.GenerateName = "j-"
+	}
+
 	job := &batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "j-",
-		},
+		ObjectMeta: jobMeta,
 		Spec: batchv1.JobSpec{
 			Template: v1.PodTemplateSpec{
 				Spec: v1.PodSpec{
@@ -50,15 +57,12 @@ func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, 
 		},
 	}
 
-	job, err = k.api.BatchV1().Jobs(k.ns).Create(job)
+	err = k.CreateResource(ctx, KubeResourceTypeJobs, job)
 	if err != nil {
-		//@TODO add our own error
-		return nil, errors.Wrap(err, "failed to create job")
+		return nil, err
 	}
 
-	//@TODO try to use ctx (?)
-	//@TODO call the Kubernetes
-	out = &RunJobOutput{Name: job.Name}
-
-	return out, nil
+	return &RunJobOutput{
+		Name: job.Name,
+	}, nil
 }

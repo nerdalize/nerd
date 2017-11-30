@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/nerdalize/nerd/svc"
 )
@@ -14,49 +15,59 @@ import (
 func TestRunJob(t *testing.T) {
 	for _, c := range []struct {
 		Name     string
-		Ctx      context.Context
+		Timeout  time.Duration
 		Input    *svc.RunJobInput
 		Output   *svc.RunJobOutput
 		IsOutput func(tb testing.TB, out *svc.RunJobOutput)
 		IsErr    func(error) bool
 	}{
 		{
-			Name:  "when a zero value input is provided it should return a no input error",
-			Ctx:   context.Background(),
-			Input: nil,
-			IsErr: svc.IsNoInputErr,
+			Name:    "when a zero value input is provided it should return a no input error",
+			Timeout: time.Second * 5,
+			Input:   nil,
+			IsErr:   svc.IsNoInputErr,
 			IsOutput: func(tb testing.TB, out *svc.RunJobOutput) {
 				assert(tb, out == nil, "output should be nil")
 			},
 		},
 		{
-			Name:  "when input is provided that is invalid it should return a validation error",
-			Ctx:   context.Background(),
-			Input: &svc.RunJobInput{},
-			IsErr: svc.IsValidationErr,
+			Name:    "when input is provided that is invalid it should return a validation error",
+			Timeout: time.Second * 5,
+			Input:   &svc.RunJobInput{},
+			IsErr:   svc.IsValidationErr,
 			IsOutput: func(tb testing.TB, out *svc.RunJobOutput) {
 				assert(tb, out == nil, "output should be nil")
 			},
 		},
 		{
-			Name:  "when a job is started with just an image it should generate a name and return it",
-			Ctx:   context.Background(),
-			Input: &svc.RunJobInput{Image: "hello-world"},
-			IsErr: isNilErr,
+			Name:    "when a job is started with just an image it should generate a name and return it",
+			Timeout: time.Second * 5,
+			Input:   &svc.RunJobInput{Image: "hello-world"},
+			IsErr:   isNilErr,
 			IsOutput: func(tb testing.TB, out *svc.RunJobOutput) {
 				assert(tb, out != nil, "output should not be nil")
 				assert(tb, regexp.MustCompile(`^j-.+$`).MatchString(out.Name), "name should have a prefix but not be empty after the prefix")
 			},
 		},
-		//@TODO test the usecase of the usecase that doesn't exist
+		{
+			Name:    "when a job is started with a very short deadline it should return a specific error",
+			Timeout: time.Millisecond,
+			Input:   &svc.RunJobInput{Image: "hello-world"},
+			IsErr:   svc.IsDeadlineErr,
+		},
+		//@TODO test the usecase of the job already exists
 	} {
 		t.Run(c.Name, func(t *testing.T) {
 			di := testDI(t)
 			ns, clean := testNamespace(t, di.Kube())
 			defer clean()
 
+			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(ctx, c.Timeout)
+			defer cancel()
+
 			kube := svc.NewKube(di, ns)
-			out, err := kube.RunJob(c.Ctx, c.Input)
+			out, err := kube.RunJob(ctx, c.Input)
 			if c.IsErr != nil {
 				assert(t, c.IsErr(err), fmt.Sprintf("unexpected '%#v' to match: %#v", err, runtime.FuncForPC(reflect.ValueOf(c.IsErr).Pointer()).Name()))
 			}
@@ -76,4 +87,21 @@ func TestRunJob(t *testing.T) {
 	// })
 
 	//@TODO test the case in which no namespace is available
+}
+
+func TestRunJobWithNameThatAlreadyExists(t *testing.T) {
+	di := testDI(t)
+	ns, clean := testNamespace(t, di.Kube())
+	defer clean()
+
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
+	defer cancel()
+
+	kube := svc.NewKube(di, ns)
+	out, err := kube.RunJob(ctx, &svc.RunJobInput{Image: "hello-world", Name: "my-job"})
+	ok(t, err)
+
+	_, err = kube.RunJob(ctx, &svc.RunJobInput{Image: "hello-world", Name: out.Name})
+	assert(t, svc.IsAlreadyExistsErr(err), "expected error to be already exists")
 }
