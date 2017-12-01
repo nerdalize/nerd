@@ -3,6 +3,8 @@ package svc
 import (
 	"context"
 
+	"github.com/nerdalize/nerd/pkg/kubevisor"
+
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,13 +23,8 @@ type RunJobOutput struct {
 
 //RunJob will create a job on kubernetes
 func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, err error) {
-	if in == nil || ctx == nil {
-		return nil, errNoInput{}
-	}
-
-	err = k.val.StructCtx(ctx, in)
-	if err != nil {
-		return nil, errValidation{err}
+	if err = k.checkInput(ctx, in); err != nil {
+		return nil, err
 	}
 
 	job := &batchv1.Job{
@@ -47,7 +44,7 @@ func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, 
 		},
 	}
 
-	err = k.createResource(ctx, KubeResourceTypeJobs, job, in.Name)
+	err = k.visor.CreateResource(ctx, kubevisor.KubeResourceTypeJobs, job, in.Name)
 	if err != nil {
 		return nil, err
 	}

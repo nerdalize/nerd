@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nerdalize/nerd/pkg/kubevisor"
 	"github.com/nerdalize/nerd/svc"
 )
 
@@ -22,10 +23,10 @@ func TestRunJob(t *testing.T) {
 		IsErr    func(error) bool
 	}{
 		{
-			Name:    "when a zero value input is provided it should return a no input error",
+			Name:    "when a zero value input is provided it should return a validation error",
 			Timeout: time.Second * 5,
 			Input:   nil,
-			IsErr:   svc.IsNoInputErr,
+			IsErr:   svc.IsValidationErr,
 			IsOutput: func(t testing.TB, out *svc.RunJobOutput) {
 				assert(t, out == nil, "output should be nil")
 			},
@@ -53,13 +54,13 @@ func TestRunJob(t *testing.T) {
 			Name:    "when a job is started with a very short deadline it should return a specific error",
 			Timeout: time.Millisecond,
 			Input:   &svc.RunJobInput{Image: "hello-world"},
-			IsErr:   svc.IsDeadlineErr,
+			IsErr:   kubevisor.IsDeadlineErr,
 		},
 		{
 			Name:    "when a job is started with an invalid name it should return a invalid name error",
 			Timeout: time.Second * 5,
 			Input:   &svc.RunJobInput{Image: "hello-world", Name: "my-name-"},
-			IsErr:   svc.IsInvalidNameErr,
+			IsErr:   kubevisor.IsInvalidNameErr,
 		},
 	} {
 		t.Run(c.Name, func(t *testing.T) {
@@ -93,7 +94,7 @@ func TestRunJobWithoutTheNamespace(t *testing.T) {
 
 	kube := svc.NewKube(di, "non-existing")
 	_, err := kube.RunJob(ctx, &svc.RunJobInput{Image: "hello-world", Name: "my-job"})
-	assert(t, svc.IsNamespaceNotExistsErr(err), "expected error to be namespace doesn't exist")
+	assert(t, kubevisor.IsNamespaceNotExistsErr(err), "expected error to be namespace doesn't exist")
 }
 
 func TestRunJobWithNameThatAlreadyExists(t *testing.T) {
@@ -110,5 +111,5 @@ func TestRunJobWithNameThatAlreadyExists(t *testing.T) {
 	ok(t, err)
 
 	_, err = kube.RunJob(ctx, &svc.RunJobInput{Image: "hello-world", Name: out.Name})
-	assert(t, svc.IsAlreadyExistsErr(err), "expected error to be already exists")
+	assert(t, kubevisor.IsAlreadyExistsErr(err), "expected error to be already exists")
 }

@@ -3,6 +3,8 @@ package svc
 import (
 	"context"
 
+	"github.com/nerdalize/nerd/pkg/kubevisor"
+
 	"k8s.io/api/batch/v1"
 )
 
@@ -22,8 +24,12 @@ type ListJobsOutput struct {
 
 //ListJobs will create a job on kubernetes
 func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOutput, err error) {
+	if err = k.checkInput(ctx, in); err != nil {
+		return nil, err
+	}
+
 	jobs := &jobs{}
-	err = k.listResource(ctx, KubeResourceTypeJobs, jobs)
+	err = k.visor.ListResources(ctx, kubevisor.KubeResourceTypeJobs, jobs)
 	if err != nil {
 		return nil, err
 	}
@@ -45,10 +51,10 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 	return out, nil
 }
 
-//jobs implements the list transformer interface
+//jobs implements the list transformer interface to allow the kubevisor the manage names for us
 type jobs struct{ *v1.JobList }
 
-func (jobs *jobs) Transform(fn func(in KubeManagedNames) (out KubeManagedNames)) {
+func (jobs *jobs) Transform(fn func(in kubevisor.KubeManagedNames) (out kubevisor.KubeManagedNames)) {
 	for i, j1 := range jobs.JobList.Items {
 		jobs.Items[i] = *(fn(&j1).(*v1.Job))
 	}
