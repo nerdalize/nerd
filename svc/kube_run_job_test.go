@@ -26,8 +26,8 @@ func TestRunJob(t *testing.T) {
 			Timeout: time.Second * 5,
 			Input:   nil,
 			IsErr:   svc.IsNoInputErr,
-			IsOutput: func(tb testing.TB, out *svc.RunJobOutput) {
-				assert(tb, out == nil, "output should be nil")
+			IsOutput: func(t testing.TB, out *svc.RunJobOutput) {
+				assert(t, out == nil, "output should be nil")
 			},
 		},
 		{
@@ -35,8 +35,8 @@ func TestRunJob(t *testing.T) {
 			Timeout: time.Second * 5,
 			Input:   &svc.RunJobInput{},
 			IsErr:   svc.IsValidationErr,
-			IsOutput: func(tb testing.TB, out *svc.RunJobOutput) {
-				assert(tb, out == nil, "output should be nil")
+			IsOutput: func(t testing.TB, out *svc.RunJobOutput) {
+				assert(t, out == nil, "output should be nil")
 			},
 		},
 		{
@@ -44,9 +44,9 @@ func TestRunJob(t *testing.T) {
 			Timeout: time.Second * 5,
 			Input:   &svc.RunJobInput{Image: "hello-world"},
 			IsErr:   isNilErr,
-			IsOutput: func(tb testing.TB, out *svc.RunJobOutput) {
-				assert(tb, out != nil, "output should not be nil")
-				assert(tb, regexp.MustCompile(`^j-.+$`).MatchString(out.Name), "name should have a prefix but not be empty after the prefix")
+			IsOutput: func(t testing.TB, out *svc.RunJobOutput) {
+				assert(t, out != nil, "output should not be nil")
+				assert(t, regexp.MustCompile(`^j-.+$`).MatchString(out.Name), "name should have a prefix but not be empty after the prefix")
 			},
 		},
 		{

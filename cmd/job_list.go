@@ -45,7 +45,10 @@ func (cmd *JobList) Execute(args []string) (err error) {
 		return errors.Wrap(err, "failed to run job")
 	}
 
-	fmt.Printf("jobs %#v\n", out)
+	for _, item := range out.Items {
+		fmt.Printf("%#v\n", item) //@TODO add proper output formatting
+	}
+
 	return nil
 }
 
