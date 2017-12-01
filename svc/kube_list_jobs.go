@@ -29,7 +29,7 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 	}
 
 	jobs := &jobs{}
-	err = k.visor.ListResources(ctx, kubevisor.KubeResourceTypeJobs, jobs)
+	err = k.visor.ListResources(ctx, kubevisor.ResourceTypeJobs, jobs)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 //jobs implements the list transformer interface to allow the kubevisor the manage names for us
 type jobs struct{ *v1.JobList }
 
-func (jobs *jobs) Transform(fn func(in kubevisor.KubeManagedNames) (out kubevisor.KubeManagedNames)) {
+func (jobs *jobs) Transform(fn func(in kubevisor.ManagedNames) (out kubevisor.ManagedNames)) {
 	for i, j1 := range jobs.JobList.Items {
 		jobs.Items[i] = *(fn(&j1).(*v1.Job))
 	}

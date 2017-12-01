@@ -19,16 +19,16 @@ type Logger interface {
 	Debugf(format string, args ...interface{})
 }
 
-//KubeResourceType is a type of Kubernetes resource
-type KubeResourceType string
+//ResourceType is a type of Kubernetes resource
+type ResourceType string
 
 var (
-	//KubeResourceTypeJobs is used for job management
-	KubeResourceTypeJobs = KubeResourceType("jobs")
+	//ResourceTypeJobs is used for job management
+	ResourceTypeJobs = ResourceType("jobs")
 )
 
-//KubeManagedNames allows for Nerd to transparently manage resources based on names and there prefixes
-type KubeManagedNames interface {
+//ManagedNames allows for Nerd to transparently manage resources based on names and there prefixes
+type ManagedNames interface {
 	GetName() string
 	GetLabels() map[string]string
 	SetLabels(map[string]string)
@@ -36,9 +36,9 @@ type KubeManagedNames interface {
 	SetGenerateName(name string)
 }
 
-//KubeListTranformer must be implemented to allow Nerd to transparently manage resource names
-type KubeListTranformer interface {
-	Transform(fn func(in KubeManagedNames) (out KubeManagedNames))
+//ListTranformer must be implemented to allow Nerd to transparently manage resource names
+type ListTranformer interface {
+	Transform(fn func(in ManagedNames) (out ManagedNames))
 }
 
 //Visor provides access to Kubernetes resources while transparently filtering, naming and labeling
@@ -55,9 +55,37 @@ func NewVisor(ns, prefix string, api kubernetes.Interface, logs Logger) *Visor {
 	return &Visor{prefix, ns, api, logs}
 }
 
+//DeleteResource will use the kube RESTClient to delete a resource by its name.
+func (k *Visor) DeleteResource(ctx context.Context, t ResourceType, name string) (err error) {
+	var c rest.Interface
+	switch t {
+	case ResourceTypeJobs:
+		c = k.api.BatchV1().RESTClient()
+
+	default:
+		return errors.Errorf("unknown Kubernetes resource type provided: '%s'", t)
+	}
+
+	name = k.prefix + name
+
+	k.logs.Debugf("deleting %s '%s' in namespace '%s': %s", t, name, k.ns, ctx)
+	err = c.Delete().
+		Namespace(k.ns).
+		Resource(string(t)).
+		Name(name).
+		Context(ctx).
+		Do().Error()
+
+	if err != nil {
+		return k.tagError(err)
+	}
+
+	return nil
+}
+
 //CreateResource will use the kube RESTClient to create a resource while using the context, adding the
 //Nerd prefix and handling errors specific to our domain.
-func (k *Visor) CreateResource(ctx context.Context, t KubeResourceType, v KubeManagedNames, name string) (err error) {
+func (k *Visor) CreateResource(ctx context.Context, t ResourceType, v ManagedNames, name string) (err error) {
 	vv, ok := v.(runtime.Object)
 	if !ok {
 		return errors.Errorf("provided value was not castable to runtime.Object")
@@ -66,7 +94,7 @@ func (k *Visor) CreateResource(ctx context.Context, t KubeResourceType, v KubeMa
 	genfix := "x-"
 	var c rest.Interface
 	switch t {
-	case KubeResourceTypeJobs:
+	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
 		genfix = "j-"
 
@@ -107,7 +135,7 @@ func (k *Visor) CreateResource(ctx context.Context, t KubeResourceType, v KubeMa
 
 //ListResources will use the RESTClient to list resources while using the context and transparently
 //filter resources managed by the CLI
-func (k *Visor) ListResources(ctx context.Context, t KubeResourceType, v KubeListTranformer) (err error) {
+func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranformer) (err error) {
 	vv, ok := v.(runtime.Object)
 	if !ok {
 		return errors.Errorf("provided value was not castable to runtime.Object")
@@ -115,7 +143,7 @@ func (k *Visor) ListResources(ctx context.Context, t KubeResourceType, v KubeLis
 
 	var c rest.Interface
 	switch t {
-	case KubeResourceTypeJobs:
+	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
 	default:
 		return errors.Errorf("unknown Kubernetes resource type provided: '%s'", t)
@@ -134,7 +162,7 @@ func (k *Visor) ListResources(ctx context.Context, t KubeResourceType, v KubeLis
 	}
 
 	//transform each managed item to return unprefixed
-	v.Transform(func(in KubeManagedNames) KubeManagedNames {
+	v.Transform(func(in ManagedNames) ManagedNames {
 		in.SetName(strings.TrimPrefix(in.GetName(), k.prefix))
 		return in
 	})
@@ -157,6 +185,8 @@ func (k *Visor) tagError(err error) error {
 			if details.Kind == "namespaces" {
 				return errNamespaceNotExists{err}
 			}
+
+			return errNotExists{err}
 		}
 
 		if kuberr.IsInvalid(serr) {

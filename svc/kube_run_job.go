@@ -44,7 +44,7 @@ func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, 
 		},
 	}
 
-	err = k.visor.CreateResource(ctx, kubevisor.KubeResourceTypeJobs, job, in.Name)
+	err = k.visor.CreateResource(ctx, kubevisor.ResourceTypeJobs, job, in.Name)
 	if err != nil {
 		return nil, err
 	}
