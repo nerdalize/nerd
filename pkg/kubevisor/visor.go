@@ -25,6 +25,9 @@ type ResourceType string
 var (
 	//ResourceTypeJobs is used for job management
 	ResourceTypeJobs = ResourceType("jobs")
+
+	//ResourceTypePods is used for pod inspection
+	ResourceTypePods = ResourceType("pods")
 )
 
 //ManagedNames allows for Nerd to transparently manage resources based on names and there prefixes
@@ -68,7 +71,7 @@ func (k *Visor) DeleteResource(ctx context.Context, t ResourceType, name string)
 		c = k.api.BatchV1().RESTClient()
 
 	default:
-		return errors.Errorf("unknown Kubernetes resource type provided: '%s'", t)
+		return errors.Errorf("unknown Kubernetes resource type provided for deletion: '%s'", t)
 	}
 
 	name = k.prefix + name
@@ -107,7 +110,7 @@ func (k *Visor) CreateResource(ctx context.Context, t ResourceType, v ManagedNam
 		genfix = "j-"
 
 	default:
-		return errors.Errorf("unknown Kubernetes resource type provided: '%s'", t)
+		return errors.Errorf("unknown Kubernetes resource type provided for creation: '%s'", t)
 	}
 
 	if name != "" {
@@ -153,8 +156,10 @@ func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranfor
 	switch t {
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
+	case ResourceTypePods:
+		c = k.api.CoreV1().RESTClient()
 	default:
-		return errors.Errorf("unknown Kubernetes resource type provided: '%s'", t)
+		return errors.Errorf("unknown Kubernetes resource type provided for listing: '%s'", t)
 	}
 
 	err = c.Get().

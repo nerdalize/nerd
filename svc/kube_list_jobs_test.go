@@ -36,7 +36,7 @@ func TestListJobs(t *testing.T) {
 		},
 		{
 			Name:    "when one correct job was run it should eventually be started",
-			Timeout: time.Second * 5,
+			Timeout: time.Minute,
 			Jobs:    []*svc.RunJobInput{{Image: "nginx", Name: "my-job"}},
 			Input:   &svc.ListJobsInput{},
 			IsErr:   isNilErr,
@@ -47,9 +47,15 @@ func TestListJobs(t *testing.T) {
 				assert(t, out.Items[0].Name == "my-job", "expected job name to be equal to what was provided")
 				assert(t, out.Items[0].Image == "nginx", "expected image name to be equal to what was provided")
 				if out.Items[0].ActiveAt.IsZero() {
-					return false //should eventually start
+					return false //should eventually be active
 				}
 
+				if out.Items[0].Details.Phase != svc.JobDetailsPhaseRunning {
+					return false //should eventually be running
+				}
+
+				assert(t, out.Items[0].Details.SeenAt.Sub(time.Now()) < time.Minute, "should have seen details recently once active")
+				equals(t, svc.JobDetailsPhaseRunning, out.Items[0].Details.Phase)
 				assert(t, out.Items[0].ActiveAt.Sub(time.Now()) < time.Minute, "started time should be recent")
 				return true
 			},
@@ -66,12 +72,14 @@ func TestListJobs(t *testing.T) {
 					return false
 				}
 
+				assert(t, out.Items[0].Details.SeenAt.Sub(time.Now()) < time.Minute, "should have seen details recently once active")
+				equals(t, svc.JobDetailsPhaseSucceeded, out.Items[0].Details.Phase)
 				assert(t, out.Items[0].CompletedAt.Sub(time.Now()) < time.Minute, "completed time should be recent")
 				return true
 			},
 		},
 		{
-			Name:    "when job is run with the wrong image it should still become active",
+			Name:    "when job is run with the wrong image it should show a waiting reason at some point",
 			Timeout: time.Minute,
 			Jobs:    []*svc.RunJobInput{{Image: "there-is-no-image-called-this", Name: "invalid-image-job"}},
 			Input:   &svc.ListJobsInput{},
@@ -82,7 +90,12 @@ func TestListJobs(t *testing.T) {
 					return false //should eventually be active
 				}
 
+				if out.Items[0].Details.WaitingReason != "ErrImagePull" {
+					return false //should eventually show errImagePull
+				}
+
 				assert(t, out.Items[0].ActiveAt.Sub(time.Now()) < time.Minute, "started time should be recent")
+				equals(t, svc.JobDetailsPhasePending, out.Items[0].Details.Phase)
 				return true
 			},
 		},
@@ -99,11 +112,13 @@ func TestListJobs(t *testing.T) {
 				}
 
 				assert(t, out.Items[0].FailedAt.Sub(time.Now()) < time.Minute, "started time should be recent")
+				equals(t, svc.JobDetailsPhaseFailed, out.Items[0].Details.Phase)
 				return true
 			},
 		},
 
 		//@TODO when a job is scaled to 0, find out the status shows it (if parralism is 0, it is stopped)
+		//@TODO when a job is scaled to 0, see what we do with details?
 	} {
 		t.Run(c.Name, func(t *testing.T) {
 			if c.Timeout > time.Second*5 && testing.Short() {

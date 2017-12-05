@@ -67,7 +67,7 @@ func (cmd *JobList) Execute(args []string) (err error) {
 			status = "Deleting..."
 		}
 
-		fmt.Println("Job:", item.Name, "Image:", item.Image, "Status:", status)
+		fmt.Println("Job:", item.Name, "Image:", item.Image, "Status:", status, "Phase:", item.Details.Phase, "WaitingReason:", item.Details.WaitingReason)
 	}
 
 	return nil
