@@ -76,6 +76,7 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 	}
 
 	//Step 1: Analyse job structure and formulate our output items
+	out = &ListJobsOutput{}
 	mapping := map[types.UID]*ListJobItem{}
 	for _, job := range jobs.Items {
 		if len(job.Spec.Template.Spec.Containers) != 1 {
@@ -114,6 +115,7 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 		}
 
 		mapping[job.UID] = item
+		out.Items = append(out.Items, item)
 	}
 
 	//Step 2: Get all pods under nerd-app=cli
@@ -123,7 +125,7 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 		return nil, err
 	}
 
-	//Step 3: Match pods to the jobs we got earlier and augment item with pod statuses
+	//Step 3: Match pods to the jobs we got earlier and augment details with pod information
 	for _, pod := range pods.Items {
 		uid, ok := pod.Labels["controller-uid"]
 		if !ok {
@@ -167,13 +169,6 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 				jobItem.Details.WaitingMessage = cstatus.State.Waiting.Message
 			}
 		}
-
-	}
-
-	//Step 4: Set in output
-	out = &ListJobsOutput{}
-	for _, item := range mapping {
-		out.Items = append(out.Items, item)
 	}
 
 	return out, nil
