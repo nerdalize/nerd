@@ -42,6 +42,8 @@ func TestListJobs(t *testing.T) {
 			IsErr:   isNilErr,
 			IsOutput: func(t testing.TB, out *svc.ListJobsOutput) bool {
 				assert(t, len(out.Items) == 1, "expected one job to be listed")
+				assert(t, !out.Items[0].CreatedAt.IsZero(), "created at time should not be zero")
+
 				assert(t, out.Items[0].Name == "my-job", "expected job name to be equal to what was provided")
 				assert(t, out.Items[0].Image == "nginx", "expected image name to be equal to what was provided")
 				if out.Items[0].ActiveAt.IsZero() {

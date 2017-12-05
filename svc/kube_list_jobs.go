@@ -14,6 +14,7 @@ import (
 type ListJobItem struct {
 	Name        string
 	Image       string
+	CreatedAt   time.Time
 	DeletedAt   time.Time
 	ActiveAt    time.Time
 	CompletedAt time.Time
@@ -51,8 +52,9 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 
 		c := job.Spec.Template.Spec.Containers[0]
 		item := &ListJobItem{
-			Name:  job.GetName(),
-			Image: c.Image,
+			Name:      job.GetName(),
+			Image:     c.Image,
+			CreatedAt: job.CreationTimestamp.Local(),
 		}
 
 		if dt := job.GetDeletionTimestamp(); dt != nil {
@@ -78,6 +80,8 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 
 		out.Items = append(out.Items, item)
 	}
+
+	//@TODO fetch all pods with label nerd-app=cli and match to jobs
 
 	return out, nil
 }

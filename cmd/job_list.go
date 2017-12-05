@@ -46,7 +46,28 @@ func (cmd *JobList) Execute(args []string) (err error) {
 	}
 
 	for _, item := range out.Items {
-		fmt.Printf("%#v\n", item) //@TODO add proper output formatting
+		status := "Unkown"
+		if item.DeletedAt.IsZero() {
+			if !item.FailedAt.IsZero() {
+				status = "Failed"
+			} else {
+				if !item.CompletedAt.IsZero() {
+					status = "Completed"
+				} else {
+
+					if !item.ActiveAt.IsZero() {
+						status = "Active" //@TODO at this point the job's sole pod can still be:
+						// - Pending (due to capacity, not being placed)
+						// - ErrImagePull (due to wrong image being provided)
+						// - Running (successfully being in progress)
+					}
+				}
+			}
+		} else {
+			status = "Deleting..."
+		}
+
+		fmt.Println("Job:", item.Name, "Image:", item.Image, "Status:", status)
 	}
 
 	return nil
