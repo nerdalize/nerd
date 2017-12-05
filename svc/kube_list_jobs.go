@@ -2,16 +2,21 @@ package svc
 
 import (
 	"context"
+	"time"
 
 	"github.com/nerdalize/nerd/pkg/kubevisor"
 
 	"k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 //ListJobItem is a job listing item
 type ListJobItem struct {
-	Name  string
-	Image string
+	Name        string
+	Image       string
+	ActiveAt    time.Time
+	CompletedAt time.Time
+	FailedAt    time.Time
 }
 
 //ListJobsInput is the input to ListJobs
@@ -42,10 +47,29 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 		}
 
 		c := job.Spec.Template.Spec.Containers[0]
-		out.Items = append(out.Items, &ListJobItem{
+		item := &ListJobItem{
 			Name:  job.GetName(),
 			Image: c.Image,
-		})
+		}
+
+		if job.Status.StartTime != nil {
+			item.ActiveAt = job.Status.StartTime.Local()
+		}
+
+		for _, cond := range job.Status.Conditions {
+			if cond.Status != corev1.ConditionTrue {
+				continue
+			}
+
+			switch cond.Type {
+			case v1.JobComplete:
+				item.CompletedAt = cond.LastTransitionTime.Local()
+			case v1.JobFailed:
+				item.FailedAt = cond.LastTransitionTime.Local()
+			}
+		}
+
+		out.Items = append(out.Items, item)
 	}
 
 	return out, nil

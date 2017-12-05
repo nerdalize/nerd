@@ -10,10 +10,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+var (
+	//JobDefaultBackoffLimit determines how often we will retry a pod's job on when its failing
+	JobDefaultBackoffLimit = int32(3)
+)
+
 //RunJobInput is the input to RunJob
 type RunJobInput struct {
-	Image string `validate:"min=1"`
-	Name  string `validate:"printascii"`
+	Image        string `validate:"min=1"`
+	Name         string `validate:"printascii"`
+	BackoffLimit *int32
 }
 
 //RunJobOutput is the output to RunJob
@@ -27,12 +33,17 @@ func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, 
 		return nil, err
 	}
 
+	if in.BackoffLimit == nil {
+		in.BackoffLimit = &JobDefaultBackoffLimit
+	}
+
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{},
 		Spec: batchv1.JobSpec{
+			BackoffLimit: in.BackoffLimit,
 			Template: v1.PodTemplateSpec{
 				Spec: v1.PodSpec{
-					RestartPolicy: v1.RestartPolicyOnFailure,
+					RestartPolicy: v1.RestartPolicyNever,
 					Containers: []v1.Container{
 						{
 							Name:  "main",
