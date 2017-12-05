@@ -31,14 +31,15 @@ func TestDeleteJob(t *testing.T) {
 			IsErr:   svc.IsValidationErr,
 		},
 		{
-			Name:    "when an existing job is delete it should eventually not show up in the listing",
+			Name:    "when an existing job is delete it should be marked for garbage collection",
 			Timeout: time.Second * 5,
 			Jobs:    []*svc.RunJobInput{{Image: "nginx", Name: "my-job"}},
 			Input:   &svc.DeleteJobInput{Name: "my-job"},
 			Output:  &svc.DeleteJobOutput{},
 			IsErr:   isNilErr,
 			IsOutput: func(t testing.TB, out *svc.DeleteJobOutput, list *svc.ListJobsOutput) {
-				assert(t, len(list.Items) == 0, "should be zero jobs after delete")
+				assert(t, len(list.Items) == 1, "job should still be there")
+				assert(t, !list.Items[0].DeletedAt.IsZero(), "delete at should not be zero")
 			},
 		},
 		{
@@ -69,8 +70,6 @@ func TestDeleteJob(t *testing.T) {
 			if c.IsErr != nil {
 				assert(t, c.IsErr(err), fmt.Sprintf("unexpected '%#v' to match: %#v", err, runtime.FuncForPC(reflect.ValueOf(c.IsErr).Pointer()).Name()))
 			}
-
-			time.Sleep(time.Second) //@TODO can we poll for the new state(?)
 
 			list, err := kube.ListJobs(ctx, &svc.ListJobsInput{})
 			ok(t, err)

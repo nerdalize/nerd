@@ -50,6 +50,11 @@ type Visor struct {
 	logs   Logger
 }
 
+var (
+	//used during deletion but requires an address to create a pointer for
+	deletePropagationForeground = metav1.DeletePropagationForeground
+)
+
 //NewVisor will setup a Kubernetes visor
 func NewVisor(ns, prefix string, api kubernetes.Interface, logs Logger) *Visor {
 	return &Visor{prefix, ns, api, logs}
@@ -68,9 +73,12 @@ func (k *Visor) DeleteResource(ctx context.Context, t ResourceType, name string)
 
 	name = k.prefix + name
 
+	// k.api.BatchV1().Jobs("Aaa").Delete(name, options)
+
 	k.logs.Debugf("deleting %s '%s' in namespace '%s': %s", t, name, k.ns, ctx)
 	err = c.Delete().
 		Namespace(k.ns).
+		Body(&metav1.DeleteOptions{PropagationPolicy: &deletePropagationForeground}).
 		Resource(string(t)).
 		Name(name).
 		Context(ctx).

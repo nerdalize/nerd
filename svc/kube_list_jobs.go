@@ -14,6 +14,7 @@ import (
 type ListJobItem struct {
 	Name        string
 	Image       string
+	DeletedAt   time.Time
 	ActiveAt    time.Time
 	CompletedAt time.Time
 	FailedAt    time.Time
@@ -46,10 +47,16 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 			continue
 		}
 
+		//@TODO if parralism is set to 0, consider "stopped"?
+
 		c := job.Spec.Template.Spec.Containers[0]
 		item := &ListJobItem{
 			Name:  job.GetName(),
 			Image: c.Image,
+		}
+
+		if dt := job.GetDeletionTimestamp(); dt != nil {
+			item.DeletedAt = dt.Local() //mark as deleting
 		}
 
 		if job.Status.StartTime != nil {
