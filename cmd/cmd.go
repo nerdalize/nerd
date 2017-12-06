@@ -39,16 +39,15 @@ type command struct {
 	flagParser *flags.Parser
 	runFunc    func(args []string) error
 	helpFunc   func() string
-	logs       *logrus.Logger
+	out        *Output
 }
 
-func createCommand(runFunc func([]string) error, helpFunc func() string, usageFunc func() string, fgroup interface{}) *command {
-	logs := logrus.New()
+func createCommand(ui cli.Ui, runFunc func([]string) error, helpFunc func() string, usageFunc func() string, fgroup interface{}) *command {
 	c := &command{
 		flagParser: flags.NewNamedParser(usageFunc(), flags.None),
 		runFunc:    runFunc,
 		helpFunc:   helpFunc,
-		logs:       logs,
+		out:        NewOutput(ui),
 	}
 
 	_, err := c.flagParser.AddGroup("Options", "Options", fgroup)
@@ -107,10 +106,6 @@ func (cmd *command) Run(args []string) int {
 		return cmd.fail(err, "failed to parse flags(s)")
 	}
 
-	if cmd.globalOpts.Debug {
-		cmd.logs.Level = logrus.DebugLevel
-	}
-
 	if err := cmd.runFunc(remaining); err != nil {
 		if err == errShowHelp {
 			return cli.RunResultHelp
@@ -122,12 +117,21 @@ func (cmd *command) Run(args []string) int {
 	return 0
 }
 
+//Logger returns the logger
+func (cmd *command) Logger() *logrus.Logger {
+	if cmd.globalOpts.Debug {
+		return cmd.out.Logger(logrus.DebugLevel)
+	}
+
+	return cmd.out.Logger(logrus.ErrorLevel)
+}
+
 // AutocompleteArgs returns the argument predictor for this command.
 func (cmd *command) AutocompleteArgs() complete.Predictor {
 	return complete.PredictNothing
 }
 
 func (cmd *command) fail(err error, message string) int {
-	cmd.logs.Error(errors.Wrap(err, message))
+	cmd.out.Errorf("error: %v", errors.Wrap(err, message))
 	return 255
 }

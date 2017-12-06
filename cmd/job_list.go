@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/svc"
@@ -18,9 +17,9 @@ type JobList struct {
 }
 
 //JobListFactory creates the command
-func JobListFactory() cli.CommandFactory {
+func JobListFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &JobList{}
-	cmd.command = createCommand(cmd.Execute, cmd.Description, cmd.Usage, cmd)
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd)
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -29,7 +28,7 @@ func JobListFactory() cli.CommandFactory {
 //Execute runs the command
 func (cmd *JobList) Execute(args []string) (err error) {
 	kopts := cmd.KubeOpts
-	deps, err := NewDeps(cmd.logs, kopts)
+	deps, err := NewDeps(cmd.Logger(), kopts)
 	if err != nil {
 		return errors.Wrap(err, "failed to configure")
 	}
@@ -45,7 +44,11 @@ func (cmd *JobList) Execute(args []string) (err error) {
 		return errors.Wrap(err, "failed to run job")
 	}
 
+	hdr := []string{"JOB", "IMAGE", "STATUS", "PHASE", "WAITING REASON"}
+	rows := [][]string{}
 	for _, item := range out.Items {
+
+		//@TODO think of a better way to format jobs
 		status := "Unkown"
 		if item.DeletedAt.IsZero() {
 			if !item.FailedAt.IsZero() {
@@ -67,10 +70,10 @@ func (cmd *JobList) Execute(args []string) (err error) {
 			status = "Deleting..."
 		}
 
-		fmt.Println("Job:", item.Name, "Image:", item.Image, "Status:", status, "Phase:", item.Details.Phase, "WaitingReason:", item.Details.WaitingReason)
+		rows = append(rows, []string{item.Name, item.Image, status, string(item.Details.Phase), item.Details.WaitingReason})
 	}
 
-	return nil
+	return cmd.out.Table(hdr, rows)
 }
 
 // Description returns long-form help text
