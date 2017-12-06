@@ -76,8 +76,6 @@ func (k *Visor) DeleteResource(ctx context.Context, t ResourceType, name string)
 
 	name = k.prefix + name
 
-	// k.api.BatchV1().Jobs("Aaa").Delete(name, options)
-
 	k.logs.Debugf("deleting %s '%s' in namespace '%s': %s", t, name, k.ns, ctx)
 	err = c.Delete().
 		Namespace(k.ns).
