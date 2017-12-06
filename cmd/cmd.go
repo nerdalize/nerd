@@ -132,6 +132,6 @@ func (cmd *command) AutocompleteArgs() complete.Predictor {
 }
 
 func (cmd *command) fail(err error, message string) int {
-	cmd.out.Errorf("error: %v", errors.Wrap(err, message))
+	cmd.out.Errorf("%v", errors.Wrap(err, message))
 	return 255
 }

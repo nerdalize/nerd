@@ -43,7 +43,7 @@ func (cmd *JobList) Execute(args []string) (err error) {
 	kube := svc.NewKube(deps, kopts.Namespace)
 	out, err := kube.ListJobs(ctx, in)
 	if err != nil {
-		return errors.Wrap(err, "failed to run job")
+		return renderServiceError(err, "failed to list jobs")
 	}
 
 	hdr := []string{"JOB", "IMAGE", "CREATED AT", "PHASE", "DETAILS"}

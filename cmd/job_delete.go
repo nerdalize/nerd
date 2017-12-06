@@ -47,7 +47,7 @@ func (cmd *JobDelete) Execute(args []string) (err error) {
 	kube := svc.NewKube(deps, kopts.Namespace)
 	_, err = kube.DeleteJob(ctx, in)
 	if err != nil {
-		return errors.Wrap(err, "failed to run job")
+		return renderServiceError(err, "failed to delete job")
 	}
 
 	cmd.out.Infof("Deleted job: '%s'", in.Name)
