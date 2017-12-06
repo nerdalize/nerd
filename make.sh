@@ -32,7 +32,7 @@ function run_test { #unit test project
 	command -v go >/dev/null 2>&1 || { echo "executable 'go' (the language sdk) must be installed" >&2; exit 1; }
 	command -v minikube >/dev/null 2>&1 || { echo "executable 'minikube' (local kubernetes cluster) must be installed" >&2; exit 1; }
 
-	minikube_profile="clusterd-dev"
+	minikube_profile="nerd-dev"
 	kube_version="v1.8.0"
 	if minikube status --profile=$minikube_profile | grep Running; then
 	    echo "--> minikube vm (profile: $minikube_profile) is already running (check: $kube_version), skipping restart"
