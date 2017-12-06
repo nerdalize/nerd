@@ -64,6 +64,8 @@ func create() *cli.CLI {
 			"project list":      command.ProjectListFactory,
 			"job":               cmd.JobFactory(),
 			"job run":           cmd.JobRunFactory(),
+			"job delete":        cmd.JobDeleteFactory(),
+			"job list":          cmd.JobListFactory(),
 			"task":              command.TaskFactory,
 			"task list":         command.TaskListFactory,
 			"task create":       command.TaskCreateFactory,
