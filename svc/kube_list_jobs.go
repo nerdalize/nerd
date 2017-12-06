@@ -33,10 +33,11 @@ var (
 	JobDetailsPhaseUnknown JobDetailsPhase = "Unknown"
 )
 
-//JobDetails tells us more about the job from a pod
+//JobDetails tells us more about the job by looking at underlying resources
 type JobDetails struct {
 	SeenAt         time.Time
 	Phase          JobDetailsPhase
+	Parallelism    int32  //job width, if 0 this means it was stopped
 	WaitingReason  string //why the job -> pod -> container is waiting
 	WaitingMessage string //explains why we're waiting
 }
@@ -84,13 +85,15 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 			continue
 		}
 
-		//@TODO if parralism is set to 0, consider "stopped"?
-
 		c := job.Spec.Template.Spec.Containers[0]
 		item := &ListJobItem{
 			Name:      job.GetName(),
 			Image:     c.Image,
 			CreatedAt: job.CreationTimestamp.Local(),
+		}
+
+		if parr := job.Spec.Parallelism; parr != nil {
+			item.Details.Parallelism = *parr
 		}
 
 		if dt := job.GetDeletionTimestamp(); dt != nil {
@@ -138,7 +141,7 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 		}
 
 		//technically we can have multiple pods per job (one terminating, unkown etc) so we pick the
-		//one that is created most recently
+		//one that is created most recently to base our details on
 		if pod.CreationTimestamp.Local().After(jobItem.Details.SeenAt) {
 			jobItem.Details.SeenAt = pod.CreationTimestamp.Local()
 		}
