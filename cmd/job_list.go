@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	humanize "github.com/dustin/go-humanize"
@@ -47,51 +46,16 @@ func (cmd *JobList) Execute(args []string) (err error) {
 		return errors.Wrap(err, "failed to run job")
 	}
 
-	hdr := []string{"JOB", "IMAGE", "CREATED AT", "STATUS"}
+	hdr := []string{"JOB", "IMAGE", "CREATED AT", "PHASE", "DETAILS"}
 	rows := [][]string{}
 	for _, item := range out.Items {
-		details := []string{}
-		status := func() string {
-			if !item.DeletedAt.IsZero() {
-				return "(Deleting)" //in progress of deleting
-			}
-
-			if item.Details.Parallelism == 0 {
-				return "Stopped"
-			}
-
-			if !item.FailedAt.IsZero() {
-				return "Failed"
-			}
-
-			if !item.CompletedAt.IsZero() {
-				return "Completed"
-			}
-
-			if !item.ActiveAt.IsZero() {
-				if item.Details.Phase != "" {
-					return string(item.Details.Phase) //detailed phase is always more usefull then active
-				}
-
-				return "Active" //little to go on, but better then nothing
-			}
-
-			return "Unkown" //by default the status is unkown
-		}()
-
-		//humanize creation
-		createdAt := humanize.Time(item.CreatedAt)
-
-		//add explanations as details
-		if item.Details.WaitingReason != "" {
-			details = append(details, item.Details.WaitingReason)
-		}
-
-		if len(details) > 0 {
-			status = fmt.Sprintf("%s: %s", status, strings.Join(details, ", "))
-		}
-
-		rows = append(rows, []string{item.Name, item.Image, createdAt, status})
+		rows = append(rows, []string{
+			item.Name,
+			item.Image,
+			humanize.Time(item.CreatedAt),
+			renderItemPhase(item),
+			strings.Join(renderItemDetails(item), ","),
+		})
 	}
 
 	return cmd.out.Table(hdr, rows)
@@ -105,3 +69,61 @@ func (cmd *JobList) Synopsis() string { return PlaceholderSynopsis }
 
 // Usage shows usage
 func (cmd *JobList) Usage() string { return PlaceholderUsage }
+
+func renderItemDetails(item *svc.ListJobItem) (details []string) {
+	if item.Details.WaitingReason != "" {
+		wreason := item.Details.WaitingReason
+		if strings.Contains(wreason, "Image") {
+			wreason = "Failure while pulling image"
+		}
+
+		details = append(details, wreason)
+	}
+
+	if item.Details.UnschedulableReason != "" {
+		usreason := item.Details.UnschedulableReason
+		if strings.Contains(usreason, "NotYetSchedulable") {
+			usreason = "No resources available"
+		}
+
+		details = append(details, usreason)
+	}
+
+	return details
+}
+
+func renderItemPhase(item *svc.ListJobItem) string {
+	if !item.DeletedAt.IsZero() {
+		return "Deleting" //in progress of deleting
+	}
+
+	if item.Details.Parallelism == 0 {
+		return "Stopped"
+	}
+
+	if !item.FailedAt.IsZero() {
+		return "Failed"
+	}
+
+	if !item.CompletedAt.IsZero() {
+		return "Completed"
+	}
+
+	if !item.Details.Scheduled {
+		return "Waiting" //waiting to be scheduled
+	}
+
+	if !item.ActiveAt.IsZero() {
+		if item.Details.Phase != "" {
+			if item.Details.Phase == svc.JobDetailsPhasePending {
+				return "Starting" //if not "waiting" but pending, call it "starting" instead
+			}
+
+			return string(item.Details.Phase) //detailed phase is always more usefull then active
+		}
+
+		return "Active" //little to go on, but better then nothing
+	}
+
+	return "Unkown" //by default the status is unkown
+}

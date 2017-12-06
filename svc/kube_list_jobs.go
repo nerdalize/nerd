@@ -35,13 +35,16 @@ var (
 
 //JobDetails tells us more about the job by looking at underlying resources
 type JobDetails struct {
-	SeenAt            time.Time
-	Phase             JobDetailsPhase
-	Parallelism       int32  //job width, if 0 this means it was stopped
-	WaitingReason     string //why the job -> pod -> container is waiting
-	WaitingMessage    string //explains why we're waiting
-	TerminatedReason  string //termination of main container
-	TerminatedMessage string //explains why its terminated
+	SeenAt               time.Time
+	Phase                JobDetailsPhase
+	Scheduled            bool   //indicate if the pod was scheduled
+	Parallelism          int32  //job width, if 0 this means it was stopped
+	WaitingReason        string //why the job -> pod -> container is waiting
+	WaitingMessage       string //explains why we're waiting
+	TerminatedReason     string //termination of main container
+	TerminatedMessage    string //explains why its terminated
+	UnschedulableReason  string //when scheduling condition is false
+	UnschedulableMessage string
 }
 
 //ListJobItem is a job listing item
@@ -162,7 +165,27 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 			jobItem.Details.Phase = JobDetailsPhaseUnknown
 		}
 
-		//@TODO add pod condition type "unschedulable" to indicate it was not able to have enough resources
+		for _, cond := range pod.Status.Conditions {
+			//onschedulable is a reason for being pending
+			if cond.Type == corev1.PodScheduled {
+				if cond.Status == corev1.ConditionFalse {
+					if cond.Reason == corev1.PodReasonUnschedulable {
+						// From src: "PodReasonUnschedulable reason in PodScheduled PodCondition means that the scheduler
+						// can't schedule the pod right now"
+						jobItem.Details.UnschedulableReason = "NotYetSchedulable" //special case
+						jobItem.Details.UnschedulableMessage = cond.Message
+					} else {
+						jobItem.Details.UnschedulableReason = cond.Reason
+						jobItem.Details.UnschedulableMessage = cond.Message
+					}
+
+					//NotScheduled
+
+				} else if cond.Status == corev1.ConditionTrue {
+					jobItem.Details.Scheduled = true
+				}
+			}
+		}
 
 		//container conditions allow us to capture ErrImageNotFound
 		for _, cstatus := range pod.Status.ContainerStatuses {
