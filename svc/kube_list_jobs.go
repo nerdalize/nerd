@@ -35,11 +35,13 @@ var (
 
 //JobDetails tells us more about the job by looking at underlying resources
 type JobDetails struct {
-	SeenAt         time.Time
-	Phase          JobDetailsPhase
-	Parallelism    int32  //job width, if 0 this means it was stopped
-	WaitingReason  string //why the job -> pod -> container is waiting
-	WaitingMessage string //explains why we're waiting
+	SeenAt            time.Time
+	Phase             JobDetailsPhase
+	Parallelism       int32  //job width, if 0 this means it was stopped
+	WaitingReason     string //why the job -> pod -> container is waiting
+	WaitingMessage    string //explains why we're waiting
+	TerminatedReason  string //termination of main container
+	TerminatedMessage string //explains why its terminated
 }
 
 //ListJobItem is a job listing item
@@ -160,6 +162,8 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 			jobItem.Details.Phase = JobDetailsPhaseUnknown
 		}
 
+		//@TODO add pod condition type "unschedulable" to indicate it was not able to have enough resources
+
 		//container conditions allow us to capture ErrImageNotFound
 		for _, cstatus := range pod.Status.ContainerStatuses {
 			if cstatus.Name != "main" { //we only care about the main container
@@ -170,6 +174,11 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 			if cstatus.State.Waiting != nil {
 				jobItem.Details.WaitingReason = cstatus.State.Waiting.Reason
 				jobItem.Details.WaitingMessage = cstatus.State.Waiting.Message
+			}
+
+			if cstatus.State.Terminated != nil {
+				jobItem.Details.TerminatedReason = cstatus.State.Terminated.Reason
+				jobItem.Details.TerminatedMessage = cstatus.State.Terminated.Message
 			}
 		}
 	}

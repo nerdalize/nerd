@@ -2,7 +2,10 @@ package cmd
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
+	humanize "github.com/dustin/go-humanize"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
@@ -44,33 +47,51 @@ func (cmd *JobList) Execute(args []string) (err error) {
 		return errors.Wrap(err, "failed to run job")
 	}
 
-	hdr := []string{"JOB", "IMAGE", "STATUS", "PHASE", "WAITING REASON"}
+	hdr := []string{"JOB", "IMAGE", "CREATED AT", "STATUS"}
 	rows := [][]string{}
 	for _, item := range out.Items {
-
-		//@TODO think of a better way to format jobs
-		status := "Unkown"
-		if item.DeletedAt.IsZero() {
-			if !item.FailedAt.IsZero() {
-				status = "Failed"
-			} else {
-				if !item.CompletedAt.IsZero() {
-					status = "Completed"
-				} else {
-
-					if !item.ActiveAt.IsZero() {
-						status = "Active" //@TODO at this point the job's sole pod can still be:
-						// - Pending (due to capacity, not being placed)
-						// - ErrImagePull (due to wrong image being provided)
-						// - Running (successfully being in progress)
-					}
-				}
+		details := []string{}
+		status := func() string {
+			if !item.DeletedAt.IsZero() {
+				return "(Deleting)" //in progress of deleting
 			}
-		} else {
-			status = "Deleting..."
+
+			if item.Details.Parallelism == 0 {
+				return "Stopped"
+			}
+
+			if !item.FailedAt.IsZero() {
+				return "Failed"
+			}
+
+			if !item.CompletedAt.IsZero() {
+				return "Completed"
+			}
+
+			if !item.ActiveAt.IsZero() {
+				if item.Details.Phase != "" {
+					return string(item.Details.Phase) //detailed phase is always more usefull then active
+				}
+
+				return "Active" //little to go on, but better then nothing
+			}
+
+			return "Unkown" //by default the status is unkown
+		}()
+
+		//humanize creation
+		createdAt := humanize.Time(item.CreatedAt)
+
+		//add explanations as details
+		if item.Details.WaitingReason != "" {
+			details = append(details, item.Details.WaitingReason)
 		}
 
-		rows = append(rows, []string{item.Name, item.Image, status, string(item.Details.Phase), item.Details.WaitingReason})
+		if len(details) > 0 {
+			status = fmt.Sprintf("%s: %s", status, strings.Join(details, ", "))
+		}
+
+		rows = append(rows, []string{item.Name, item.Image, createdAt, status})
 	}
 
 	return cmd.out.Table(hdr, rows)
