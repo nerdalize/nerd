@@ -29,6 +29,12 @@ func create() *cli.CLI {
 		}
 	}
 
+	ui := &cli.BasicUi{
+		Reader:      os.Stdin,
+		Writer:      os.Stdout,
+		ErrorWriter: os.Stderr,
+	}
+
 	c := &cli.CLI{
 		Name: name,
 		Args: args,
@@ -62,10 +68,10 @@ func create() *cli.CLI {
 			"project expel":     command.ProjectExpelFactory,
 			"project set":       command.ProjectSetFactory,
 			"project list":      command.ProjectListFactory,
-			"job":               cmd.JobFactory(),
-			"job run":           cmd.JobRunFactory(),
-			"job delete":        cmd.JobDeleteFactory(),
-			"job list":          cmd.JobListFactory(),
+			"job":               cmd.JobFactory(ui),
+			"job run":           cmd.JobRunFactory(ui),
+			"job delete":        cmd.JobDeleteFactory(ui),
+			"job list":          cmd.JobListFactory(ui),
 			"task":              command.TaskFactory,
 			"task list":         command.TaskListFactory,
 			"task create":       command.TaskCreateFactory,

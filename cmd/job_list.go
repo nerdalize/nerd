@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"context"
-	"fmt"
+	"sort"
+	"strings"
 
+	humanize "github.com/dustin/go-humanize"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
@@ -18,9 +20,9 @@ type JobList struct {
 }
 
 //JobListFactory creates the command
-func JobListFactory() cli.CommandFactory {
+func JobListFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &JobList{}
-	cmd.command = createCommand(cmd.Execute, cmd.Description, cmd.Usage, cmd)
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd)
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -29,7 +31,7 @@ func JobListFactory() cli.CommandFactory {
 //Execute runs the command
 func (cmd *JobList) Execute(args []string) (err error) {
 	kopts := cmd.KubeOpts
-	deps, err := NewDeps(cmd.logs, kopts)
+	deps, err := NewDeps(cmd.Logger(), kopts)
 	if err != nil {
 		return errors.Wrap(err, "failed to configure")
 	}
@@ -42,42 +44,91 @@ func (cmd *JobList) Execute(args []string) (err error) {
 	kube := svc.NewKube(deps, kopts.Namespace)
 	out, err := kube.ListJobs(ctx, in)
 	if err != nil {
-		return errors.Wrap(err, "failed to run job")
+		return renderServiceError(err, "failed to list jobs")
 	}
 
+	sort.Slice(out.Items, func(i int, j int) bool {
+		return out.Items[i].CreatedAt.After(out.Items[j].CreatedAt)
+	})
+
+	hdr := []string{"JOB", "IMAGE", "CREATED AT", "PHASE", "DETAILS"}
+	rows := [][]string{}
 	for _, item := range out.Items {
-		status := "Unkown"
-		if item.DeletedAt.IsZero() {
-			if !item.FailedAt.IsZero() {
-				status = "Failed"
-			} else {
-				if !item.CompletedAt.IsZero() {
-					status = "Completed"
-				} else {
-
-					if !item.ActiveAt.IsZero() {
-						status = "Active" //@TODO at this point the job's sole pod can still be:
-						// - Pending (due to capacity, not being placed)
-						// - ErrImagePull (due to wrong image being provided)
-						// - Running (successfully being in progress)
-					}
-				}
-			}
-		} else {
-			status = "Deleting..."
-		}
-
-		fmt.Println("Job:", item.Name, "Image:", item.Image, "Status:", status, "Phase:", item.Details.Phase, "WaitingReason:", item.Details.WaitingReason)
+		rows = append(rows, []string{
+			item.Name,
+			item.Image,
+			humanize.Time(item.CreatedAt),
+			renderItemPhase(item),
+			strings.Join(renderItemDetails(item), ","),
+		})
 	}
 
-	return nil
+	return cmd.out.Table(hdr, rows)
 }
 
 // Description returns long-form help text
-func (cmd *JobList) Description() string { return PlaceholderHelp }
+func (cmd *JobList) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
-func (cmd *JobList) Synopsis() string { return PlaceholderSynopsis }
+func (cmd *JobList) Synopsis() string { return "Return jobs that are managed by the cluster" }
 
 // Usage shows usage
-func (cmd *JobList) Usage() string { return PlaceholderUsage }
+func (cmd *JobList) Usage() string { return "nerd job list" }
+
+func renderItemDetails(item *svc.ListJobItem) (details []string) {
+	if item.Details.WaitingReason != "" {
+		wreason := item.Details.WaitingReason
+		if strings.Contains(wreason, "Image") {
+			wreason = "Failure while pulling image"
+		}
+
+		details = append(details, wreason)
+	}
+
+	if item.Details.UnschedulableReason != "" {
+		usreason := item.Details.UnschedulableReason
+		if strings.Contains(usreason, "NotYetSchedulable") {
+			usreason = "No resources available"
+		}
+
+		details = append(details, usreason)
+	}
+
+	return details
+}
+
+func renderItemPhase(item *svc.ListJobItem) string {
+	if !item.DeletedAt.IsZero() {
+		return "Deleting" //in progress of deleting
+	}
+
+	if item.Details.Parallelism == 0 {
+		return "Stopped"
+	}
+
+	if !item.FailedAt.IsZero() {
+		return "Failed"
+	}
+
+	if !item.CompletedAt.IsZero() {
+		return "Completed"
+	}
+
+	if !item.Details.Scheduled {
+		return "Waiting" //waiting to be scheduled
+	}
+
+	if !item.ActiveAt.IsZero() {
+		if item.Details.Phase != "" {
+			if item.Details.Phase == svc.JobDetailsPhasePending {
+				return "Starting" //if not "waiting" but pending, call it "starting" instead
+			}
+
+			return string(item.Details.Phase) //detailed phase is always more usefull then active
+		}
+
+		return "Active" //little to go on, but better then nothing
+	}
+
+	return "Unkown" //by default the status is unkown
+}

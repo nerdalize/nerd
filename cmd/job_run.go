@@ -17,9 +17,9 @@ type JobRun struct {
 }
 
 //JobRunFactory creates the command
-func JobRunFactory() cli.CommandFactory {
+func JobRunFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &JobRun{}
-	cmd.command = createCommand(cmd.Execute, cmd.Description, cmd.Usage, cmd)
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd)
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -32,7 +32,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 	}
 
 	kopts := cmd.KubeOpts
-	deps, err := NewDeps(cmd.logs, kopts)
+	deps, err := NewDeps(cmd.Logger(), kopts)
 	if err != nil {
 		return errors.Wrap(err, "failed to configure")
 	}
@@ -49,19 +49,19 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 	kube := svc.NewKube(deps, kopts.Namespace)
 	out, err := kube.RunJob(ctx, in)
 	if err != nil {
-		return errors.Wrap(err, "failed to run job")
+		return renderServiceError(err, "failed to run job")
 	}
 
-	cmd.logs.Printf("Submitted job: '%s'", out.Name)
-	cmd.logs.Printf("To see whats happening, use: 'nerd job inspect %s'", out.Name)
+	cmd.out.Infof("Submitted job: '%s'", out.Name)
+	cmd.out.Infof("To see whats happening, use: 'nerd job list'")
 	return nil
 }
 
 // Description returns long-form help text
-func (cmd *JobRun) Description() string { return PlaceholderHelp }
+func (cmd *JobRun) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
-func (cmd *JobRun) Synopsis() string { return PlaceholderSynopsis }
+func (cmd *JobRun) Synopsis() string { return "Runs a job on your compute cluster" }
 
 // Usage shows usage
-func (cmd *JobRun) Usage() string { return PlaceholderUsage }
+func (cmd *JobRun) Usage() string { return "nerd job run [OPTIONS] IMAGE [COMMAND] [ARG...]" }

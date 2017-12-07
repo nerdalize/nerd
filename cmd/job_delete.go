@@ -16,9 +16,9 @@ type JobDelete struct {
 }
 
 //JobDeleteFactory creates the command
-func JobDeleteFactory() cli.CommandFactory {
+func JobDeleteFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &JobDelete{}
-	cmd.command = createCommand(cmd.Execute, cmd.Description, cmd.Usage, cmd)
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd)
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -31,7 +31,7 @@ func (cmd *JobDelete) Execute(args []string) (err error) {
 	}
 
 	kopts := cmd.KubeOpts
-	deps, err := NewDeps(cmd.logs, kopts)
+	deps, err := NewDeps(cmd.Logger(), kopts)
 	if err != nil {
 		return errors.Wrap(err, "failed to configure")
 	}
@@ -47,18 +47,19 @@ func (cmd *JobDelete) Execute(args []string) (err error) {
 	kube := svc.NewKube(deps, kopts.Namespace)
 	_, err = kube.DeleteJob(ctx, in)
 	if err != nil {
-		return errors.Wrap(err, "failed to run job")
+		return renderServiceError(err, "failed to delete job")
 	}
 
-	cmd.logs.Printf("Deleted job: '%s'", in.Name)
+	cmd.out.Infof("Deleted job: '%s'", in.Name)
+	cmd.out.Infof("To see whats happening, use: 'nerd job list'")
 	return nil
 }
 
 // Description returns long-form help text
-func (cmd *JobDelete) Description() string { return PlaceholderHelp }
+func (cmd *JobDelete) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
-func (cmd *JobDelete) Synopsis() string { return PlaceholderSynopsis }
+func (cmd *JobDelete) Synopsis() string { return "Remove a job from the cluster" }
 
 // Usage shows usage
-func (cmd *JobDelete) Usage() string { return PlaceholderUsage }
+func (cmd *JobDelete) Usage() string { return "nerd job delete [NAME]" }
