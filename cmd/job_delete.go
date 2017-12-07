@@ -56,10 +56,10 @@ func (cmd *JobDelete) Execute(args []string) (err error) {
 }
 
 // Description returns long-form help text
-func (cmd *JobDelete) Description() string { return PlaceholderHelp }
+func (cmd *JobDelete) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
-func (cmd *JobDelete) Synopsis() string { return PlaceholderSynopsis }
+func (cmd *JobDelete) Synopsis() string { return "Remove a job from the cluster" }
 
 // Usage shows usage
-func (cmd *JobDelete) Usage() string { return PlaceholderUsage }
+func (cmd *JobDelete) Usage() string { return "nerd job delete [NAME]" }

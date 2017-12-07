@@ -58,10 +58,10 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 }
 
 // Description returns long-form help text
-func (cmd *JobRun) Description() string { return PlaceholderHelp }
+func (cmd *JobRun) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
-func (cmd *JobRun) Synopsis() string { return PlaceholderSynopsis }
+func (cmd *JobRun) Synopsis() string { return "Runs a job on your compute cluster" }
 
 // Usage shows usage
-func (cmd *JobRun) Usage() string { return PlaceholderUsage }
+func (cmd *JobRun) Usage() string { return "nerd job run [OPTIONS] IMAGE [COMMAND] [ARG...]" }

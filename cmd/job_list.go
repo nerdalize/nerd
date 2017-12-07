@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"sort"
 	"strings"
 
 	humanize "github.com/dustin/go-humanize"
@@ -46,6 +47,10 @@ func (cmd *JobList) Execute(args []string) (err error) {
 		return renderServiceError(err, "failed to list jobs")
 	}
 
+	sort.Slice(out.Items, func(i int, j int) bool {
+		return out.Items[i].CreatedAt.After(out.Items[j].CreatedAt)
+	})
+
 	hdr := []string{"JOB", "IMAGE", "CREATED AT", "PHASE", "DETAILS"}
 	rows := [][]string{}
 	for _, item := range out.Items {
@@ -62,13 +67,13 @@ func (cmd *JobList) Execute(args []string) (err error) {
 }
 
 // Description returns long-form help text
-func (cmd *JobList) Description() string { return PlaceholderHelp }
+func (cmd *JobList) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
-func (cmd *JobList) Synopsis() string { return PlaceholderSynopsis }
+func (cmd *JobList) Synopsis() string { return "Return jobs that are managed by the cluster" }
 
 // Usage shows usage
-func (cmd *JobList) Usage() string { return PlaceholderUsage }
+func (cmd *JobList) Usage() string { return "nerd job list" }
 
 func renderItemDetails(item *svc.ListJobItem) (details []string) {
 	if item.Details.WaitingReason != "" {
