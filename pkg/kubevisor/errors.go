@@ -86,3 +86,29 @@ func IsInvalidNameErr(err error) bool {
 	te, ok := err.(iface)
 	return ok && te.IsInvalidName()
 }
+
+type errServiceUnavailable struct{ error }
+
+func (e errServiceUnavailable) IsServiceUnavailable() bool { return true }
+
+//IsServiceUnavailableErr indicates that kubernetes is unhealthy
+func IsServiceUnavailableErr(err error) bool {
+	type iface interface {
+		IsServiceUnavailable() bool
+	}
+	te, ok := err.(iface)
+	return ok && te.IsServiceUnavailable()
+}
+
+type errUnauthorized struct{ error }
+
+func (e errUnauthorized) IsUnauthorized() bool { return true }
+
+//IsUnauthorizedErr indicates that what is attempted to be created already exists
+func IsUnauthorizedErr(err error) bool {
+	type iface interface {
+		IsUnauthorized() bool
+	}
+	te, ok := err.(iface)
+	return ok && te.IsUnauthorized()
+}

@@ -187,6 +187,14 @@ func (k *Visor) tagError(err error) error {
 	}
 
 	if serr, ok := err.(*kuberr.StatusError); ok {
+		if kuberr.IsServiceUnavailable(err) {
+			return errServiceUnavailable{err}
+		}
+
+		if kuberr.IsUnauthorized(err) {
+			return errUnauthorized{err}
+		}
+
 		if kuberr.IsAlreadyExists(serr) {
 			return errAlreadyExists{err}
 		}
