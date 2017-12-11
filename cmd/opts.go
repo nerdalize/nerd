@@ -1,11 +1,13 @@
 package cmd
 
 import (
+	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/go-playground/validator"
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/nerdalize/nerd/pkg/authenticator"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
@@ -24,17 +26,22 @@ type Deps struct {
 	val  svc.Validator
 	kube kubernetes.Interface
 	logs svc.Logger
+	ns   string
 }
 
 //NewDeps uses options to setup dependencies
 func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
 	if kopts.KubeConfig == "" {
-		hdir, err := homedir.Dir()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get home directory")
-		}
+		if os.Getenv("KUBECONFIG") == "" {
+			hdir, err := homedir.Dir()
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get home directory")
+			}
 
-		kopts.KubeConfig = filepath.Join(hdir, ".kube", "config")
+			kopts.KubeConfig = filepath.Join(hdir, ".kube", "config")
+		} else {
+			kopts.KubeConfig = filepath.Join(os.Getenv("KUBECONFIG"), "config")
+		}
 	}
 
 	kcfg, err := clientcmd.BuildConfigFromFlags("", kopts.KubeConfig)
@@ -49,6 +56,11 @@ func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
 	d.kube, err = kubernetes.NewForConfig(kcfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create Kubernetes configuration")
+	}
+
+	d.ns, err = authenticator.Namespace(kopts.KubeConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get namespace from Kubernetes configuration")
 	}
 
 	d.val = validator.New()

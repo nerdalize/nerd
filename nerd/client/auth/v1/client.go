@@ -149,6 +149,11 @@ func (c *Client) ListProjects() (output *v1payload.ListProjectsOutput, err error
 	return output, c.doRequest(http.MethodGet, projectsEndpoint, nil, &output.Projects)
 }
 
+func (c *Client) GetProject(id string) (output *v1payload.GetProjectOutput, err error) {
+	output = &v1payload.GetProjectOutput{}
+	return output, c.doRequest(http.MethodGet, fmt.Sprintf("%s/%s", projectsEndpoint, id), nil, output)
+}
+
 //GetJWT gets a JWT for a given scope
 func (c *Client) GetJWT(scope string) (output *v1payload.GetJWTOutput, err error) {
 	output = &v1payload.GetJWTOutput{}
