@@ -14,9 +14,9 @@ type Kube struct {
 }
 
 //NewKube will setup the Kubernetes service
-func NewKube(di DI, ns string) (k *Kube) {
+func NewKube(di DI) (k *Kube) {
 	k = &Kube{
-		visor: kubevisor.NewVisor(ns, "nlz-nerd", di.Kube(), di.Logger()),
+		visor: kubevisor.NewVisor(di.Namespace(), "nlz-nerd", di.Kube(), di.Logger()),
 		val:   di.Validator(),
 		logs:  di.Logger(),
 	}

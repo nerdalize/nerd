@@ -39,7 +39,7 @@ func (cmd *JobList) Execute(args []string) (err error) {
 	defer cancel()
 
 	in := &svc.ListJobsInput{}
-	kube := svc.NewKube(deps, kopts.Namespace)
+	kube := svc.NewKube(deps)
 	out, err := kube.ListJobs(ctx, in)
 	if err != nil {
 		return errors.Wrap(err, "failed to run job")

@@ -2,7 +2,6 @@
 package authenticator
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -167,7 +166,6 @@ func Namespace(filename string) (string, error) {
 		return "", errors.Errorf("could not read config: %v", err)
 	}
 
-	fmt.Println(config.Contexts[config.CurrentContext].Namespace, config.CurrentContext)
 	return config.Contexts[config.CurrentContext].Namespace, nil
 }
 
