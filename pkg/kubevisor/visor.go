@@ -2,16 +2,23 @@ package kubevisor
 
 import (
 	"context"
+	"io"
 	"net/url"
 	"strings"
 
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	kuberr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+)
+
+var (
+	//MaxLogBytes determines how much logs we're gonna return, we cap it hard at this point
+	MaxLogBytes = int64(1024 * 1024) //1MiB
 )
 
 //Logger describes the logging dependency the services require
@@ -92,6 +99,29 @@ func (k *Visor) DeleteResource(ctx context.Context, t ResourceType, name string)
 	return nil
 }
 
+//FetchLogs will read logs from container with name 'cname' from pod 'pname' and write it to writer 'w'
+func (k *Visor) FetchLogs(ctx context.Context, tail int64, w io.Writer, cname, pname string) (err error) {
+	req := k.api.CoreV1().Pods(k.ns).GetLogs(pname, &corev1.PodLogOptions{
+		Container:  cname,
+		TailLines:  &tail,
+		LimitBytes: &MaxLogBytes,
+	})
+
+	req = req.Context(ctx)
+	rc, err := req.Stream()
+	if err != nil {
+		return k.tagError(err)
+	}
+
+	defer rc.Close()
+	_, err = io.Copy(w, rc)
+	if err != nil {
+		return errors.Wrap(err, "failed to copy logs over")
+	}
+
+	return nil
+}
+
 //CreateResource will use the kube RESTClient to create a resource while using the context, adding the
 //Nerd prefix and handling errors specific to our domain.
 func (k *Visor) CreateResource(ctx context.Context, t ResourceType, v ManagedNames, name string) (err error) {
@@ -144,7 +174,7 @@ func (k *Visor) CreateResource(ctx context.Context, t ResourceType, v ManagedNam
 
 //ListResources will use the RESTClient to list resources while using the context and transparently
 //filter resources managed by the CLI
-func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranformer) (err error) {
+func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranformer, lselector []string) (err error) {
 	vv, ok := v.(runtime.Object)
 	if !ok {
 		return errors.Errorf("provided value was not castable to runtime.Object")
@@ -160,9 +190,10 @@ func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranfor
 		return errors.Errorf("unknown Kubernetes resource type provided for listing: '%s'", t)
 	}
 
+	lselector = append(lselector, "nerd-app=cli")
 	err = c.Get().
 		Namespace(k.ns).
-		VersionedParams(&metav1.ListOptions{LabelSelector: "nerd-app=cli"}, scheme.ParameterCodec).
+		VersionedParams(&metav1.ListOptions{LabelSelector: strings.Join(lselector, ",")}, scheme.ParameterCodec).
 		Resource(string(t)).
 		Context(ctx).
 		Do().

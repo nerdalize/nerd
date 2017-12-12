@@ -76,7 +76,7 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 
 	//Step 0: Get all the jobs under nerd-app=cli
 	jobs := &jobs{}
-	err = k.visor.ListResources(ctx, kubevisor.ResourceTypeJobs, jobs)
+	err = k.visor.ListResources(ctx, kubevisor.ResourceTypeJobs, jobs, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 
 	//Step 2: Get all pods under nerd-app=cli
 	pods := &pods{}
-	err = k.visor.ListResources(ctx, kubevisor.ResourceTypePods, pods)
+	err = k.visor.ListResources(ctx, kubevisor.ResourceTypePods, pods, nil)
 	if err != nil {
 		return nil, err
 	}
