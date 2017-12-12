@@ -1,7 +1,11 @@
 package svc
 
 import (
+	"bytes"
 	"context"
+
+	"github.com/nerdalize/nerd/pkg/kubevisor"
+	corev1 "k8s.io/api/core/v1"
 )
 
 //FetchJobLogsInput is the input to FetchJobLogs
@@ -10,7 +14,9 @@ type FetchJobLogsInput struct {
 }
 
 //FetchJobLogsOutput is the output to FetchJobLogs
-type FetchJobLogsOutput struct{}
+type FetchJobLogsOutput struct {
+	Data []byte
+}
 
 //FetchJobLogs will create a job on kubernetes
 func (k *Kube) FetchJobLogs(ctx context.Context, in *FetchJobLogsInput) (out *FetchJobLogsOutput, err error) {
@@ -18,10 +24,30 @@ func (k *Kube) FetchJobLogs(ctx context.Context, in *FetchJobLogsInput) (out *Fe
 		return nil, err
 	}
 
-	//@TODO get all pods with prefix and label
+	pods := &pods{}
+	err = k.visor.ListResources(ctx, kubevisor.ResourceTypePods, pods, nil)
+	if err != nil {
+		return nil, err
+	}
 
-	//@TODO get pod name
-	//@TODO assume container name
+	if len(pods.Items) < 1 {
+		return nil, errNoLogs{reasonNoPods: true}
+	}
 
-	return &FetchJobLogsOutput{}, nil
+	var last corev1.Pod
+	for _, pod := range pods.Items {
+		if pod.CreationTimestamp.Local().After(last.CreationTimestamp.Local()) {
+			last = pod //found a more recent pod
+		} else {
+			continue
+		}
+	}
+
+	buf := bytes.NewBuffer(nil)
+	err = k.visor.FetchLogs(ctx, 100, buf, "main", last.GetName())
+	if err != nil {
+		return nil, err //@TODO, possible race, at this point the pod could have been deleted
+	}
+
+	return &FetchJobLogsOutput{Data: buf.Bytes()}, nil
 }
