@@ -5,11 +5,13 @@ import (
 	"context"
 
 	"github.com/nerdalize/nerd/pkg/kubevisor"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
 //FetchJobLogsInput is the input to FetchJobLogs
 type FetchJobLogsInput struct {
+	Tail int64  `validate:"min=0"`
 	Name string `validate:"min=1,printascii"`
 }
 
@@ -24,14 +26,20 @@ func (k *Kube) FetchJobLogs(ctx context.Context, in *FetchJobLogsInput) (out *Fe
 		return nil, err
 	}
 
+	job := &batchv1.Job{}
+	err = k.visor.GetResource(ctx, kubevisor.ResourceTypeJobs, job, in.Name)
+	if err != nil {
+		return nil, err
+	}
+
 	pods := &pods{}
-	err = k.visor.ListResources(ctx, kubevisor.ResourceTypePods, pods, []string{"job-name=" + k.visor.Prefix(in.Name)})
+	err = k.visor.ListResources(ctx, kubevisor.ResourceTypePods, pods, []string{"controller-uid=" + string(job.GetUID())})
 	if err != nil {
 		return nil, err
 	}
 
 	if len(pods.Items) < 1 {
-		return nil, errNoLogs{reasonNoPods: true}
+		return &FetchJobLogsOutput{}, nil
 	}
 
 	var last corev1.Pod
@@ -44,10 +52,12 @@ func (k *Kube) FetchJobLogs(ctx context.Context, in *FetchJobLogsInput) (out *Fe
 	}
 
 	buf := bytes.NewBuffer(nil)
-	err = k.visor.FetchLogs(ctx, buf, "main", last.GetName())
+	err = k.visor.FetchLogs(ctx, in.Tail, buf, "main", last.GetName())
 	if err != nil {
-		//@TODO,possible race, at this point the pod could have been deleted, not exist
-		//@TODO could be error: "is still creating"
+		if kubevisor.IsNotExistsErr(err) {
+			return nil, errRaceCondition{err} //pod was deleted since we listed it
+		}
+
 		return nil, err
 	}
 

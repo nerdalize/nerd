@@ -13,19 +13,15 @@ func IsValidationErr(err error) bool {
 	return ok && te.IsValidation()
 }
 
-type errNoLogs struct {
-	reasonNoPods bool //there were no pods for the logs
-}
+type errRaceCondition struct{ error }
 
-func (e errNoLogs) IsNoLogs() bool { return true }
+func (e errRaceCondition) IsRaceCondition() bool { return true }
 
-func (e errNoLogs) Error() string { return "no logs available" }
-
-//IsNoLogsErr is returned when we couldn't retrieve any logs for the job
-func IsNoLogsErr(err error) bool {
+//IsRaceConditionErr is returned when we couldn't retrieve any logs for the job
+func IsRaceConditionErr(err error) bool {
 	type iface interface {
-		IsNoLogs() bool
+		IsRaceCondition() bool
 	}
 	te, ok := err.(iface)
-	return ok && te.IsNoLogs()
+	return ok && te.IsRaceCondition()
 }

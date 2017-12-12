@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nerdalize/nerd/pkg/kubevisor"
 	"github.com/nerdalize/nerd/svc"
 )
 
@@ -25,7 +26,7 @@ func TestFetchJobLogs(t *testing.T) {
 			Name:    "when job doesnt exist it should that there were no logs available",
 			Timeout: time.Second * 5,
 			Input:   &svc.FetchJobLogsInput{Name: "my-job"},
-			IsErr:   svc.IsNoLogsErr,
+			IsErr:   kubevisor.IsNotExistsErr,
 			IsOutput: func(t testing.TB, out *svc.FetchJobLogsOutput) bool {
 				return true
 			},
@@ -42,6 +43,23 @@ func TestFetchJobLogs(t *testing.T) {
 				}
 
 				assert(t, bytes.Contains(out.Data, []byte("Hello from Docker")), "logs should contain the data we expect")
+				return true
+			},
+		},
+
+		{
+			Name:    "tail option should allow for limiting the nr of lines to return",
+			Timeout: time.Minute,
+			Jobs:    []*svc.RunJobInput{{Image: "hello-world", Name: "my-job"}},
+			Input:   &svc.FetchJobLogsInput{Name: "my-job", Tail: 3},
+			IsErr:   nil,
+			IsOutput: func(t testing.TB, out *svc.FetchJobLogsOutput) bool {
+				if out == nil || len(out.Data) < 1 {
+					return false
+				}
+
+				assert(t, !bytes.Contains(out.Data, []byte("Hello from Docker")), "logs should not contain the data before the tail")
+				assert(t, bytes.Contains(out.Data, []byte("more examples and ideas")), "logs should contain the data after the tail")
 				return true
 			},
 		},
