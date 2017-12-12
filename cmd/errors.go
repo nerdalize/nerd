@@ -7,6 +7,16 @@ import (
 	"github.com/pkg/errors"
 )
 
+// errShowHelp can be returned by commands to show the commands help message next to the error.
+type errShowHelp string
+
+func (e errShowHelp) Error() string { return string(e) }
+
+// errShowUsage can be returned by commands to show usage.
+type errShowUsage string
+
+func (e errShowUsage) Error() string { return string(e) }
+
 func renderServiceError(err error, format string, args ...interface{}) error {
 	if err == nil {
 		return nil
