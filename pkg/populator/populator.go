@@ -16,11 +16,19 @@ import (
 // P is an interface that we can use to read from and to write to the kube config file.
 type P interface {
 	PopulateKubeConfig(project string) error
-	SetKubeConfigFile()
-	GetKubeConfigFile() string
 }
 
-
+//New instantiates a new P interface using the conf parameter. It can return a env, endpoint or oidc populator.
+func New(conf, kubeConfigFile string) (P, error) {
+	switch conf {
+	case "oidc":
+		return newOIDC(kubeConfigFile), nil
+	case "endpoint":
+		return newEndpoint(kubeConfigFile), nil
+	default:
+		return newEnv(kubeConfigFile), nil
+	}
+}
 
 // ReadConfigOrNew retrieves Kubernetes client configuration from a file.
 // If no files exists, an empty configuration is returned.

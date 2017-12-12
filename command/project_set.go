@@ -2,8 +2,11 @@ package command
 
 import (
 	"net/url"
+	"os"
+	"path/filepath"
 
 	"github.com/mitchellh/cli"
+	homedir "github.com/mitchellh/go-homedir"
 	"github.com/nerdalize/nerd/nerd/client/auth/v1"
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/oauth"
@@ -11,19 +14,27 @@ import (
 	"github.com/pkg/errors"
 )
 
+//ProjectSetOpts determine
+type ProjectSetOpts struct {
+	Config string `long:"config-src" default:"env" default-mask:"" description:"type of configuration to use (from env, endpoint, or oidc)"`
+}
+
 //ProjectSet command
 type ProjectSet struct {
 	*command
+	opts *ProjectSetOpts
 }
 
 //ProjectSetFactory returns a factory method for the join command
 func ProjectSetFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd project set", "Set current working project.", "", nil)
+	opts := &ProjectSetOpts{}
+	comm, err := newCommand("nerd project set", "Set current working project.", "", opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
 	cmd := &ProjectSet{
 		command: comm,
+		opts:    opts,
 	}
 	cmd.runFunc = cmd.DoRun
 
@@ -68,9 +79,20 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 		return HandleError(errors.New("Project not found, please check the project name. You can get a list of your projects by running `nerd project list`."))
 	}
 
-	var p populator.P
-	p = &populator.EnvPopulator{}
-	p.SetKubeConfigFile()
+	var kubeConfigFile string
+	if os.Getenv("KUBECONFIG") == "" {
+		hdir, err := homedir.Dir()
+		if err != nil {
+			return HandleError(err)
+		}
+		kubeConfigFile = filepath.Join(hdir, ".kube", "config")
+	} else {
+		kubeConfigFile = filepath.Join(os.Getenv("KUBECONFIG"), "config")
+	}
+	p, err := populator.New(cmd.opts.Config, kubeConfigFile)
+	if err != nil {
+		return HandleError(err)
+	}
 	err = p.PopulateKubeConfig(args[0])
 	if err != nil {
 		return HandleError(err)

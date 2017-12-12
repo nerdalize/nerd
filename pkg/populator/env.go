@@ -2,10 +2,8 @@ package populator
 
 import (
 	"os"
-	"path/filepath"
 	"sync/atomic"
 
-	homedir "github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
@@ -16,19 +14,10 @@ type EnvPopulator struct {
 	kubeConfigFile atomic.Value
 }
 
-func (e *EnvPopulator) SetKubeConfigFile() {
-	var kubeConfigFile string
-	if os.Getenv("KUBECONFIG") == "" {
-		hdir, err := homedir.Dir()
-		if err != nil {
-			return
-		}
-
-		kubeConfigFile = filepath.Join(hdir, ".kube", "config")
-	} else {
-		kubeConfigFile = filepath.Join(os.Getenv("KUBECONFIG"), "config")
-	}
+func newEnv(kubeConfigFile string) *EnvPopulator {
+	e := &EnvPopulator{}
 	e.kubeConfigFile.Store(kubeConfigFile)
+	return e
 }
 
 func (e *EnvPopulator) GetKubeConfigFile() string {

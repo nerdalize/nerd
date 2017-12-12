@@ -2,10 +2,8 @@ package populator
 
 import (
 	"os"
-	"path/filepath"
 	"sync/atomic"
 
-	homedir "github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
@@ -25,19 +23,10 @@ type OIDCPopulator struct {
 	kubeConfigFile atomic.Value
 }
 
-func (o *OIDCPopulator) SetKubeConfigFile() {
-	var kubeConfigFile string
-	if os.Getenv("KUBECONFIG") == "" {
-		hdir, err := homedir.Dir()
-		if err != nil {
-			return
-		}
-
-		kubeConfigFile = filepath.Join(hdir, ".kube", "config")
-	} else {
-		kubeConfigFile = filepath.Join(os.Getenv("KUBECONFIG"), "config")
-	}
+func newOIDC(kubeConfigFile string) *OIDCPopulator {
+	o := &OIDCPopulator{}
 	o.kubeConfigFile.Store(kubeConfigFile)
+	return o
 }
 
 func (o *OIDCPopulator) GetKubeConfigFile() string {
