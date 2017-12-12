@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-playground/validator"
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/nerdalize/nerd/pkg/populator"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
@@ -14,8 +15,7 @@ import (
 
 //KubeOpts can be used to create a Kubernetes service
 type KubeOpts struct {
-	KubeConfig string        `long:"kube-config" description:"file at which Nerd will look for Kubernetes credentials" default-mask:"~/.kube/conf"`
-	Namespace  string        `long:"namespace" description:"the Kubernetes namespace in which jobs will be managed" default-mask:"default" default:"default" required:"true"`
+	KubeConfig string        `long:"kube-config" description:"file at which Nerd will look for Kubernetes credentials" env:"KUBECONFIG" default-mask:"~/.kube/conf"`
 	Timeout    time.Duration `long:"timeout" description:"duration for which Nerd will wait for Kubernetes" default-mask:"10s" default:"10s" required:"true"`
 }
 
@@ -24,6 +24,7 @@ type Deps struct {
 	val  svc.Validator
 	kube kubernetes.Interface
 	logs svc.Logger
+	ns   string
 }
 
 //NewDeps uses options to setup dependencies
@@ -51,6 +52,11 @@ func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
 		return nil, errors.Wrap(err, "failed to create Kubernetes configuration")
 	}
 
+	d.ns, err = populator.Namespace(kopts.KubeConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get namespace from Kubernetes configuration")
+	}
+
 	d.val = validator.New()
 	return d, nil
 }
@@ -68,4 +74,9 @@ func (deps *Deps) Validator() svc.Validator {
 //Logger provides the Logger dependency
 func (deps *Deps) Logger() svc.Logger {
 	return deps.logs
+}
+
+//Namespace provides the namespace dependency
+func (deps *Deps) Namespace() string {
+	return deps.ns
 }

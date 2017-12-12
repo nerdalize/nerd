@@ -21,4 +21,5 @@ type DI interface {
 	Kube() kubernetes.Interface
 	Validator() Validator
 	Logger() Logger
+	Namespace() string
 }

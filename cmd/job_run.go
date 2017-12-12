@@ -46,7 +46,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		Name:  cmd.Name,
 	}
 
-	kube := svc.NewKube(deps, kopts.Namespace)
+	kube := svc.NewKube(deps)
 	out, err := kube.RunJob(ctx, in)
 	if err != nil {
 		return renderServiceError(err, "failed to run job")
