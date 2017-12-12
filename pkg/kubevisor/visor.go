@@ -70,9 +70,48 @@ func NewVisor(ns, prefix string, api kubernetes.Interface, logs Logger) *Visor {
 	return &Visor{prefix, ns, api, logs}
 }
 
-//Prefix returns the string with which each resource is prefixed in this instance
-func (k *Visor) Prefix(n string) string {
+func (k *Visor) applyPrefix(n string) string {
 	return k.prefix + n
+}
+
+func (k *Visor) removePrefix(n string) string {
+	return strings.TrimPrefix(n, k.prefix)
+}
+
+//GetResource will use the kube RESTClient to describe a resource by its name.
+func (k *Visor) GetResource(ctx context.Context, t ResourceType, v ManagedNames, name string) (err error) {
+	vv, ok := v.(runtime.Object)
+	if !ok {
+		return errors.Errorf("provided value was not castable to runtime.Object")
+	}
+
+	var c rest.Interface
+	switch t {
+	case ResourceTypeJobs:
+		c = k.api.BatchV1().RESTClient()
+
+	default:
+		return errors.Errorf("unknown Kubernetes resource type provided: '%s'", t)
+	}
+
+	name = k.applyPrefix(name)
+
+	k.logs.Debugf("getting %s '%s' in namespace '%s': %s", t, name, k.ns, ctx)
+	err = c.Get().
+		Name(name).
+		Namespace(k.ns).
+		Resource(string(t)).
+		Body(vv).
+		Context(ctx).
+		Do().
+		Into(vv)
+
+	if err != nil {
+		return k.tagError(err)
+	}
+
+	v.SetName(k.removePrefix(v.GetName())) //normalize back to unprefixed resource name
+	return nil
 }
 
 //DeleteResource will use the kube RESTClient to delete a resource by its name.
@@ -86,7 +125,7 @@ func (k *Visor) DeleteResource(ctx context.Context, t ResourceType, name string)
 		return errors.Errorf("unknown Kubernetes resource type provided for deletion: '%s'", t)
 	}
 
-	name = k.Prefix(name)
+	name = k.applyPrefix(name)
 
 	k.logs.Debugf("deleting %s '%s' in namespace '%s': %s", t, name, k.ns, ctx)
 	err = c.Delete().
@@ -105,10 +144,16 @@ func (k *Visor) DeleteResource(ctx context.Context, t ResourceType, name string)
 }
 
 //FetchLogs will read logs from container with name 'cname' from pod 'pname' and write it to writer 'w'
-func (k *Visor) FetchLogs(ctx context.Context, w io.Writer, cname, pname string) (err error) {
-	pname = k.Prefix(pname)
+func (k *Visor) FetchLogs(ctx context.Context, tail int64, w io.Writer, cname, pname string) (err error) {
+	taill := &tail
+	if tail < 1 {
+		taill = nil
+	}
+
+	pname = k.applyPrefix(pname)
 	req := k.api.CoreV1().Pods(k.ns).GetLogs(pname, &corev1.PodLogOptions{
 		Container:  cname,
+		TailLines:  taill, //can be nil if we dont want to tail
 		LimitBytes: &MaxLogBytes,
 	})
 
@@ -147,7 +192,7 @@ func (k *Visor) CreateResource(ctx context.Context, t ResourceType, v ManagedNam
 	}
 
 	if name != "" {
-		v.SetName(k.Prefix(name))
+		v.SetName(k.applyPrefix(name))
 	} else {
 		v.SetGenerateName(k.prefix + genfix)
 	}
@@ -173,7 +218,7 @@ func (k *Visor) CreateResource(ctx context.Context, t ResourceType, v ManagedNam
 		return k.tagError(err)
 	}
 
-	v.SetName(strings.TrimPrefix(v.GetName(), k.prefix)) //normalize back to unprefixed resource name
+	v.SetName(k.removePrefix(v.GetName())) //normalize back to unprefixed resource name
 	return nil
 }
 
@@ -210,7 +255,7 @@ func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranfor
 
 	//transform each managed item to return unprefixed
 	v.Transform(func(in ManagedNames) ManagedNames {
-		in.SetName(strings.TrimPrefix(in.GetName(), k.prefix))
+		in.SetName(k.removePrefix(in.GetName()))
 		return in
 	})
 

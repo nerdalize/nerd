@@ -12,6 +12,7 @@ import (
 //JobLogs command
 type JobLogs struct {
 	KubeOpts
+	Tail int64 `long:"tail" short:"t" description:"only return the oldest N lines of the process logs"`
 
 	*command
 }
@@ -43,17 +44,18 @@ func (cmd *JobLogs) Execute(args []string) (err error) {
 
 	in := &svc.FetchJobLogsInput{
 		Name: args[0],
+		Tail: cmd.Tail,
 	}
 
 	kube := svc.NewKube(deps, kopts.Namespace)
 	out, err := kube.FetchJobLogs(ctx, in)
 	if err != nil {
-		return renderServiceError(err, "failed to delete job")
+		return renderServiceError(err, "failed to fetch job logs")
 	}
 
 	lines := string(bytes.TrimSpace(out.Data))
 	if len(lines) < 1 {
-		cmd.out.Errorf("No logs available (anymore) for job '%s'. Maybe the process didn't output any logs or it was created a long time ago: old logs may be discarded", in.Name)
+		cmd.out.Errorf("No logs visible (anymore) for job '%s'. Maybe the process didn't output any logs or it was created a long time ago: old logs may be discarded", in.Name)
 		return nil
 	}
 

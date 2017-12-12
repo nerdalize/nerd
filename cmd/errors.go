@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/nerdalize/nerd/pkg/kubevisor"
+	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
 )
 
@@ -52,6 +53,10 @@ func renderServiceError(err error, format string, args ...interface{}) error {
 
 	if kubevisor.IsUnauthorizedErr(err) {
 		return errors.Errorf("%s: you do not have permission to perform this action", fmt.Errorf(format, args...))
+	}
+
+	if svc.IsRaceConditionErr(err) {
+		return errors.Errorf("%s: another process caused your action to fail, please try again", fmt.Errorf(format, args...))
 	}
 
 	return err
