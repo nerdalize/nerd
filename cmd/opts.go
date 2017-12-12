@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"os"
 	"path/filepath"
 	"time"
 
@@ -16,7 +15,7 @@ import (
 
 //KubeOpts can be used to create a Kubernetes service
 type KubeOpts struct {
-	KubeConfig string        `long:"kube-config" description:"file at which Nerd will look for Kubernetes credentials" default-mask:"~/.kube/conf"`
+	KubeConfig string        `long:"kube-config" description:"file at which Nerd will look for Kubernetes credentials" env:"KUBECONFIG" default-mask:"~/.kube/conf"`
 	Timeout    time.Duration `long:"timeout" description:"duration for which Nerd will wait for Kubernetes" default-mask:"10s" default:"10s" required:"true"`
 }
 
@@ -31,16 +30,12 @@ type Deps struct {
 //NewDeps uses options to setup dependencies
 func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
 	if kopts.KubeConfig == "" {
-		if os.Getenv("KUBECONFIG") == "" {
-			hdir, err := homedir.Dir()
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to get home directory")
-			}
-
-			kopts.KubeConfig = filepath.Join(hdir, ".kube", "config")
-		} else {
-			kopts.KubeConfig = filepath.Join(os.Getenv("KUBECONFIG"), "config")
+		hdir, err := homedir.Dir()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get home directory")
 		}
+
+		kopts.KubeConfig = filepath.Join(hdir, ".kube", "config")
 	}
 
 	kcfg, err := clientcmd.BuildConfigFromFlags("", kopts.KubeConfig)

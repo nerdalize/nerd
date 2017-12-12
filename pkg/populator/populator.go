@@ -25,8 +25,10 @@ func New(conf, kubeConfigFile string) (P, error) {
 		return newOIDC(kubeConfigFile), nil
 	case "endpoint":
 		return newEndpoint(kubeConfigFile), nil
-	default:
+	case "env":
 		return newEnv(kubeConfigFile), nil
+	default:
+		return nil, ErrNoSuchPopulator("populators implemented: oidc, endpoint, env")
 	}
 }
 

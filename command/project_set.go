@@ -2,7 +2,6 @@ package command
 
 import (
 	"net/url"
-	"os"
 	"path/filepath"
 
 	"github.com/mitchellh/cli"
@@ -16,7 +15,8 @@ import (
 
 //ProjectSetOpts determine
 type ProjectSetOpts struct {
-	Config string `long:"config-src" default:"env" default-mask:"" description:"type of configuration to use (from env, endpoint, or oidc)"`
+	Config     string `long:"config-src" default:"env" default-mask:"" description:"type of configuration to use (from env, endpoint, or oidc)"`
+	KubeConfig string `long:"kube-config" env:"KUBECONFIG" description:"file at which Nerd will look for Kubernetes credentials" default-mask:"~/.kube/conf"`
 }
 
 //ProjectSet command
@@ -79,17 +79,14 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 		return HandleError(errors.New("Project not found, please check the project name. You can get a list of your projects by running `nerd project list`."))
 	}
 
-	var kubeConfigFile string
-	if os.Getenv("KUBECONFIG") == "" {
+	if cmd.opts.KubeConfig == "" {
 		hdir, err := homedir.Dir()
 		if err != nil {
 			return HandleError(err)
 		}
-		kubeConfigFile = filepath.Join(hdir, ".kube", "config")
-	} else {
-		kubeConfigFile = filepath.Join(os.Getenv("KUBECONFIG"), "config")
+		cmd.opts.KubeConfig = filepath.Join(hdir, ".kube", "config")
 	}
-	p, err := populator.New(cmd.opts.Config, kubeConfigFile)
+	p, err := populator.New(cmd.opts.Config, cmd.opts.KubeConfig)
 	if err != nil {
 		return HandleError(err)
 	}
