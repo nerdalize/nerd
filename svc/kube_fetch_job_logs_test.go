@@ -45,6 +45,8 @@ func TestFetchJobLogs(t *testing.T) {
 				return true
 			},
 		},
+
+		//@TODO add a test with multiple jobs, make sure logs are returned from earlier jobs
 	} {
 		t.Run(c.Name, func(t *testing.T) {
 			if c.Timeout > time.Second*5 && testing.Short() {

@@ -25,7 +25,7 @@ func (k *Kube) FetchJobLogs(ctx context.Context, in *FetchJobLogsInput) (out *Fe
 	}
 
 	pods := &pods{}
-	err = k.visor.ListResources(ctx, kubevisor.ResourceTypePods, pods, nil)
+	err = k.visor.ListResources(ctx, kubevisor.ResourceTypePods, pods, []string{"job-name=" + k.visor.Prefix(in.Name)})
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,9 @@ func (k *Kube) FetchJobLogs(ctx context.Context, in *FetchJobLogsInput) (out *Fe
 	buf := bytes.NewBuffer(nil)
 	err = k.visor.FetchLogs(ctx, 100, buf, "main", last.GetName())
 	if err != nil {
-		return nil, err //@TODO, possible race, at this point the pod could have been deleted
+		//@TODO,possible race, at this point the pod could have been deleted, not exist
+		//@TODO could be error: "is still creating"
+		return nil, err
 	}
 
 	return &FetchJobLogsOutput{Data: buf.Bytes()}, nil
