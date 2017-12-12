@@ -1,5 +1,5 @@
-//authenticator is a package that will help us to populate the kubernetes config file with the right credentials
-package authenticator
+//package populator is a package that will help us to populate the kubernetes config file with the right credentials
+package populator
 
 import (
 	"io/ioutil"
@@ -13,81 +13,14 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api/latest"
 )
 
-// Configurer is an interface that we can use to read from and to write to the kube config file.
-type Configurer interface {
-	AuthGetter(userID int64, projects []string) (map[string]*api.Cluster, map[string]*api.Context, map[string]*api.AuthInfo)
-	GetNamespace() string
-	PopulateKubeConfig(serverName, serverAddress, namespace, user *api.AuthInfo) error
-	SetKubeConfigFile(kubeConfigFile string)
+// P is an interface that we can use to read from and to write to the kube config file.
+type P interface {
+	PopulateKubeConfig(project string) error
+	SetKubeConfigFile()
 	GetKubeConfigFile() string
 }
 
-// PopulateKubeConfigFromEnv populates the kube config file with the info found in the environment.
-func PopulateKubeConfigFromEnv(project, kubeConfigFile string) error {
-	cluster := api.NewCluster()
-	cluster.Server = os.Getenv("KUBE_CLUSTER_ADDR")
 
-	// user
-	user := api.NewAuthInfo()
-	user.Token = os.Getenv("KUBE_TOKEN")
-
-	// context
-	context := api.NewContext()
-	context.Cluster = project
-	context.AuthInfo = project
-	context.Namespace = os.Getenv("KUBE_NAMESPACE")
-
-	// read existing config or create new if does not exist
-	kubecfg, err := ReadConfigOrNew(kubeConfigFile)
-	if err != nil {
-		return err
-	}
-	kubecfg.Clusters[project] = cluster
-	kubecfg.AuthInfos[project] = user
-	kubecfg.CurrentContext = project
-	kubecfg.Contexts[project] = context
-
-	// write back to disk
-	if err := WriteConfig(kubecfg, kubeConfigFile); err != nil {
-		return errors.Wrap(err, "writing kubeconfig")
-	}
-
-	return nil
-}
-
-// PopulateKubeConfig populates an api.Config object.
-func PopulateKubeConfig(project, token, refresh_token, kubeConfigFile string) error {
-	cluster := api.NewCluster()
-	cluster.Server = os.Getenv("KUBE_CLUSTER_ADDR")
-
-	// user
-	user := api.NewAuthInfo()
-	user.Username = project
-	user.Token = os.Getenv("KUBE_TOKEN")
-
-	// context
-	context := api.NewContext()
-	context.Cluster = project
-	context.AuthInfo = project
-	context.Namespace = os.Getenv("KUBE_NAMESPACE")
-
-	// read existing config or create new if does not exist
-	kubecfg, err := ReadConfigOrNew(kubeConfigFile)
-	if err != nil {
-		return err
-	}
-	kubecfg.Clusters[project] = cluster
-	kubecfg.AuthInfos[project] = user
-	kubecfg.CurrentContext = project
-	kubecfg.Contexts[project] = context
-
-	// write back to disk
-	if err := WriteConfig(kubecfg, kubeConfigFile); err != nil {
-		return errors.Wrap(err, "writing kubeconfig")
-	}
-
-	return nil
-}
 
 // ReadConfigOrNew retrieves Kubernetes client configuration from a file.
 // If no files exists, an empty configuration is returned.
@@ -144,9 +77,6 @@ func WriteConfig(config *api.Config, filename string) error {
 	if err := ioutil.WriteFile(filename, data, 0600); err != nil {
 		return errors.Wrapf(err, "Error writing file %s", filename)
 	}
-	// if err := util.MaybeChownDirRecursiveToMinikubeUser(dir); err != nil {
-	// 	return errors.Wrapf(err, "Error recursively changing ownership for dir: %s", dir)
-	// }
 
 	return nil
 }
@@ -154,6 +84,7 @@ func WriteConfig(config *api.Config, filename string) error {
 //Namespace get the namespace of the current context from the kube config file
 func Namespace(filename string) (string, error) {
 	data, err := ioutil.ReadFile(filename)
+
 	if os.IsNotExist(err) {
 		return "", err
 	} else if err != nil {

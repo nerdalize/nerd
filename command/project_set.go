@@ -2,15 +2,12 @@ package command
 
 import (
 	"net/url"
-	"os"
-	"path/filepath"
 
 	"github.com/mitchellh/cli"
-	homedir "github.com/mitchellh/go-homedir"
 	"github.com/nerdalize/nerd/nerd/client/auth/v1"
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/oauth"
-	"github.com/nerdalize/nerd/pkg/authenticator"
+	"github.com/nerdalize/nerd/pkg/populator"
 	"github.com/pkg/errors"
 )
 
@@ -71,19 +68,10 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 		return HandleError(errors.New("Project not found, please check the project name. You can get a list of your projects by running `nerd project list`."))
 	}
 
-	var kubeConfig string
-	if os.Getenv("KUBECONFIG") == "" {
-		hdir, err := homedir.Dir()
-		if err != nil {
-			return HandleError(err)
-		}
-
-		kubeConfig = filepath.Join(hdir, ".kube", "config")
-	} else {
-		kubeConfig = filepath.Join(os.Getenv("KUBECONFIG"), "config")
-	}
-
-	err = authenticator.PopulateKubeConfigFromEnv(args[0], kubeConfig)
+	var p populator.P
+	p = &populator.EnvPopulator{}
+	p.SetKubeConfigFile()
+	err = p.PopulateKubeConfig(args[0])
 	if err != nil {
 		return HandleError(err)
 	}

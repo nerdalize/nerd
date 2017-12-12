@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-playground/validator"
 	homedir "github.com/mitchellh/go-homedir"
-	"github.com/nerdalize/nerd/pkg/authenticator"
+	"github.com/nerdalize/nerd/pkg/populator"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
@@ -57,7 +57,7 @@ func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
 		return nil, errors.Wrap(err, "failed to create Kubernetes configuration")
 	}
 
-	d.ns, err = authenticator.Namespace(kopts.KubeConfig)
+	d.ns, err = populator.Namespace(kopts.KubeConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get namespace from Kubernetes configuration")
 	}
