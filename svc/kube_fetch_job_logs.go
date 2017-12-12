@@ -44,7 +44,7 @@ func (k *Kube) FetchJobLogs(ctx context.Context, in *FetchJobLogsInput) (out *Fe
 	}
 
 	buf := bytes.NewBuffer(nil)
-	err = k.visor.FetchLogs(ctx, 100, buf, "main", last.GetName())
+	err = k.visor.FetchLogs(ctx, buf, "main", last.GetName())
 	if err != nil {
 		//@TODO,possible race, at this point the pod could have been deleted, not exist
 		//@TODO could be error: "is still creating"
