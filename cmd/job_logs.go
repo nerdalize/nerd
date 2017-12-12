@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/pkg/kubevisor"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
 )
@@ -55,11 +56,15 @@ func (cmd *JobLogs) Execute(args []string) (err error) {
 
 	lines := string(bytes.TrimSpace(out.Data))
 	if len(lines) < 1 {
-		cmd.out.Errorf("No logs visible (anymore) for job '%s'. Maybe the process didn't output any logs or it was created a long time ago: old logs may be discarded", in.Name)
+		cmd.out.Info("-- no visible logs returned --")
 		return nil
 	}
 
 	cmd.out.Output(string(out.Data))
+	if int64(len(out.Data)) == kubevisor.MaxLogBytes {
+		cmd.out.Info("-- logs are trimmed after this point --")
+	}
+
 	return nil
 }
 
