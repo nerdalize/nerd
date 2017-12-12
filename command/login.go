@@ -57,7 +57,7 @@ func (cmd *Login) DoRun(args []string) error {
 
 	err = open.Run(fmt.Sprintf("http://%s/oauth?state=%s", cmd.config.Auth.OAuthLocalServer, randomState))
 	if err != nil {
-		return HandleError(errors.Wrap(err, "Failed to open browser window. Please see github.com/nerdalize/nerd for alternative ways of authenticating."))
+		return HandleError(errors.Wrap(err, "Failed to open browser window. Please see for alternative ways of authenticating on https://www.nerdalize.com/docs/basics/http-proxy/."))
 	}
 
 	oauthResponse := <-doneCh
@@ -75,7 +75,7 @@ func (cmd *Login) DoRun(args []string) error {
 	if err != nil {
 		return HandleError(errors.Wrap(err, "failed to write oauth tokens to config"))
 	}
-	cmd.ui.Info("Successful login. You can now select a project using 'nerd project'")
+	cmd.ui.Info("Successful login. You can now select a project using 'nerd project set'")
 	return nil
 }
 
