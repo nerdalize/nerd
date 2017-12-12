@@ -105,12 +105,11 @@ func (k *Visor) DeleteResource(ctx context.Context, t ResourceType, name string)
 }
 
 //FetchLogs will read logs from container with name 'cname' from pod 'pname' and write it to writer 'w'
-func (k *Visor) FetchLogs(ctx context.Context, tail int64, w io.Writer, cname, pname string) (err error) {
+func (k *Visor) FetchLogs(ctx context.Context, w io.Writer, cname, pname string) (err error) {
 	pname = k.Prefix(pname)
 	req := k.api.CoreV1().Pods(k.ns).GetLogs(pname, &corev1.PodLogOptions{
-		Container: cname,
-		TailLines: &tail,
-		// LimitBytes: &MaxLogBytes,
+		Container:  cname,
+		LimitBytes: &MaxLogBytes,
 	})
 
 	req = req.Context(ctx)
