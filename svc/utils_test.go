@@ -27,6 +27,7 @@ type testingDI struct {
 	kube kubernetes.Interface
 	val  svc.Validator
 	logs svc.Logger
+	ns   string
 }
 
 func (di *testingDI) Kube() kubernetes.Interface {
@@ -41,6 +42,10 @@ func (di *testingDI) Logger() svc.Logger {
 	return di.logs
 }
 
+func (di *testingDI) Namespace() string {
+	return di.ns
+}
+
 func testNamespaceName(tb testing.TB) string {
 	return fmt.Sprintf("%.63s", strings.ToLower(
 		strings.Replace(
@@ -48,19 +53,7 @@ func testNamespaceName(tb testing.TB) string {
 	))
 }
 
-func testNamespace(tb testing.TB, kube kubernetes.Interface) (ns string, clean func()) {
-	n1, err := kube.CoreV1().Namespaces().Create(&v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{GenerateName: testNamespaceName(tb)},
-	})
-	ok(tb, err)
-
-	return n1.Name, func() {
-		err := kube.CoreV1().Namespaces().Delete(n1.Name, nil)
-		ok(tb, err)
-	}
-}
-
-func testDI(tb testing.TB) svc.DI {
+func testDI(tb testing.TB) (svc.DI, func()) {
 	tb.Helper()
 
 	hdir, err := homedir.Dir()
@@ -80,6 +73,39 @@ func testDI(tb testing.TB) svc.DI {
 
 	tdi.val = validator.New()
 
+	ns, err := tdi.kube.CoreV1().Namespaces().Create(&v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{GenerateName: testNamespaceName(tb)},
+	})
+	tdi.ns = ns.Name
+	ok(tb, err)
+
+	return tdi, func() {
+		err := tdi.kube.CoreV1().Namespaces().Delete(ns.Name, nil)
+		ok(tb, err)
+	}
+
+}
+
+func testDIWithoutNamespace(tb testing.TB) svc.DI {
+	tb.Helper()
+
+	hdir, err := homedir.Dir()
+	ok(tb, err)
+
+	tdi := &testingDI{}
+	kcfg, err := clientcmd.BuildConfigFromFlags("", filepath.Join(hdir, ".kube", "config"))
+	ok(tb, err)
+
+	if !strings.Contains(fmt.Sprintf("%#v", kcfg), "minikube") {
+		tb.Skipf("kube config needs to contain 'minikube' for local testing")
+	}
+
+	tdi.logs = logrus.New()
+	tdi.kube, err = kubernetes.NewForConfig(kcfg)
+	ok(tb, err)
+
+	tdi.val = validator.New()
+	tdi.ns = "non-existing"
 	return tdi
 }
 
