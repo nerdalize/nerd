@@ -64,15 +64,14 @@ func TestRunJob(t *testing.T) {
 		},
 	} {
 		t.Run(c.Name, func(t *testing.T) {
-			di := testDI(t)
-			ns, clean := testNamespace(t, di.Kube())
+			di, clean := testDI(t)
 			defer clean()
 
 			ctx := context.Background()
 			ctx, cancel := context.WithTimeout(ctx, c.Timeout)
 			defer cancel()
 
-			kube := svc.NewKube(di, ns)
+			kube := svc.NewKube(di)
 			out, err := kube.RunJob(ctx, c.Input)
 			if c.IsErr != nil {
 				assert(t, c.IsErr(err), fmt.Sprintf("unexpected '%#v' to match: %#v", err, runtime.FuncForPC(reflect.ValueOf(c.IsErr).Pointer()).Name()))
@@ -86,27 +85,26 @@ func TestRunJob(t *testing.T) {
 }
 
 func TestRunJobWithoutTheNamespace(t *testing.T) {
-	di := testDI(t)
+	di := testDIWithoutNamespace(t)
 
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
 	defer cancel()
 
-	kube := svc.NewKube(di, "non-existing")
+	kube := svc.NewKube(di)
 	_, err := kube.RunJob(ctx, &svc.RunJobInput{Image: "hello-world", Name: "my-job"})
 	assert(t, kubevisor.IsNamespaceNotExistsErr(err), "expected error to be namespace doesn't exist")
 }
 
 func TestRunJobWithNameThatAlreadyExists(t *testing.T) {
-	di := testDI(t)
-	ns, clean := testNamespace(t, di.Kube())
+	di, clean := testDI(t)
 	defer clean()
 
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
 	defer cancel()
 
-	kube := svc.NewKube(di, ns)
+	kube := svc.NewKube(di)
 	out, err := kube.RunJob(ctx, &svc.RunJobInput{Image: "hello-world", Name: "my-job"})
 	ok(t, err)
 
