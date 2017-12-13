@@ -12,3 +12,16 @@ func IsValidationErr(err error) bool {
 	te, ok := err.(iface)
 	return ok && te.IsValidation()
 }
+
+type errRaceCondition struct{ error }
+
+func (e errRaceCondition) IsRaceCondition() bool { return true }
+
+//IsRaceConditionErr is returned when we couldn't retrieve any logs for the job
+func IsRaceConditionErr(err error) bool {
+	type iface interface {
+		IsRaceCondition() bool
+	}
+	te, ok := err.(iface)
+	return ok && te.IsRaceCondition()
+}

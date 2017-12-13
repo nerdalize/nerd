@@ -76,7 +76,7 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 
 	//Step 0: Get all the jobs under nerd-app=cli
 	jobs := &jobs{}
-	err = k.visor.ListResources(ctx, kubevisor.ResourceTypeJobs, jobs)
+	err = k.visor.ListResources(ctx, kubevisor.ResourceTypeJobs, jobs, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 
 	//Step 2: Get all pods under nerd-app=cli
 	pods := &pods{}
-	err = k.visor.ListResources(ctx, kubevisor.ResourceTypePods, pods)
+	err = k.visor.ListResources(ctx, kubevisor.ResourceTypePods, pods, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +148,9 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 		//technically we can have multiple pods per job (one terminating, unkown etc) so we pick the
 		//one that is created most recently to base our details on
 		if pod.CreationTimestamp.Local().After(jobItem.Details.SeenAt) {
-			jobItem.Details.SeenAt = pod.CreationTimestamp.Local()
+			jobItem.Details.SeenAt = pod.CreationTimestamp.Local() //this pod was created after previous pod
+		} else {
+			continue //this pod was created before the other one in the item, ignore
 		}
 
 		//the pod phase allows us to distinguish between Pending and Running
