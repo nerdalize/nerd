@@ -1,5 +1,5 @@
-# Nerd
-The Nerdalize command line interface: Your personal `nerd` that takes care of running compute jobs on the [Nerdalize cloud](https://www.nerdalize.com/).
+# Nerd - Nerdalize Command Line Interface
+Your personal `nerd` that takes care of running compute jobs on the [Nerdalize cloud](https://www.nerdalize.com/).
 
 ---
 
