@@ -1,5 +1,5 @@
 # Nerd
-Your personal `nerd` that takes care of running compute jobs on the [Nerdalize cloud](https://www.nerdalize.com/).
+The Nerdalize command line interface: Your personal `nerd` that takes care of running compute jobs on the [Nerdalize cloud](https://www.nerdalize.com/).
 
 ---
 
@@ -10,7 +10,11 @@ Your personal `nerd` that takes care of running compute jobs on the [Nerdalize c
 In order to make using these cloud resources more straight forward we’ve designed a CLI that fits your workflow. Whether you’re a researcher, engineer or developer, it allows you to easily run your computations, simulations and analyses on our cloud infrastructure.
 
 __Features__:
-  - abc
+  - Moving __datasets__ from you workstation to the cloud and back is included right into the workflow
+  - Nerd ensures efficient and quick datatransfers through a __deduplication__ algorithm
+  - Send in __thousands of jobs__, the Nerd makes your resources are used as efficient as possible
+  - Package your software using the industry-standard __Docker__ containers
+  - Follows basic CLI conventions to provide a __scriptable__ interface your daily-dose of automation goodness
 
 ## Documentation
 To start running your compute on the Nerdalize cloud you'll need to setup an account and download the Nerd CLI itself.
