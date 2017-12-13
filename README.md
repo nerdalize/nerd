@@ -1,9 +1,9 @@
 # Nerd
 Your personal `nerd` that takes care of running compute jobs on the [Nerdalize cloud](https://www.nerdalize.com/).
 
-<p align="center">
+---
+
 <img src="./nerd.svg">
-</p>
 
 [Nerdalize](https://www.nerdalize.com/) is building a different cloud. Instead of constructing huge datacenters, we're distributing our servers over homes. Homeowners use the residual heat for hot showers and to warm their house, and we don't need to build new infrastructure.
 
