@@ -71,15 +71,14 @@ func TestFetchJobLogs(t *testing.T) {
 				t.Skipf("skipping long test with contex timeout: %s", c.Timeout)
 			}
 
-			di := testDI(t)
-			ns, clean := testNamespace(t, di.Kube())
+			di, clean := testDI(t)
 			defer clean()
 
 			ctx := context.Background()
 			ctx, cancel := context.WithTimeout(ctx, c.Timeout)
 			defer cancel()
 
-			kube := svc.NewKube(di, ns)
+			kube := svc.NewKube(di)
 			for _, job := range c.Jobs {
 				_, err := kube.RunJob(ctx, job)
 				ok(t, err)
