@@ -48,7 +48,7 @@ func (cmd *JobLogs) Execute(args []string) (err error) {
 		Tail: cmd.Tail,
 	}
 
-	kube := svc.NewKube(deps, kopts.Namespace)
+	kube := svc.NewKube(deps)
 	out, err := kube.FetchJobLogs(ctx, in)
 	if err != nil {
 		return renderServiceError(err, "failed to fetch job logs")
