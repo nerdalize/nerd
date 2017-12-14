@@ -12,12 +12,12 @@ In order to make our cloud resources accessible and easy to use, we've developed
 __Features__:
   - Moving __datasets__ from you workstation to the cloud and back is included right into the workflow
   - Nerd ensures efficient and quick datatransfers through a __deduplication__ algorithm
-  - Send in __thousands of jobs__, the Nerd makes your resources are used as efficient as possible
-  - Package your software using the industry-standard __Docker__ containers
-  - Follows basic CLI conventions to provide a __scriptable__ interface your daily-dose of automation goodness
+  - Send in __thousands of jobs__, Nerd makes sure your resources are used as efficiently as possible
+  - Package your software using industry-standard __Docker__ containers
+  - Follows basic CLI conventions to provide a __scriptable__ interface your daily dose of automation goodness
 
 ## Documentation
-To start running your compute on the Nerdalize cloud you'll need to setup an account and download the Nerd CLI itself.
+To start running your compute on the Nerdalize cloud you'll need to set up an account and download the Nerd CLI itself.
 
   - [Quickstarts](https://www.nerdalize.com/docs/) - To quickly get you up and running.
   - [Ready-to-use Software ](https://www.nerdalize.com/applications/) - We have application-specific guides for Python or FFmpeg for you to get started.
@@ -26,7 +26,7 @@ To start running your compute on the Nerdalize cloud you'll need to setup an acc
 ---
 
 ## Power users
-The Nerd is capable of some powerful scripting and customization options. These guides are somewhat advances and not necessary to comprehend when just starting out on the Nerdalize cloud.
+The Nerd is capable of some powerful scripting and customization options. The rest of this guide is somewhat advanced and is not required for day-to-day use of the Nerdalize cloud.
 
 ### Config
 
