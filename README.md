@@ -1,73 +1,32 @@
-# Nerd
-Your personal nerd that takes care of running jobs on the [Nerdalize cloud](https://www.nerdalize.com/).
+# Nerd - Nerdalize Command Line Interface
+Your personal `nerd` that takes care of running compute jobs on the [Nerdalize cloud](https://www.nerdalize.com/).
 
-_NOTE: This project is currently experimental and not functional._
+---
 
-## Command Usage
+<img src="./nerd.svg">
 
-```bash
-# log into the scientific compute platform
-$ nerd login
-Successful login. You can now select a project using 'nerd project'
+[Nerdalize](https://www.nerdalize.com/) is building a different cloud. Instead of constructing huge datacenters, we're distributing our servers over homes. Homeowners use the residual heat for hot showers and to warm their house, and we don't need to build new infrastructure.
 
-# list all projects
-$ nerd project list
-PROJECTS
-nerdalize-video
-nerdalize-weather
+In order to make our cloud resources accessible and easy to use, we've developed a CLI that fits your workflow. Whether you’re a researcher, engineer or developer, it allows you to easily run your computations, simulations and analyses on our cloud infrastructure.
 
-# set a project to work with
-$ nerd project set nerdalize-video
+__Features__:
+  - Moving __datasets__ from you workstation to the cloud and back is included right into the workflow
+  - Nerd ensures efficient and quick datatransfers through a __deduplication__ algorithm
+  - Send in __thousands of jobs__, the Nerd makes your resources are used as efficient as possible
+  - Package your software using the industry-standard __Docker__ containers
+  - Follows basic CLI conventions to provide a __scriptable__ interface your daily-dose of automation goodness
 
-# upload a piece of data that will acts as input to the program
-$ ls ~/Desktop/videos
-video1.mov
-video2.mov
+## Documentation
+To start running your compute on the Nerdalize cloud you'll need to setup an account and download the Nerd CLI itself.
 
-$ nerd dataset upload ~/Desktop/videos
-Uploading dataset with ID 'd-96fac377'
-314.38 MiB / 314.38 MiB [=============================] 100.00%
+  - [Quickstarts](https://www.nerdalize.com/docs/) - To quickly get you up and running.
+  - [Ready-to-use Software ](https://www.nerdalize.com/applications/) - We have application-specific guides for Python or FFmpeg for you to get started.
+  - [CLI Reference](https://www.nerdalize.com/docs/reference/cli/) - For a reference of all available commands
 
-# start a workload
-# we start 2 workers that use the jrottenberg/ffmpeg container to work on the input dataset
-$ nerd workload start jrottenberg/ffmpeg
-    --instances 2
-    --input-dataset d-96fac377
-Started workload with ID 'w-96fac375'
-
-# create two tasks for this workload
-# this will start the jrottenberg/ffmpeg container twice with the given arguments
-# input dataset d-96fac377 will be available in /input, data in /output will be uploaded when the task has successfully executed
-$ nerd task create w-96fac375 -- -i /input/video1.mov -acodec copy -vcodec copy /output/video1.avi
-$ nerd task create w-96fac375 -- -i /input/video2.mov -acodec copy -vcodec copy /output/video2.avi
-
-# get status of tasks
-$ nerd task list w-96fac375
-TASK ID     CMD                                                                 OUTPUT ID   STATUS    CREATED
-t-14962176  [-i /input/video1.mov -acodec copy -vcodec copy /output/video1.avi] video1.avi  SUCCESS   1 minute ago
-t-89491732  [-i /input/video2.mov -acodec copy -vcodec copy /output/video2.avi]             PENDING   1 minute ago
-
-# when all tasks are done we can download the output
-$ nerd workload download w-96fac375 ~/Desktop/videos_out
-$ tree ~/Desktop/videos_out
-~/Desktop/videos_out
-├── 7691e3df0c824efc1007082057b9c867_14962176
-│   └── video1.avi
-└── f45371445a7b95f7352bf841c30e4f58_89491732
-    └── video2.avi
-
-```
-
-Please note that each command has a `--help` option that shows how to use the command.
-Each command accepts at least the following options:
-```
---config-file=  location of config file [$NERD_CONFIG_FILE]
---session-file= location of session file [$NERD_SESSION_FILE]
---debug=  show debug output [$NERD_DEBUG]
---output=[pretty|raw|json] Format of the output (default: pretty)
-```
+---
 
 ## Power users
+The Nerd is capable of some powerful scripting and customization options. These guides are somewhat advances and not necessary to comprehend when just starting out on the Nerdalize cloud.
 
 ### Config
 
@@ -112,9 +71,9 @@ The structure of `session.json` is show below:
 }
 ```
 
-## Docker
+### Docker
 
-The nerd CLI can be dockerized. To build the docker container run:
+The Nerd CLI can be dockerized. To build the Docker container run:
 
 ```docker build -t my-nerd .```
 
@@ -130,16 +89,16 @@ If you just want to set your credentials, you can also set it with an environmen
 
 ```docker run -e NERD_JWT=put.jwt.here my-nerd <command>```
 
-## Nerdalize SDK
+### Nerdalize SDK
 
 Code in this repository can also be used as a Software Development Kit (SDK) to communicate with Nerdalize services. The SDK consists of two packages:
 
-### nerd/client
+#### nerd/client
 
 * `auth` is a client to the Nerdalize authentication backend. It can be used to fetch new JWTs.
 * `batch` is a client to batch.nerdalize.com. It can be used to work with resources like `queues`, `workers`, and `datasets`.
 
-### nerd/service
+#### nerd/service
 
 * `datatransfer` makes it possible to upload or download a dataset using one function call
 * `working` works on workload tasks
