@@ -1,4 +1,3 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/nerdalize/nerd)](https://goreportcard.com/report/github.com/nerdalize/nerd)
 # Nerd
 Your personal nerd that takes care of running jobs on the [Nerdalize cloud](https://www.nerdalize.com/).
 
