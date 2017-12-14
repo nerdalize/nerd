@@ -7,7 +7,7 @@ Your personal `nerd` that takes care of running compute jobs on the [Nerdalize c
 
 [Nerdalize](https://www.nerdalize.com/) is building a different cloud. Instead of constructing huge datacenters, we're distributing our servers over homes. Homeowners use the residual heat for hot showers and to warm their house, and we don't need to build new infrastructure.
 
-In order to make using these cloud resources more straight forward we’ve designed a CLI that fits your workflow. Whether you’re a researcher, engineer or developer, it allows you to easily run your computations, simulations and analyses on our cloud infrastructure.
+In order to make our cloud resources accessible and easy to use, we've developed a CLI that fits your workflow. Whether you’re a researcher, engineer or developer, it allows you to easily run your computations, simulations and analyses on our cloud infrastructure.
 
 __Features__:
   - Moving __datasets__ from you workstation to the cloud and back is included right into the workflow
@@ -19,9 +19,9 @@ __Features__:
 ## Documentation
 To start running your compute on the Nerdalize cloud you'll need to setup an account and download the Nerd CLI itself.
 
-  - To quickly get up and running: [Quick Start](https://www.nerdalize.com/docs/)
-  - Use one of our application specific guides: [Application Guides](https://www.nerdalize.com/applications/)
-  - For a reference of all available commands: [CLI Reference](https://www.nerdalize.com/docs/reference/cli/)
+  - [Quickstarts](https://www.nerdalize.com/docs/) - To quickly get you up and running.
+  - [Ready-to-use Software ](https://www.nerdalize.com/applications/) - We have application-specific guides for Python or FFmpeg for you to get started.
+  - [CLI Reference](https://www.nerdalize.com/docs/reference/cli/) - For a reference of all available commands
 
 ---
 
@@ -73,7 +73,7 @@ The structure of `session.json` is show below:
 
 ### Docker
 
-The nerd CLI can be dockerized. To build the docker container run:
+The Nerd CLI can be dockerized. To build the Docker container run:
 
 ```docker build -t my-nerd .```
 
