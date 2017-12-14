@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jessevdk/go-flags"
+
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
@@ -22,7 +24,7 @@ type JobRun struct {
 //JobRunFactory creates the command
 func JobRunFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &JobRun{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd)
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.PassAfterNonOption)
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}

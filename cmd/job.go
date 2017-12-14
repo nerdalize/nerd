@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 )
 
@@ -12,7 +13,7 @@ type Job struct {
 //JobFactory creates the command
 func JobFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &Job{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd)
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None)
 
 	return func() (cli.Command, error) {
 		return cmd, nil

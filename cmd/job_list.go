@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	humanize "github.com/dustin/go-humanize"
+	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
@@ -22,7 +23,7 @@ type JobList struct {
 //JobListFactory creates the command
 func JobListFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &JobList{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd)
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None)
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
