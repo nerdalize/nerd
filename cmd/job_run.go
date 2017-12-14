@@ -44,6 +44,11 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
 	defer cancel()
 
+	jcmd := []string{}
+	if len(args) > 1 {
+		jcmd = args[1:]
+	}
+
 	jenv := map[string]string{}
 	for _, l := range cmd.Env {
 		split := strings.SplitN(l, "=", 2)
@@ -54,9 +59,10 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 	}
 
 	in := &svc.RunJobInput{
-		Image: args[0],
-		Name:  cmd.Name,
-		Env:   jenv,
+		Image:   args[0],
+		Name:    cmd.Name,
+		Env:     jenv,
+		Command: jcmd,
 	}
 
 	kube := svc.NewKube(deps)

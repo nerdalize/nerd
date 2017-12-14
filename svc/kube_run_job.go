@@ -21,6 +21,7 @@ type RunJobInput struct {
 	Name         string `validate:"printascii"`
 	Env          map[string]string
 	BackoffLimit *int32
+	Command      []string
 }
 
 //RunJobOutput is the output to RunJob
@@ -60,9 +61,10 @@ func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, 
 					RestartPolicy: v1.RestartPolicyNever,
 					Containers: []v1.Container{
 						{
-							Name:  "main",
-							Image: in.Image,
-							Env:   envs,
+							Name:    "main",
+							Image:   in.Image,
+							Env:     envs,
+							Command: in.Command,
 							// Resources: v1.ResourceRequirements{
 							// 	Limits: v1.ResourceList{v1.ResourceCPU: resource.MustParse("10"), v1.ResourceMemory: resource.MustParse("256M")},
 							// 	// Requests: v1.ResourceList{v1.ResourceCPU: cpu, v1.ResourceMemory: memory},
