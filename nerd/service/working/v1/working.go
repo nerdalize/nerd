@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	//RunErrCodeUnexpected is presented to the api when an unexpected error occurred during the run of the task
+	//RunErrCodeUnexpected is presented to the api when an unexpected error occured during the run of the task
 	RunErrCodeUnexpected = "ERR_UNEXPECTED"
 
 	//RunResultUndefined is send to the server when
@@ -143,7 +143,7 @@ func (w *Worker) startRunExec(ctx context.Context, run *v1payload.Run) {
 		err = cmd.Wait()
 	}
 
-	//if an error happened at this point we want to send a failure to the server
+	//if an error happend at this point we want to send a failure to the server
 	if err != nil {
 		var errCode string
 		var errMsg string
@@ -175,7 +175,7 @@ func (w *Worker) startRunExec(ctx context.Context, run *v1payload.Run) {
 			runRes = cmd.ProcessState.String()
 		}
 
-		w.logs.Printf("[INFO] run process exited successfully")
+		w.logs.Printf("[INFO] run process exited succesfully")
 		outputDatasetID := ""
 		if w.uploadConf != nil {
 			var empty bool

@@ -13,7 +13,7 @@ const (
 )
 
 //AuthAPIProvider provides nerdalize credentials by making a request to the nerdalize auth server.
-//The UserPassProvider is used to retrieve the username and password required to authenticate with the auth server.
+//The UserPassProvider is used to retreive the username and password required to authenticate with the auth server.
 type AuthAPIProvider struct {
 	*ProviderBasis
 

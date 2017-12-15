@@ -43,7 +43,7 @@ func VersionMessage(current string) {
 		return
 	}
 	if e.Message != "" {
-		fmt.Fprintf(os.Stderr, "Received GitHub error message: %v (%v)\n", e.Message, e.URL)
+		fmt.Fprintf(os.Stderr, "Recieved GitHub error message: %v (%v)\n", e.Message, e.URL)
 		return
 	}
 	if len(releases) > 0 {

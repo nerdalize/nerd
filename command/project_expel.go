@@ -46,6 +46,6 @@ func (cmd *ProjectExpel) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	cmd.outputter.Logger.Printf("Successfully removed project placement")
+	cmd.outputter.Logger.Printf("Succesfully removed project placement")
 	return nil
 }

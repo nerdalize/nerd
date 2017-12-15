@@ -70,7 +70,7 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 
 	ok := false
 	for _, project := range projects.Projects {
-		if project.Slug == projectSlug {
+		if project.Slug == args[0] {
 			ok = true
 		}
 	}
@@ -90,7 +90,7 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 	if err != nil {
 		return HandleError(err)
 	}
-	err = p.PopulateKubeConfig(projectSlug)
+	err = p.PopulateKubeConfig(args[0])
 	if err != nil {
 		return HandleError(err)
 	}
@@ -100,6 +100,5 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	cmd.outputter.Logger.Printf("Project %s set successfully", projectSlug)
 	return nil
 }

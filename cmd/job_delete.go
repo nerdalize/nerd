@@ -27,7 +27,7 @@ func JobDeleteFactory(ui cli.Ui) cli.CommandFactory {
 //Execute runs the command
 func (cmd *JobDelete) Execute(args []string) (err error) {
 	if len(args) < 1 {
-		return errShowUsage(MessageNotEnoughArguments)
+		return errors.New(MessageNotEnoughArguments)
 	}
 
 	kopts := cmd.KubeOpts

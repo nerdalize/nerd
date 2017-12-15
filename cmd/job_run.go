@@ -28,7 +28,7 @@ func JobRunFactory(ui cli.Ui) cli.CommandFactory {
 //Execute runs the command
 func (cmd *JobRun) Execute(args []string) (err error) {
 	if len(args) < 1 {
-		return errShowUsage(MessageNotEnoughArguments)
+		return errors.New(MessageNotEnoughArguments)
 	}
 
 	kopts := cmd.KubeOpts
