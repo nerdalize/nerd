@@ -135,7 +135,7 @@ func TestRunJobTemplate(t *testing.T) {
 			assert(t, o != nil, "expected RunJob return to be not nil")
 
 			k := di.Kube()
-			out, err := k.BatchV1().Jobs(di.Namespace()).Get("nlz-nerd"+o.Name, metav1.GetOptions{})
+			out, err := k.BatchV1().Jobs(di.Namespace()).Get(kubevisor.DefaultPrefix+o.Name, metav1.GetOptions{})
 			if c.IsOutput == nil {
 				return
 			}
