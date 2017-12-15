@@ -15,6 +15,7 @@ import (
 
 	"github.com/go-playground/validator"
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/nerdalize/nerd/pkg/kubevisor"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/sirupsen/logrus"
 )
@@ -107,6 +108,22 @@ func testDIWithoutNamespace(tb testing.TB) svc.DI {
 	tdi.val = validator.New()
 	tdi.ns = "non-existing"
 	return tdi
+}
+
+type testKube struct {
+	visor *kubevisor.Visor
+	val   svc.Validator
+	logs  svc.Logger
+}
+
+func newTestKube(di svc.DI) (k *testKube) {
+	k = &testKube{
+		visor: kubevisor.NewVisor(di.Namespace(), "nlz-nerd", di.Kube(), di.Logger()),
+		val:   di.Validator(),
+		logs:  di.Logger(),
+	}
+
+	return k
 }
 
 // assert fails the test if the condition is false.

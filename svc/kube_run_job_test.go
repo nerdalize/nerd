@@ -11,6 +11,8 @@ import (
 
 	"github.com/nerdalize/nerd/pkg/kubevisor"
 	"github.com/nerdalize/nerd/svc"
+	batchv1 "k8s.io/api/batch/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestRunJob(t *testing.T) {
@@ -84,7 +86,65 @@ func TestRunJob(t *testing.T) {
 	}
 }
 
-func TestRunJobWithoutTheNamespace(t *testing.T) {
+func TestRunJobTemplate(t *testing.T) {
+	for _, c := range []struct {
+		Name     string
+		Timeout  time.Duration
+		Input    *svc.RunJobInput
+		IsOutput func(tb testing.TB, out *batchv1.Job) bool
+	}{
+		{
+			Name:    "when args are provided they should be found in the pod template",
+			Timeout: time.Second * 10,
+			Input:   &svc.RunJobInput{Image: "nginx", Name: "my-args", Args: []string{"--port=8080"}},
+			IsOutput: func(t testing.TB, out *batchv1.Job) bool {
+				if len(out.Spec.Template.Spec.Containers) < 1 {
+					return false
+				}
+				assert(t, len(out.Spec.Template.Spec.Containers[0].Args) == 1, "there should be at least one arg")
+				assert(t, out.Spec.Template.Spec.Containers[0].Args[0] == "--port=8080", "arg should be the one given in input")
+				return true
+			},
+		},
+		{
+			Name:    "when env vars are provided they should be found in the job template",
+			Timeout: time.Second * 10,
+			Input:   &svc.RunJobInput{Image: "nginx", Name: "my-env", Env: map[string]string{"TEST": "xyz"}},
+			IsOutput: func(t testing.TB, out *batchv1.Job) bool {
+				if len(out.Spec.Template.Spec.Containers) < 1 {
+					return false
+				}
+				assert(t, len(out.Spec.Template.Spec.Containers[0].Env) == 1, "there should be at least one environment variable")
+				assert(t, out.Spec.Template.Spec.Containers[0].Env[0].Name == "TEST", "env var name should be the one given in input")
+				assert(t, out.Spec.Template.Spec.Containers[0].Env[0].Value == "xyz", "env var value should be the one given in input")
+				return true
+			},
+		},
+	} {
+		t.Run(c.Name, func(t *testing.T) {
+			di, clean := testDI(t)
+			defer clean()
+
+			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(ctx, c.Timeout)
+			defer cancel()
+
+			kube := svc.NewKube(di)
+			o, err := kube.RunJob(ctx, c.Input)
+			ok(t, err)
+			assert(t, o != nil, "expected RunJob return to be not nil")
+
+			k := di.Kube()
+			out, err := k.BatchV1().Jobs(di.Namespace()).Get("nlz-nerd"+o.Name, metav1.GetOptions{})
+			if c.IsOutput == nil {
+				return
+			}
+			assert(t, c.IsOutput(t, out), "should return true")
+		})
+	}
+}
+
+func TestRunJobWithoutNamespace(t *testing.T) {
 	di := testDIWithoutNamespace(t)
 
 	ctx := context.Background()
