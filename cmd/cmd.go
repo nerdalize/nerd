@@ -13,13 +13,8 @@ import (
 )
 
 var (
-	// errShowHelp can be returned by commands to show the commands help message next to the error
-	errShowHelp = errors.New("show help")
-)
-
-var (
 	//MessageNotEnoughArguments is shown when the user didn't provide enough arguments
-	MessageNotEnoughArguments = "not enough arguments, see --help"
+	MessageNotEnoughArguments = "not enough arguments, see below for usage"
 
 	//PlaceholderSynopsis is synopsis text when none is available
 	PlaceholderSynopsis = "<synopsis>"
@@ -27,7 +22,7 @@ var (
 	//PlaceholderHelp is help when none is available
 	PlaceholderHelp = "<help>"
 
-	//PlaceholderUsage is sown when no specific implementation is available
+	//PlaceholderUsage is shown when no specific implementation is available
 	PlaceholderUsage = "<usage>"
 )
 
@@ -39,11 +34,13 @@ type command struct {
 	flagParser *flags.Parser
 	runFunc    func(args []string) error
 	helpFunc   func() string
+	usageFunc  func() string
 	out        *Output
 }
 
 func createCommand(ui cli.Ui, runFunc func([]string) error, helpFunc func() string, usageFunc func() string, fgroup interface{}) *command {
 	c := &command{
+		usageFunc:  usageFunc,
 		flagParser: flags.NewNamedParser(usageFunc(), flags.None),
 		runFunc:    runFunc,
 		helpFunc:   helpFunc,
@@ -107,13 +104,16 @@ func (cmd *command) Run(args []string) int {
 	}
 
 	if err := cmd.runFunc(remaining); err != nil {
-		if err == errShowHelp {
+		switch cause := errors.Cause(err).(type) {
+		case errShowUsage:
+			return cmd.usage(cause)
+		case errShowHelp:
+			cmd.out.Output(cause.Error())
 			return cli.RunResultHelp
+		default:
+			return cmd.fail(err, "error")
 		}
-
-		return cmd.fail(err, "error")
 	}
-
 	return 0
 }
 
@@ -134,4 +134,9 @@ func (cmd *command) AutocompleteArgs() complete.Predictor {
 func (cmd *command) fail(err error, message string) int {
 	cmd.out.Errorf("%v", errors.Wrap(err, message))
 	return 255
+}
+
+func (cmd *command) usage(cause error) int {
+	cmd.out.Output(fmt.Sprintf("%s\n\n%s", cause.Error(), cmd.usageFunc()))
+	return 254
 }

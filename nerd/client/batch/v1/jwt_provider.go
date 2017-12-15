@@ -59,7 +59,7 @@ func (c *ChainedJWTProvider) Retrieve() (string, error) {
 	}
 	c.curr = nil
 
-	return "", client.NewError("could not retreive token from any provider", provErr)
+	return "", client.NewError("could not retrieve token from any provider", provErr)
 }
 
 // IsExpired will returned the expired state of the currently cached provider
