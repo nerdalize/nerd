@@ -38,10 +38,9 @@ type command struct {
 	out        *Output
 }
 
-func createCommand(ui cli.Ui, runFunc func([]string) error, helpFunc func() string, usageFunc func() string, fgroup interface{}) *command {
+func createCommand(ui cli.Ui, runFunc func([]string) error, helpFunc func() string, usageFunc func() string, fgroup interface{}, opts flags.Options) *command {
 	c := &command{
-		usageFunc:  usageFunc,
-		flagParser: flags.NewNamedParser(usageFunc(), flags.None),
+		flagParser: flags.NewNamedParser(usageFunc(), opts),
 		runFunc:    runFunc,
 		helpFunc:   helpFunc,
 		out:        NewOutput(ui),

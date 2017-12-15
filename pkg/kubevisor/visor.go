@@ -19,6 +19,8 @@ import (
 var (
 	//MaxLogBytes determines how much logs we're gonna return, we cap it hard at this point
 	MaxLogBytes = int64(1024 * 1024) //1MiB
+	//DefaultPrefix is used to identify a job created by the cli
+	DefaultPrefix = "nlz-nerd"
 )
 
 //Logger describes the logging dependency the services require
@@ -67,6 +69,9 @@ var (
 
 //NewVisor will setup a Kubernetes visor
 func NewVisor(ns, prefix string, api kubernetes.Interface, logs Logger) *Visor {
+	if prefix == "" {
+		prefix = DefaultPrefix
+	}
 	return &Visor{prefix, ns, api, logs}
 }
 

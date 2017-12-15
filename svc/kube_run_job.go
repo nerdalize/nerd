@@ -19,7 +19,9 @@ var (
 type RunJobInput struct {
 	Image        string `validate:"min=1"`
 	Name         string `validate:"printascii"`
+	Env          map[string]string
 	BackoffLimit *int32
+	Args         []string
 }
 
 //RunJobOutput is the output to RunJob
@@ -35,6 +37,14 @@ func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, 
 
 	if in.BackoffLimit == nil {
 		in.BackoffLimit = &JobDefaultBackoffLimit
+	}
+
+	envs := []v1.EnvVar{}
+	for k, v := range in.Env {
+		envs = append(envs, v1.EnvVar{
+			Name:  k,
+			Value: v,
+		})
 	}
 
 	job := &batchv1.Job{
@@ -53,6 +63,8 @@ func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, 
 						{
 							Name:  "main",
 							Image: in.Image,
+							Env:   envs,
+							Args:  in.Args,
 							// Resources: v1.ResourceRequirements{
 							// 	Limits: v1.ResourceList{v1.ResourceCPU: resource.MustParse("10"), v1.ResourceMemory: resource.MustParse("256M")},
 							// 	// Requests: v1.ResourceList{v1.ResourceCPU: cpu, v1.ResourceMemory: memory},

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 
+	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/pkg/kubevisor"
 	"github.com/nerdalize/nerd/svc"
@@ -21,7 +22,7 @@ type JobLogs struct {
 //JobLogsFactory creates the command
 func JobLogsFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &JobLogs{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd)
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None)
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}

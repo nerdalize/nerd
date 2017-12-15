@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 
+	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
@@ -18,7 +19,7 @@ type JobDelete struct {
 //JobDeleteFactory creates the command
 func JobDeleteFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &JobDelete{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd)
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None)
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}

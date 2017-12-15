@@ -2,6 +2,10 @@ package cmd
 
 import (
 	"context"
+	"fmt"
+	"strings"
+
+	"github.com/jessevdk/go-flags"
 
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/svc"
@@ -11,7 +15,8 @@ import (
 //JobRun command
 type JobRun struct {
 	KubeOpts
-	Name string `long:"name" short:"n" description:"assign a name to the job"`
+	Name string   `long:"name" short:"n" description:"assign a name to the job"`
+	Env  []string `long:"env" short:"e" description:"environment variables to use"`
 
 	*command
 }
@@ -19,7 +24,7 @@ type JobRun struct {
 //JobRunFactory creates the command
 func JobRunFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &JobRun{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd)
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.PassAfterNonOption)
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -41,9 +46,25 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
 	defer cancel()
 
+	jargs := []string{}
+	if len(args) > 1 {
+		jargs = args[1:]
+	}
+
+	jenv := map[string]string{}
+	for _, l := range cmd.Env {
+		split := strings.SplitN(l, "=", 2)
+		if len(split) < 2 {
+			return fmt.Errorf("invalid environment variable format, expected 'FOO=bar' fromat, got: %v", l)
+		}
+		jenv[split[0]] = split[1]
+	}
+
 	in := &svc.RunJobInput{
 		Image: args[0],
 		Name:  cmd.Name,
+		Env:   jenv,
+		Args:  jargs,
 	}
 
 	kube := svc.NewKube(deps)
