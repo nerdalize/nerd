@@ -1,3 +1,111 @@
+Release v1.12.48 (2017-12-15)
+===
+
+### Service Client Updates
+* `service/appstream`: Updates service API and documentation
+  * This API update is to enable customers to add tags to their Amazon AppStream 2.0 resources
+
+Release v1.12.47 (2017-12-14)
+===
+
+### Service Client Updates
+* `service/apigateway`: Updates service API and documentation
+  * Adds support for Cognito Authorizer scopes at the API method level.
+* `service/email`: Updates service documentation
+  * Added information about the maximum number of transactions per second for the SendCustomVerificationEmail operation.
+* `aws/endpoints`: Updated Regions and Endpoints metadata.
+
+Release v1.12.46 (2017-12-12)
+===
+
+### Service Client Updates
+* `service/workmail`: Adds new service
+  * Today, Amazon WorkMail released an administrative SDK and enabled AWS CloudTrail integration. With the administrative SDK, you can natively integrate WorkMail with your existing services. The SDK enables programmatic user, resource, and group management through API calls. This means your existing IT tools and workflows can now automate WorkMail management, and third party applications can streamline WorkMail migrations and account actions.
+
+Release v1.12.45 (2017-12-11)
+===
+
+### Service Client Updates
+* `service/cognito-idp`: Updates service API and documentation
+* `aws/endpoints`: Updated Regions and Endpoints metadata.
+* `service/lex-models`: Updates service API and documentation
+* `service/sagemaker`: Updates service API
+  * CreateModel API Update:  The request parameter 'ExecutionRoleArn' has changed from optional to required.
+
+Release v1.12.44 (2017-12-08)
+===
+
+### Service Client Updates
+* `service/appstream`: Updates service API and documentation
+  * This API update is to support the feature that allows customers to automatically consume the latest Amazon AppStream 2.0 agent as and when published by AWS.
+* `service/ecs`: Updates service documentation
+  * Documentation updates for Windows containers.
+* `service/monitoring`: Updates service API and documentation
+  * With this launch, you can now create a CloudWatch alarm that alerts you when M out of N datapoints of a metric are breaching your predefined threshold, such as three out of five times in any given five minutes interval or two out of six times in a thirty minutes interval. When M out of N datapoints are not breaching your threshold in an interval, the alarm will be in OK state. Please note that the M datapoints out of N datapoints in an interval can be of any order and does not need to be consecutive. Consequently, you can now get alerted even when the spikes in your metrics are intermittent over an interval.
+
+Release v1.12.43 (2017-12-07)
+===
+
+### Service Client Updates
+* `service/email`: Updates service API, documentation, and paginators
+  * Customers can customize the emails that Amazon SES sends when verifying new identities. This feature is helpful for developers whose applications send email through Amazon SES on behalf of their customers.
+* `service/es`: Updates service API and documentation
+  * Added support for encryption of data at rest on Amazon Elasticsearch Service using AWS KMS
+
+### SDK Bugs
+* `models/apis` Fixes removes colliding sagemaker models folders ([#1686](https://github.com/aws/aws-sdk-go/pull/1686))
+  * Fixes Release v1.12.42's SageMaker vs sagemaker model folders.
+Release v1.12.42 (2017-12-06)
+===
+
+### Service Client Updates
+* `service/clouddirectory`: Updates service API and documentation
+  * Amazon Cloud Directory makes it easier for you to apply schema changes across your directories with in-place schema upgrades. Your directories now remain available while backward-compatible schema changes are being applied, such as the addition of new fields. You also can view the history of your schema changes in Cloud Directory by using both major and minor version identifiers, which can help you track and audit schema versions across directories.
+* `service/elasticbeanstalk`: Updates service documentation
+  * Documentation updates for AWS Elastic Beanstalk.
+* `service/sagemaker`: Adds new service
+  * Initial waiters for common SageMaker workflows.
+
+Release v1.12.41 (2017-12-05)
+===
+
+### Service Client Updates
+* `service/iot`: Updates service API and documentation
+  * Add error action API for RulesEngine.
+* `service/servicecatalog`: Updates service API and documentation
+  * ServiceCatalog has two distinct personas for its use, an "admin" persona (who creates sets of products with different versions and prescribes who has access to them) and an "end-user" persona (who can launch cloud resources based on the configuration data their admins have given them access to).  This API update will allow admin users to deactivate/activate product versions, end-user will only be able to access and launch active product versions.
+* `service/servicediscovery`: Adds new service
+  * Amazon Route 53 Auto Naming lets you configure public or private namespaces that your microservice applications run in. When instances of the service become available, you can call the Auto Naming API to register the instance, and Amazon Route 53 automatically creates up to five DNS records and an optional health check. Clients that submit DNS queries for the service receive an answer that contains up to eight healthy records.
+
+Release v1.12.40 (2017-12-04)
+===
+
+### Service Client Updates
+* `service/budgets`: Updates service API and documentation
+  * Add additional costTypes to support finer control for different charges included in a cost budget.
+* `service/ecs`: Updates service documentation
+  * Documentation updates for ecs
+
+Release v1.12.39 (2017-12-01)
+===
+
+### Service Client Updates
+* `service/SageMaker`: Updates service waiters
+
+Release v1.12.38 (2017-11-30)
+===
+
+### Service Client Updates
+* `service/AWSMoneypenny`: Adds new service
+* `service/Cloud9`: Adds new service
+* `service/Serverless Registry`: Adds new service
+* `service/apigateway`: Updates service API, documentation, and paginators
+  * Added support Private Integration and VPC Link features in API Gateway. This allows to create an API with the API Gateway private integration, thus providing clients access to HTTP/HTTPS resources in an Amazon VPC from outside of the VPC through a VpcLink resource.
+* `service/ec2`: Updates service API and documentation
+  * Adds the following updates: 1. Spread Placement ensures that instances are placed on distinct hardware in order to reduce correlated failures. 2. Inter-region VPC Peering allows customers to peer VPCs across different AWS regions without requiring additional gateways, VPN connections or physical hardware
+* `service/lambda`: Updates service API and documentation
+  * AWS Lambda now supports the ability to set the concurrency limits for individual functions, and increasing memory to 3008 MB.
+
 Release v1.12.37 (2017-11-30)
 ===
 

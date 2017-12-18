@@ -1,10 +1,10 @@
-hash: 275776b9db156683a173b8ca388918cb809d0480399a597f992e7cb0053430de
-updated: 2017-11-30T15:17:18.599907+01:00
+hash: 4413cbe8e39442c410d9250f578c3c5f7caf5442c9eced09bf8d18be1cd49c19
+updated: 2017-12-18T14:49:47.765141823+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
-  version: 83e491e1ee74c797ee52c228b654601ba6702c31
+  version: fd9b7491525896e01db35c1e20a5bd94bf11491c
   subpackages:
   - aws
   - aws/awserr
@@ -70,7 +70,7 @@ imports:
 - name: github.com/go-playground/universal-translator
   version: 71201497bace774495daed26a3874fd339e0b538
 - name: github.com/go-playground/validator
-  version: 61caf9d3038e1af346dbf5c2e16f6678e1548364
+  version: b1f51f36f1c98cc97f777d6fc9d4b05eaa0cabb5
 - name: github.com/gogo/protobuf
   version: c0656edd0d9eab7c66d1eb0c568f9039345796f7
   subpackages:
@@ -109,7 +109,7 @@ imports:
 - name: github.com/hashicorp/errwrap
   version: 7554cd9344cec97297fa6649b055a8c98c2a1e55
 - name: github.com/hashicorp/go-multierror
-  version: 83588e72410abfbe4df460eeb6f30841ae47d4c4
+  version: b7773ae218740a7be65057fc60b366a49b538a44
 - name: github.com/hashicorp/logutils
   version: 0dc08b1671f34c4250ce212759ebd880f743d883
 - name: github.com/howeyc/gopass
@@ -165,7 +165,7 @@ imports:
 - name: github.com/spf13/pflag
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - name: golang.org/x/crypto
-  version: 81e90905daefcd6fd217b62423c0908922eadb30
+  version: 94eea52f7b742c7cbe0b03b22f0c4c8631ece122
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
@@ -177,6 +177,11 @@ imports:
   - http2/hpack
   - idna
   - lex/httplex
+- name: golang.org/x/sys
+  version: 7ddbeae9ae08c6a06a59597f0c9edbc5ff2444ce
+  subpackages:
+  - unix
+  - windows
 - name: golang.org/x/text
   version: b19bf474d317b857955b12035d2c5acb57ce8b01
   subpackages:
