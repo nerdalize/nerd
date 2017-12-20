@@ -25,7 +25,6 @@ type Config struct {
 type AuthConfig struct {
 	APIEndpoint        string `json:"api_endpoint"`
 	PublicKey          string `json:"public_key"`
-	ClientID           string `json:"client_id"`
 	SecureClientID     string `json:"secure_client_id"`
 	SecureClientSecret string `json:"secure_client_secret"`
 	OAuthSuccessURL    string `json:"oauth_success_url"`
@@ -45,7 +44,6 @@ func Defaults() *Config {
 			APIEndpoint:        "https://auth.nerdalize.com/v1/",
 			OAuthLocalServer:   "localhost:9876",
 			OAuthSuccessURL:    "https://auth.nerdalize.com/do/login_complete/?client=CLI",
-			ClientID:           "Po2PHR7YOIEQojfHy3zfOMulby9QGVSvcD9bO3S3",
 			SecureClientID:     "ckvyq40yyGSH",
 			SecureClientSecret: "f9ef9cb57f5a76e0715def8e7c4c609a1b8872912bc09208cb75d71f",
 			PublicKey: `-----BEGIN PUBLIC KEY-----

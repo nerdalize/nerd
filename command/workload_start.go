@@ -64,7 +64,7 @@ func (cmd *WorkloadStart) DoRun(args []string) (err error) {
 	authclient := v1auth.NewClient(v1auth.ClientConfig{
 		Base:               authbase,
 		Logger:             cmd.outputter.Logger,
-		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.ClientID, cmd.session),
+		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.SecureClientID, cmd.config.Auth.SecureClientSecret, cmd.session),
 	})
 
 	ss, err := cmd.session.Read()

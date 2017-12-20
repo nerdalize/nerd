@@ -9,6 +9,8 @@ import (
 	v1payload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd/api"
+	// this blank import is necessary to load the oidc plugin for client-go
+	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 )
 
 const (
@@ -52,6 +54,9 @@ func (o *OIDCPopulator) PopulateKubeConfig(project string) error {
 	cluster := api.NewCluster()
 	cluster.InsecureSkipTLSVerify = true
 	cluster.Server = o.project.Services.Cluster.Address
+	if cluster.Server == "" {
+		return errors.New("this project isn't available for open id connect (server address cannot be blank)")
+	}
 
 	filename, err := conf.GetDefaultSessionLocation()
 	if err != nil {
