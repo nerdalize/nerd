@@ -43,6 +43,7 @@ func createCommand(ui cli.Ui, runFunc func([]string) error, helpFunc func() stri
 		flagParser: flags.NewNamedParser(usageFunc(), opts),
 		runFunc:    runFunc,
 		helpFunc:   helpFunc,
+		usageFunc:  usageFunc,
 		out:        NewOutput(ui),
 	}
 

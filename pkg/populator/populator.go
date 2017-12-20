@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/golang/glog"
 	v1payload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
@@ -140,6 +141,29 @@ func Namespace(filename string) (string, error) {
 	}
 
 	return config.Contexts[config.CurrentContext].Namespace, nil
+}
+
+//Context defines if the current context from the kube config file comes from the cli
+func Context(filename string) bool {
+	data, err := ioutil.ReadFile(filename)
+
+	if os.IsNotExist(err) {
+		return false
+	} else if err != nil {
+		return false
+	}
+
+	// decode config, empty if no bytes
+	config, err := decode(data)
+	if err != nil {
+		return false
+	}
+
+	if strings.Contains(config.CurrentContext, Prefix) {
+		return true
+	}
+
+	return false
 }
 
 // decode reads a Config object from bytes.

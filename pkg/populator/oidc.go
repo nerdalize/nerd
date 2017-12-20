@@ -89,6 +89,7 @@ func (o *OIDCPopulator) PopulateKubeConfig(project string) error {
 	context.Cluster = project
 	context.AuthInfo = project
 	context.Namespace = project
+	clusterName := fmt.Sprintf("%s-%s", Prefix, project)
 
 	// read existing config or create new if does not exist
 	kubecfg, err := ReadConfigOrNew(o.GetKubeConfigFile())
@@ -96,9 +97,9 @@ func (o *OIDCPopulator) PopulateKubeConfig(project string) error {
 		return err
 	}
 	kubecfg.Clusters[project] = cluster
-	kubecfg.CurrentContext = project
+	kubecfg.CurrentContext = clusterName
 	kubecfg.AuthInfos[project] = auth
-	kubecfg.Contexts[project] = context
+	kubecfg.Contexts[clusterName] = context
 
 	// write back to disk
 	if err := WriteConfig(kubecfg, o.GetKubeConfigFile()); err != nil {
