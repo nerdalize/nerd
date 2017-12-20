@@ -23,7 +23,7 @@ var _ OpsClientInterface = &OpsClient{}
 //OpsClientInterface is an interface so client calls can be mocked.
 type OpsClientInterface interface {
 	GetOAuthCredentials(code, clientID, clientSecret, localServerURL string) (output *v1payload.GetOAuthCredentialsOutput, err error)
-	RefreshOAuthCredentials(refreshToken, clientID string) (output *v1payload.RefreshOAuthCredentialsOutput, err error)
+	RefreshOAuthCredentials(refreshToken, clientID, clientSecret string) (output *v1payload.RefreshOAuthCredentialsOutput, err error)
 }
 
 //OpsClientConfig is the config for OpsClient
@@ -84,7 +84,6 @@ func (c *OpsClient) doRequest(method, urlPath string, input, output interface{})
 	client.LogResponse(resp, c.Logger)
 
 	dec := json.NewDecoder(resp.Body)
-	fmt.Println(resp.Body)
 	defer resp.Body.Close()
 	if resp.StatusCode > 399 {
 		errv := &v1payload.Error{}
@@ -123,11 +122,12 @@ func (c *OpsClient) GetOAuthCredentials(code, clientID, clientSecret, localServe
 }
 
 //RefreshOAuthCredentials refreshes an oauth access token
-func (c *OpsClient) RefreshOAuthCredentials(refreshToken, clientID string) (output *v1payload.RefreshOAuthCredentialsOutput, err error) {
+func (c *OpsClient) RefreshOAuthCredentials(refreshToken, clientID, clientSecret string) (output *v1payload.RefreshOAuthCredentialsOutput, err error) {
 	output = &v1payload.RefreshOAuthCredentialsOutput{}
 	input := &v1payload.RefreshOAuthCredentialsInput{
 		RefreshToken: refreshToken,
 		ClientID:     clientID,
+		ClientSecret: clientSecret,
 		GrantType:    "refresh_token",
 	}
 	return output, c.doRequest(http.MethodPost, "o/token/", input, output)

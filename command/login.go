@@ -69,7 +69,6 @@ func (cmd *Login) DoRun(args []string) error {
 	if err != nil {
 		return HandleError(errors.Wrap(err, "failed to get oauth credentials"))
 	}
-	fmt.Println(out)
 
 	expiration := time.Unix(time.Now().Unix()+int64(out.ExpiresIn), 0)
 	err = cmd.session.WriteOAuth(out.AccessToken, out.RefreshToken, out.IDToken, expiration, out.Scope, out.TokenType)

@@ -1,4 +1,4 @@
-//package populator is a package that will help us to populate the kubernetes config file with the right credentials
+//Package populator is a package that will help us to populate the kubernetes config file with the right credentials
 package populator
 
 import (
@@ -14,7 +14,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api/latest"
 )
 
-var Username = "nerd-cli"
+//Prefix is used to know if a context comes from the cli.
+var Prefix = "nerd-cli"
 
 // P is an interface that we can use to read from and to write to the kube config file.
 type P interface {

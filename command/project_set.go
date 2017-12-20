@@ -1,7 +1,6 @@
 package command
 
 import (
-	"fmt"
 	"net/url"
 	"path/filepath"
 
@@ -63,12 +62,10 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.ClientID, cmd.session),
 	})
 
-	// This part should be easier to do if we can get a project with its name instead of its id
 	project, err := client.GetProject(projectSlug)
 	if err != nil {
 		return HandleError(errors.Wrap(err, "Project not found, please check the project name. You can get a list of your projects by running `nerd project list`."))
 	}
-	fmt.Println(project)
 
 	if cmd.opts.KubeConfig == "" {
 		hdir, err := homedir.Dir()

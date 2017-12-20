@@ -8,6 +8,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
+//EnvPopulator is a populator implementation based on env variables.
 type EnvPopulator struct {
 	// kubeConfigFile is the path where the kube config is stored
 	// Only access this with atomic ops
@@ -20,6 +21,7 @@ func newEnv(kubeConfigFile string) *EnvPopulator {
 	return e
 }
 
+//GetKubeConfigFile returns the path where the kube config is stored.
 func (e *EnvPopulator) GetKubeConfigFile() string {
 	return e.kubeConfigFile.Load().(string)
 }

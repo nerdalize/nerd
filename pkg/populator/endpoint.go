@@ -8,6 +8,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
+//EndpointPopulator is an implementation of the P interface based on the retrieval of a conf file.
 type EndpointPopulator struct {
 	// kubeConfigFile is the path where the kube config is stored
 	// Only access this with atomic ops
@@ -20,6 +21,7 @@ func newEndpoint(kubeConfigFile string) *EndpointPopulator {
 	return e
 }
 
+//GetKubeConfigFile returns the path where the kube config is stored
 func (e *EndpointPopulator) GetKubeConfigFile() string {
 	return e.kubeConfigFile.Load().(string)
 }

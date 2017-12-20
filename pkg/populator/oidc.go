@@ -25,6 +25,7 @@ var (
 	tokenEndpoint = fmt.Sprintf("%s/v1/o/token", IDPIssuerURL)
 )
 
+//OIDCPopulator is an implementation of the P interface using on Open ID Connect credentials.
 type OIDCPopulator struct {
 	// kubeConfigFile is the path where the kube config is stored
 	// Only access this with atomic ops
@@ -41,6 +42,7 @@ func newOIDC(kubeConfigFile string, project *v1payload.GetProjectOutput) *OIDCPo
 	return o
 }
 
+//GetKubeConfigFile returns the path where the kube config is stored.
 func (o *OIDCPopulator) GetKubeConfigFile() string {
 	return o.kubeConfigFile.Load().(string)
 }
