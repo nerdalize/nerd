@@ -22,7 +22,7 @@ var _ OpsClientInterface = &OpsClient{}
 
 //OpsClientInterface is an interface so client calls can be mocked.
 type OpsClientInterface interface {
-	GetOAuthCredentials(code, clientID, localServerURL string) (output *v1payload.GetOAuthCredentialsOutput, err error)
+	GetOAuthCredentials(code, clientID, clientSecret, localServerURL string) (output *v1payload.GetOAuthCredentialsOutput, err error)
 	RefreshOAuthCredentials(refreshToken, clientID string) (output *v1payload.RefreshOAuthCredentialsOutput, err error)
 }
 
@@ -84,6 +84,7 @@ func (c *OpsClient) doRequest(method, urlPath string, input, output interface{})
 	client.LogResponse(resp, c.Logger)
 
 	dec := json.NewDecoder(resp.Body)
+	fmt.Println(resp.Body)
 	defer resp.Body.Close()
 	if resp.StatusCode > 399 {
 		errv := &v1payload.Error{}
@@ -109,13 +110,14 @@ func (c *OpsClient) doRequest(method, urlPath string, input, output interface{})
 }
 
 //GetOAuthCredentials gets oauth credentials based on a 'session' code
-func (c *OpsClient) GetOAuthCredentials(code, clientID, localServerURL string) (output *v1payload.GetOAuthCredentialsOutput, err error) {
+func (c *OpsClient) GetOAuthCredentials(code, clientID, clientSecret, localServerURL string) (output *v1payload.GetOAuthCredentialsOutput, err error) {
 	output = &v1payload.GetOAuthCredentialsOutput{}
 	input := &v1payload.GetOAuthCredentialsInput{
-		Code:        code,
-		ClientID:    clientID,
-		GrantType:   "authorization_code",
-		RedirectURI: localServerURL,
+		Code:         code,
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		GrantType:    "authorization_code",
+		RedirectURI:  localServerURL,
 	}
 	return output, c.doRequest(http.MethodPost, "o/token/", input, output)
 }

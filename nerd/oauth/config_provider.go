@@ -61,7 +61,7 @@ func (e *ConfigProvider) refresh(refreshToken, clientID string) (string, error) 
 	}
 	expiration := time.Unix(e.CurrentTime().Unix()+int64(out.ExpiresIn), 0)
 	e.SetExpiration(expiration)
-	err = e.Session.WriteOAuth(out.AccessToken, out.RefreshToken, expiration, out.Scope, out.TokenType)
+	err = e.Session.WriteOAuth(out.AccessToken, out.RefreshToken, "", expiration, out.Scope, out.TokenType)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to write oauth tokens to config")
 	}

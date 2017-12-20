@@ -149,6 +149,7 @@ func (c *Client) ListProjects() (output *v1payload.ListProjectsOutput, err error
 	return output, c.doRequest(http.MethodGet, projectsEndpoint, nil, &output.Projects)
 }
 
+//GetProject retrieve a precised project so we can validate its existence and find on which cluster it's living.
 func (c *Client) GetProject(id string) (output *v1payload.GetProjectOutput, err error) {
 	output = &v1payload.GetProjectOutput{}
 	return output, c.doRequest(http.MethodGet, fmt.Sprintf("%s/%s", projectsEndpoint, id), nil, output)

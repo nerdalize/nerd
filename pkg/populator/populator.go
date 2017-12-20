@@ -7,11 +7,14 @@ import (
 	"path/filepath"
 
 	"github.com/golang/glog"
+	v1payload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/clientcmd/api/latest"
 )
+
+var Username = "nerd-cli"
 
 // P is an interface that we can use to read from and to write to the kube config file.
 type P interface {
@@ -19,10 +22,10 @@ type P interface {
 }
 
 //New instantiates a new P interface using the conf parameter. It can return a env, endpoint or oidc populator.
-func New(conf, kubeConfigFile string) (P, error) {
+func New(conf, kubeConfigFile string, project *v1payload.GetProjectOutput) (P, error) {
 	switch conf {
 	case "oidc":
-		return newOIDC(kubeConfigFile), nil
+		return newOIDC(kubeConfigFile, project), nil
 	case "endpoint":
 		return newEndpoint(kubeConfigFile), nil
 	case "env":
@@ -39,6 +42,34 @@ func ReadConfigOrNew(filename string) (*api.Config, error) {
 	if os.IsNotExist(err) {
 		return api.NewConfig(), nil
 	} else if err != nil {
+		return nil, errors.Wrapf(err, "Error reading file %q", filename)
+	}
+
+	// decode config, empty if no bytes
+	config, err := decode(data)
+	if err != nil {
+		return nil, errors.Errorf("could not read config: %v", err)
+	}
+
+	// initialize nil maps
+	if config.AuthInfos == nil {
+		config.AuthInfos = map[string]*api.AuthInfo{}
+	}
+	if config.Clusters == nil {
+		config.Clusters = map[string]*api.Cluster{}
+	}
+	if config.Contexts == nil {
+		config.Contexts = map[string]*api.Context{}
+	}
+
+	return config, nil
+}
+
+// ReadConfig retrieves Kubernetes client configuration from a file.
+// If no files exists, it returns an error.
+func ReadConfig(filename string) (*api.Config, error) {
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
 		return nil, errors.Wrapf(err, "Error reading file %q", filename)
 	}
 

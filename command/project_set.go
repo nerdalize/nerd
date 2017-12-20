@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"net/url"
 	"path/filepath"
 
@@ -63,21 +64,11 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 	})
 
 	// This part should be easier to do if we can get a project with its name instead of its id
-	projects, err := client.ListProjects()
+	project, err := client.GetProject(projectSlug)
 	if err != nil {
-		return HandleError(err)
+		return HandleError(errors.Wrap(err, "Project not found, please check the project name. You can get a list of your projects by running `nerd project list`."))
 	}
-
-	ok := false
-	for _, project := range projects.Projects {
-		if project.Slug == projectSlug {
-			ok = true
-		}
-	}
-
-	if !ok {
-		return HandleError(errors.New("Project not found, please check the project name. You can get a list of your projects by running `nerd project list`."))
-	}
+	fmt.Println(project)
 
 	if cmd.opts.KubeConfig == "" {
 		hdir, err := homedir.Dir()
@@ -86,7 +77,7 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 		}
 		cmd.opts.KubeConfig = filepath.Join(hdir, ".kube", "config")
 	}
-	p, err := populator.New(cmd.opts.Config, cmd.opts.KubeConfig)
+	p, err := populator.New(cmd.opts.Config, cmd.opts.KubeConfig, project)
 	if err != nil {
 		return HandleError(err)
 	}
