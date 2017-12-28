@@ -59,24 +59,12 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 	client := v1auth.NewClient(v1auth.ClientConfig{
 		Base:               authbase,
 		Logger:             cmd.outputter.Logger,
-		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.ClientID, cmd.session),
+		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.SecureClientID, cmd.config.Auth.SecureClientSecret, cmd.session),
 	})
 
-	// This part should be easier to do if we can get a project with its name instead of its id
-	projects, err := client.ListProjects()
+	project, err := client.GetProject(projectSlug)
 	if err != nil {
-		return HandleError(err)
-	}
-
-	ok := false
-	for _, project := range projects.Projects {
-		if project.Slug == projectSlug {
-			ok = true
-		}
-	}
-
-	if !ok {
-		return HandleError(errors.New("Project not found, please check the project name. You can get a list of your projects by running `nerd project list`."))
+		return HandleError(errors.Wrap(err, "Project not found, please check the project name. You can get a list of your projects by running `nerd project list`."))
 	}
 
 	if cmd.opts.KubeConfig == "" {
@@ -86,7 +74,7 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 		}
 		cmd.opts.KubeConfig = filepath.Join(hdir, ".kube", "config")
 	}
-	p, err := populator.New(cmd.opts.Config, cmd.opts.KubeConfig)
+	p, err := populator.New(cmd.opts.Config, cmd.opts.KubeConfig, project)
 	if err != nil {
 		return HandleError(err)
 	}

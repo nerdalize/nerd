@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"context"
+	"strings"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
@@ -61,7 +62,7 @@ func (cmd *JobLogs) Execute(args []string) (err error) {
 		return nil
 	}
 
-	cmd.out.Output(string(out.Data))
+	cmd.out.Output(strings.TrimSpace(string(out.Data))) //trim trailing newline, which is re-added by the output function
 	if int64(len(out.Data)) == kubevisor.MaxLogBytes {
 		cmd.out.Info("-- logs are trimmed after this point --")
 	}

@@ -1,6 +1,7 @@
 package populator
 
 import (
+	"fmt"
 	"os"
 	"sync/atomic"
 
@@ -8,6 +9,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
+//EnvPopulator is a populator implementation based on env variables.
 type EnvPopulator struct {
 	// kubeConfigFile is the path where the kube config is stored
 	// Only access this with atomic ops
@@ -20,6 +22,7 @@ func newEnv(kubeConfigFile string) *EnvPopulator {
 	return e
 }
 
+//GetKubeConfigFile returns the path where the kube config is stored.
 func (e *EnvPopulator) GetKubeConfigFile() string {
 	return e.kubeConfigFile.Load().(string)
 }
@@ -38,6 +41,7 @@ func (e *EnvPopulator) PopulateKubeConfig(project string) error {
 	context.Cluster = project
 	context.AuthInfo = project
 	context.Namespace = os.Getenv("KUBE_NAMESPACE")
+	clusterName := fmt.Sprintf("%s-%s", Prefix, project)
 
 	// read existing config or create new if does not exist
 	kubecfg, err := ReadConfigOrNew(e.GetKubeConfigFile())
@@ -46,8 +50,8 @@ func (e *EnvPopulator) PopulateKubeConfig(project string) error {
 	}
 	kubecfg.Clusters[project] = cluster
 	kubecfg.AuthInfos[project] = user
-	kubecfg.CurrentContext = project
-	kubecfg.Contexts[project] = context
+	kubecfg.CurrentContext = clusterName
+	kubecfg.Contexts[clusterName] = context
 
 	// write back to disk
 	if err := WriteConfig(kubecfg, e.GetKubeConfigFile()); err != nil {

@@ -65,13 +65,13 @@ func (cmd *Login) DoRun(args []string) error {
 		return HandleError(errors.Wrap(oauthResponse.err, "failed to do oauth login"))
 	}
 
-	out, err := authOpsClient.GetOAuthCredentials(oauthResponse.code, cmd.config.Auth.ClientID, fmt.Sprintf("http://%s/oauth/callback", cmd.config.Auth.OAuthLocalServer))
+	out, err := authOpsClient.GetOAuthCredentials(oauthResponse.code, cmd.config.Auth.SecureClientID, cmd.config.Auth.SecureClientSecret, fmt.Sprintf("http://%s/oauth/callback", cmd.config.Auth.OAuthLocalServer))
 	if err != nil {
 		return HandleError(errors.Wrap(err, "failed to get oauth credentials"))
 	}
 
 	expiration := time.Unix(time.Now().Unix()+int64(out.ExpiresIn), 0)
-	err = cmd.session.WriteOAuth(out.AccessToken, out.RefreshToken, expiration, out.Scope, out.TokenType)
+	err = cmd.session.WriteOAuth(out.AccessToken, out.RefreshToken, out.IDToken, expiration, out.Scope, out.TokenType)
 	if err != nil {
 		return HandleError(errors.Wrap(err, "failed to write oauth tokens to config"))
 	}
@@ -126,8 +126,9 @@ func spawnServer(svr *http.Server, cfg conf.AuthConfig, randomState string, done
 		resolved := base.ResolveReference(path)
 		q := resolved.Query()
 		q.Set("state", r.URL.Query().Get("state"))
-		q.Set("client_id", cfg.ClientID)
+		q.Set("client_id", cfg.SecureClientID)
 		q.Set("response_type", "code")
+		q.Set("scope", "openid email group")
 		q.Set("redirect_uri", fmt.Sprintf("http://%s/oauth/callback", cfg.OAuthLocalServer))
 		resolved.RawQuery = q.Encode()
 

@@ -1,10 +1,10 @@
-hash: 275776b9db156683a173b8ca388918cb809d0480399a597f992e7cb0053430de
-updated: 2017-11-30T15:17:18.599907+01:00
+hash: 4413cbe8e39442c410d9250f578c3c5f7caf5442c9eced09bf8d18be1cd49c19
+updated: 2017-12-28T10:26:51.241839+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
-  version: 83e491e1ee74c797ee52c228b654601ba6702c31
+  version: 82ad808f2307df0776c038bfd7ea85440a35c02e
   subpackages:
   - aws
   - aws/awserr
@@ -70,7 +70,7 @@ imports:
 - name: github.com/go-playground/universal-translator
   version: 71201497bace774495daed26a3874fd339e0b538
 - name: github.com/go-playground/validator
-  version: 61caf9d3038e1af346dbf5c2e16f6678e1548364
+  version: b1f51f36f1c98cc97f777d6fc9d4b05eaa0cabb5
 - name: github.com/gogo/protobuf
   version: c0656edd0d9eab7c66d1eb0c568f9039345796f7
   subpackages:
@@ -109,7 +109,7 @@ imports:
 - name: github.com/hashicorp/errwrap
   version: 7554cd9344cec97297fa6649b055a8c98c2a1e55
 - name: github.com/hashicorp/go-multierror
-  version: 83588e72410abfbe4df460eeb6f30841ae47d4c4
+  version: b7773ae218740a7be65057fc60b366a49b538a44
 - name: github.com/hashicorp/logutils
   version: 0dc08b1671f34c4250ce212759ebd880f743d883
 - name: github.com/howeyc/gopass
@@ -145,7 +145,7 @@ imports:
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/posener/complete
-  version: dc2bc5a81accba8782bebea28628224643a8286a
+  version: 6bee943216c8cea4cc983c8596346d8945279a1f
   subpackages:
   - cmd
   - cmd/install
@@ -177,6 +177,18 @@ imports:
   - http2/hpack
   - idna
   - lex/httplex
+- name: golang.org/x/oauth2
+  version: a6bd8cefa1811bd24b86f8902872e4e8225f74c4
+  subpackages:
+  - google
+  - internal
+  - jws
+  - jwt
+- name: golang.org/x/sys
+  version: 7ddbeae9ae08c6a06a59597f0c9edbc5ff2444ce
+  subpackages:
+  - unix
+  - windows
 - name: golang.org/x/text
   version: b19bf474d317b857955b12035d2c5acb57ce8b01
   subpackages:
@@ -191,6 +203,16 @@ imports:
   - unicode/bidi
   - unicode/norm
   - width
+- name: google.golang.org/appengine
+  version: 5bee14b453b4c71be47ec1781b0fa61c2ea182db
+  subpackages:
+  - internal
+  - internal/base
+  - internal/datastore
+  - internal/log
+  - internal/remote_api
+  - internal/urlfetch
+  - urlfetch
 - name: gopkg.in/cheggaaa/pb.v1
   version: 0817e3a1f8de9e3c78b159699b3c07d53e24a963
 - name: gopkg.in/inf.v0
@@ -308,6 +330,7 @@ imports:
   - kubernetes/typed/storage/v1
   - kubernetes/typed/storage/v1beta1
   - pkg/version
+  - plugin/pkg/client/auth/oidc
   - rest
   - rest/watch
   - tools/auth

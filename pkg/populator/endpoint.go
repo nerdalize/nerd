@@ -1,6 +1,7 @@
 package populator
 
 import (
+	"fmt"
 	"os"
 	"sync/atomic"
 
@@ -8,6 +9,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
+//EndpointPopulator is an implementation of the P interface based on the retrieval of a conf file.
 type EndpointPopulator struct {
 	// kubeConfigFile is the path where the kube config is stored
 	// Only access this with atomic ops
@@ -20,6 +22,7 @@ func newEndpoint(kubeConfigFile string) *EndpointPopulator {
 	return e
 }
 
+//GetKubeConfigFile returns the path where the kube config is stored
 func (e *EndpointPopulator) GetKubeConfigFile() string {
 	return e.kubeConfigFile.Load().(string)
 }
@@ -39,6 +42,7 @@ func (e *EndpointPopulator) PopulateKubeConfig(project string) error {
 	context.Cluster = project
 	context.AuthInfo = project
 	context.Namespace = os.Getenv("KUBE_NAMESPACE")
+	clusterName := fmt.Sprintf("%s-%s", Prefix, project)
 
 	// read existing config or create new if does not exist
 	kubecfg, err := ReadConfigOrNew(e.GetKubeConfigFile())
@@ -47,8 +51,8 @@ func (e *EndpointPopulator) PopulateKubeConfig(project string) error {
 	}
 	kubecfg.Clusters[project] = cluster
 	kubecfg.AuthInfos[project] = user
-	kubecfg.CurrentContext = project
-	kubecfg.Contexts[project] = context
+	kubecfg.CurrentContext = clusterName
+	kubecfg.Contexts[clusterName] = context
 
 	// write back to disk
 	if err := WriteConfig(kubecfg, e.GetKubeConfigFile()); err != nil {

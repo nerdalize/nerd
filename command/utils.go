@@ -10,12 +10,12 @@ import (
 
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/command/format"
+	"github.com/nerdalize/nerd/nerd"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
 	v1batch "github.com/nerdalize/nerd/nerd/client/batch/v1"
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/jwt"
 	"github.com/nerdalize/nerd/nerd/oauth"
-	"github.com/nerdalize/nerd/nerd"
 	"github.com/pkg/errors"
 	"github.com/restic/chunker"
 )
@@ -49,7 +49,7 @@ func NewClient(c *conf.Config, session *conf.Session, outputter *format.Outputte
 			jwt.NewAuthAPIProvider(key, session, v1auth.NewClient(v1auth.ClientConfig{
 				Base:               authbase,
 				Logger:             outputter.Logger,
-				OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, c.Auth.ClientID, session),
+				OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, c.Auth.SecureClientID, c.Auth.SecureClientSecret, session),
 			})),
 		),
 		Base:   base,

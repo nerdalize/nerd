@@ -42,6 +42,7 @@ func (ss *SessionSnapshot) RequireProjectID() (name string, err error) {
 type OAuth struct {
 	AccessToken  string    `json:"access_token,omitempty"`
 	RefreshToken string    `json:"refresh_token,omitempty"`
+	IDToken      string    `json:"id_token"`
 	Expiration   time.Time `json:"expiration,omitempty"`
 	Scope        string    `json:"scope,omitempty"`
 	TokenType    string    `json:"token_type,omitempty"`
@@ -89,7 +90,7 @@ func GetDefaultSessionLocation() (string, error) {
 type SessionInterface interface {
 	Read() (*SessionSnapshot, error)
 	WriteJWT(jwt, refreshToken string) error
-	WriteOAuth(accessToken, refreshToken string, expiration time.Time, scope, tokenType string) error
+	WriteOAuth(accessToken, refreshToken, idToken string, expiration time.Time, scope, tokenType string) error
 	WriteProject(project, awsRegion string) error
 }
 
@@ -151,7 +152,7 @@ func (s *Session) WriteJWT(jwt, refreshToken string) error {
 }
 
 //WriteOAuth writes the oauth object to the session file
-func (s *Session) WriteOAuth(accessToken, refreshToken string, expiration time.Time, scope, tokenType string) error {
+func (s *Session) WriteOAuth(accessToken, refreshToken, idToken string, expiration time.Time, scope, tokenType string) error {
 	s.m.Lock()
 	defer s.m.Unlock()
 	ss, err := s.readFile()
@@ -160,6 +161,7 @@ func (s *Session) WriteOAuth(accessToken, refreshToken string, expiration time.T
 	}
 	ss.OAuth.AccessToken = accessToken
 	ss.OAuth.RefreshToken = refreshToken
+	ss.OAuth.IDToken = idToken
 	ss.OAuth.Expiration = expiration
 	ss.OAuth.Scope = scope
 	ss.OAuth.TokenType = tokenType

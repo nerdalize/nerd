@@ -23,11 +23,12 @@ type Config struct {
 
 //AuthConfig contains config details with respect to the authentication server.
 type AuthConfig struct {
-	APIEndpoint      string `json:"api_endpoint"`
-	PublicKey        string `json:"public_key"`
-	ClientID         string `json:"client_id"`
-	OAuthSuccessURL  string `json:"oauth_success_url"`
-	OAuthLocalServer string `json:"oauth_localserver"`
+	APIEndpoint        string `json:"api_endpoint"`
+	PublicKey          string `json:"public_key"`
+	SecureClientID     string `json:"secure_client_id"`
+	SecureClientSecret string `json:"secure_client_secret"`
+	OAuthSuccessURL    string `json:"oauth_success_url"`
+	OAuthLocalServer   string `json:"oauth_localserver"`
 }
 
 //LoggingConfig contains config details about local logging of command output
@@ -40,10 +41,11 @@ type LoggingConfig struct {
 func Defaults() *Config {
 	return &Config{
 		Auth: AuthConfig{
-			APIEndpoint:      "https://auth.nerdalize.com/v1/",
-			OAuthLocalServer: "localhost:9876",
-			OAuthSuccessURL:  "https://auth.nerdalize.com/do/login_complete/?client=CLI",
-			ClientID:         "Po2PHR7YOIEQojfHy3zfOMulby9QGVSvcD9bO3S3",
+			APIEndpoint:        "https://auth.nerdalize.com/v1/",
+			OAuthLocalServer:   "localhost:9876",
+			OAuthSuccessURL:    "https://auth.nerdalize.com/do/login_complete/?client=CLI",
+			SecureClientID:     "ckvyq40yyGSH",
+			SecureClientSecret: "f9ef9cb57f5a76e0715def8e7c4c609a1b8872912bc09208cb75d71f",
 			PublicKey: `-----BEGIN PUBLIC KEY-----
 MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEBthEmchVCtA3ZPXqiCXdj+7/ZFuhxRgx
 grTxIHK+b0vEqKqA3O++ggD1GgjqtTfNLGUjLCE3KxyIN78TsK+HU4VVexTjlWXy

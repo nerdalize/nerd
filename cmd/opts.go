@@ -52,6 +52,10 @@ func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
 		return nil, errors.Wrap(err, "failed to create Kubernetes configuration")
 	}
 
+	if !populator.Context(kopts.KubeConfig) {
+		return nil, errors.New("Please select a project with `nerd project set`.")
+	}
+
 	d.ns, err = populator.Namespace(kopts.KubeConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get namespace from Kubernetes configuration")
