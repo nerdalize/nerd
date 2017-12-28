@@ -1,10 +1,10 @@
 hash: 4413cbe8e39442c410d9250f578c3c5f7caf5442c9eced09bf8d18be1cd49c19
-updated: 2017-12-18T14:49:47.765141823+01:00
+updated: 2017-12-28T10:26:51.241839+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
-  version: fd9b7491525896e01db35c1e20a5bd94bf11491c
+  version: 82ad808f2307df0776c038bfd7ea85440a35c02e
   subpackages:
   - aws
   - aws/awserr
@@ -145,7 +145,7 @@ imports:
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/posener/complete
-  version: dc2bc5a81accba8782bebea28628224643a8286a
+  version: 6bee943216c8cea4cc983c8596346d8945279a1f
   subpackages:
   - cmd
   - cmd/install
@@ -165,7 +165,7 @@ imports:
 - name: github.com/spf13/pflag
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - name: golang.org/x/crypto
-  version: 94eea52f7b742c7cbe0b03b22f0c4c8631ece122
+  version: 81e90905daefcd6fd217b62423c0908922eadb30
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
@@ -177,6 +177,13 @@ imports:
   - http2/hpack
   - idna
   - lex/httplex
+- name: golang.org/x/oauth2
+  version: a6bd8cefa1811bd24b86f8902872e4e8225f74c4
+  subpackages:
+  - google
+  - internal
+  - jws
+  - jwt
 - name: golang.org/x/sys
   version: 7ddbeae9ae08c6a06a59597f0c9edbc5ff2444ce
   subpackages:
@@ -196,6 +203,16 @@ imports:
   - unicode/bidi
   - unicode/norm
   - width
+- name: google.golang.org/appengine
+  version: 5bee14b453b4c71be47ec1781b0fa61c2ea182db
+  subpackages:
+  - internal
+  - internal/base
+  - internal/datastore
+  - internal/log
+  - internal/remote_api
+  - internal/urlfetch
+  - urlfetch
 - name: gopkg.in/cheggaaa/pb.v1
   version: 0817e3a1f8de9e3c78b159699b3c07d53e24a963
 - name: gopkg.in/inf.v0
@@ -313,6 +330,7 @@ imports:
   - kubernetes/typed/storage/v1
   - kubernetes/typed/storage/v1beta1
   - pkg/version
+  - plugin/pkg/client/auth/oidc
   - rest
   - rest/watch
   - tools/auth
