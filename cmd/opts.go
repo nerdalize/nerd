@@ -13,6 +13,11 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+var (
+	//DefaultNamespace is used whenever the populator doesn't provide one
+	DefaultNamespace = "default"
+)
+
 //KubeOpts can be used to create a Kubernetes service
 type KubeOpts struct {
 	KubeConfig string        `long:"kube-config" description:"file at which Nerd will look for Kubernetes credentials" env:"KUBECONFIG" default-mask:"~/.kube/conf"`
@@ -59,6 +64,10 @@ func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
 	d.ns, err = populator.Namespace(kopts.KubeConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get namespace from Kubernetes configuration")
+	}
+
+	if d.ns == "" {
+		d.ns = DefaultNamespace //we need some namespace to work on
 	}
 
 	d.val = validator.New()
