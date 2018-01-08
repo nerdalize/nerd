@@ -4,6 +4,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/nerdalize/nerd/nerd"
+
 	"github.com/go-playground/validator"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/nerdalize/nerd/pkg/populator"
@@ -11,11 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-)
-
-var (
-	//DefaultNamespace is used whenever the populator doesn't provide one
-	DefaultNamespace = "default"
 )
 
 //KubeOpts can be used to create a Kubernetes service
@@ -58,16 +55,12 @@ func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
 	}
 
 	if !populator.Context(kopts.KubeConfig) {
-		return nil, errors.New("Please select a project with `nerd project set`.")
+		return nil, nerd.ErrProjectIDNotSet
 	}
 
 	d.ns, err = populator.Namespace(kopts.KubeConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get namespace from Kubernetes configuration")
-	}
-
-	if d.ns == "" {
-		d.ns = DefaultNamespace //we need some namespace to work on
 	}
 
 	d.val = validator.New()
