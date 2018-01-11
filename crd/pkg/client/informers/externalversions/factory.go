@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Openshift Evangelists
+Copyright 2018 Nerdalize
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import (
 
 	versioned "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
 	internalinterfaces "github.com/nerdalize/nerd/crd/pkg/client/informers/externalversions/internalinterfaces"
-	nerdalize_com "github.com/nerdalize/nerd/crd/pkg/client/informers/externalversions/nerdalize.com"
+	stable_nerdalize_com "github.com/nerdalize/nerd/crd/pkg/client/informers/externalversions/stable.nerdalize.com"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -123,9 +123,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Nerdalize() nerdalize_com.Interface
+	Nerdalize() stable_nerdalize_com.Interface
 }
 
-func (f *sharedInformerFactory) Nerdalize() nerdalize_com.Interface {
-	return nerdalize_com.New(f, f.namespace, f.tweakListOptions)
+func (f *sharedInformerFactory) Nerdalize() stable_nerdalize_com.Interface {
+	return stable_nerdalize_com.New(f, f.namespace, f.tweakListOptions)
 }

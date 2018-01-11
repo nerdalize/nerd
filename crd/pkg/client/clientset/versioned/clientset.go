@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Openshift Evangelists
+Copyright 2018 Nerdalize
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package versioned
 
 import (
 	glog "github.com/golang/glog"
-	nerdalizev1 "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned/typed/nerdalize.com/v1"
+	nerdalizev1 "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned/typed/stable.nerdalize.com/v1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

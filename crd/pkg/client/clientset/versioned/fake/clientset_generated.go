@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Openshift Evangelists
+Copyright 2018 Nerdalize
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@ package fake
 
 import (
 	clientset "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
-	nerdalizev1 "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned/typed/nerdalize.com/v1"
-	fakenerdalizev1 "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned/typed/nerdalize.com/v1/fake"
+	nerdalizev1 "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned/typed/stable.nerdalize.com/v1"
+	fakenerdalizev1 "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned/typed/stable.nerdalize.com/v1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
