@@ -44,3 +44,4 @@ import:
   - kubernetes
   - tools/clientcmd
 - package: golang.org/x/sys
+- package: k8s.io/code-generator

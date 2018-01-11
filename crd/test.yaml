@@ -1,0 +1,8 @@
+apiVersion: "stable.nerdalize.com/v1" 
+kind: Dataset 
+metadata:
+  name: my-new-dataset-object
+spec: 
+  bucket: "a-s3-bucket"
+  key: my-awesome-dataset
+

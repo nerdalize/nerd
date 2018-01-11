@@ -1,10 +1,10 @@
-hash: 4413cbe8e39442c410d9250f578c3c5f7caf5442c9eced09bf8d18be1cd49c19
-updated: 2017-12-28T10:26:51.241839+01:00
+hash: 5fccf4e79733a8f7066a3ffb681dd4b1f5edd61bd3500b2f59d9f225954a303c
+updated: 2018-01-10T15:28:50.385418581+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
-  version: 82ad808f2307df0776c038bfd7ea85440a35c02e
+  version: 3c754f1d340244540350f0a00b940781bae9c905
   subpackages:
   - aws
   - aws/awserr
@@ -70,7 +70,7 @@ imports:
 - name: github.com/go-playground/universal-translator
   version: 71201497bace774495daed26a3874fd339e0b538
 - name: github.com/go-playground/validator
-  version: b1f51f36f1c98cc97f777d6fc9d4b05eaa0cabb5
+  version: 230db62e071d40171640c9deb875d46a3858d9dd
 - name: github.com/gogo/protobuf
   version: c0656edd0d9eab7c66d1eb0c568f9039345796f7
   subpackages:
@@ -145,7 +145,7 @@ imports:
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/posener/complete
-  version: 6bee943216c8cea4cc983c8596346d8945279a1f
+  version: 57878c9c0341001dd50e6ab0052c61cf9a79ad7f
   subpackages:
   - cmd
   - cmd/install
@@ -165,7 +165,7 @@ imports:
 - name: github.com/spf13/pflag
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - name: golang.org/x/crypto
-  version: 81e90905daefcd6fd217b62423c0908922eadb30
+  version: 6bd909f163c83732e0b5e22a27154b1a112c3ff9
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
@@ -345,6 +345,8 @@ imports:
   - util/flowcontrol
   - util/homedir
   - util/integer
+- name: k8s.io/code-generator
+  version: 3c1fe2637f4efce271f1e6f50e039b2a0467c60c
 - name: k8s.io/kube-openapi
   version: 868f2f29720b192240e18284659231b440f9cda5
   subpackages:

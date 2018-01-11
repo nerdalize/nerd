@@ -1,3 +1,54 @@
+Release v1.12.59 (2018-01-09)
+===
+
+### Service Client Updates
+* `service/kms`: Updates service documentation
+  * Documentation updates for AWS KMS
+
+Release v1.12.58 (2018-01-09)
+===
+
+### Service Client Updates
+* `service/ds`: Updates service API and documentation
+  * On October 24 we introduced AWS Directory Service for Microsoft Active Directory (Standard Edition), also known as AWS Microsoft AD (Standard Edition), which is a managed Microsoft Active Directory (AD) that is optimized for small and midsize businesses (SMBs). With this SDK release, you can now create an AWS Microsoft AD directory using API. This enables you to run typical SMB workloads using a cost-effective, highly available, and managed Microsoft AD in the AWS Cloud.
+
+Release v1.12.57 (2018-01-08)
+===
+
+### Service Client Updates
+* `service/codedeploy`: Updates service API and documentation
+  * The AWS CodeDeploy API was updated to support DeleteGitHubAccountToken, a new method that deletes a GitHub account connection.
+* `service/discovery`: Updates service API and documentation
+  * Documentation updates for AWS Application Discovery Service.
+* `service/route53`: Updates service API and documentation
+  * This release adds an exception to the CreateTrafficPolicyVersion API operation.
+
+Release v1.12.56 (2018-01-05)
+===
+
+### Service Client Updates
+* `service/inspector`: Updates service API, documentation, and examples
+  * Added 2 new attributes to the DescribeAssessmentTemplate response, indicating the total number of assessment runs and last assessment run ARN (if present.)
+* `service/snowball`: Updates service documentation
+  * Documentation updates for snowball
+* `service/ssm`: Updates service documentation
+  * Documentation updates for ssm
+
+Release v1.12.55 (2018-01-02)
+===
+
+### Service Client Updates
+* `service/rds`: Updates service documentation
+  * Documentation updates for rds
+
+Release v1.12.54 (2017-12-29)
+===
+
+### Service Client Updates
+* `aws/endpoints`: Updated Regions and Endpoints metadata.
+* `service/workspaces`: Updates service API and documentation
+  * Modify WorkSpaces have been updated with flexible storage and switching of hardware bundles feature. The following configurations have been added to ModifyWorkSpacesProperties: storage and compute. This update provides the capability to configure the storage of a WorkSpace. It also adds the capability of switching hardware bundle of a WorkSpace by specifying an eligible compute (Value, Standard, Performance, Power).
+
 Release v1.12.53 (2017-12-22)
 ===
 
