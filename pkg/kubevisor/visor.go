@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 
+	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	kuberr "k8s.io/apimachinery/pkg/api/errors"
@@ -37,6 +38,9 @@ var (
 
 	//ResourceTypePods is used for pod inspection
 	ResourceTypePods = ResourceType("pods")
+
+	//ResourceTypeDatasets is used for dataset management
+	ResourceTypeDatasets = ResourceType("datasets")
 )
 
 //ManagedNames allows for Nerd to transparently manage resources based on names and there prefixes
@@ -59,6 +63,7 @@ type Visor struct {
 	prefix string
 	ns     string
 	api    kubernetes.Interface
+	crd    crd.Interface
 	logs   Logger
 }
 
@@ -68,11 +73,11 @@ var (
 )
 
 //NewVisor will setup a Kubernetes visor
-func NewVisor(ns, prefix string, api kubernetes.Interface, logs Logger) *Visor {
+func NewVisor(ns, prefix string, api kubernetes.Interface, crd crd.Interface, logs Logger) *Visor {
 	if prefix == "" {
 		prefix = DefaultPrefix
 	}
-	return &Visor{prefix, ns, api, logs}
+	return &Visor{prefix, ns, api, crd, logs}
 }
 
 func (k *Visor) applyPrefix(n string) string {
@@ -94,7 +99,8 @@ func (k *Visor) GetResource(ctx context.Context, t ResourceType, v ManagedNames,
 	switch t {
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
-
+	case ResourceTypeDatasets:
+		c = k.crd.NerdalizeV1().RESTClient()
 	default:
 		return errors.Errorf("unknown Kubernetes resource type provided: '%s'", t)
 	}
@@ -125,6 +131,8 @@ func (k *Visor) DeleteResource(ctx context.Context, t ResourceType, name string)
 	switch t {
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
+	case ResourceTypeDatasets:
+		c = k.crd.NerdalizeV1().RESTClient()
 
 	default:
 		return errors.Errorf("unknown Kubernetes resource type provided for deletion: '%s'", t)
@@ -191,7 +199,9 @@ func (k *Visor) CreateResource(ctx context.Context, t ResourceType, v ManagedNam
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
 		genfix = "j-"
-
+	case ResourceTypeDatasets:
+		c = k.crd.NerdalizeV1().RESTClient()
+		genfix = "d-"
 	default:
 		return errors.Errorf("unknown Kubernetes resource type provided for creation: '%s'", t)
 	}
@@ -241,6 +251,8 @@ func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranfor
 		c = k.api.BatchV1().RESTClient()
 	case ResourceTypePods:
 		c = k.api.CoreV1().RESTClient()
+	case ResourceTypeDatasets:
+		c = k.crd.NerdalizeV1().RESTClient()
 	default:
 		return errors.Errorf("unknown Kubernetes resource type provided for listing: '%s'", t)
 	}

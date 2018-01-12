@@ -3,6 +3,7 @@ package svc
 import (
 	"context"
 
+	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -19,6 +20,7 @@ type Logger interface {
 //DI provides dependencies for our services
 type DI interface {
 	Kube() kubernetes.Interface
+	Crd() crd.Interface
 	Validator() Validator
 	Logger() Logger
 	Namespace() string

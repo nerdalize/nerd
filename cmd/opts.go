@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-playground/validator"
 	homedir "github.com/mitchellh/go-homedir"
+	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
 	"github.com/nerdalize/nerd/pkg/populator"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
@@ -25,6 +26,7 @@ type KubeOpts struct {
 type Deps struct {
 	val  svc.Validator
 	kube kubernetes.Interface
+	crd  crd.Interface
 	logs svc.Logger
 	ns   string
 }
@@ -47,6 +49,11 @@ func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
 
 	d := &Deps{
 		logs: logs,
+	}
+
+	d.crd, err = crd.NewForConfig(kcfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create Kubernetes configuration")
 	}
 
 	d.kube, err = kubernetes.NewForConfig(kcfg)
@@ -85,4 +92,8 @@ func (deps *Deps) Logger() svc.Logger {
 //Namespace provides the namespace dependency
 func (deps *Deps) Namespace() string {
 	return deps.ns
+}
+
+func (deps *Deps) Crd() crd.Interface {
+	return deps.crd
 }
