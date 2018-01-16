@@ -3,6 +3,7 @@ package svc_test
 import (
 	"context"
 	"fmt"
+	"log"
 	"reflect"
 	"runtime"
 	"testing"
@@ -37,6 +38,7 @@ func TestListDatasets(t *testing.T) {
 			Input:    &svc.ListDatasetsInput{},
 			IsErr:    isNilErr,
 			IsOutput: func(t testing.TB, out *svc.ListDatasetsOutput) bool {
+				log.Print(out)
 				assert(t, len(out.Items) == 1, "expected one dataset to be listed")
 				assert(t, !out.Items[0].Details.CreatedAt.IsZero(), "created at time should not be zero")
 

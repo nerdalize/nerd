@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
+	crdscheme "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned/scheme"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	kuberr "k8s.io/apimachinery/pkg/api/errors"
@@ -246,21 +247,26 @@ func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranfor
 	}
 
 	var c rest.Interface
+	var s runtime.ParameterCodec
+	labels := strings.Join(append(lselector, "nerd-app=cli"), ",")
 	switch t {
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
+		s = scheme.ParameterCodec
 	case ResourceTypePods:
 		c = k.api.CoreV1().RESTClient()
+		s = scheme.ParameterCodec
 	case ResourceTypeDatasets:
 		c = k.crd.NerdalizeV1().RESTClient()
+		s = crdscheme.ParameterCodec
+		labels = ""
 	default:
 		return errors.Errorf("unknown Kubernetes resource type provided for listing: '%s'", t)
 	}
 
-	lselector = append(lselector, "nerd-app=cli")
 	err = c.Get().
 		Namespace(k.ns).
-		VersionedParams(&metav1.ListOptions{LabelSelector: strings.Join(lselector, ",")}, scheme.ParameterCodec).
+		VersionedParams(&metav1.ListOptions{LabelSelector: labels}, s).
 		Resource(string(t)).
 		Context(ctx).
 		Do().

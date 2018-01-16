@@ -60,27 +60,27 @@ func (k *Kube) ListDatasets(ctx context.Context, in *ListDatasetsInput) (out *Li
 		out.Items = append(out.Items, item)
 	}
 
-	//Step 2: Get all pods under nerd-app=cli
-	pods := &pods{}
-	err = k.visor.ListResources(ctx, kubevisor.ResourceTypePods, pods, nil)
-	if err != nil {
-		return nil, err
-	}
+	// //Step 2: Get all pods under nerd-app=cli
+	// pods := &pods{}
+	// err = k.visor.ListResources(ctx, kubevisor.ResourceTypePods, pods, nil)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	//Step 3: Match pods to the datasets we got earlier
-	for _, pod := range pods.Items {
-		uid, ok := pod.Labels["controller-uid"]
-		if !ok {
-			continue //not part of a controller
-		}
+	// //Step 3: Match pods to the datasets we got earlier
+	// for _, pod := range pods.Items {
+	// 	uid, ok := pod.Labels["controller-uid"]
+	// 	if !ok {
+	// 		continue //not part of a controller
+	// 	}
 
-		datasetItem, ok := mapping[types.UID(uid)]
-		if !ok {
-			continue //not part of any dataset
-		}
-		datasetItem.Details.InputFor = append(datasetItem.Details.InputFor, pod.Labels["job"])
+	// 	datasetItem, ok := mapping[types.UID(uid)]
+	// 	if !ok {
+	// 		continue //not part of any dataset
+	// 	}
+	// 	datasetItem.Details.InputFor = append(datasetItem.Details.InputFor, pod.Labels["job"])
 
-	}
+	// }
 
 	return out, nil
 }

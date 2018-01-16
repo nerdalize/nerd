@@ -77,7 +77,7 @@ func testDI(tb testing.TB) (svc.DI, func()) {
 	tdi.logs = logrus.New()
 	tdi.kube, err = kubernetes.NewForConfig(kcfg)
 	ok(tb, err)
-	tdi.crd, err = nerdalize.NewForConfig(kcfg)
+	tdi.crd, err = crd.NewForConfig(kcfg)
 	ok(tb, err)
 	tdi.val = validator.New()
 

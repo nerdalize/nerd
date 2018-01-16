@@ -1,8 +1,10 @@
 apiVersion: "stable.nerdalize.com/v1" 
 kind: Dataset 
+labels:
+  nerd-app: cli
 metadata:
-  name: my-new-dataset-object
+  name: my-1601-dataset-object
 spec: 
-  bucket: "a-s3-bucket"
+  bucket: "a-s3-bucket-1501"
   key: my-awesome-dataset
 
