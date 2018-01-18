@@ -88,8 +88,10 @@ func (cmd *DatasetDownload) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
 func (cmd *DatasetDownload) Synopsis() string {
-	return "Return datasets that are managed by the cluster"
+	return "Download results from a running job"
 }
 
 // Usage shows usage
-func (cmd *DatasetDownload) Usage() string { return "nerd dataset list" }
+func (cmd *DatasetDownload) Usage() string {
+	return "nerd dataset download <DATASET-NAME> [--job-output=JOB-NAME] [--job-input=JOB-NAME] ~/my-projects/my-output-1"
+}

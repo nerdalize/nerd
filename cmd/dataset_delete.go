@@ -53,7 +53,6 @@ func (cmd *DatasetDelete) Execute(args []string) (err error) {
 	}
 
 	cmd.out.Infof("Deleted dataset: '%s'", in.Name)
-	cmd.out.Infof("To see whats happening, use: 'nerd dataset list'")
 	return nil
 }
 

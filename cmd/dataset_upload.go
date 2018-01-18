@@ -72,7 +72,9 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 func (cmd *DatasetUpload) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
-func (cmd *DatasetUpload) Synopsis() string { return "Runs a job on your compute cluster" }
+func (cmd *DatasetUpload) Synopsis() string { return "Upload a dataset to your compute cluster." }
 
 // Usage shows usage
-func (cmd *DatasetUpload) Usage() string { return "nerd job run [OPTIONS] IMAGE [COMMAND] [ARG...]" }
+func (cmd *DatasetUpload) Usage() string {
+	return "nerd dataset upload [--name=] ~/my-project/my-input-1"
+}
