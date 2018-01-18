@@ -248,7 +248,6 @@ func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranfor
 
 	var c rest.Interface
 	var s runtime.ParameterCodec
-	labels := strings.Join(append(lselector, "nerd-app=cli"), ",")
 	switch t {
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
@@ -259,11 +258,11 @@ func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranfor
 	case ResourceTypeDatasets:
 		c = k.crd.NerdalizeV1().RESTClient()
 		s = crdscheme.ParameterCodec
-		labels = ""
 	default:
 		return errors.Errorf("unknown Kubernetes resource type provided for listing: '%s'", t)
 	}
 
+	labels := strings.Join(append(lselector, "nerd-app=cli"), ",")
 	err = c.Get().
 		Namespace(k.ns).
 		VersionedParams(&metav1.ListOptions{LabelSelector: labels}, s).
