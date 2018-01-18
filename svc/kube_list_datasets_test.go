@@ -68,23 +68,8 @@ func TestListDatasets(t *testing.T) {
 				assert(t, c.IsErr(err), fmt.Sprintf("unexpected '%#v' to match: %#v", err, runtime.FuncForPC(reflect.ValueOf(c.IsErr).Pointer()).Name()))
 			}
 
-			if c.IsOutput == nil {
-				return //no output testing
-			}
-
-			for {
-				if c.IsOutput(t, out) {
-					break
-				}
-
-				d := time.Second
-				t.Logf("retrying listing in %s...", d)
-				<-time.After(d)
-
-				out, err = kube.ListDatasets(ctx, c.Input)
-				if err != nil {
-					t.Fatalf("failed to list datasets during retry: %v", err)
-				}
+			if c.IsOutput != nil {
+				c.IsOutput(t, out)
 			}
 		})
 	}

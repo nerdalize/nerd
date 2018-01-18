@@ -78,18 +78,6 @@ func TestUploadDataset(t *testing.T) {
 	}
 }
 
-func TestUploadDatasetWithoutNamespace(t *testing.T) {
-	di := testDIWithoutNamespace(t)
-
-	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
-	defer cancel()
-
-	kube := svc.NewKube(di)
-	_, err := kube.UploadDataset(ctx, &svc.UploadDatasetInput{Name: "my-dataset"})
-	assert(t, kubevisor.IsNamespaceNotExistsErr(err), "expected error to be namespace doesn't exist")
-}
-
 func TestUploadDatasetWithNameThatAlreadyExists(t *testing.T) {
 	di, clean := testDI(t)
 	defer clean()
