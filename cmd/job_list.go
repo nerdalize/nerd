@@ -48,10 +48,11 @@ func (cmd *JobList) Execute(args []string) (err error) {
 		return renderServiceError(err, "failed to list jobs")
 	}
 
+	cmd.out.Infof("To see the logs of a job, use: `nerd job logs <JOB-NAME>`")
+
 	sort.Slice(out.Items, func(i int, j int) bool {
 		return out.Items[i].CreatedAt.After(out.Items[j].CreatedAt)
 	})
-
 	hdr := []string{"JOB", "IMAGE", "CREATED AT", "PHASE", "DETAILS"}
 	rows := [][]string{}
 	for _, item := range out.Items {

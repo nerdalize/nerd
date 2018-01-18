@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
@@ -48,7 +49,7 @@ func (cmd *DatasetDelete) Execute(args []string) (err error) {
 	kube := svc.NewKube(deps)
 	_, err = kube.DeleteDataset(ctx, in)
 	if err != nil {
-		return renderServiceError(err, "failed to delete dataset")
+		return renderServiceError(err, fmt.Sprintf("failed to delete dataset `%s`", args[0]))
 	}
 
 	cmd.out.Infof("Deleted dataset: '%s'", in.Name)
