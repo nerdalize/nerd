@@ -59,7 +59,7 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 	kopts := cmd.KubeOpts
 	deps, err := NewDeps(cmd.Logger(), kopts)
 	if err != nil {
-		return errors.Wrap(err, "failed to configure")
+		return renderConfigError(err, "failed to configure")
 	}
 
 	ctx := context.Background()

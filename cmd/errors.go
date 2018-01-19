@@ -59,3 +59,18 @@ func renderServiceError(err error, format string, args ...interface{}) error {
 		return err
 	}
 }
+
+func renderConfigError(err error, format string, args ...interface{}) error {
+	if err == nil {
+		return nil
+	}
+
+	switch {
+	case errors.Cause(err) == ErrNotLoggedIn:
+		return ErrNotLoggedIn
+	case errors.Cause(err) == ErrProjectNotSet:
+		return ErrProjectNotSet
+	default:
+		return err
+	}
+}

@@ -6,7 +6,6 @@ import (
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/svc"
-	"github.com/pkg/errors"
 )
 
 //JobDelete command
@@ -34,7 +33,7 @@ func (cmd *JobDelete) Execute(args []string) (err error) {
 	kopts := cmd.KubeOpts
 	deps, err := NewDeps(cmd.Logger(), kopts)
 	if err != nil {
-		return errors.Wrap(err, "failed to configure")
+		return renderConfigError(err, "failed to configure")
 	}
 
 	ctx := context.Background()
