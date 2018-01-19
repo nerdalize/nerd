@@ -37,7 +37,7 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 	dataPath := args[0]
 	fi, err := os.Stat(dataPath)
 	if err != nil {
-		return errors.Errorf("argument '%v' is not a valid file or directory", dataPath)
+		return errors.Errorf("argument '%v' is not a valid directory", dataPath)
 	} else if !fi.IsDir() {
 		return errors.Errorf("provided path '%s' is not a directory", dataPath)
 	}
