@@ -35,6 +35,8 @@ func renderServiceError(err error, format string, args ...interface{}) error {
 		return errors.Errorf("%s: invalid name, must be an empty string or consist of alphanumeric characters, '-', '_' or '.'", fmt.Errorf(format, args...))
 	case kubevisor.IsDeadlineErr(err):
 		return errors.Errorf("%s: action took to long to complete, try again or check your internet connection", fmt.Errorf(format, args...))
+	case kubevisor.IsNetworkErr(err):
+		return errors.Errorf("%s: failed to reach the cluster, make sure you're connected to the internet and try again", fmt.Errorf(format, args...))
 	case kubevisor.IsNotExistsErr(err):
 		return errors.Errorf("%s: it does not exist", fmt.Errorf(format, args...))
 	case kubevisor.IsKubernetesErr(err):

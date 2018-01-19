@@ -3,6 +3,7 @@ package kubevisor
 import (
 	"context"
 	"io"
+	"net"
 	"net/url"
 	"strings"
 
@@ -285,8 +286,14 @@ func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranfor
 }
 
 func (k *Visor) tagError(err error) error {
-	if uerr, ok := err.(*url.Error); ok && uerr.Err == context.DeadlineExceeded {
-		return errDeadline{uerr}
+	if uerr, ok := err.(*url.Error); ok {
+		if uerr.Err == context.DeadlineExceeded {
+			return errDeadline{uerr}
+		}
+
+		if nerr, ok := uerr.Err.(*net.OpError); ok {
+			return errNetwork{nerr}
+		}
 	}
 
 	if serr, ok := err.(*kuberr.StatusError); ok {

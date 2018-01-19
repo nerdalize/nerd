@@ -1,5 +1,18 @@
 package kubevisor
 
+type errNetwork struct{ error }
+
+func (e errNetwork) IsNetwork() bool { return true }
+
+//IsNetworkErr is for unexpected kubernetes errors
+func IsNetworkErr(err error) bool {
+	type iface interface {
+		IsNetwork() bool
+	}
+	te, ok := err.(iface)
+	return ok && te.IsNetwork()
+}
+
 type errKubernetes struct{ error }
 
 func (e errKubernetes) IsKubernetes() bool { return true }
