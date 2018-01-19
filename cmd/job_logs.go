@@ -9,7 +9,6 @@ import (
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/pkg/kubevisor"
 	"github.com/nerdalize/nerd/svc"
-	"github.com/pkg/errors"
 )
 
 //JobLogs command
@@ -38,7 +37,7 @@ func (cmd *JobLogs) Execute(args []string) (err error) {
 	kopts := cmd.KubeOpts
 	deps, err := NewDeps(cmd.Logger(), kopts)
 	if err != nil {
-		return errors.Wrap(err, "failed to configure")
+		return renderConfigError(err, "failed to configure")
 	}
 
 	ctx := context.Background()

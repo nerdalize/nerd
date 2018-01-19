@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"os"
 	"path/filepath"
 	"time"
 
@@ -44,6 +45,9 @@ func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
 
 	kcfg, err := clientcmd.BuildConfigFromFlags("", kopts.KubeConfig)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, ErrNotLoggedIn
+		}
 		return nil, errors.Wrap(err, "failed to build Kubernetes config from provided kube config path")
 	}
 
@@ -66,8 +70,8 @@ func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
 	}
 
 	d.ns, err = populator.Namespace(kopts.KubeConfig)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get namespace from Kubernetes configuration")
+	if err != nil || d.ns == "" {
+		return nil, nerd.ErrProjectIDNotSet
 	}
 
 	d.val = validator.New()
