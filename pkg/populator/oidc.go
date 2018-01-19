@@ -52,7 +52,7 @@ func (o *OIDCPopulator) GetKubeConfigFile() string {
 // PopulateKubeConfig populates an api.Config object and set the current context to the provided project.
 func (o *OIDCPopulator) PopulateKubeConfig(project string) error {
 	cluster := api.NewCluster()
-	cluster.InsecureSkipTLSVerify = true
+	cluster.CertificateAuthorityData = []byte(o.project.Services.Cluster.B64CaData)
 	cluster.Server = o.project.Services.Cluster.Address
 	if cluster.Server == "" {
 		return errors.New("this project isn't available for open id connect (server address cannot be blank)")

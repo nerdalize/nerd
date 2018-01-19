@@ -15,6 +15,7 @@ import (
 
 	"github.com/go-playground/validator"
 	homedir "github.com/mitchellh/go-homedir"
+	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
 	"github.com/nerdalize/nerd/pkg/kubevisor"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/sirupsen/logrus"
@@ -26,6 +27,7 @@ func isNilErr(err error) bool {
 
 type testingDI struct {
 	kube kubernetes.Interface
+	crd  crd.Interface
 	val  svc.Validator
 	logs svc.Logger
 	ns   string
@@ -45,6 +47,10 @@ func (di *testingDI) Logger() svc.Logger {
 
 func (di *testingDI) Namespace() string {
 	return di.ns
+}
+
+func (di *testingDI) Crd() crd.Interface {
+	return di.crd
 }
 
 func testNamespaceName(tb testing.TB) string {
@@ -71,7 +77,8 @@ func testDI(tb testing.TB) (svc.DI, func()) {
 	tdi.logs = logrus.New()
 	tdi.kube, err = kubernetes.NewForConfig(kcfg)
 	ok(tb, err)
-
+	tdi.crd, err = crd.NewForConfig(kcfg)
+	ok(tb, err)
 	tdi.val = validator.New()
 
 	ns, err := tdi.kube.CoreV1().Namespaces().Create(&v1.Namespace{
@@ -118,7 +125,7 @@ type testKube struct {
 
 func newTestKube(di svc.DI) (k *testKube) {
 	k = &testKube{
-		visor: kubevisor.NewVisor(di.Namespace(), "nlz-nerd", di.Kube(), di.Logger()),
+		visor: kubevisor.NewVisor(di.Namespace(), "nlz-nerd", di.Kube(), di.Crd(), di.Logger()),
 		val:   di.Validator(),
 		logs:  di.Logger(),
 	}

@@ -1,21 +1,20 @@
 package cmd
 
 import (
+	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/nerdalize/nerd/nerd"
+
 	"github.com/go-playground/validator"
 	homedir "github.com/mitchellh/go-homedir"
+	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
 	"github.com/nerdalize/nerd/pkg/populator"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-)
-
-var (
-	//DefaultNamespace is used whenever the populator doesn't provide one
-	DefaultNamespace = "default"
 )
 
 //KubeOpts can be used to create a Kubernetes service
@@ -28,6 +27,7 @@ type KubeOpts struct {
 type Deps struct {
 	val  svc.Validator
 	kube kubernetes.Interface
+	crd  crd.Interface
 	logs svc.Logger
 	ns   string
 }
@@ -45,11 +45,19 @@ func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
 
 	kcfg, err := clientcmd.BuildConfigFromFlags("", kopts.KubeConfig)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, ErrNotLoggedIn
+		}
 		return nil, errors.Wrap(err, "failed to build Kubernetes config from provided kube config path")
 	}
 
 	d := &Deps{
 		logs: logs,
+	}
+
+	d.crd, err = crd.NewForConfig(kcfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create Kubernetes configuration")
 	}
 
 	d.kube, err = kubernetes.NewForConfig(kcfg)
@@ -58,16 +66,12 @@ func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
 	}
 
 	if !populator.Context(kopts.KubeConfig) {
-		return nil, errors.New("Please select a project with `nerd project set`.")
+		return nil, nerd.ErrProjectIDNotSet
 	}
 
 	d.ns, err = populator.Namespace(kopts.KubeConfig)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get namespace from Kubernetes configuration")
-	}
-
-	if d.ns == "" {
-		d.ns = DefaultNamespace //we need some namespace to work on
+	if err != nil || d.ns == "" {
+		return nil, nerd.ErrProjectIDNotSet
 	}
 
 	d.val = validator.New()
@@ -92,4 +96,8 @@ func (deps *Deps) Logger() svc.Logger {
 //Namespace provides the namespace dependency
 func (deps *Deps) Namespace() string {
 	return deps.ns
+}
+
+func (deps *Deps) Crd() crd.Interface {
+	return deps.crd
 }

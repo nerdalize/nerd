@@ -68,7 +68,7 @@ type ListJobsOutput struct {
 	Items []*ListJobItem
 }
 
-//ListJobs will create a job on kubernetes
+//ListJobs will list jobs on kubernetes
 func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOutput, err error) {
 	if err = k.checkInput(ctx, in); err != nil {
 		return nil, err

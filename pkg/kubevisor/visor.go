@@ -3,9 +3,12 @@ package kubevisor
 import (
 	"context"
 	"io"
+	"net"
 	"net/url"
 	"strings"
 
+	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
+	crdscheme "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned/scheme"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	kuberr "k8s.io/apimachinery/pkg/api/errors"
@@ -37,6 +40,9 @@ var (
 
 	//ResourceTypePods is used for pod inspection
 	ResourceTypePods = ResourceType("pods")
+
+	//ResourceTypeDatasets is used for dataset management
+	ResourceTypeDatasets = ResourceType("datasets")
 )
 
 //ManagedNames allows for Nerd to transparently manage resources based on names and there prefixes
@@ -59,6 +65,7 @@ type Visor struct {
 	prefix string
 	ns     string
 	api    kubernetes.Interface
+	crd    crd.Interface
 	logs   Logger
 }
 
@@ -68,11 +75,11 @@ var (
 )
 
 //NewVisor will setup a Kubernetes visor
-func NewVisor(ns, prefix string, api kubernetes.Interface, logs Logger) *Visor {
+func NewVisor(ns, prefix string, api kubernetes.Interface, crd crd.Interface, logs Logger) *Visor {
 	if prefix == "" {
 		prefix = DefaultPrefix
 	}
-	return &Visor{prefix, ns, api, logs}
+	return &Visor{prefix, ns, api, crd, logs}
 }
 
 func (k *Visor) applyPrefix(n string) string {
@@ -94,7 +101,8 @@ func (k *Visor) GetResource(ctx context.Context, t ResourceType, v ManagedNames,
 	switch t {
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
-
+	case ResourceTypeDatasets:
+		c = k.crd.NerdalizeV1().RESTClient()
 	default:
 		return errors.Errorf("unknown Kubernetes resource type provided: '%s'", t)
 	}
@@ -125,6 +133,8 @@ func (k *Visor) DeleteResource(ctx context.Context, t ResourceType, name string)
 	switch t {
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
+	case ResourceTypeDatasets:
+		c = k.crd.NerdalizeV1().RESTClient()
 
 	default:
 		return errors.Errorf("unknown Kubernetes resource type provided for deletion: '%s'", t)
@@ -191,7 +201,9 @@ func (k *Visor) CreateResource(ctx context.Context, t ResourceType, v ManagedNam
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
 		genfix = "j-"
-
+	case ResourceTypeDatasets:
+		c = k.crd.NerdalizeV1().RESTClient()
+		genfix = "d-"
 	default:
 		return errors.Errorf("unknown Kubernetes resource type provided for creation: '%s'", t)
 	}
@@ -236,19 +248,25 @@ func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranfor
 	}
 
 	var c rest.Interface
+	var s runtime.ParameterCodec
 	switch t {
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
+		s = scheme.ParameterCodec
 	case ResourceTypePods:
 		c = k.api.CoreV1().RESTClient()
+		s = scheme.ParameterCodec
+	case ResourceTypeDatasets:
+		c = k.crd.NerdalizeV1().RESTClient()
+		s = crdscheme.ParameterCodec
 	default:
 		return errors.Errorf("unknown Kubernetes resource type provided for listing: '%s'", t)
 	}
 
-	lselector = append(lselector, "nerd-app=cli")
+	labels := strings.Join(append(lselector, "nerd-app=cli"), ",")
 	err = c.Get().
 		Namespace(k.ns).
-		VersionedParams(&metav1.ListOptions{LabelSelector: strings.Join(lselector, ",")}, scheme.ParameterCodec).
+		VersionedParams(&metav1.ListOptions{LabelSelector: labels}, s).
 		Resource(string(t)).
 		Context(ctx).
 		Do().
@@ -268,8 +286,14 @@ func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranfor
 }
 
 func (k *Visor) tagError(err error) error {
-	if uerr, ok := err.(*url.Error); ok && uerr.Err == context.DeadlineExceeded {
-		return errDeadline{uerr}
+	if uerr, ok := err.(*url.Error); ok {
+		if uerr.Err == context.DeadlineExceeded {
+			return errDeadline{uerr}
+		}
+
+		if nerr, ok := uerr.Err.(*net.OpError); ok {
+			return errNetwork{nerr}
+		}
 	}
 
 	if serr, ok := err.(*kuberr.StatusError); ok {

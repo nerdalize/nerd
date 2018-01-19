@@ -9,7 +9,6 @@ import (
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/svc"
-	"github.com/pkg/errors"
 )
 
 //JobList command
@@ -34,7 +33,7 @@ func (cmd *JobList) Execute(args []string) (err error) {
 	kopts := cmd.KubeOpts
 	deps, err := NewDeps(cmd.Logger(), kopts)
 	if err != nil {
-		return errors.Wrap(err, "failed to configure")
+		return renderConfigError(err, "failed to configure")
 	}
 
 	ctx := context.Background()
@@ -48,10 +47,11 @@ func (cmd *JobList) Execute(args []string) (err error) {
 		return renderServiceError(err, "failed to list jobs")
 	}
 
+	cmd.out.Infof("To see the logs of a job, use: `nerd job logs <JOB-NAME>`")
+
 	sort.Slice(out.Items, func(i int, j int) bool {
 		return out.Items[i].CreatedAt.After(out.Items[j].CreatedAt)
 	})
-
 	hdr := []string{"JOB", "IMAGE", "CREATED AT", "PHASE", "DETAILS"}
 	rows := [][]string{}
 	for _, item := range out.Items {
