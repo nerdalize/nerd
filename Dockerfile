@@ -1,4 +1,4 @@
-FROM golang:1-alpine
+FROM golang:1-alpine as build 
 
 ENV NERD_PATH /go/src/github.com/nerdalize/nerd
 
@@ -16,4 +16,6 @@ RUN cd $NERD_PATH; \
       -o /go/bin/nerd \
       main.go
 
+FROM alpine:3.5
+COPY --from=build /go/bin/nerd /go/bin/nerd
 ENTRYPOINT ["/go/bin/nerd"]
