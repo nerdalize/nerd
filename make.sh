@@ -18,6 +18,30 @@ function run_build { #compile versioned executable and place it in $GOPATH/bin
     main.go
 }
 
+function run_dev { #setup dev environment
+	command -v go >/dev/null 2>&1 || { echo "executable 'go' (the language sdk) must be installed" >&2; exit 1; }
+	command -v kubectl >/dev/null 2>&1 || { echo "executable 'kubectl' (kubernetes cli https://kubernetes.io/docs/tasks/tools/install-kubectl/) must be installed" >&2; exit 1; }
+	command -v glide >/dev/null 2>&1 || { echo "executable glide (https://github.com/Masterminds/glide) must be installed" >&2; exit 1; }
+
+	dev_profile="nerd-cli-dev"
+	echo "--> setting up kube config"
+	kubectl config set-context $dev_profile --user=$dev_profile --cluster=$dev_profile --namespace=default && kubectl config use-context $dev_profile
+
+	echo "--> setting up custom resource definition for datasets"
+	kubectl apply -f crd/artifacts/datasets.yaml
+
+	echo "--> updating dependencies"
+	glide up
+
+	echo "--> checking crd generated code is valid"
+	./crd/hack/verify-codegen.sh
+	if [ $? -gt 0 ]
+	then
+		echo "--> regenerating code for crd"
+		./crd/hack/update-codegen.sh
+	fi
+}
+
 function run_docs { #run godoc
   command -v go >/dev/null 2>&1 || { echo "executable 'go' (the language sdk) must be installed" >&2; exit 1; }
 
@@ -31,6 +55,7 @@ function run_test { #unit test project
 
 	command -v go >/dev/null 2>&1 || { echo "executable 'go' (the language sdk) must be installed" >&2; exit 1; }
 	command -v minikube >/dev/null 2>&1 || { echo "executable 'minikube' (local kubernetes cluster) must be installed" >&2; exit 1; }
+	command -v kubectl >/dev/null 2>&1 || { echo "executable 'kubectl' (kubernetes cli) must be installed" >&2; exit 1; }
 
 	minikube_profile="nerd-cli-dev"
 	kube_version="v1.8.0"
@@ -40,6 +65,20 @@ function run_test { #unit test project
 	else
 			echo "--> starting minikube using the default 'vm-driver',to configure: https://github.com/kubernetes/minikube/issues/637)"
 		  minikube start --profile=$minikube_profile --kubernetes-version=$kube_version
+	fi
+
+	echo "--> setting up kube config"
+	kubectl config set-context $minikube_profile --user=$minikube_profile --cluster=$minikube_profile --namespace=default && kubectl config use-context $minikube_profile
+
+	echo "--> setting up custom resource definition for datasets"
+	kubectl apply -f crd/artifacts/datasets.yaml
+
+	echo "--> checking crd generated code is valid"
+	./crd/hack/verify-codegen.sh
+	if [ $? -gt 0 ]
+	then
+		echo "--> regenerating code for crd"
+		./crd/hack/update-codegen.sh
 	fi
 
 	echo "--> running service tests"
@@ -100,6 +139,7 @@ function run_dockerpush { #build and push docker container
 
 case $1 in
 	"build") run_build ;;
+	"dev") run_dev ;;
 	"docs") run_docs ;;
 	"test") run_test ;;
 	"gen") run_gen ;;

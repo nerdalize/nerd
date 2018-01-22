@@ -1,10 +1,10 @@
 hash: 5fccf4e79733a8f7066a3ffb681dd4b1f5edd61bd3500b2f59d9f225954a303c
-updated: 2018-01-10T15:28:50.385418581+01:00
+updated: 2018-01-22T16:18:54.729883984+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
-  version: 3c754f1d340244540350f0a00b940781bae9c905
+  version: 9ed0c8de252f04ac45a65358377103d5a1aa2d92
   subpackages:
   - aws
   - aws/awserr
@@ -70,7 +70,7 @@ imports:
 - name: github.com/go-playground/universal-translator
   version: 71201497bace774495daed26a3874fd339e0b538
 - name: github.com/go-playground/validator
-  version: 230db62e071d40171640c9deb875d46a3858d9dd
+  version: 48a433ba4bcadc5be9aa16d4bdcb383d3f57a741
 - name: github.com/gogo/protobuf
   version: c0656edd0d9eab7c66d1eb0c568f9039345796f7
   subpackages:
@@ -110,6 +110,10 @@ imports:
   version: 7554cd9344cec97297fa6649b055a8c98c2a1e55
 - name: github.com/hashicorp/go-multierror
   version: b7773ae218740a7be65057fc60b366a49b538a44
+- name: github.com/hashicorp/golang-lru
+  version: a0d98a5f288019575c6d1f4bb1573fef2d1fcdc4
+  subpackages:
+  - simplelru
 - name: github.com/hashicorp/logutils
   version: 0dc08b1671f34c4250ce212759ebd880f743d883
 - name: github.com/howeyc/gopass
@@ -145,7 +149,7 @@ imports:
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/posener/complete
-  version: 57878c9c0341001dd50e6ab0052c61cf9a79ad7f
+  version: cdc49b71388c2ab059f57997ef2575c9e8b4f146
   subpackages:
   - cmd
   - cmd/install
@@ -165,7 +169,7 @@ imports:
 - name: github.com/spf13/pflag
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - name: golang.org/x/crypto
-  version: 6bd909f163c83732e0b5e22a27154b1a112c3ff9
+  version: 39efaea5da11abd5e2b90a435b1f338cdb94619c
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
@@ -303,6 +307,7 @@ imports:
   version: 35874c597fed17ca62cd197e516d7d5ff9a2958c
   subpackages:
   - discovery
+  - discovery/fake
   - kubernetes
   - kubernetes/scheme
   - kubernetes/typed/admissionregistration/v1alpha1
@@ -333,12 +338,15 @@ imports:
   - plugin/pkg/client/auth/oidc
   - rest
   - rest/watch
+  - testing
   - tools/auth
+  - tools/cache
   - tools/clientcmd
   - tools/clientcmd/api
   - tools/clientcmd/api/latest
   - tools/clientcmd/api/v1
   - tools/metrics
+  - tools/pager
   - tools/reference
   - transport
   - util/cert
@@ -346,7 +354,7 @@ imports:
   - util/homedir
   - util/integer
 - name: k8s.io/code-generator
-  version: 3c1fe2637f4efce271f1e6f50e039b2a0467c60c
+  version: f4fbdd37ed9c2292ea0abaabd8581008984dffc4
 - name: k8s.io/kube-openapi
   version: 868f2f29720b192240e18284659231b440f9cda5
   subpackages:
