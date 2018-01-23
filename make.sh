@@ -50,9 +50,6 @@ function run_docs { #run godoc
 }
 
 function run_test { #unit test project
-	# go test -v ./command/...
-  # go test -v ./nerd/...
-
 	command -v go >/dev/null 2>&1 || { echo "executable 'go' (the language sdk) must be installed" >&2; exit 1; }
 	command -v minikube >/dev/null 2>&1 || { echo "executable 'minikube' (local kubernetes cluster) must be installed" >&2; exit 1; }
 	command -v kubectl >/dev/null 2>&1 || { echo "executable 'kubectl' (kubernetes cli) must be installed" >&2; exit 1; }
@@ -74,9 +71,9 @@ function run_test { #unit test project
 	kubectl apply -f crd/artifacts/datasets.yaml
 
 	echo "--> checking crd generated code is valid"
-	./crd/hack/verify-codegen.sh
-	if [ $? -gt 0 ]
-	then
+	if ./crd/hack/verify-codegen.sh; then
+		echo "--> crd code is up-to-date"
+	else
 		echo "--> regenerating code for crd"
 		./crd/hack/update-codegen.sh
 	fi
