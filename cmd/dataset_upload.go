@@ -14,6 +14,7 @@ import (
 //DatasetUpload command
 type DatasetUpload struct {
 	KubeOpts
+	TransferOpts
 	Name string `long:"name" short:"n" description:"assign a name to the dataset"`
 
 	*command
@@ -34,6 +35,12 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 		return errShowUsage(MessageNotEnoughArguments)
 	}
 
+	upl, err := cmd.TransferOpts.Uploader()
+	if err != nil {
+		return errors.Wrap(err, "failed to create uploader")
+	}
+
+	//@TODO move to transfer package
 	dataPath := args[0]
 	fi, err := os.Stat(dataPath)
 	if err != nil {
@@ -41,6 +48,14 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 	} else if !fi.IsDir() {
 		return errors.Errorf("provided path '%s' is not a directory", dataPath)
 	}
+
+	ref, err := upl.Upload(dataPath)
+	if err != nil {
+		return errors.Wrap(err, "failed to perform upload")
+	}
+
+	//@TODO store ref in dataset
+	_ = ref
 
 	kopts := cmd.KubeOpts
 	deps, err := NewDeps(cmd.Logger(), kopts)

@@ -11,11 +11,39 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
 	"github.com/nerdalize/nerd/pkg/populator"
+	"github.com/nerdalize/nerd/pkg/transfer"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
+
+//TransferOpts hold CLI options for configuring data transfer
+type TransferOpts struct {
+	AWSS3Bucket        string `long:"aws-s3-bucket" description:"AWS S3 Bucket name that will be used for dataset storage"`
+	AWSRegion          string `long:"aws-region" description:"AWS region used for dataset storage"`
+	AWSAccessKeyID     string `long:"aws-access-key-id" description:"AWS access key used for auth with the storage backend"`
+	AWSSecretAccessKey string `long:"aws-secret-access-key" description:"AWS secret key for auth with the storage backend"`
+	AWSSessionToken    string `long:"aws-session-token" description:"AWS temporary auth token for the storage backend"`
+}
+
+//Uploader creates an concrete uploader using the transfer configuration
+func (opts TransferOpts) Uploader() (upl transfer.Uploader, err error) {
+	s3cfg := &transfer.S3Conf{
+		Bucket:       opts.AWSS3Bucket,
+		Region:       opts.AWSRegion,
+		AccessKey:    opts.AWSAccessKeyID,
+		SecretKey:    opts.AWSSecretAccessKey,
+		SessionToken: opts.AWSSessionToken,
+	}
+
+	upl, err = transfer.NewS3Uploader(s3cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create s3 uploader")
+	}
+
+	return upl, nil
+}
 
 //KubeOpts can be used to create a Kubernetes service
 type KubeOpts struct {
