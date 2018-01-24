@@ -57,6 +57,7 @@ type ManagedNames interface {
 //ListTranformer must be implemented to allow Nerd to transparently manage resource names
 type ListTranformer interface {
 	Transform(fn func(in ManagedNames) (out ManagedNames))
+	Len() int
 }
 
 //Visor provides access to Kubernetes resources while transparently filtering, naming and labeling
@@ -274,6 +275,13 @@ func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranfor
 
 	if err != nil {
 		return k.tagError(err)
+	}
+
+	if v.Len() == 0 {
+		_, err = k.api.CoreV1().Namespaces().Get(k.ns, metav1.GetOptions{})
+		if err != nil {
+			return k.tagError(err)
+		}
 	}
 
 	//transform each managed item to return unprefixed

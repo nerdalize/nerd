@@ -79,9 +79,6 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 		}
 		cmd.opts.KubeConfig = filepath.Join(hdir, ".kube", "config")
 	}
-	if err := checkNamespace(cmd.opts.KubeConfig, projectSlug); err != nil {
-		return HandleError(err)
-	}
 
 	p, err := populator.New(cmd.opts.Config, cmd.opts.KubeConfig, project)
 	if err != nil {
@@ -89,6 +86,13 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 	}
 	err = p.PopulateKubeConfig(projectSlug)
 	if err != nil {
+		return HandleError(err)
+	}
+
+	if err := checkNamespace(cmd.opts.KubeConfig, projectSlug); err != nil {
+		// @TODO
+		// return to old config file
+		p.RemoveConfig(projectSlug)
 		return HandleError(err)
 	}
 

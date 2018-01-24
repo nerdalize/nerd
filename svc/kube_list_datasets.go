@@ -85,11 +85,15 @@ func (k *Kube) ListDatasets(ctx context.Context, in *ListDatasetsInput) (out *Li
 	return out, nil
 }
 
-//datasets implements the list transformer interface to allow the kubevisor the manage names for us
+//datasets implements the list transformer interface to allow the kubevisor to manage names for us
 type datasets struct{ *datasetsv1.DatasetList }
 
 func (datasets *datasets) Transform(fn func(in kubevisor.ManagedNames) (out kubevisor.ManagedNames)) {
 	for i, d1 := range datasets.DatasetList.Items {
 		datasets.Items[i] = *(fn(&d1).(*datasetsv1.Dataset))
 	}
+}
+
+func (datasets *datasets) Len() int {
+	return len(datasets.DatasetList.Items)
 }

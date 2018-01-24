@@ -220,6 +220,10 @@ func (jobs *jobs) Transform(fn func(in kubevisor.ManagedNames) (out kubevisor.Ma
 	}
 }
 
+func (jobs *jobs) Len() int {
+	return len(jobs.JobList.Items)
+}
+
 //pods implements the list transformer interface to allow the kubevisor the manage names for us
 type pods struct{ *corev1.PodList }
 
@@ -227,4 +231,8 @@ func (pods *pods) Transform(fn func(in kubevisor.ManagedNames) (out kubevisor.Ma
 	for i, j1 := range pods.PodList.Items {
 		pods.Items[i] = *(fn(&j1).(*corev1.Pod))
 	}
+}
+
+func (pods *pods) Len() int {
+	return len(pods.PodList.Items)
 }
