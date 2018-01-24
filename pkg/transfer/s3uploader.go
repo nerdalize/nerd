@@ -1,8 +1,11 @@
 package transfer
 
 import (
+	"archive/zip"
 	"bytes"
-	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/corehandlers"
@@ -12,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/pkg/errors"
+	uuid "github.com/satori/go.uuid"
 )
 
 //S3Uploader encapsulates logic for uploading a local directory
@@ -24,6 +28,10 @@ type S3Uploader struct {
 
 //NewS3Uploader creates an S3 uploader
 func NewS3Uploader(cfg *S3Conf) (upl *S3Uploader, err error) {
+	if cfg.Bucket == "" {
+		return nil, errors.New("no bucket configured")
+	}
+
 	upl = &S3Uploader{cfg: cfg}
 	if cfg.Region == "" {
 		cfg.Region = endpoints.UsEast1RegionID //this will make the sdk use the global s3 endpoint
@@ -54,15 +62,50 @@ func NewS3Uploader(cfg *S3Conf) (upl *S3Uploader, err error) {
 
 //Upload data at a local path to the remote storage and return a reference
 func (upl *S3Uploader) Upload(path string) (r *Ref, err error) {
+	buf := bytes.NewBuffer(nil)
+	zipw := zip.NewWriter(buf)
+	if err = func() error {
+		defer zipw.Close()
+		return filepath.Walk(path, func(p string, fi os.FileInfo, err error) error {
+			if p == path || fi.IsDir() {
+				return nil //skip dirs
+			}
+
+			rel, err := filepath.Rel(path, p)
+			if err != nil {
+				return errors.Wrap(err, "failed to determine relative path")
+			}
+
+			f, err := os.Open(p)
+			if err != nil {
+				return errors.Wrap(err, "failed to open file")
+			}
+
+			defer f.Close()
+			zipf, err := zipw.Create(rel)
+			if err != nil {
+				return errors.Wrap(err, "failed to create zip file")
+			}
+
+			_, err = io.Copy(zipf, f)
+			if err != nil {
+				return errors.Wrap(err, "failed to copy file")
+			}
+
+			return nil
+		})
+	}(); err != nil {
+		return nil, errors.Wrap(err, "failed to create zip file")
+	}
+
 	out, err := upl.upl.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(upl.cfg.Bucket),
-		Key:    aws.String("hello3"),
-		Body:   bytes.NewBufferString("world"),
+		Key:    aws.String(uuid.NewV4().String() + ".zip"),
+		Body:   buf,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to perform upload")
 	}
 
-	fmt.Printf("%#v\n", out)
-	return r, nil
+	return &Ref{Location: out.Location}, nil
 }

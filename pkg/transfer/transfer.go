@@ -1,7 +1,9 @@
 package transfer
 
 //Ref is a pointer to something stored remotely
-type Ref struct{}
+type Ref struct {
+	Location string
+}
 
 //Uploader interface can be implemented to provide upload functionality for moving
 //data from a local path to a remote location

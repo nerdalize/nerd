@@ -54,8 +54,7 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 		return errors.Wrap(err, "failed to perform upload")
 	}
 
-	//@TODO store ref in dataset
-	_ = ref
+	cmd.out.Infof("Uploaded directory to: '%s'", ref.Location)
 
 	kopts := cmd.KubeOpts
 	deps, err := NewDeps(cmd.Logger(), kopts)
