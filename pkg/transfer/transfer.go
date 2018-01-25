@@ -1,18 +1,16 @@
 package transfer
 
+import "context"
+
 //Ref is a pointer to something stored remotely
 type Ref struct {
-	Location string
+	Bucket string
+	Key    string
 }
 
-//Uploader interface can be implemented to provide upload functionality for moving
+//Transfer interface can be implemented to provide upload functionality for moving
 //data from a local path to a remote location
-type Uploader interface {
-	Upload(path string) (r *Ref, err error)
-}
-
-//Downloader provides functionality for moving data from a remote location
-//to a local path
-type Downloader interface {
-	Download(*Ref) (path string, err error)
+type Transfer interface {
+	Upload(ctx context.Context, from string) (r *Ref, err error)
+	Download(ctx context.Context, r *Ref, to string) (err error)
 }

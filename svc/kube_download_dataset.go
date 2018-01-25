@@ -12,7 +12,6 @@ import (
 type DownloadDatasetInput struct {
 	JobInput  string
 	JobOutput string
-	Dest      string `validate:"min=1"`
 	Name      string `validate:"printascii"`
 }
 

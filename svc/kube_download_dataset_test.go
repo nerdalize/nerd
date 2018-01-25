@@ -24,7 +24,7 @@ func TestDownloadDataset(t *testing.T) {
 		{
 			Name:    "when dataset doesnt exist it should return an error",
 			Timeout: time.Second * 5,
-			Input:   &svc.DownloadDatasetInput{Name: "my-dataset", Dest: "/tmp"},
+			Input:   &svc.DownloadDatasetInput{Name: "my-dataset"},
 			IsErr:   kubevisor.IsNotExistsErr,
 			IsOutput: func(t testing.TB, out *svc.DownloadDatasetOutput) bool {
 				return true
@@ -34,7 +34,7 @@ func TestDownloadDataset(t *testing.T) {
 			Name:     "when one dataset has been uploaded it should be available for download",
 			Timeout:  time.Minute,
 			Datasets: []*svc.UploadDatasetInput{{Name: "my-dataset", Dir: "/tmp"}},
-			Input:    &svc.DownloadDatasetInput{Name: "my-datasets", Dest: "/tmp"},
+			Input:    &svc.DownloadDatasetInput{Name: "my-datasets"},
 			IsErr:    nil,
 			IsOutput: func(t testing.TB, out *svc.DownloadDatasetOutput) bool {
 				if out == nil {

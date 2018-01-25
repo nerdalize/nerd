@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/jessevdk/go-flags"
@@ -35,9 +36,14 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 		return errShowUsage(MessageNotEnoughArguments)
 	}
 
-	upl, err := cmd.TransferOpts.Uploader()
+	deps, err := NewDeps(cmd.Logger(), cmd.KubeOpts)
 	if err != nil {
-		return errors.Wrap(err, "failed to create uploader")
+		return renderConfigError(err, "failed to configure")
+	}
+
+	trans, err := cmd.TransferOpts.Transfer()
+	if err != nil {
+		return errors.Wrap(err, "failed configure transfer")
 	}
 
 	//@TODO move to transfer package
@@ -49,22 +55,18 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 		return errors.Errorf("provided path '%s' is not a directory", dataPath)
 	}
 
-	ref, err := upl.Upload(dataPath)
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
+	defer cancel()
+
+	ref, err := trans.Upload(ctx, dataPath)
 	if err != nil {
 		return errors.Wrap(err, "failed to perform upload")
 	}
 
-	cmd.out.Infof("Uploaded directory to: '%s'", ref.Location)
-
-	kopts := cmd.KubeOpts
-	deps, err := NewDeps(cmd.Logger(), kopts)
-	if err != nil {
-		return renderConfigError(err, "failed to configure")
-	}
-
-	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
-	defer cancel()
+	//@TODO store ref in custom resource
+	fmt.Printf("ref: %#v\n", ref)
+	_ = ref
 
 	in := &svc.UploadDatasetInput{
 		Name: cmd.Name,

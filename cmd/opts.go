@@ -20,15 +20,15 @@ import (
 
 //TransferOpts hold CLI options for configuring data transfer
 type TransferOpts struct {
-	AWSS3Bucket        string `long:"aws-s3-bucket" description:"AWS S3 Bucket name that will be used for dataset storage"`
+	AWSS3Bucket        string `long:"aws-s3-bucket" description:"AWS S3 Bucket name that will be used for dataset storage" default:"nlz-datasets-dev"`
 	AWSRegion          string `long:"aws-region" description:"AWS region used for dataset storage"`
 	AWSAccessKeyID     string `long:"aws-access-key-id" description:"AWS access key used for auth with the storage backend"`
 	AWSSecretAccessKey string `long:"aws-secret-access-key" description:"AWS secret key for auth with the storage backend"`
 	AWSSessionToken    string `long:"aws-session-token" description:"AWS temporary auth token for the storage backend"`
 }
 
-//Uploader creates an concrete uploader using the transfer configuration
-func (opts TransferOpts) Uploader() (upl transfer.Uploader, err error) {
+//Transfer creates an concrete transfer service using the configuration
+func (opts TransferOpts) Transfer() (trans transfer.Transfer, err error) {
 	s3cfg := &transfer.S3Conf{
 		Bucket:       opts.AWSS3Bucket,
 		Region:       opts.AWSRegion,
@@ -37,12 +37,12 @@ func (opts TransferOpts) Uploader() (upl transfer.Uploader, err error) {
 		SessionToken: opts.AWSSessionToken,
 	}
 
-	upl, err = transfer.NewS3Uploader(s3cfg)
+	trans, err = transfer.NewS3(s3cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create s3 uploader")
 	}
 
-	return upl, nil
+	return trans, nil
 }
 
 //KubeOpts can be used to create a Kubernetes service
