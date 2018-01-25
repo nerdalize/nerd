@@ -66,7 +66,7 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 	}
 
 	cmd.out.Infof("Upload dataset: '%s'", out.Name)
-	cmd.out.Infof("To see available datasets, use: 'nerd dataset list'")
+	cmd.out.Infof("To run a job with a dataset, use: 'nerd job run'")
 	return nil
 }
 
