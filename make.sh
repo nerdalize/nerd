@@ -34,9 +34,9 @@ function run_dev { #setup dev environment
 	glide up
 
 	echo "--> checking crd generated code is valid"
-	./crd/hack/verify-codegen.sh
-	if [ $? -gt 0 ]
-	then
+	if ./crd/hack/verify-codegen.sh; then
+		echo "--> crd code is up-to-date"
+	else
 		echo "--> regenerating code for crd"
 		./crd/hack/update-codegen.sh
 	fi
