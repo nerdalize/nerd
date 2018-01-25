@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	"github.com/jessevdk/go-flags"
 
@@ -46,35 +44,23 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 		return errors.Wrap(err, "failed configure transfer")
 	}
 
-	//@TODO move to transfer package
-	dataPath := args[0]
-	fi, err := os.Stat(dataPath)
-	if err != nil {
-		return errors.Errorf("argument '%v' is not a valid directory", dataPath)
-	} else if !fi.IsDir() {
-		return errors.Errorf("provided path '%s' is not a directory", dataPath)
-	}
-
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
 	defer cancel()
 
-	ref, err := trans.Upload(ctx, dataPath)
+	ref, err := trans.Upload(ctx, args[0])
 	if err != nil {
 		return errors.Wrap(err, "failed to perform upload")
 	}
 
-	//@TODO store ref in custom resource
-	fmt.Printf("ref: %#v\n", ref)
-	_ = ref
-
-	in := &svc.UploadDatasetInput{
-		Name: cmd.Name,
-		Dir:  args[0],
+	in := &svc.CreateDatasetInput{
+		Name:   cmd.Name,
+		Bucket: ref.Bucket,
+		Key:    ref.Key,
 	}
 
 	kube := svc.NewKube(deps)
-	out, err := kube.UploadDataset(ctx, in)
+	out, err := kube.CreateDataset(ctx, in)
 	if err != nil {
 		return renderServiceError(err, "failed to upload dataset")
 	}

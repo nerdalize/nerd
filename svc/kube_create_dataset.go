@@ -9,30 +9,29 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//UploadDatasetInput is the input to UploadDataset
-type UploadDatasetInput struct {
-	Dir  string `validate:"min=1"`
-	Name string `validate:"printascii"`
+//CreateDatasetInput is the input to CreateDataset
+type CreateDatasetInput struct {
+	Name   string `validate:"printascii"`
+	Bucket string `validate:"min=1"`
+	Key    string `validate:"min=1"`
 }
 
-//UploadDatasetOutput is the output to UploadDataset
-type UploadDatasetOutput struct {
+//CreateDatasetOutput is the output to CreateDataset
+type CreateDatasetOutput struct {
 	Name string
 }
 
-//UploadDataset will create a dataset on kubernetes
-func (k *Kube) UploadDataset(ctx context.Context, in *UploadDatasetInput) (out *UploadDatasetOutput, err error) {
+//CreateDataset will create a dataset on kubernetes
+func (k *Kube) CreateDataset(ctx context.Context, in *CreateDatasetInput) (out *CreateDatasetOutput, err error) {
 	if err = k.checkInput(ctx, in); err != nil {
 		return nil, err
 	}
 
-	//@TODO Upload dir to S3 bucket
-
 	dataset := &datasetsv1.Dataset{
 		ObjectMeta: metav1.ObjectMeta{},
 		Spec: datasetsv1.DatasetSpec{
-			Bucket: "to-be-determined",
-			Key:    "tbd",
+			Bucket: in.Bucket,
+			Key:    in.Key,
 		},
 	}
 
@@ -41,7 +40,7 @@ func (k *Kube) UploadDataset(ctx context.Context, in *UploadDatasetInput) (out *
 		return nil, err
 	}
 
-	return &UploadDatasetOutput{
+	return &CreateDatasetOutput{
 		Name: dataset.Name,
 	}, nil
 }

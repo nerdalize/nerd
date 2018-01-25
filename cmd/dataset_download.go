@@ -19,8 +19,6 @@ const (
 type DatasetDownload struct {
 	KubeOpts
 	TransferOpts
-	JobOutput string `long:"job-output" description:"output of the precised job"`
-	JobInput  string `long:"job-input" description:"input of the precised job"`
 
 	*command
 }
@@ -50,30 +48,32 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 		return errors.Wrap(err, "failed configure transfer")
 	}
 
-	ref := &transfer.Ref{
-		Bucket: cmd.TransferOpts.AWSS3Bucket,
-		Key:    args[0],
-	}
+	//get the dataset by name
 
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
 	defer cancel()
 
+	in := &svc.GetDatasetInput{
+		Name: args[0],
+	}
+
+	kube := svc.NewKube(deps)
+	out, err := kube.GetDataset(ctx, in)
+	if err != nil {
+		return renderServiceError(err, "failed to download dataset")
+	}
+
+	//Use dataset spec to downloa
+
+	ref := &transfer.Ref{
+		Bucket: out.Bucket,
+		Key:    out.Key,
+	}
+
 	err = trans.Download(ctx, ref, args[1])
 	if err != nil {
 		return errors.Wrap(err, "failed to download")
-	}
-
-	in := &svc.DownloadDatasetInput{
-		JobInput:  cmd.JobInput,
-		JobOutput: cmd.JobOutput,
-		Name:      args[0],
-		// Dest:      outputDir,
-	}
-	kube := svc.NewKube(deps)
-	out, err := kube.DownloadDataset(ctx, in)
-	if err != nil {
-		return renderServiceError(err, "failed to download dataset")
 	}
 
 	cmd.out.Infof("Downloaded dataset: '%s'", out.Name)
@@ -91,5 +91,5 @@ func (cmd *DatasetDownload) Synopsis() string {
 
 // Usage shows usage
 func (cmd *DatasetDownload) Usage() string {
-	return "nerd dataset download <DATASET-NAME> [--job-output=JOB-NAME] [--job-input=JOB-NAME] ~/my-projects/my-output-1"
+	return "nerd dataset download <DATASET-NAME> <DOWNLOAD-PATH>"
 }
