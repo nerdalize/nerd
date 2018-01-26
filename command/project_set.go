@@ -90,8 +90,6 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 	}
 
 	if err := checkNamespace(cmd.opts.KubeConfig, projectSlug); err != nil {
-		// @TODO
-		// return to old config file
 		p.RemoveConfig(projectSlug)
 		return HandleError(err)
 	}
