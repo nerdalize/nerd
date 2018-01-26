@@ -14,8 +14,6 @@ import (
 type DatasetDetails struct {
 	CreatedAt time.Time
 	Size      uint64
-	OutputOf  []string
-	InputFor  []string
 }
 
 //ListDatasetItem is a dataset listing item
@@ -52,6 +50,7 @@ func (k *Kube) ListDatasets(ctx context.Context, in *ListDatasetsInput) (out *Li
 		item := &ListDatasetItem{
 			Name: dataset.GetName(),
 			Details: DatasetDetails{
+				Size:      dataset.Spec.Size,
 				CreatedAt: dataset.CreationTimestamp.Local(),
 			},
 		}

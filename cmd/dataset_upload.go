@@ -48,7 +48,7 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
 	defer cancel()
 
-	ref, err := trans.Upload(ctx, args[0])
+	n, ref, err := trans.Upload(ctx, args[0])
 	if err != nil {
 		return errors.Wrap(err, "failed to perform upload")
 	}
@@ -57,6 +57,7 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 		Name:   cmd.Name,
 		Bucket: ref.Bucket,
 		Key:    ref.Key,
+		Size:   uint64(n),
 	}
 
 	kube := svc.NewKube(deps)

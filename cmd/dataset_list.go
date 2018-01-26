@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"sort"
-	"strings"
 
 	humanize "github.com/dustin/go-humanize"
 	flags "github.com/jessevdk/go-flags"
@@ -50,15 +49,13 @@ func (cmd *DatasetList) Execute(args []string) (err error) {
 		return out.Items[i].Details.CreatedAt.After(out.Items[j].Details.CreatedAt)
 	})
 
-	hdr := []string{"DATASET", "CREATED AT", "SIZE", "OUTPUT OF", "INPUT FOR"}
+	hdr := []string{"DATASET", "CREATED AT", "SIZE"}
 	rows := [][]string{}
 	for _, item := range out.Items {
 		rows = append(rows, []string{
 			item.Name,
 			humanize.Time(item.Details.CreatedAt),
 			humanize.Bytes(item.Details.Size),
-			strings.Join(item.Details.OutputOf, ","),
-			strings.Join(item.Details.InputFor, ","),
 		})
 	}
 

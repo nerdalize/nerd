@@ -18,6 +18,7 @@ type GetDatasetOutput struct {
 	Name   string
 	Bucket string
 	Key    string
+	Size   uint64
 }
 
 //GetDataset will create a dataset on kubernetes
@@ -34,6 +35,7 @@ func (k *Kube) GetDataset(ctx context.Context, in *GetDatasetInput) (out *GetDat
 
 	return &GetDatasetOutput{
 		Name:   dataset.Name,
+		Size:   dataset.Spec.Size,
 		Bucket: dataset.Spec.Bucket,
 		Key:    dataset.Spec.Key,
 	}, nil

@@ -14,6 +14,7 @@ type CreateDatasetInput struct {
 	Name   string `validate:"printascii"`
 	Bucket string `validate:"min=1"`
 	Key    string `validate:"min=1"`
+	Size   uint64
 }
 
 //CreateDatasetOutput is the output to CreateDataset
@@ -30,6 +31,7 @@ func (k *Kube) CreateDataset(ctx context.Context, in *CreateDatasetInput) (out *
 	dataset := &datasetsv1.Dataset{
 		ObjectMeta: metav1.ObjectMeta{},
 		Spec: datasetsv1.DatasetSpec{
+			Size:   in.Size,
 			Bucket: in.Bucket,
 			Key:    in.Key,
 		},
