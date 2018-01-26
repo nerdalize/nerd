@@ -49,14 +49,34 @@ func (o *OIDCPopulator) GetKubeConfigFile() string {
 	return o.kubeConfigFile.Load().(string)
 }
 
+//RemoveConfig deletes the precised project context and cluster info.
+func (o *OIDCPopulator) RemoveConfig(project string) error {
+	// read existing config or create new if does not exist
+	kubecfg, err := ReadConfigOrNew(o.GetKubeConfigFile())
+	if err != nil {
+		return err
+	}
+	delete(kubecfg.Clusters, project)
+	delete(kubecfg.AuthInfos, project)
+	delete(kubecfg.Contexts, fmt.Sprintf("%s-%s", Prefix, project))
+	kubecfg.CurrentContext = ""
+
+	// write back to disk
+	if err := WriteConfig(kubecfg, o.GetKubeConfigFile()); err != nil {
+		return errors.Wrap(err, "could not write kubeconfig")
+	}
+	return nil
+}
+
 // PopulateKubeConfig populates an api.Config object and set the current context to the provided project.
 func (o *OIDCPopulator) PopulateKubeConfig(project string) error {
 	cluster := api.NewCluster()
-	cluster.CertificateAuthorityData = []byte(o.project.Services.Cluster.B64CaData)
-	cluster.Server = o.project.Services.Cluster.Address
-	if cluster.Server == "" {
-		return errors.New("this project isn't available for open id connect (server address cannot be blank)")
+	if o.project.Services.Cluster.B64CaData == "" {
+		cluster.InsecureSkipTLSVerify = true
+	} else {
+		cluster.CertificateAuthorityData = []byte(o.project.Services.Cluster.B64CaData)
 	}
+	cluster.Server = o.project.Services.Cluster.Address
 
 	filename, err := conf.GetDefaultSessionLocation()
 	if err != nil {
@@ -103,7 +123,7 @@ func (o *OIDCPopulator) PopulateKubeConfig(project string) error {
 
 	// write back to disk
 	if err := WriteConfig(kubecfg, o.GetKubeConfigFile()); err != nil {
-		return errors.Wrap(err, "writing kubeconfig")
+		return errors.Wrap(err, "could not write kubeconfig")
 	}
 
 	return nil

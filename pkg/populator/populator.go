@@ -11,6 +11,7 @@ import (
 	v1payload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/clientcmd/api/latest"
 )
@@ -21,6 +22,7 @@ var Prefix = "nerd-cli"
 // P is an interface that we can use to read from and to write to the kube config file.
 type P interface {
 	PopulateKubeConfig(project string) error
+	RemoveConfig(project string) error
 }
 
 //New instantiates a new P interface using the conf parameter. It can return a env, endpoint or oidc populator.
@@ -100,6 +102,10 @@ func ReadConfig(filename string) (*api.Config, error) {
 func WriteConfig(config *api.Config, filename string) error {
 	if config == nil {
 		glog.Errorf("could not write to '%s': config can't be nil", filename)
+	}
+
+	if err := clientcmd.ConfirmUsable(*config, config.CurrentContext); err != nil {
+		return err
 	}
 
 	// encode config to YAML

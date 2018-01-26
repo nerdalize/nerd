@@ -27,6 +27,11 @@ func (e *EndpointPopulator) GetKubeConfigFile() string {
 	return e.kubeConfigFile.Load().(string)
 }
 
+//RemoveConfig deletes the precised project context and cluster info.
+func (e *EndpointPopulator) RemoveConfig(project string) error {
+	return nil
+}
+
 // PopulateKubeConfig populates an api.Config object and set the current context to the provided project.
 func (e *EndpointPopulator) PopulateKubeConfig(project string) error {
 	cluster := api.NewCluster()
