@@ -44,7 +44,7 @@ func renderServiceError(err error, format string, args ...interface{}) error {
 	case kubevisor.IsAlreadyExistsErr(err):
 		return errors.Errorf("%s: it already exists", fmt.Errorf(format, args...))
 	case kubevisor.IsNamespaceNotExistsErr(err):
-		return errors.Errorf("%s: the namespace does not exist or you have no access", fmt.Errorf(format, args...))
+		return errors.Errorf("%s: the namespace does not exist or you have no access. If the problem persists, please contact mayday@nerdalize.com.", fmt.Errorf(format, args...))
 	case kubevisor.IsServiceUnavailableErr(err):
 		return errors.Errorf("%s: cluster is currently unable to receive requests, try again later", fmt.Errorf(format, args...))
 	case kubevisor.IsUnauthorizedErr(err):

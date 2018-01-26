@@ -27,6 +27,11 @@ func (e *EnvPopulator) GetKubeConfigFile() string {
 	return e.kubeConfigFile.Load().(string)
 }
 
+//RemoveConfig deletes the precised project context and cluster info.
+func (e *EnvPopulator) RemoveConfig(project string) error {
+	return nil
+}
+
 // PopulateKubeConfig populates the kube config file with the info found in the environment.
 func (e *EnvPopulator) PopulateKubeConfig(project string) error {
 	cluster := api.NewCluster()

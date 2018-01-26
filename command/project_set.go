@@ -2,15 +2,20 @@ package command
 
 import (
 	"net/url"
+	"os"
 	"path/filepath"
 
 	"github.com/mitchellh/cli"
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/nerdalize/nerd/cmd"
 	"github.com/nerdalize/nerd/nerd/client/auth/v1"
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/oauth"
 	"github.com/nerdalize/nerd/pkg/populator"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 //ProjectSetOpts determine
@@ -74,6 +79,7 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 		}
 		cmd.opts.KubeConfig = filepath.Join(hdir, ".kube", "config")
 	}
+
 	p, err := populator.New(cmd.opts.Config, cmd.opts.KubeConfig, project)
 	if err != nil {
 		return HandleError(err)
@@ -83,11 +89,37 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
+	if err := checkNamespace(cmd.opts.KubeConfig, projectSlug); err != nil {
+		p.RemoveConfig(projectSlug)
+		return HandleError(err)
+	}
+
 	err = cmd.session.WriteProject(projectSlug, conf.DefaultAWSRegion)
 	if err != nil {
 		return HandleError(err)
 	}
 
 	cmd.outputter.Logger.Printf("Project %s set successfully", projectSlug)
+	return nil
+}
+
+func checkNamespace(kubeConfig, ns string) error {
+	kcfg, err := clientcmd.BuildConfigFromFlags("", kubeConfig)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return cmd.ErrNotLoggedIn
+		}
+		return errors.Wrap(err, "failed to build Kubernetes config from provided kube config path")
+	}
+
+	kube, err := kubernetes.NewForConfig(kcfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create Kubernetes configuration")
+	}
+
+	_, err = kube.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
 	return nil
 }

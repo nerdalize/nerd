@@ -48,5 +48,4 @@ func init() {
 // correctly.
 func AddToScheme(scheme *runtime.Scheme) {
 	nerdalizev1.AddToScheme(scheme)
-
 }
