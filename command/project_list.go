@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"log"
 	"net/url"
 
 	"github.com/mitchellh/cli"
@@ -45,13 +46,13 @@ func (cmd *ProjectList) DoRun(args []string) (err error) {
 		Logger:             cmd.outputter.Logger,
 		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.SecureClientID, cmd.config.Auth.SecureClientSecret, cmd.session),
 	})
-
-	projects, err := client.ListProjects()
+	ss, err := cmd.session.Read()
 	if err != nil {
 		return HandleError(err)
 	}
 
-	ss, err := cmd.session.Read()
+	log.Println(client.Base, ss)
+	projects, err := client.ListProjects()
 	if err != nil {
 		return HandleError(err)
 	}

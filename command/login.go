@@ -10,6 +10,7 @@ import (
 	"github.com/mitchellh/cli"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
 	"github.com/nerdalize/nerd/nerd/conf"
+	"github.com/nerdalize/nerd/nerd/oauth"
 	"github.com/pkg/errors"
 	"github.com/skratchdot/open-golang/open"
 )
@@ -18,19 +19,28 @@ const (
 	authorizeEndpoint = "o/authorize"
 )
 
+//LoginOpts defines options for login command
+type LoginOpts struct {
+	Config     string `long:"config-src" default:"oidc" default-mask:"" description:"type of configuration to use (from env, endpoint, or oidc)"`
+	KubeConfig string `long:"kube-config" env:"KUBECONFIG" description:"file at which Nerd will look for Kubernetes credentials" default-mask:"~/.kube/config"`
+}
+
 //Login command
 type Login struct {
 	*command
+	opts *LoginOpts
 }
 
 //LoginFactory returns a factory method for the join command
 func LoginFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd login", "Start a new authorized session.", "", nil)
+	opts := &LoginOpts{}
+	comm, err := newCommand("nerd login", "Start a new authorized session.", "", opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
 	cmd := &Login{
 		command: comm,
+		opts:    opts,
 	}
 	cmd.runFunc = cmd.DoRun
 
@@ -75,6 +85,33 @@ func (cmd *Login) DoRun(args []string) error {
 	if err != nil {
 		return HandleError(errors.Wrap(err, "failed to write oauth tokens to config"))
 	}
+
+	client := v1auth.NewClient(v1auth.ClientConfig{
+		Base:               authbase,
+		Logger:             cmd.outputter.Logger,
+		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.SecureClientID, cmd.config.Auth.SecureClientSecret, cmd.session),
+	})
+	list, err := client.ListProjects()
+	if err != nil {
+		return HandleError(err)
+	}
+
+	if len(list.Projects) == 0 {
+		cmd.ui.Info("Successful login. You can now select a project using 'nerd project set'")
+		return nil
+	}
+	projectSlug := list.Projects[0].Nk
+
+	err = setProject(cmd.opts.KubeConfig, cmd.opts.Config, list.Projects[0], cmd.outputter.Logger)
+	if err != nil {
+		return HandleError(err)
+	}
+
+	err = cmd.session.WriteProject(projectSlug, conf.DefaultAWSRegion)
+	if err != nil {
+		return HandleError(err)
+	}
+
 	cmd.ui.Info("Successful login. You can now select a project using 'nerd project set'")
 	return nil
 }

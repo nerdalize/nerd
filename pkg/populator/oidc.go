@@ -2,6 +2,7 @@ package populator
 
 import (
 	"fmt"
+	"os"
 	"sync/atomic"
 
 	"github.com/nerdalize/nerd/nerd/conf"
@@ -127,4 +128,19 @@ func (o *OIDCPopulator) PopulateKubeConfig(project string) error {
 	}
 
 	return nil
+}
+
+func (o *OIDCPopulator) createCertificate(data, project, homedir string) (string, error) {
+	fi, err := os.Stat(dataPath)
+	if err != nil {
+		return errors.Errorf("argument '%v' is not a valid file or directory", dataPath)
+	}
+	// check if certificate file exists
+	// if not:
+	// 	create file
+	// 	decode b64 data
+	//	write utf-8 data in file
+	// close file
+	// return path
+	return "~/home/.kube/ca.pem", nil
 }
