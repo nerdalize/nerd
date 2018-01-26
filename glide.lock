@@ -1,10 +1,10 @@
 hash: 5fccf4e79733a8f7066a3ffb681dd4b1f5edd61bd3500b2f59d9f225954a303c
-updated: 2018-01-22T16:18:54.729883984+01:00
+updated: 2018-01-26T09:38:33.276652292+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
-  version: 9ed0c8de252f04ac45a65358377103d5a1aa2d92
+  version: d7ca0344c929a6e28bf7e1dd17ea32f800634374
   subpackages:
   - aws
   - aws/awserr
@@ -169,7 +169,7 @@ imports:
 - name: github.com/spf13/pflag
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - name: golang.org/x/crypto
-  version: 39efaea5da11abd5e2b90a435b1f338cdb94619c
+  version: 0efb9460aaf800c6376acf625be2853bceac2e06
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
@@ -354,7 +354,7 @@ imports:
   - util/homedir
   - util/integer
 - name: k8s.io/code-generator
-  version: f4fbdd37ed9c2292ea0abaabd8581008984dffc4
+  version: 64ca0808efd56c2418939848947c06b8d495144d
 - name: k8s.io/kube-openapi
   version: 868f2f29720b192240e18284659231b440f9cda5
   subpackages:
