@@ -90,16 +90,18 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 }
 
 func setProject(kubeConfig, conf string, project *v1payload.GetProjectOutput, logger *log.Logger) error {
+	var (
+		hdir string
+		err  error
+	)
+	hdir, err = homedir.Dir()
+	if err != nil {
+		return err
+	}
 	if kubeConfig == "" {
-		hdir, err := homedir.Dir()
-		if err != nil {
-			return err
-		}
 		kubeConfig = filepath.Join(hdir, ".kube", "config")
 	}
-	log.Println(kubeConfig)
-	log.Println(project)
-	p, err := populator.New(conf, kubeConfig, project)
+	p, err := populator.New(conf, kubeConfig, hdir, project)
 	if err != nil {
 		return err
 	}
@@ -107,7 +109,6 @@ func setProject(kubeConfig, conf string, project *v1payload.GetProjectOutput, lo
 	if err != nil {
 		return err
 	}
-
 	if err := checkNamespace(kubeConfig, project.Nk); err != nil {
 		p.RemoveConfig(project.Nk)
 		return err
@@ -124,10 +125,8 @@ func checkNamespace(kubeConfig, ns string) error {
 		}
 		return errors.Wrap(err, "failed to build Kubernetes config from provided kube config path")
 	}
-	log.Println(kcfg.Username)
 	kube, err := kubernetes.NewForConfig(kcfg)
 	if err != nil {
-		log.Println(err)
 		return errors.Wrap(err, "failed to create Kubernetes configuration")
 	}
 

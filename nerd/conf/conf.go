@@ -44,8 +44,8 @@ func Defaults() *Config {
 			APIEndpoint:        "https://auth.staging.nlze.nl/v1/",
 			OAuthLocalServer:   "localhost:9876",
 			OAuthSuccessURL:    "https://auth.staging.nlze.nl/do/login_complete/?client=CLI",
-			SecureClientID:     "123-staging-456",
-			SecureClientSecret: "da4e05748252e51571339fe6425254f08442a63a8ccea64634de0cf6",
+			SecureClientID:     "eD72uSHdzkWl8dmwOXamrpDJzmJ1BU7Xdwl4Srt4",
+			SecureClientSecret: "",
 			PublicKey: `-----BEGIN PUBLIC KEY-----
 MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEBthEmchVCtA3ZPXqiCXdj+7/ZFuhxRgx
 grTxIHK+b0vEqKqA3O++ggD1GgjqtTfNLGUjLCE3KxyIN78TsK+HU4VVexTjlWXy

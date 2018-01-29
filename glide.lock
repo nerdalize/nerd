@@ -1,10 +1,10 @@
 hash: 5fccf4e79733a8f7066a3ffb681dd4b1f5edd61bd3500b2f59d9f225954a303c
-updated: 2018-01-26T12:22:48.441521214+01:00
+updated: 2018-01-29T14:58:05.442303725+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
-  version: 094c4e4e03d9f1c2c7d25a17b5df5f2685ae922a
+  version: 1b176c5c6b57adb03bb982c21930e708ebca5a77
   subpackages:
   - aws
   - aws/awserr
@@ -169,7 +169,7 @@ imports:
 - name: github.com/spf13/pflag
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - name: golang.org/x/crypto
-  version: 0efb9460aaf800c6376acf625be2853bceac2e06
+  version: 1875d0a70c90e57f11972aefd42276df65e895b9
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
