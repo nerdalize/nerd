@@ -54,7 +54,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 	for _, l := range cmd.Env {
 		split := strings.SplitN(l, "=", 2)
 		if len(split) < 2 {
-			return fmt.Errorf("invalid environment variable format, expected 'FOO=bar' fromat, got: %v", l)
+			return fmt.Errorf("invalid environment variable format, expected 'FOO=bar' format, got: %v", l)
 		}
 		jenv[split[0]] = split[1]
 	}

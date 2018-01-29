@@ -52,7 +52,7 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 
 	ref := &transfer.Ref{
 		Bucket: cmd.AWSS3Bucket,
-		Key:    uuid.NewV4().String() + ".zip",
+		Key:    uuid.NewV4().String() + ".zip", //@TODO move this to a library
 	}
 
 	n, err := trans.Upload(ctx, ref, args[0])

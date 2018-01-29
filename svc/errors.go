@@ -25,3 +25,16 @@ func IsRaceConditionErr(err error) bool {
 	te, ok := err.(iface)
 	return ok && te.IsRaceCondition()
 }
+
+type errDatasetSpec struct{ error }
+
+func (e errDatasetSpec) IsDatasetSpec() bool { return true }
+
+//IsDatasetSpecErr is returned when a invalid input/output spec was given
+func IsDatasetSpecErr(err error) bool {
+	type iface interface {
+		IsDatasetSpec() bool
+	}
+	te, ok := err.(iface)
+	return ok && te.IsDatasetSpec()
+}

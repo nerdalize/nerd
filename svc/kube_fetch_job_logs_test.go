@@ -46,7 +46,6 @@ func TestFetchJobLogs(t *testing.T) {
 				return true
 			},
 		},
-
 		{
 			Name:    "tail option should allow for limiting the nr of lines to return",
 			Timeout: time.Minute,
@@ -60,6 +59,34 @@ func TestFetchJobLogs(t *testing.T) {
 
 				assert(t, !bytes.Contains(out.Data, []byte("Hello from Docker")), "logs should not contain the data before the tail")
 				assert(t, bytes.Contains(out.Data, []byte("more examples and ideas")), "logs should contain the data after the tail")
+				return true
+			},
+		},
+
+		{
+			Name:    "when one job with a volume is run it should return logs indicating the download",
+			Timeout: time.Minute,
+			Jobs: []*svc.RunJobInput{{
+				Image: "alpine",
+				Name:  "my-job",
+				Args:  []string{"ls", "-la", "/input"},
+				Volumes: []svc.JobVolume{
+					{
+						Path:   "/input",
+						Type:   svc.JobVolumeTypeInput,
+						Bucket: "nlz-datasets-dev",
+						Key:    "959d240b-4abb-43ba-b253-98b024541e09.zip",
+					},
+				},
+			}},
+			Input: &svc.FetchJobLogsInput{Name: "my-job"},
+			IsErr: nil,
+			IsOutput: func(t testing.TB, out *svc.FetchJobLogsOutput) bool {
+				if out == nil || len(out.Data) < 1 {
+					return false
+				}
+
+				assert(t, bytes.Contains(out.Data, []byte("westerscheldt_0001_19920831_020000")), "logs should contain the data we expect")
 				return true
 			},
 		},
