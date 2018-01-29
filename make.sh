@@ -64,12 +64,13 @@ function run_test { #unit test project
 	command -v go >/dev/null 2>&1 || { echo "executable 'go' (the language sdk) must be installed" >&2; exit 1; }
 
 	echo "--> building (new) flex volume"
-	go build -o $GOPATH/bin/nerd-flex-volume pkg/transfer/flex/main.go
+	GOOS=linux go build -o $GOPATH/bin/nerd-flex-volume pkg/transfer/flex/main.go
 
 	echo "--> transfer flex volume"
 	scp -i ~/.minikube/machines/$dev_profile/id_rsa $GOPATH/bin/nerd-flex-volume docker@$(minikube ip --profile=$dev_profile):/home/docker/nerd-flex-volume
-	ssh -i ~/.minikube/machines/$dev_profile/id_rsa docker@$(minikube ip --profile=$dev_profile) sudo cp /home/docker/nerd-flex-volume /usr/libexec/kubernetes/kubelet-plugins/volume/exec
-	minikube ssh stat /usr/libexec/kubernetes/kubelet-plugins/volume/exec/nerd-flex-volume
+	ssh -i ~/.minikube/machines/$dev_profile/id_rsa docker@$(minikube ip --profile=$dev_profile) sudo mkdir -p /usr/libexec/kubernetes/kubelet-plugins/volume/exec/foo~cifs
+	ssh -i ~/.minikube/machines/$dev_profile/id_rsa docker@$(minikube ip --profile=$dev_profile) sudo cp /home/docker/nerd-flex-volume /usr/libexec/kubernetes/kubelet-plugins/volume/exec/foo~cifs/cifs
+	minikube ssh /usr/libexec/kubernetes/kubelet-plugins/volume/exec/foo~cifs/cifs
 
 	echo "--> running service tests"
 	go test -cover -v ./svc/...
