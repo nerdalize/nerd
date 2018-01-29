@@ -2,7 +2,6 @@ package command
 
 import (
 	"fmt"
-	"log"
 	"net/url"
 
 	"github.com/mitchellh/cli"
@@ -51,7 +50,6 @@ func (cmd *ProjectList) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	log.Println(client.Base, ss)
 	projects, err := client.ListProjects()
 	if err != nil {
 		return HandleError(err)
