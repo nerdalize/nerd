@@ -38,30 +38,6 @@
 		}
 	],
 	"commands": {
-		"dataset": {
-			"usage": "nerd dataset \u003csubcommand\u003e",
-			"synopsis": "Upload and download datasets for tasks to use.",
-			"description": "Upload and download datasets for tasks to use.",
-			"options": {}
-		},
-		"dataset download": {
-			"usage": "nerd dataset download \u003cdataset-id\u003e \u003coutput-dir\u003e",
-			"synopsis": "Download data from the cloud to a local directory.",
-			"description": "Download data from the cloud to a local directory.",
-			"options": {}
-		},
-		"dataset list": {
-			"usage": "nerd dataset list",
-			"synopsis": "Show a list of all datasets.",
-			"description": "Show a list of all datasets.",
-			"options": {}
-		},
-		"dataset upload": {
-			"usage": "nerd dataset upload \u003cpath\u003e",
-			"synopsis": "Upload data from a directory to the cloud and create a new dataset.",
-			"description": "Upload data from a directory to the cloud and create a new dataset.",
-			"options": {}
-		},
 		"login": {
 			"usage": "nerd login",
 			"synopsis": "Start a new authorized session.",
@@ -84,7 +60,24 @@
 			"usage": "nerd project set",
 			"synopsis": "Set current working project.",
 			"description": "Set current working project.",
-			"options": {}
+			"options": {
+				"Options": [
+					{
+						"long_name": "config-src",
+						"description": "type of configuration to use (from env, endpoint, or oidc)",
+						"default_value": [
+							"oidc"
+						],
+						"choices": null
+					},
+					{
+						"long_name": "kube-config",
+						"description": "file at which Nerd will look for Kubernetes credentials",
+						"default_value": null,
+						"choices": null
+					}
+				]
+			}
 		},
 		"secret": {
 			"usage": "nerd secret \u003csubcommand\u003e",

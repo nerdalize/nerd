@@ -4,8 +4,10 @@ import (
 	"context"
 
 	"github.com/jessevdk/go-flags"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/pkg/transfer"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
 )
@@ -48,7 +50,12 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
 	defer cancel()
 
-	n, ref, err := trans.Upload(ctx, args[0])
+	ref := &transfer.Ref{
+		Bucket: cmd.AWSS3Bucket,
+		Key:    uuid.NewV4().String() + ".zip",
+	}
+
+	n, err := trans.Upload(ctx, ref, args[0])
 	if err != nil {
 		return errors.Wrap(err, "failed to perform upload")
 	}

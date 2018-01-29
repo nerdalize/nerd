@@ -17,7 +17,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 )
 
 //S3 encapsulates logic for uploading a local directory
@@ -144,7 +143,7 @@ func (trans *S3) Download(ctx context.Context, r *Ref, path string) (err error) 
 }
 
 //Upload data at a local path to the remote storage and return a reference
-func (trans *S3) Upload(ctx context.Context, path string) (size int, r *Ref, err error) {
+func (trans *S3) Upload(ctx context.Context, r *Ref, path string) (size int, err error) {
 	buf := bytes.NewBuffer(nil)
 	zipw := zip.NewWriter(buf)
 	if err = func() error {
@@ -178,26 +177,17 @@ func (trans *S3) Upload(ctx context.Context, path string) (size int, r *Ref, err
 			return nil
 		})
 	}(); err != nil {
-		return 0, nil, errors.Wrap(err, "failed to create zip file")
-	}
-
-	uid, err := uuid.NewV4()
-	if err != nil {
-		return 0, nil, errors.Wrap(err, "failed to create uuid")
+		return 0, errors.Wrap(err, "failed to create zip file")
 	}
 
 	size = buf.Len()
-	key := uid.String() + ".zip"
 	if _, err = trans.upl.UploadWithContext(ctx, &s3manager.UploadInput{
-		Bucket: aws.String(trans.cfg.Bucket),
-		Key:    aws.String(key),
+		Bucket: aws.String(r.Bucket),
+		Key:    aws.String(r.Key),
 		Body:   buf,
 	}); err != nil {
-		return 0, nil, errors.Wrap(err, "failed to perform upload")
+		return 0, errors.Wrap(err, "failed to perform upload")
 	}
 
-	return size, &Ref{
-		Bucket: trans.cfg.Bucket,
-		Key:    key,
-	}, nil
+	return size, nil
 }

@@ -68,9 +68,9 @@ function run_test { #unit test project
 
 	echo "--> transfer flex volume"
 	scp -i ~/.minikube/machines/$dev_profile/id_rsa $GOPATH/bin/nerd-flex-volume docker@$(minikube ip --profile=$dev_profile):/home/docker/nerd-flex-volume
-	ssh -i ~/.minikube/machines/$dev_profile/id_rsa docker@$(minikube ip --profile=$dev_profile) sudo mkdir -p /usr/libexec/kubernetes/kubelet-plugins/volume/exec/foo~cifs
-	ssh -i ~/.minikube/machines/$dev_profile/id_rsa docker@$(minikube ip --profile=$dev_profile) sudo cp /home/docker/nerd-flex-volume /usr/libexec/kubernetes/kubelet-plugins/volume/exec/foo~cifs/cifs
-	minikube ssh /usr/libexec/kubernetes/kubelet-plugins/volume/exec/foo~cifs/cifs
+	ssh -i ~/.minikube/machines/$dev_profile/id_rsa docker@$(minikube ip --profile=$dev_profile) sudo mkdir -p /usr/libexec/kubernetes/kubelet-plugins/volume/exec/nerdalize.com~dataset
+	ssh -i ~/.minikube/machines/$dev_profile/id_rsa docker@$(minikube ip --profile=$dev_profile) sudo cp /home/docker/nerd-flex-volume /usr/libexec/kubernetes/kubelet-plugins/volume/exec/nerdalize.com~dataset/dataset
+	minikube ssh /usr/libexec/kubernetes/kubelet-plugins/volume/exec/nerdalize.com~dataset/dataset
 
 	echo "--> running service tests"
 	go test -cover -v ./svc/...

@@ -11,6 +11,6 @@ type Ref struct {
 //Transfer interface can be implemented to provide upload functionality for moving
 //data from a local path to a remote location
 type Transfer interface {
-	Upload(ctx context.Context, from string) (n int, r *Ref, err error)
+	Upload(ctx context.Context, r *Ref, from string) (n int, err error)
 	Download(ctx context.Context, r *Ref, to string) (err error)
 }
