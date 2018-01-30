@@ -63,6 +63,7 @@ func TestFetchJobLogs(t *testing.T) {
 			},
 		},
 
+		//@TODO find a way to not be dependant on a specific key to be present on s3
 		{
 			Name:    "when one job with a volume is run it should return logs indicating the download",
 			Timeout: time.Minute,

@@ -30,6 +30,33 @@ func DatasetUploadFactory(ui cli.Ui) cli.CommandFactory {
 	}
 }
 
+func uploadToDataset(ctx context.Context, trans transfer.Transfer, bucket string, kube *svc.Kube, path, datasetName string) (ref *transfer.Ref, name string, err error) {
+	ref = &transfer.Ref{
+		// Bucket: cmd.AWSS3Bucket,
+		Bucket: bucket,
+		Key:    uuid.NewV4().String() + ".zip", //@TODO move this to a library
+	}
+
+	n, err := trans.Upload(ctx, ref, path)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "failed to perform upload")
+	}
+
+	in := &svc.CreateDatasetInput{
+		Name:   datasetName,
+		Bucket: ref.Bucket,
+		Key:    ref.Key,
+		Size:   uint64(n),
+	}
+
+	out, err := kube.CreateDataset(ctx, in)
+	if err != nil {
+		return nil, "", renderServiceError(err, "failed to upload dataset")
+	}
+
+	return ref, out.Name, nil
+}
+
 //Execute runs the command
 func (cmd *DatasetUpload) Execute(args []string) (err error) {
 	if len(args) < 1 {
@@ -50,30 +77,14 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
 	defer cancel()
 
-	ref := &transfer.Ref{
-		Bucket: cmd.AWSS3Bucket,
-		Key:    uuid.NewV4().String() + ".zip", //@TODO move this to a library
-	}
-
-	n, err := trans.Upload(ctx, ref, args[0])
-	if err != nil {
-		return errors.Wrap(err, "failed to perform upload")
-	}
-
-	in := &svc.CreateDatasetInput{
-		Name:   cmd.Name,
-		Bucket: ref.Bucket,
-		Key:    ref.Key,
-		Size:   uint64(n),
-	}
-
 	kube := svc.NewKube(deps)
-	out, err := kube.CreateDataset(ctx, in)
+
+	_, name, err := uploadToDataset(ctx, trans, cmd.AWSS3Bucket, kube, args[0], cmd.Name)
 	if err != nil {
-		return renderServiceError(err, "failed to upload dataset")
+		return err
 	}
 
-	cmd.out.Infof("Upload dataset: '%s'", out.Name)
+	cmd.out.Infof("Uploaded dataset: '%s'", name)
 	cmd.out.Infof("To run a job with a dataset, use: 'nerd job run'")
 	return nil
 }

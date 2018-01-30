@@ -39,10 +39,10 @@ const (
 
 //JobVolume can be used in a job
 type JobVolume struct {
-	Path   string
-	Type   JobVolumeType
-	Bucket string
-	Key    string
+	MountPath string
+	Type      JobVolumeType
+	Bucket    string
+	Key       string
 }
 
 //RunJobOutput is the output to RunJob
@@ -99,7 +99,7 @@ func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, 
 
 	for _, vol := range in.Volumes {
 		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, v1.Volume{
-			Name: hex.EncodeToString([]byte(vol.Path)),
+			Name: hex.EncodeToString([]byte(vol.MountPath)),
 			VolumeSource: v1.VolumeSource{
 				FlexVolume: &v1.FlexVolumeSource{
 					Driver: "nerdalize.com/dataset",
@@ -113,8 +113,8 @@ func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, 
 		})
 
 		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts, v1.VolumeMount{
-			Name:      hex.EncodeToString([]byte(vol.Path)),
-			MountPath: vol.Path,
+			Name:      hex.EncodeToString([]byte(vol.MountPath)),
+			MountPath: vol.MountPath,
 		})
 	}
 
