@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 
 	"github.com/nerdalize/nerd/pkg/kubevisor"
+	"github.com/nerdalize/nerd/pkg/transfer"
 
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/api/core/v1"
@@ -40,9 +41,8 @@ const (
 //JobVolume can be used in a job
 type JobVolume struct {
 	MountPath string
-	Type      JobVolumeType
-	Bucket    string
-	Key       string
+	Input     *transfer.Ref
+	Output    *transfer.Ref
 }
 
 //RunJobOutput is the output to RunJob
@@ -98,16 +98,23 @@ func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, 
 	}
 
 	for _, vol := range in.Volumes {
+		opts := map[string]string{}
+		if vol.Input != nil {
+			opts["input/s3Key"] = vol.Input.Key
+			opts["input/s3Bucket"] = vol.Input.Bucket
+		}
+
+		if vol.Output != nil {
+			opts["output/s3Key"] = vol.Output.Key
+			opts["output/s3Bucket"] = vol.Output.Bucket
+		}
+
 		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, v1.Volume{
 			Name: hex.EncodeToString([]byte(vol.MountPath)),
 			VolumeSource: v1.VolumeSource{
 				FlexVolume: &v1.FlexVolumeSource{
-					Driver: "nerdalize.com/dataset",
-					Options: map[string]string{
-						"type":   string(vol.Type),
-						"key":    vol.Key,
-						"bucket": vol.Bucket,
-					},
+					Driver:  "nerdalize.com/dataset",
+					Options: opts,
 				},
 			},
 		})

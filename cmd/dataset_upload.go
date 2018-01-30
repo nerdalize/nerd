@@ -32,14 +32,16 @@ func DatasetUploadFactory(ui cli.Ui) cli.CommandFactory {
 
 func uploadToDataset(ctx context.Context, trans transfer.Transfer, bucket string, kube *svc.Kube, path, datasetName string) (ref *transfer.Ref, name string, err error) {
 	ref = &transfer.Ref{
-		// Bucket: cmd.AWSS3Bucket,
 		Bucket: bucket,
 		Key:    uuid.NewV4().String() + ".zip", //@TODO move this to a library
 	}
 
-	n, err := trans.Upload(ctx, ref, path)
-	if err != nil {
-		return nil, "", errors.Wrap(err, "failed to perform upload")
+	var n int
+	if path != "" { //path is optional
+		n, err = trans.Upload(ctx, ref, path)
+		if err != nil {
+			return nil, "", errors.Wrap(err, "failed to perform upload")
+		}
 	}
 
 	in := &svc.CreateDatasetInput{

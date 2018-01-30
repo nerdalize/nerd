@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -47,7 +48,12 @@ type Output struct {
 //MountOptions is specified whenever Kubernetes calls the mount, comes with
 //the following keys: kubernetes.io/fsType, kubernetes.io/pod.name, kubernetes.io/pod.namespace
 //kubernetes.io/pod.uid, kubernetes.io/pvOrVolumeName, kubernetes.io/readwrite, kubernetes.io/serviceAccount.name
-type MountOptions map[string]string
+type MountOptions struct {
+	InputS3Key     string `json:"input/s3Key"`
+	InputS3Bucket  string `json:"input/s3Bucket"`
+	OutputS3Key    string `json:"output/s3Key"`
+	OutputS3Bucket string `json:"output/s3Bucket"`
+}
 
 //Capabilities of the flex volume
 type Capabilities struct {
@@ -64,43 +70,33 @@ type VolumeDriver interface {
 //DatasetVolumes is a volume implementations that works with Nerdalize Datasets
 type DatasetVolumes struct{}
 
-//DatasetType determines if the volume will be uploaded or downloaded
-type DatasetType string
-
-const (
-	//DatasetTypeInput will be downloaded
-	DatasetTypeInput = "input"
-
-	//DatasetTypeOutput will be uploaded
-	DatasetTypeOutput = "output"
-)
-
 type datasetOpts struct {
-	Type   DatasetType
-	Key    string
-	Bucket string
+	Input  *transfer.Ref
+	Output *transfer.Ref
 }
 
 func (volp *DatasetVolumes) writeDatasetOpts(mountPath string, opts MountOptions) (*datasetOpts, error) {
 	dsopts := &datasetOpts{}
-	typ, _ := opts["type"]
-	switch typ {
-	case DatasetTypeInput:
-		dsopts.Type = DatasetTypeInput
-	case DatasetTypeOutput:
-		dsopts.Type = DatasetTypeOutput
-	default:
-		return nil, fmt.Errorf("unsupported dataset type specified: '%s'", typ)
+	if opts.InputS3Key != "" {
+		dsopts.Input = &transfer.Ref{
+			Key:    opts.InputS3Key,
+			Bucket: opts.InputS3Bucket,
+		}
+
+		if dsopts.Input.Bucket == "" {
+			return nil, errors.New("input key configured without a bucket")
+		}
 	}
 
-	dsopts.Key, _ = opts["key"]
-	if dsopts.Key == "" {
-		return nil, fmt.Errorf("no dataset key configured for volume")
-	}
+	if opts.OutputS3Key != "" {
+		dsopts.Output = &transfer.Ref{
+			Key:    opts.OutputS3Key,
+			Bucket: opts.OutputS3Bucket,
+		}
 
-	dsopts.Bucket, _ = opts["bucket"]
-	if dsopts.Bucket == "" {
-		return nil, fmt.Errorf("no bucket key configured for volume")
+		if dsopts.Output.Bucket == "" {
+			return nil, errors.New("output key configured without a bucket")
+		}
 	}
 
 	path := filepath.Join(mountPath, "..", filepath.Base(mountPath)+".json")
@@ -150,20 +146,20 @@ func (volp *DatasetVolumes) Mount(mountPath string, opts MountOptions) error {
 		return fmt.Errorf("failed to write volume database: %v", err)
 	}
 
-	if dsopts.Type != DatasetTypeInput {
-		return nil //not an input dataset, do nothing on mount
+	if dsopts.Input == nil {
+		return nil //no input for volume
 	}
 
 	var trans transfer.Transfer
 	if trans, err = transfer.NewS3(&transfer.S3Conf{
-		Bucket: dsopts.Bucket,
+		Bucket: dsopts.Input.Bucket,
 	}); err != nil {
 		return err
 	}
 
 	ref := &transfer.Ref{
-		Bucket: dsopts.Bucket,
-		Key:    dsopts.Key,
+		Bucket: dsopts.Input.Bucket,
+		Key:    dsopts.Input.Key,
 	}
 
 	err = trans.Download(context.Background(), ref, mountPath)
@@ -188,20 +184,20 @@ func (volp *DatasetVolumes) Unmount(mountPath string) (err error) {
 		}
 	}()
 
-	if dsopts.Type != DatasetTypeOutput {
-		return nil //not an output dataset, do nothing on unmount
+	if dsopts.Output == nil {
+		return nil //no output dataset, do nothing with the volume data
 	}
 
 	var trans transfer.Transfer
 	if trans, err = transfer.NewS3(&transfer.S3Conf{
-		Bucket: dsopts.Bucket,
+		Bucket: dsopts.Output.Bucket,
 	}); err != nil {
 		return err
 	}
 
 	ref := &transfer.Ref{
-		Bucket: dsopts.Bucket,
-		Key:    dsopts.Key,
+		Bucket: dsopts.Output.Bucket,
+		Key:    dsopts.Output.Key,
 	}
 
 	_, err = trans.Upload(context.Background(), ref, mountPath)
