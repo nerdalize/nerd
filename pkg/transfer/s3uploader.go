@@ -144,7 +144,7 @@ func (trans *S3) Download(ctx context.Context, r *Ref, path string) (err error) 
 
 //Upload data at a local path to the remote storage and return a reference
 func (trans *S3) Upload(ctx context.Context, r *Ref, path string) (size int, err error) {
-	buf := bytes.NewBuffer(nil)
+	buf := bytes.NewBuffer(nil) //@TODO we cannot zip to memory as these files can be very large
 	zipw := zip.NewWriter(buf)
 	if err = func() error {
 		defer zipw.Close()

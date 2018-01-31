@@ -68,11 +68,12 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 	kube := svc.NewKube(deps)
 
 	//start with input volumes
+	//@TODO move this logic to a separate package and test is
 	vols := map[string]*svc.JobVolume{}
 	for _, input := range cmd.Inputs {
 		parts := strings.Split(input, ":")
 		if len(parts) != 2 {
-			return fmt.Errorf("invalid input specified, expected '<DIR_OR_DATASET>:<JOB_DIR>' format, got: %s", input)
+			return fmt.Errorf("invalid input specified, expected '<DIR|DATASET_ID>:<JOB_DIR>' format, got: %s", input)
 		}
 
 		if !filepath.IsAbs(parts[1]) {
@@ -152,7 +153,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 			var out *svc.GetDatasetOutput
 			out, err = kube.GetDataset(ctx, &svc.GetDatasetInput{Name: parts[1]})
 			if err != nil {
-				return errors.Wrapf(err, "failed to get dataset '%s' ", parts[1])
+				return errors.Wrapf(err, "failed to get dataset '%s' ", parts[1]) //@TODO do we want to hint the user that he might meant to specify a releative directory(?)
 			}
 
 			if out.Bucket == "" || out.Key == "" {

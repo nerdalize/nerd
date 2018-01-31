@@ -30,6 +30,7 @@ func DatasetUploadFactory(ui cli.Ui) cli.CommandFactory {
 	}
 }
 
+//@TODO needs a better place instead of the cmd package
 func uploadToDataset(ctx context.Context, trans transfer.Transfer, bucket string, kube *svc.Kube, path, datasetName string) (ref *transfer.Ref, name string, err error) {
 	ref = &transfer.Ref{
 		Bucket: bucket,
