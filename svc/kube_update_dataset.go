@@ -11,10 +11,10 @@ import (
 
 // UpdateDatasetInput is the input for UpdateDataset
 type UpdateDatasetInput struct {
-	Name    string `validate:"printascii"`
-	NewName string `validate:"printascii"`
-	Input   string
-	Output  string
+	Name       string `validate:"printascii"`
+	NewName    string `validate:"printascii"`
+	InputFor   string
+	OutputFrom string
 }
 
 // UpdateDatasetOutput is the output for UpdateDataset
@@ -35,8 +35,8 @@ func (k *Kube) UpdateDataset(ctx context.Context, in *UpdateDatasetInput) (out *
 		dataset.SetName(in.NewName)
 	}
 	dataset.Spec = datasetsv1.DatasetSpec{
-		Input:  in.Input,
-		Output: in.Output,
+		InputFor:   in.InputFor,
+		OutputFrom: in.OutputFrom,
 	}
 
 	err = k.visor.UpdateResource(ctx, kubevisor.ResourceTypeDatasets, dataset, in.Name)
