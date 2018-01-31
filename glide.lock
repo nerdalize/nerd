@@ -1,10 +1,10 @@
-hash: 5fccf4e79733a8f7066a3ffb681dd4b1f5edd61bd3500b2f59d9f225954a303c
-updated: 2018-01-26T09:38:33.276652292+01:00
+hash: 5b594e52eb212b7f509d879bc7d74dfd21c2e405f72e908fe81cad20b252807d
+updated: 2018-01-29T14:00:30.022262192+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
-  version: d7ca0344c929a6e28bf7e1dd17ea32f800634374
+  version: 1b176c5c6b57adb03bb982c21930e708ebca5a77
   subpackages:
   - aws
   - aws/awserr
@@ -88,6 +88,10 @@ imports:
   - ptypes/timestamp
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
+- name: github.com/google/go-github
+  version: e48060a28fac52d0f1cb758bc8b87c07bac4a87d
+  subpackages:
+  - github
 - name: github.com/google/go-querystring
   version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
   subpackages:
@@ -169,7 +173,7 @@ imports:
 - name: github.com/spf13/pflag
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - name: golang.org/x/crypto
-  version: 0efb9460aaf800c6376acf625be2853bceac2e06
+  version: 1875d0a70c90e57f11972aefd42276df65e895b9
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
