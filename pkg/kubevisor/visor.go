@@ -240,6 +240,46 @@ func (k *Visor) CreateResource(ctx context.Context, t ResourceType, v ManagedNam
 	return nil
 }
 
+//UpdateResource will use the kube RESTClient to update a resource while using the context, adding the
+//Nerd prefix and handling errors specific to our domain.
+func (k *Visor) UpdateResource(ctx context.Context, t ResourceType, v ManagedNames, name string) (err error) {
+	vv, ok := v.(runtime.Object)
+	if !ok {
+		return errors.Errorf("provided value was not castable to runtime.Object")
+	}
+
+	var c rest.Interface
+	switch t {
+	case ResourceTypeJobs:
+		c = k.api.BatchV1().RESTClient()
+	case ResourceTypePods:
+		c = k.api.CoreV1().RESTClient()
+	case ResourceTypeDatasets:
+		c = k.crd.NerdalizeV1().RESTClient()
+	default:
+		return errors.Errorf("unknown Kubernetes resource type provided for update: '%s'", t)
+	}
+
+	name = k.applyPrefix(name)
+	v.SetName(name)
+
+	k.logs.Debugf("updating %s '%s' in namespace '%s': %s", t, v.GetName(), k.ns, ctx)
+	err = c.Put().
+		Namespace(k.ns).
+		Resource(string(t)).
+		Body(vv).
+		Name(name).
+		Context(ctx).
+		Do().
+		Into(vv)
+	if err != nil {
+		return k.tagError(err)
+	}
+
+	v.SetName(k.removePrefix(v.GetName())) //normalize back to unprefixed resource name
+	return nil
+}
+
 //ListResources will use the RESTClient to list resources while using the context and transparently
 //filter resources managed by the CLI
 func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranformer, lselector []string) (err error) {

@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+dev_profile="nerd-cli-dev"
+
 function print_help {
 	printf "Available Commands:\n";
 	awk -v sq="'" '/^function run_([a-zA-Z0-9-]*)\s*/ {print "-e " sq NR "p" sq " -e " sq NR-1 "p" sq }' make.sh \
@@ -24,7 +26,6 @@ function run_dev { #setup dev environment
 	command -v kubectl >/dev/null 2>&1 || { echo "executable 'kubectl' (kubernetes cli https://kubernetes.io/docs/tasks/tools/install-kubectl/) must be installed" >&2; exit 1; }
 	command -v glide >/dev/null 2>&1 || { echo "executable glide (https://github.com/Masterminds/glide) must be installed" >&2; exit 1; }
 
-	dev_profile="nerd-cli-dev"
 	kube_version="v1.8.0"
 	if minikube status --profile=$dev_profile | grep Running; then
 	    echo "--> minikube vm (profile: $dev_profile) is already running (check: $kube_version), skipping restart"
@@ -61,6 +62,15 @@ function run_docs { #run godoc
 
 function run_test { #unit test project
 	command -v go >/dev/null 2>&1 || { echo "executable 'go' (the language sdk) must be installed" >&2; exit 1; }
+
+	echo "--> building (new) flex volume"
+	GOOS=linux go build -o $GOPATH/bin/nerd-flex-volume pkg/transfer/flex/main.go
+
+	echo "--> transfer flex volume"
+	scp -i ~/.minikube/machines/$dev_profile/id_rsa $GOPATH/bin/nerd-flex-volume docker@$(minikube ip --profile=$dev_profile):/home/docker/nerd-flex-volume
+	ssh -i ~/.minikube/machines/$dev_profile/id_rsa docker@$(minikube ip --profile=$dev_profile) sudo mkdir -p /usr/libexec/kubernetes/kubelet-plugins/volume/exec/nerdalize.com~dataset
+	ssh -i ~/.minikube/machines/$dev_profile/id_rsa docker@$(minikube ip --profile=$dev_profile) sudo cp /home/docker/nerd-flex-volume /usr/libexec/kubernetes/kubelet-plugins/volume/exec/nerdalize.com~dataset/dataset
+	minikube ssh /usr/libexec/kubernetes/kubelet-plugins/volume/exec/nerdalize.com~dataset/dataset
 
 	echo "--> running service tests"
 	go test -cover -v ./svc/...

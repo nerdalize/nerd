@@ -2,11 +2,10 @@ package cmd
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/pkg/transfer"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
 )
@@ -19,8 +18,7 @@ const (
 //DatasetDownload command
 type DatasetDownload struct {
 	KubeOpts
-	JobOutput string `long:"job-output" description:"output of the precised job"`
-	JobInput  string `long:"job-input" description:"input of the precised job"`
+	TransferOpts
 
 	*command
 }
@@ -40,42 +38,42 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 		return errShowUsage(MessageNotEnoughArguments)
 	}
 
-	outputDir := args[1]
-	// Folder create and check
-	fi, err := os.Stat(outputDir)
-	if err != nil && os.IsNotExist(err) {
-		err = os.MkdirAll(outputDir, OutputDirPermissions)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("The provided path '%s' does not exist and could not be created.", outputDir))
-		}
-		fi, err = os.Stat(outputDir)
-	}
-	if err != nil {
-		return errors.Wrap(err, "The folder could not be created")
-	} else if !fi.IsDir() {
-		return errors.Errorf("The provided path '%s' is not a directory", outputDir)
-	}
-
-	kopts := cmd.KubeOpts
-	deps, err := NewDeps(cmd.Logger(), kopts)
+	deps, err := NewDeps(cmd.Logger(), cmd.KubeOpts)
 	if err != nil {
 		return renderConfigError(err, "failed to configure")
 	}
+
+	trans, err := cmd.TransferOpts.Transfer()
+	if err != nil {
+		return errors.Wrap(err, "failed configure transfer")
+	}
+
+	//get the dataset by name
 
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
 	defer cancel()
 
-	in := &svc.DownloadDatasetInput{
-		JobInput:  cmd.JobInput,
-		JobOutput: cmd.JobOutput,
-		Name:      args[0],
-		Dest:      outputDir,
+	in := &svc.GetDatasetInput{
+		Name: args[0],
 	}
+
 	kube := svc.NewKube(deps)
-	out, err := kube.DownloadDataset(ctx, in)
+	out, err := kube.GetDataset(ctx, in)
 	if err != nil {
 		return renderServiceError(err, "failed to download dataset")
+	}
+
+	//Use dataset spec to downloa
+
+	ref := &transfer.Ref{
+		Bucket: out.Bucket,
+		Key:    out.Key,
+	}
+
+	err = trans.Download(ctx, ref, args[1])
+	if err != nil {
+		return errors.Wrap(err, "failed to download")
 	}
 
 	cmd.out.Infof("Downloaded dataset: '%s'", out.Name)
@@ -93,5 +91,5 @@ func (cmd *DatasetDownload) Synopsis() string {
 
 // Usage shows usage
 func (cmd *DatasetDownload) Usage() string {
-	return "nerd dataset download <DATASET-NAME> [--job-output=JOB-NAME] [--job-input=JOB-NAME] ~/my-projects/my-output-1"
+	return "nerd dataset download <DATASET-NAME> <DOWNLOAD-PATH>"
 }

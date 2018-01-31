@@ -13,13 +13,13 @@ import (
 	"github.com/nerdalize/nerd/svc"
 )
 
-func TestUploadDataset(t *testing.T) {
+func TestCreateDataset(t *testing.T) {
 	for _, c := range []struct {
 		Name     string
 		Timeout  time.Duration
-		Input    *svc.UploadDatasetInput
-		Output   *svc.UploadDatasetOutput
-		IsOutput func(tb testing.TB, out *svc.UploadDatasetOutput)
+		Input    *svc.CreateDatasetInput
+		Output   *svc.CreateDatasetOutput
+		IsOutput func(tb testing.TB, out *svc.CreateDatasetOutput)
 		IsErr    func(error) bool
 	}{
 		{
@@ -27,25 +27,25 @@ func TestUploadDataset(t *testing.T) {
 			Timeout: time.Second * 5,
 			Input:   nil,
 			IsErr:   svc.IsValidationErr,
-			IsOutput: func(t testing.TB, out *svc.UploadDatasetOutput) {
+			IsOutput: func(t testing.TB, out *svc.CreateDatasetOutput) {
 				assert(t, out == nil, "output should be nil")
 			},
 		},
 		{
 			Name:    "when input is provided that is invalid it should return a validation error",
 			Timeout: time.Second * 5,
-			Input:   &svc.UploadDatasetInput{},
+			Input:   &svc.CreateDatasetInput{},
 			IsErr:   svc.IsValidationErr,
-			IsOutput: func(t testing.TB, out *svc.UploadDatasetOutput) {
+			IsOutput: func(t testing.TB, out *svc.CreateDatasetOutput) {
 				assert(t, out == nil, "output should be nil")
 			},
 		},
 		{
 			Name:    "when a dataset is uploaded with just an input dir it should generate a name and return it",
 			Timeout: time.Second * 5,
-			Input:   &svc.UploadDatasetInput{Dir: "/tmp"},
+			Input:   &svc.CreateDatasetInput{Bucket: "bogus", Key: "my-key"},
 			IsErr:   isNilErr,
-			IsOutput: func(t testing.TB, out *svc.UploadDatasetOutput) {
+			IsOutput: func(t testing.TB, out *svc.CreateDatasetOutput) {
 				assert(t, out != nil, "output should not be nil")
 				assert(t, regexp.MustCompile(`^d-.+$`).MatchString(out.Name), "name should have a prefix but not be empty after the prefix")
 			},
@@ -53,7 +53,7 @@ func TestUploadDataset(t *testing.T) {
 		{
 			Name:    "when a dataset is uploaded with an invalid name it should return a invalid name error",
 			Timeout: time.Second * 5,
-			Input:   &svc.UploadDatasetInput{Name: "my-name-", Dir: "/tmp"},
+			Input:   &svc.CreateDatasetInput{Name: "my-name-", Bucket: "bogus", Key: "my-key"},
 			IsErr:   kubevisor.IsInvalidNameErr,
 		},
 	} {
@@ -66,7 +66,7 @@ func TestUploadDataset(t *testing.T) {
 			defer cancel()
 
 			kube := svc.NewKube(di)
-			out, err := kube.UploadDataset(ctx, c.Input)
+			out, err := kube.CreateDataset(ctx, c.Input)
 			if c.IsErr != nil {
 				assert(t, c.IsErr(err), fmt.Sprintf("unexpected '%#v' to match: %#v", err, runtime.FuncForPC(reflect.ValueOf(c.IsErr).Pointer()).Name()))
 			}
@@ -78,7 +78,7 @@ func TestUploadDataset(t *testing.T) {
 	}
 }
 
-func TestUploadDatasetWithNameThatAlreadyExists(t *testing.T) {
+func TestCreateDatasetWithNameThatAlreadyExists(t *testing.T) {
 	di, clean := testDI(t)
 	defer clean()
 
@@ -87,9 +87,9 @@ func TestUploadDatasetWithNameThatAlreadyExists(t *testing.T) {
 	defer cancel()
 
 	kube := svc.NewKube(di)
-	out, err := kube.UploadDataset(ctx, &svc.UploadDatasetInput{Name: "my-dataset", Dir: "/tmp"})
+	out, err := kube.CreateDataset(ctx, &svc.CreateDatasetInput{Name: "my-dataset", Bucket: "bogus", Key: "my-key"})
 	ok(t, err)
 
-	_, err = kube.UploadDataset(ctx, &svc.UploadDatasetInput{Name: out.Name, Dir: "/tmp"})
+	_, err = kube.CreateDataset(ctx, &svc.CreateDatasetInput{Name: out.Name, Bucket: "bogus", Key: "my-key"})
 	assert(t, kubevisor.IsAlreadyExistsErr(err), "expected error to be already exists")
 }

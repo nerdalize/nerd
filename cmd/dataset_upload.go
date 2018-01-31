@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"context"
-	"os"
 
 	"github.com/jessevdk/go-flags"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/pkg/transfer"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
 )
@@ -14,6 +15,7 @@ import (
 //DatasetUpload command
 type DatasetUpload struct {
 	KubeOpts
+	TransferOpts
 	Name string `long:"name" short:"n" description:"assign a name to the dataset"`
 
 	*command
@@ -28,43 +30,65 @@ func DatasetUploadFactory(ui cli.Ui) cli.CommandFactory {
 	}
 }
 
+//@TODO needs a better place instead of the cmd package
+func uploadToDataset(ctx context.Context, trans transfer.Transfer, bucket string, kube *svc.Kube, path, datasetName string) (ref *transfer.Ref, name string, err error) {
+	ref = &transfer.Ref{
+		Bucket: bucket,
+		Key:    uuid.NewV4().String() + ".zip", //@TODO move this to a library
+	}
+
+	var n int
+	if path != "" { //path is optional
+		n, err = trans.Upload(ctx, ref, path)
+		if err != nil {
+			return nil, "", errors.Wrap(err, "failed to perform upload")
+		}
+	}
+
+	in := &svc.CreateDatasetInput{
+		Name:   datasetName,
+		Bucket: ref.Bucket,
+		Key:    ref.Key,
+		Size:   uint64(n),
+	}
+
+	out, err := kube.CreateDataset(ctx, in)
+	if err != nil {
+		return nil, "", renderServiceError(err, "failed to upload dataset")
+	}
+
+	return ref, out.Name, nil
+}
+
 //Execute runs the command
 func (cmd *DatasetUpload) Execute(args []string) (err error) {
 	if len(args) < 1 {
 		return errShowUsage(MessageNotEnoughArguments)
 	}
 
-	dataPath := args[0]
-	fi, err := os.Stat(dataPath)
-	if err != nil {
-		return errors.Errorf("argument '%v' is not a valid directory", dataPath)
-	} else if !fi.IsDir() {
-		return errors.Errorf("provided path '%s' is not a directory", dataPath)
-	}
-
-	kopts := cmd.KubeOpts
-	deps, err := NewDeps(cmd.Logger(), kopts)
+	deps, err := NewDeps(cmd.Logger(), cmd.KubeOpts)
 	if err != nil {
 		return renderConfigError(err, "failed to configure")
+	}
+
+	trans, err := cmd.TransferOpts.Transfer()
+	if err != nil {
+		return errors.Wrap(err, "failed configure transfer")
 	}
 
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
 	defer cancel()
 
-	in := &svc.UploadDatasetInput{
-		Name: cmd.Name,
-		Dir:  args[0],
-	}
-
 	kube := svc.NewKube(deps)
-	out, err := kube.UploadDataset(ctx, in)
+
+	_, name, err := uploadToDataset(ctx, trans, cmd.AWSS3Bucket, kube, args[0], cmd.Name)
 	if err != nil {
-		return renderServiceError(err, "failed to upload dataset")
+		return err
 	}
 
-	cmd.out.Infof("Upload dataset: '%s'", out.Name)
-	cmd.out.Infof("To see available datasets, use: 'nerd dataset list'")
+	cmd.out.Infof("Uploaded dataset: '%s'", name)
+	cmd.out.Infof("To run a job with a dataset, use: 'nerd job run'")
 	return nil
 }
 

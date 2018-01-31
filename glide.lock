@@ -1,5 +1,5 @@
-hash: 5b594e52eb212b7f509d879bc7d74dfd21c2e405f72e908fe81cad20b252807d
-updated: 2018-01-29T14:00:30.022262192+01:00
+hash: 5fccf4e79733a8f7066a3ffb681dd4b1f5edd61bd3500b2f59d9f225954a303c
+updated: 2018-01-29T15:00:28.131893+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
@@ -30,6 +30,8 @@ imports:
   - private/protocol/restxml
   - private/protocol/xml/xmlutil
   - service/s3
+  - service/s3/s3iface
+  - service/s3/s3manager
   - service/sns
   - service/sqs
   - service/sts
@@ -153,7 +155,7 @@ imports:
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/posener/complete
-  version: cdc49b71388c2ab059f57997ef2575c9e8b4f146
+  version: 57878c9c0341001dd50e6ab0052c61cf9a79ad7f
   subpackages:
   - cmd
   - cmd/install
@@ -173,7 +175,7 @@ imports:
 - name: github.com/spf13/pflag
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - name: golang.org/x/crypto
-  version: 1875d0a70c90e57f11972aefd42276df65e895b9
+  version: 6bd909f163c83732e0b5e22a27154b1a112c3ff9
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
@@ -358,7 +360,7 @@ imports:
   - util/homedir
   - util/integer
 - name: k8s.io/code-generator
-  version: 64ca0808efd56c2418939848947c06b8d495144d
+  version: 3c1fe2637f4efce271f1e6f50e039b2a0467c60c
 - name: k8s.io/kube-openapi
   version: 868f2f29720b192240e18284659231b440f9cda5
   subpackages:

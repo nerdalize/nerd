@@ -2,8 +2,10 @@ package svc
 
 import (
 	"context"
+	"encoding/hex"
 
 	"github.com/nerdalize/nerd/pkg/kubevisor"
+	"github.com/nerdalize/nerd/pkg/transfer"
 
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/api/core/v1"
@@ -22,6 +24,25 @@ type RunJobInput struct {
 	Env          map[string]string
 	BackoffLimit *int32
 	Args         []string
+	Volumes      []JobVolume
+}
+
+//JobVolumeType determines if its content will be uploaded or downloaded
+type JobVolumeType string
+
+const (
+	//JobVolumeTypeInput determines the volume to be input
+	JobVolumeTypeInput = JobVolumeType("input")
+
+	//JobVolumeTypeOutput determines the volume to output
+	JobVolumeTypeOutput = JobVolumeType("output")
+)
+
+//JobVolume can be used in a job
+type JobVolume struct {
+	MountPath string
+	Input     *transfer.Ref
+	Output    *transfer.Ref
 }
 
 //RunJobOutput is the output to RunJob
@@ -74,6 +95,34 @@ func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, 
 				},
 			},
 		},
+	}
+
+	for _, vol := range in.Volumes {
+		opts := map[string]string{}
+		if vol.Input != nil {
+			opts["input/s3Key"] = vol.Input.Key
+			opts["input/s3Bucket"] = vol.Input.Bucket
+		}
+
+		if vol.Output != nil {
+			opts["output/s3Key"] = vol.Output.Key
+			opts["output/s3Bucket"] = vol.Output.Bucket
+		}
+
+		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, v1.Volume{
+			Name: hex.EncodeToString([]byte(vol.MountPath)),
+			VolumeSource: v1.VolumeSource{
+				FlexVolume: &v1.FlexVolumeSource{
+					Driver:  "nerdalize.com/dataset",
+					Options: opts,
+				},
+			},
+		})
+
+		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts, v1.VolumeMount{
+			Name:      hex.EncodeToString([]byte(vol.MountPath)),
+			MountPath: vol.MountPath,
+		})
 	}
 
 	err = k.visor.CreateResource(ctx, kubevisor.ResourceTypeJobs, job, in.Name)

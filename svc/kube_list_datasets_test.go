@@ -15,7 +15,7 @@ func TestListDatasets(t *testing.T) {
 	for _, c := range []struct {
 		Name     string
 		Timeout  time.Duration
-		Datasets []*svc.UploadDatasetInput
+		Datasets []*svc.CreateDatasetInput
 		Input    *svc.ListDatasetsInput
 		IsOutput func(tb testing.TB, out *svc.ListDatasetsOutput) bool
 		IsErr    func(error) bool
@@ -33,7 +33,7 @@ func TestListDatasets(t *testing.T) {
 		{
 			Name:     "when one correct dataset was uploaded it should be listed",
 			Timeout:  time.Minute,
-			Datasets: []*svc.UploadDatasetInput{{Name: "my-dataset", Dir: "/tmp"}},
+			Datasets: []*svc.CreateDatasetInput{{Name: "my-dataset", Bucket: "bogus", Key: "my-key"}},
 			Input:    &svc.ListDatasetsInput{},
 			IsErr:    isNilErr,
 			IsOutput: func(t testing.TB, out *svc.ListDatasetsOutput) bool {
@@ -59,7 +59,7 @@ func TestListDatasets(t *testing.T) {
 
 			kube := svc.NewKube(di)
 			for _, dataset := range c.Datasets {
-				_, err := kube.UploadDataset(ctx, dataset)
+				_, err := kube.CreateDataset(ctx, dataset)
 				ok(t, err)
 			}
 
