@@ -21,6 +21,8 @@ type DatasetSpec struct {
 	Key    string `json:"key"`
 	Bucket string `json:"bucket"`
 	Size   uint64 `json:"size"`
+	Input  string `json:"input"`
+	Output string `json:"output"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
