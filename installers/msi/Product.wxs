@@ -54,8 +54,26 @@
 		     <ComponentRef Id="CMP_NerdExe" />
 		</Feature>
 
+    <!-- Make Sure Environment Variables are effective immediately -->
     <CustomActionRef Id="WixBroadcastSettingChange" />
     <CustomActionRef Id="WixBroadcastEnvironmentChange" />
+
+    <!-- Add an UI and a checkbox that allows the user to launch Nerd -->
+    <UI>
+        <UIRef Id="WixUI_Minimal" />
+        <Publish Dialog="ExitDialog"
+          Control="Finish"
+          Event="DoAction"
+          Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
+    </UI>
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1"/>
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Nerd" />
+    <CustomAction Id="LaunchApplication"
+         Execute="immediate"
+         Directory="NerdDir"
+         ExeCommand='[SystemFolder]cmd.exe /k "nerd.exe"'
+         Return="asyncNoWait" />
+
 
 		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed."/>
     </Product>

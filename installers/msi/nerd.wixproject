@@ -21,7 +21,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <WixExtension Include="WixUtilExtension.dll"/> 
+    <WixExtension Include="WixUtilExtension.dll"/>
+    <WixExtension Include="WixUIExtension.dll"/>
     <Compile Include="Product.wxs" />
   </ItemGroup>
 </Project>
