@@ -32,9 +32,14 @@ func DatasetUploadFactory(ui cli.Ui) cli.CommandFactory {
 
 //@TODO needs a better place instead of the cmd package
 func uploadToDataset(ctx context.Context, trans transfer.Transfer, bucket string, kube *svc.Kube, path, datasetName string) (ref *transfer.Ref, name string, err error) {
+	uid, err := uuid.NewV4()
+	if err != nil {
+		return nil, "", err
+	}
+
 	ref = &transfer.Ref{
 		Bucket: bucket,
-		Key:    uuid.NewV4().String() + ".zip", //@TODO move this to a library
+		Key:    uid.String() + ".zip", //@TODO move this to a library
 	}
 
 	var n int
