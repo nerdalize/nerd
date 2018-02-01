@@ -31,12 +31,13 @@ func (k *Kube) UpdateDataset(ctx context.Context, in *UpdateDatasetInput) (out *
 		return nil, err
 	}
 
-	switch {
-	case in.NewName != "":
+	if in.NewName != "" {
 		dataset.SetName(in.NewName)
-	case in.InputFor != "":
+	}
+	if in.InputFor != "" {
 		dataset.Spec.InputFor = append(dataset.Spec.InputFor, in.InputFor)
-	case in.OutputFrom != "":
+	}
+	if in.OutputFrom != "" {
 		dataset.Spec.OutputFrom = append(dataset.Spec.OutputFrom, in.OutputFrom)
 	}
 
