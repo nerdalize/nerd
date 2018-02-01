@@ -78,15 +78,14 @@ func (o *OIDCPopulator) RemoveConfig(project string) error {
 
 // PopulateKubeConfig populates an api.Config object and set the current context to the provided project.
 func (o *OIDCPopulator) PopulateKubeConfig(project string) error {
-	cert, err := o.createCertificate(o.project.Services.Cluster.B64CaData, project, o.homedir)
-	if err != nil {
-		return err
-	}
-
 	cluster := api.NewCluster()
 	if o.project.Services.Cluster.B64CaData == "" {
 		cluster.InsecureSkipTLSVerify = true
 	} else {
+		cert, err := o.createCertificate(o.project.Services.Cluster.B64CaData, project, o.homedir)
+		if err != nil {
+			return err
+		}
 		cluster.CertificateAuthority = cert
 	}
 	cluster.Server = o.project.Services.Cluster.Address
