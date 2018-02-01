@@ -69,6 +69,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 
 	//start with input volumes
 	//@TODO move this logic to a separate package and test is
+	var inputDataset string
 	vols := map[string]*svc.JobVolume{}
 	for _, input := range cmd.Inputs {
 		parts := strings.Split(input, ":")
@@ -98,13 +99,12 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 			}
 
 			var ref *transfer.Ref
-			var name string
-			ref, name, err = uploadToDataset(ctx, trans, cmd.AWSS3Bucket, kube, parts[0], "")
+			ref, inputDataset, err = uploadToDataset(ctx, trans, cmd.AWSS3Bucket, kube, parts[0], "")
 			if err != nil {
 				return err
 			}
 
-			cmd.out.Infof("Uploaded input dataset: '%s'", name)
+			cmd.out.Infof("Uploaded input dataset: '%s'", inputDataset)
 			bucket = ref.Bucket
 			key = ref.Key
 		} else {
@@ -119,9 +119,9 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 			if out.Bucket == "" || out.Key == "" {
 				return errors.Errorf("the dataset '%s' cannot be used as input it has no key and/or bucket configured", parts[0])
 			}
-
 			bucket = out.Bucket
 			key = out.Key
+			inputDataset = out.Name
 		}
 
 		vols[parts[1]] = &svc.JobVolume{
@@ -133,6 +133,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		}
 	}
 
+	var outputDataset string
 	for _, output := range cmd.Outputs {
 		parts := strings.Split(output, ":")
 		if len(parts) < 1 || len(parts) > 2 {
@@ -164,6 +165,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 				Key:    out.Key,
 				Bucket: out.Bucket,
 			}
+			outputDataset = out.Name
 		} else {
 			var trans transfer.Transfer
 			trans, err = cmd.TransferOpts.Transfer()
@@ -172,13 +174,12 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 			}
 
 			var ref *transfer.Ref
-			var name string
-			ref, name, err = uploadToDataset(ctx, trans, cmd.AWSS3Bucket, kube, "", "")
+			ref, outputDataset, err = uploadToDataset(ctx, trans, cmd.AWSS3Bucket, kube, "", "")
 			if err != nil {
 				return err
 			}
 
-			cmd.out.Infof("Setup empty output dataset: '%s'", name)
+			cmd.out.Infof("Setup empty output dataset: '%s'", outputDataset)
 			vol.Output = &transfer.Ref{
 				Key:    ref.Key,
 				Bucket: ref.Bucket,
@@ -202,8 +203,23 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		return renderServiceError(err, "failed to run job")
 	}
 
+	// @TODO update input dataset with job identifier
+	// @TODO update output dataset with job identifier
+	err = updateDataset(ctx, inputDataset, outputDataset, out.Name, kube)
 	cmd.out.Infof("Submitted job: '%s'", out.Name)
 	cmd.out.Infof("To see whats happening, use: 'nerd job list'")
+	return nil
+}
+
+func updateDataset(ctx context.Context, inputDataset, outputDataset, job string, kube *svc.Kube) error {
+	_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: inputDataset, InputFor: job})
+	if err != nil {
+		return err
+	}
+	_, err = kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: outputDataset, OutputFrom: job})
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -12,8 +12,10 @@ import (
 
 //DatasetDetails tells us more about the dataset by looking at underlying resources
 type DatasetDetails struct {
-	CreatedAt time.Time
-	Size      uint64
+	CreatedAt  time.Time
+	Size       uint64
+	InputFor   []string
+	OutputFrom []string
 }
 
 //ListDatasetItem is a dataset listing item
@@ -50,8 +52,10 @@ func (k *Kube) ListDatasets(ctx context.Context, in *ListDatasetsInput) (out *Li
 		item := &ListDatasetItem{
 			Name: dataset.GetName(),
 			Details: DatasetDetails{
-				Size:      dataset.Spec.Size,
-				CreatedAt: dataset.CreationTimestamp.Local(),
+				Size:       dataset.Spec.Size,
+				InputFor:   dataset.Spec.InputFor,
+				OutputFrom: dataset.Spec.OutputFrom,
+				CreatedAt:  dataset.CreationTimestamp.Local(),
 			},
 		}
 

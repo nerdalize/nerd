@@ -34,10 +34,8 @@ func (k *Kube) UpdateDataset(ctx context.Context, in *UpdateDatasetInput) (out *
 	if in.NewName != "" {
 		dataset.SetName(in.NewName)
 	}
-	dataset.Spec = datasetsv1.DatasetSpec{
-		InputFor:   in.InputFor,
-		OutputFrom: in.OutputFrom,
-	}
+	dataset.Spec.InputFor = append(dataset.Spec.InputFor, in.InputFor)
+	dataset.Spec.OutputFrom = append(dataset.Spec.OutputFrom, in.OutputFrom)
 
 	err = k.visor.UpdateResource(ctx, kubevisor.ResourceTypeDatasets, dataset, in.Name)
 	if err != nil {
