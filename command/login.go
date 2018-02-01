@@ -97,14 +97,23 @@ func (cmd *Login) DoRun(args []string) error {
 	}
 
 	if len(list.Projects) == 0 {
-		cmd.ui.Info("Successful login. You can now select a project using 'nerd project set'")
+		cmd.ui.Info("Successful login. You can now list your projects using 'nerd project list'.")
 		return nil
 	}
-	projectSlug := list.Projects[0].Nk
-
-	err = setProject(cmd.opts.KubeConfig, cmd.opts.Config, list.Projects[0], cmd.outputter.Logger)
-	if err != nil {
-		return HandleError(err)
+	var projectSlug string
+	for _, project := range list.Projects {
+		projectSlug = project.Nk
+		err = setProject(cmd.opts.KubeConfig, cmd.opts.Config, project, cmd.outputter.Logger)
+		if err != nil {
+			cmd.ui.Info(fmt.Sprintf("Could not set project %s, trying with another one. Error: %v", projectSlug, err))
+			projectSlug = ""
+			continue
+		}
+		break
+	}
+	if projectSlug == "" {
+		cmd.ui.Info("Successful login. You can now list your projects using 'nerd project list'.")
+		return nil
 	}
 
 	err = cmd.session.WriteProject(projectSlug, conf.DefaultAWSRegion)
@@ -112,7 +121,7 @@ func (cmd *Login) DoRun(args []string) error {
 		return HandleError(err)
 	}
 
-	cmd.ui.Info("Successful login. You can now select a project using 'nerd project set'")
+	cmd.ui.Info(fmt.Sprintf("Successful login. Default project set: %s.", projectSlug))
 	return nil
 }
 
