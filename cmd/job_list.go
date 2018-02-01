@@ -52,12 +52,14 @@ func (cmd *JobList) Execute(args []string) (err error) {
 	sort.Slice(out.Items, func(i int, j int) bool {
 		return out.Items[i].CreatedAt.After(out.Items[j].CreatedAt)
 	})
-	hdr := []string{"JOB", "IMAGE", "CREATED AT", "PHASE", "DETAILS"}
+	hdr := []string{"JOB", "IMAGE", "INPUT", "OUTPUT", "CREATED AT", "PHASE", "DETAILS"}
 	rows := [][]string{}
 	for _, item := range out.Items {
 		rows = append(rows, []string{
 			item.Name,
 			item.Image,
+			item.Input,
+			item.Output,
 			humanize.Time(item.CreatedAt),
 			renderItemPhase(item),
 			strings.Join(renderItemDetails(item), ","),

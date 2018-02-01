@@ -203,8 +203,6 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		return renderServiceError(err, "failed to run job")
 	}
 
-	// @TODO update input dataset with job identifier
-	// @TODO update output dataset with job identifier
 	err = updateDataset(ctx, inputDataset, outputDataset, out.Name, kube)
 	cmd.out.Infof("Submitted job: '%s'", out.Name)
 	cmd.out.Infof("To see whats happening, use: 'nerd job list'")

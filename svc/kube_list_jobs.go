@@ -51,6 +51,8 @@ type JobDetails struct {
 type ListJobItem struct {
 	Name        string
 	Image       string
+	Input       string
+	Output      string
 	CreatedAt   time.Time
 	DeletedAt   time.Time
 	ActiveAt    time.Time
@@ -74,12 +76,18 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 		return nil, err
 	}
 
-	//Step 0: Get all the jobs under nerd-app=cli
+	//Step 0: Get all the jobs and datasets under nerd-app=cli
 	jobs := &jobs{}
 	err = k.visor.ListResources(ctx, kubevisor.ResourceTypeJobs, jobs, nil)
 	if err != nil {
 		return nil, err
 	}
+	datasets := &datasets{}
+	err = k.visor.ListResources(ctx, kubevisor.ResourceTypeDatasets, datasets, nil)
+	if err != nil {
+		return nil, err
+	}
+	inputs, outputs := mapDatasets(datasets)
 
 	//Step 1: Analyse job structure and formulate our output items
 	out = &ListJobsOutput{}
@@ -107,6 +115,16 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 
 		if job.Status.StartTime != nil {
 			item.ActiveAt = job.Status.StartTime.Local()
+		}
+
+		d, ok := inputs[job.Name]
+		if ok {
+			item.Input = d
+		}
+
+		d, ok = outputs[job.Name]
+		if ok {
+			item.Output = d
 		}
 
 		for _, cond := range job.Status.Conditions {
@@ -209,6 +227,21 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 	}
 
 	return out, nil
+}
+
+func mapDatasets(datasets *datasets) (map[string]string, map[string]string) {
+	inputs := map[string]string{}
+	outputs := map[string]string{}
+
+	for _, d := range datasets.Items {
+		for _, inputForJob := range d.Spec.InputFor {
+			inputs[inputForJob] = d.Name
+		}
+		for _, outputOfJob := range d.Spec.OutputFrom {
+			outputs[outputOfJob] = d.Name
+		}
+	}
+	return inputs, outputs
 }
 
 //jobs implements the list transformer interface to allow the kubevisor the manage names for us
