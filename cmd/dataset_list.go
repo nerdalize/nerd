@@ -46,6 +46,11 @@ func (cmd *DatasetList) Execute(args []string) (err error) {
 		return renderServiceError(err, "failed to list datasets")
 	}
 
+	if len(out.Items) == 0 {
+		cmd.out.Infof("No resources found.")
+		return nil
+	}
+
 	sort.Slice(out.Items, func(i int, j int) bool {
 		return out.Items[i].Details.CreatedAt.After(out.Items[j].Details.CreatedAt)
 	})

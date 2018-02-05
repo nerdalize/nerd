@@ -47,6 +47,11 @@ func (cmd *JobList) Execute(args []string) (err error) {
 		return renderServiceError(err, "failed to list jobs")
 	}
 
+	if len(out.Items) == 0 {
+		cmd.out.Infof("No resources found.")
+		return nil
+	}
+
 	cmd.out.Infof("To see the logs of a job, use: `nerd job logs <JOB-NAME>`")
 
 	sort.Slice(out.Items, func(i int, j int) bool {
