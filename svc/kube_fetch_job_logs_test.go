@@ -23,6 +23,16 @@ func TestFetchJobLogs(t *testing.T) {
 		IsErr    func(error) bool
 	}{
 		{
+			Name:    "when a zero value input is provided it should return a validation error",
+			Timeout: time.Second * 5,
+			Jobs:    nil,
+			Input:   nil,
+			IsErr:   svc.IsValidationErr,
+			IsOutput: func(t testing.TB, out *svc.FetchJobLogsOutput) bool {
+				return true
+			},
+		},
+		{
 			Name:    "when job doesnt exist it should that there were no logs available",
 			Timeout: time.Second * 5,
 			Input:   &svc.FetchJobLogsInput{Name: "my-job"},

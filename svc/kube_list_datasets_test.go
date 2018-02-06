@@ -21,6 +21,16 @@ func TestListDatasets(t *testing.T) {
 		IsErr    func(error) bool
 	}{
 		{
+			Name:     "when a zero value input is provided it should return a validation error",
+			Timeout:  time.Second * 5,
+			Datasets: nil,
+			Input:    nil,
+			IsErr:    svc.IsValidationErr,
+			IsOutput: func(t testing.TB, out *svc.ListDatasetsOutput) bool {
+				return true
+			},
+		},
+		{
 			Name:    "when no datasets have been uploaded the output should be empty",
 			Timeout: time.Second * 5,
 			Input:   &svc.ListDatasetsInput{},
