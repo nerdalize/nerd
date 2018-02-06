@@ -64,7 +64,7 @@ function run_test { #unit test project
 	command -v go >/dev/null 2>&1 || { echo "executable 'go' (the language sdk) must be installed" >&2; exit 1; }
 
 	echo "--> building (new) flex volume"
-	GOOS=linux go build -o $GOPATH/bin/nerd-flex-volume pkg/transfer/flex/main.go
+	GOOS=linux go build -o $GOPATH/bin/nerd-flex-volume cmd/flex/main.go
 
 	echo "--> transfer flex volume"
 	scp -i ~/.minikube/machines/$dev_profile/id_rsa $GOPATH/bin/nerd-flex-volume docker@$(minikube ip --profile=$dev_profile):/home/docker/nerd-flex-volume

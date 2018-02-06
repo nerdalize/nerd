@@ -1,3 +1,4 @@
+//main holds the flex volume executable, compiled separately
 package main
 
 import (
