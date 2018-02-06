@@ -66,10 +66,13 @@ function run_test { #unit test project
 	echo "--> building (new) flex volume"
 	GOOS=linux go build -o $GOPATH/bin/nerd-flex-volume pkg/transfer/flex/main.go
 
+	# Disable checking of host key in minikube because it changes every time
+	ssh_options="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+
 	echo "--> transfer flex volume"
-	scp -i ~/.minikube/machines/$dev_profile/id_rsa $GOPATH/bin/nerd-flex-volume docker@$(minikube ip --profile=$dev_profile):/home/docker/nerd-flex-volume
-	ssh -i ~/.minikube/machines/$dev_profile/id_rsa docker@$(minikube ip --profile=$dev_profile) sudo mkdir -p /usr/libexec/kubernetes/kubelet-plugins/volume/exec/nerdalize.com~dataset
-	ssh -i ~/.minikube/machines/$dev_profile/id_rsa docker@$(minikube ip --profile=$dev_profile) sudo cp /home/docker/nerd-flex-volume /usr/libexec/kubernetes/kubelet-plugins/volume/exec/nerdalize.com~dataset/dataset
+	scp $ssh_options -i ~/.minikube/machines/$dev_profile/id_rsa $GOPATH/bin/nerd-flex-volume docker@$(minikube ip --profile=$dev_profile):/home/docker/nerd-flex-volume
+	ssh $ssh_options -i ~/.minikube/machines/$dev_profile/id_rsa docker@$(minikube ip --profile=$dev_profile) sudo mkdir -p /usr/libexec/kubernetes/kubelet-plugins/volume/exec/nerdalize.com~dataset
+	ssh $ssh_options -i ~/.minikube/machines/$dev_profile/id_rsa docker@$(minikube ip --profile=$dev_profile) sudo cp /home/docker/nerd-flex-volume /usr/libexec/kubernetes/kubelet-plugins/volume/exec/nerdalize.com~dataset/dataset
 	minikube ssh /usr/libexec/kubernetes/kubelet-plugins/volume/exec/nerdalize.com~dataset/dataset
 
 	echo "--> running service tests"
