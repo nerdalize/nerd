@@ -134,6 +134,11 @@ func (volp *DatasetVolumes) readDatasetOpts(mountPath string) (*datasetOpts, err
 	return dsopts, nil
 }
 
+func (volp *DatasetVolumes) deleteDatasetOpts(mountPath string) error {
+	path := filepath.Join(mountPath, "..", filepath.Base(mountPath)+".json")
+	return os.Remove(path)
+}
+
 //Init the flex volume
 func (volp *DatasetVolumes) Init() (Capabilities, error) {
 	return Capabilities{Attach: false}, nil
@@ -182,6 +187,10 @@ func (volp *DatasetVolumes) Unmount(mountPath string) (err error) {
 	defer func() {
 		if err == nil { //if there was no error during upload remove all data
 			err = os.RemoveAll(mountPath)
+			
+			if err == nil {
+				err = volp.deleteDatasetOpts(mountPath)
+			}
 		}
 	}()
 
@@ -229,10 +238,14 @@ func main() {
 	switch os.Args[1] {
 	case OperationInit:
 		output.Status = StatusSuccess
+		output.Message = "Initialization successful"
+
 		output.Capabilities, err = volp.Init()
 
 	case OperationMount:
 		output.Status = StatusSuccess
+		output.Message = "Mount successful"
+
 		if len(os.Args) < 4 {
 			err = fmt.Errorf("expected at least 4 arguments for mount, got: %#v", os.Args)
 		} else {
@@ -245,6 +258,8 @@ func main() {
 
 	case OperationUnmount:
 		output.Status = StatusSuccess
+		output.Message = "Unmount successful"
+
 		if len(os.Args) < 3 {
 			err = fmt.Errorf("expected at least 3 arguments for unmount, got: %#v", os.Args)
 		} else {
