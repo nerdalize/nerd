@@ -25,6 +25,16 @@ func TestListJobs(t *testing.T) {
 		IsErr    func(error) bool
 	}{
 		{
+			Name:    "when a zero value input is provided it should return a validation error",
+			Timeout: time.Second * 5,
+			Jobs:    nil,
+			Input:   nil,
+			IsErr:   svc.IsValidationErr,
+			IsOutput: func(t testing.TB, out *svc.ListJobsOutput) bool {
+				return true
+			},
+		},
+		{
 			Name:    "when no jobs have run the output should be empty",
 			Timeout: time.Second * 5,
 			Input:   &svc.ListJobsInput{},

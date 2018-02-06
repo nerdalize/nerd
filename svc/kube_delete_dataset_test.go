@@ -20,7 +20,7 @@ func TestDeleteDataset(t *testing.T) {
 		Input    *svc.DeleteDatasetInput
 		Output   *svc.DeleteDatasetOutput
 		Listing  *svc.ListDatasetsOutput
-		IsOutput func(tb testing.TB, out *svc.DeleteDatasetOutput, list *svc.ListDatasetsOutput)
+		IsOutput func(tb testing.TB, out *svc.DeleteDatasetOutput, l *svc.ListDatasetsOutput)
 		IsErr    func(error) bool
 	}{
 		{

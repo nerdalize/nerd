@@ -22,6 +22,16 @@ func TestGetDataset(t *testing.T) {
 		IsErr    func(error) bool
 	}{
 		{
+			Name:     "when a zero value input is provided it should return a validation error",
+			Timeout:  time.Second * 5,
+			Datasets: nil,
+			Input:    nil,
+			IsErr:    svc.IsValidationErr,
+			IsOutput: func(t testing.TB, out *svc.GetDatasetOutput) bool {
+				return true
+			},
+		},
+		{
 			Name:    "when dataset doesnt exist it should return an error",
 			Timeout: time.Second * 5,
 			Input:   &svc.GetDatasetInput{Name: "my-dataset"},

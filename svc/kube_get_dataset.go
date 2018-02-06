@@ -19,8 +19,8 @@ type GetDatasetOutput struct {
 	Bucket     string
 	Key        string
 	Size       uint64
-	InputFor   string
-	OutputFrom string
+	InputFor   []string
+	OutputFrom []string
 }
 
 //GetDataset will create a dataset on kubernetes
