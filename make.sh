@@ -118,6 +118,12 @@ function run_publish { #publish cross compiled binaries
 }
 
 function run_docker { #build docker container
+	command -v docker >/dev/null 2>&1 || { echo "executable 'docker' (container runtime) must be installed" >&2; exit 1; }
+
+	echo "--> building flex volume container"
+	docker build -f flex.Dockerfile -t nerdalize/nerd-flex-volume:$(cat VERSION) .
+
+	echo "--> building container for nerd"
 	docker build -t nerdalize/nerd .
 	docker tag nerdalize/nerd nerdalize/nerd:`cat VERSION`
 }
@@ -126,6 +132,7 @@ function run_dockerpush { #build and push docker container
 	run_docker
 	docker push nerdalize/nerd:latest
 	docker push nerdalize/nerd:`cat VERSION`
+	docker push nerdalize/nerd-flex-volume:$(cat VERSION)
 }
 
 case $1 in
