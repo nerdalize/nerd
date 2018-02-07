@@ -283,7 +283,6 @@ func (volp *DatasetVolumes) Mount(mountPath string, opts MountOptions) (err erro
 			Key:    dsopts.Input.Key,
 		}
 
-		//@TODO when this fails flex volume retry mechanism will never succeed because the directory is not empty
 		err = trans.Download(context.Background(), ref, basePath)
 		if err != nil {
 			return errors.Wrap(err, "failed to download data from S3")
