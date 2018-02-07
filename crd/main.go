@@ -21,8 +21,6 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	kubeinformers "k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	// Uncomment the following line to load the gcp plugin (only required to authenticate against GKE clusters).
 	// _ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -41,6 +39,7 @@ func main() {
 	flag.Parse()
 
 	// set up signals so we handle the first shutdown signal gracefully
+	glog.Info("Setting up signal handler")
 	stopCh := signals.SetupSignalHandler()
 
 	cfg, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
@@ -48,27 +47,18 @@ func main() {
 		glog.Fatalf("Error building kubeconfig: %s", err.Error())
 	}
 
-	kubeClient, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		glog.Fatalf("Error building kubernetes clientset: %s", err.Error())
-	}
-
 	datasetClient, err := clientset.NewForConfig(cfg)
 	if err != nil {
 		glog.Fatalf("Error building dataset clientset: %s", err.Error())
 	}
 
-	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
 	datasetInformerFactory := informers.NewSharedInformerFactory(datasetClient, time.Second*30)
+	eventHandler := new(S3AWS)
+	controller := NewController(datasetClient, datasetInformerFactory, eventHandler)
 
-	controller := NewController(kubeClient, datasetClient, kubeInformerFactory, datasetInformerFactory)
-
-	go kubeInformerFactory.Start(stopCh)
 	go datasetInformerFactory.Start(stopCh)
 
-	if err = controller.Run(2, stopCh); err != nil {
-		glog.Fatalf("Error running controller: %s", err.Error())
-	}
+	controller.Run(stopCh)
 }
 
 func init() {
