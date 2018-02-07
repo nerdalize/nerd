@@ -109,6 +109,7 @@ func (volp *DatasetVolumes) writeDatasetOpts(mountPath string, opts MountOptions
 	}
 
 	defer f.Close()
+
 	enc := json.NewEncoder(f)
 	err = enc.Encode(dsopts)
 	if err != nil {
@@ -143,20 +144,20 @@ func (volp *DatasetVolumes) deleteDatasetOpts(mountPath string) error {
 	return errors.Wrap(err, "failed to delete metadata file")
 }
 
-func (volp *DatasetVolumes) createFSInFile(mountPath string, size int64) (*string, error) {
+func (volp *DatasetVolumes) createFSInFile(mountPath string, size int64) (string, error) {
 	volumePath := volp.getRelPath(mountPath, "volume")
 
 	//Create file with room to contain writable file system
 	f, err := os.Create(volumePath)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create file system file")
-		return nil, err
+		return volumePath, err
 	}
 
 	err = f.Truncate(size)
 	if err != nil {
 		err = errors.Wrap(err, "failed to allocate file system size")
-		return nil, err
+		return volumePath, err
 	}
 
 	//Build file system within
@@ -166,10 +167,10 @@ func (volp *DatasetVolumes) createFSInFile(mountPath string, size int64) (*strin
 	err = cmd.Run()
 	if err != nil {
 		err = errors.Wrap(errors.New(strings.TrimSpace(buf.String())), "failed to execute mkfs command")
-		return nil, err
+		return volumePath, err
 	}
 
-	return &volumePath, nil
+	return volumePath, nil
 }
 
 //@TODO: Parameters for this function need to be reconsidered, especially mountPath confusion
@@ -212,14 +213,44 @@ func (volp *DatasetVolumes) getRelPath(mountPath string, name string) string {
 	return filepath.Join(mountPath, "..", filepath.Base(mountPath)+"."+name)
 }
 
+//Deletes contents of a directory, but not the directory itself
+func (volp *DatasetVolumes) cleanDirectory(path string) error {
+	dir, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer dir.Close()
+
+	names, err := dir.Readdirnames(-1)
+	if err != nil {
+		return err
+	}
+
+	for _, name := range names {
+		err = os.RemoveAll(filepath.Join(path, name))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 //Init the flex volume
 func (volp *DatasetVolumes) Init() (Capabilities, error) {
 	return Capabilities{Attach: false}, nil
 }
 
 //Mount the flex voume, path: '/var/lib/kubelet/pods/c911e5f7-0392-11e8-8237-32f9813bbd5a/volumes/foo~cifs/input', opts: &main.MountOptions{FSType:"", PodName:"imagemagick", PodNamespace:"default", PodUID:"c911e5f7-0392-11e8-8237-32f9813bbd5a", PVOrVolumeName:"input", ReadWrite:"rw", ServiceAccountName:"default"}
-func (volp *DatasetVolumes) Mount(mountPath string, opts MountOptions) error {
+func (volp *DatasetVolumes) Mount(mountPath string, opts MountOptions) (err error) {
 	dsopts, err := volp.writeDatasetOpts(mountPath, opts)
+
+	defer func() {
+		if err != nil {
+			volp.deleteDatasetOpts(mountPath)
+		}
+	}()
+
 	if err != nil {
 		return errors.Wrap(err, "failed to write volume database")
 	}
@@ -227,6 +258,13 @@ func (volp *DatasetVolumes) Mount(mountPath string, opts MountOptions) error {
 	//Set up directory to hold base data
 	basePath := volp.getRelPath(mountPath, "base")
 	err = os.Mkdir(basePath, os.FileMode(0522))
+
+	defer func() {
+		if err != nil {
+			os.RemoveAll(basePath)
+		}
+	}()
+
 	if err != nil {
 		return errors.Wrap(err, "failed to create input data directory")
 	}
@@ -254,12 +292,29 @@ func (volp *DatasetVolumes) Mount(mountPath string, opts MountOptions) error {
 
 	//Create volume to contain pod writes (hardcoded as 100 MB right now)
 	volumePath, err := volp.createFSInFile(mountPath, 100*1024*1024)
+
+	defer func() {
+		if err != nil {
+			os.RemoveAll(volumePath)
+		}
+	}()
+
 	if err != nil {
 		return errors.Wrap(err, "failed to create file system in a file")
 	}
 
 	//Mount the file system
-	err = volp.mountFSInFile(mountPath, *volumePath)
+	err = volp.mountFSInFile(mountPath, volumePath)
+
+	defer func() {
+		if err != nil {
+			cmd := exec.Command("umount", volp.getRelPath(mountPath, "mount"))
+			cmd.Run()
+
+			os.RemoveAll(volp.getRelPath(mountPath, "mount"))
+		}
+	}()
+
 	if err != nil {
 		return errors.Wrap(err, "failed to mount file system in a file")
 	}
@@ -270,16 +325,40 @@ func (volp *DatasetVolumes) Mount(mountPath string, opts MountOptions) error {
 	lowerDir := basePath
 
 	err = os.Mkdir(upperDir, os.FileMode(0522))
+
+	defer func() {
+		if err != nil {
+			os.RemoveAll(upperDir)
+		}
+	}()
+
 	if err != nil {
 		return errors.Wrap(err, "failed to make upper directory for overlayfs")
 	}
 
 	err = os.Mkdir(workDir, os.FileMode(0522))
+
+	defer func() {
+		if err != nil {
+			os.RemoveAll(workDir)
+		}
+	}()
+
 	if err != nil {
 		return errors.Wrap(err, "failed to make work directory for overlayfs")
 	}
 
 	err = volp.createOverlayFS(upperDir, workDir, lowerDir, mountPath)
+
+	defer func() {
+		if err != nil {
+			cmd := exec.Command("umount", mountPath)
+			cmd.Run()
+
+			volp.cleanDirectory(mountPath)
+		}
+	}()
+
 	if err != nil {
 		return errors.Wrap(err, "failed to mount overlayfs")
 	}
@@ -332,7 +411,7 @@ func (volp *DatasetVolumes) Unmount(mountPath string) (err error) {
 			}
 
 			//Clean up everything else
-			err = os.RemoveAll(mountPath)
+			err = volp.cleanDirectory(mountPath)
 			if err != nil {
 				err = errors.Wrap(err, "failed to delete mount point")
 				return
