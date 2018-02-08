@@ -46,12 +46,24 @@ type FileSystem string
 
 const (
 	//Standard, supported everywhere
-	FileSystemExt4 = "ext4"
+	FileSystemExt4 FileSystem = "ext4"
 )
 
 //Amount of space available for writing data
 //@TODO: Should be based on dataset size or customer details?
 const WriteSpace = 100 * 1024 * 1024
+
+//Permissions for directories created as part of flexvolume operation
+//@TODO: Spend more time checking if they make sense and are secure
+const DirectoryPermissions = os.FileMode(0522)
+
+//Relative paths used for flexvolume data
+const (
+	RelPathInput         = "input"
+	RelPathFSInFile      = "volume"
+	RelPathFSInFileMount = "mount"
+	RelPathOptions       = "json"
+)
 
 //Output is returned by the flex volume implementation
 type Output struct {
@@ -154,7 +166,7 @@ func (volp *DatasetVolumes) deleteDatasetOpts(path string) error {
 }
 
 //Creates a file with a file system inside of it that can be mounted
-func (volp *DatasetVolumes) createFSInFile(path string, filesystem string, size int64) error {
+func (volp *DatasetVolumes) createFSInFile(path string, filesystem FileSystem, size int64) error {
 	//Create file with room to contain writable file system
 	f, err := os.Create(path)
 	if err != nil {
@@ -169,7 +181,7 @@ func (volp *DatasetVolumes) createFSInFile(path string, filesystem string, size 
 	}
 
 	//Build file system within
-	cmd := exec.Command("mkfs", "-t", filesystem, path)
+	cmd := exec.Command("mkfs", "-t", string(filesystem), path)
 	buf := bytes.NewBuffer(nil)
 	cmd.Stderr = buf
 	err = cmd.Run()
@@ -194,7 +206,7 @@ func (volp *DatasetVolumes) destroyFSInFile(path string) error {
 //Make specified input available at given path (input may be nil)
 func (volp *DatasetVolumes) provisionInput(path string, input *transfer.Ref) error {
 	//Create directory at path in case it doesn't exist yet
-	err := os.MkdirAll(path, os.FileMode(0522))
+	err := os.MkdirAll(path, DirectoryPermissions)
 	if err != nil {
 		return errors.Wrap(err, "failed to create input directory")
 	}
@@ -238,7 +250,7 @@ func (volp *DatasetVolumes) destroyInput(path string) error {
 //Mounts FS-in-file at specified path
 func (volp *DatasetVolumes) mountFSInFile(volumePath string, mountPath string) error {
 	//Create mount point
-	err := os.Mkdir(mountPath, os.FileMode(0522))
+	err := os.Mkdir(mountPath, DirectoryPermissions)
 	if err != nil {
 		return errors.Wrap(err, "failed to create mount directory")
 	}
@@ -278,8 +290,8 @@ func (volp *DatasetVolumes) unmountFSInFile(mountPath string) error {
 func (volp *DatasetVolumes) mountOverlayFS(upperDir string, workDir string, lowerDir string, mountPath string) error {
 	//Create directories in case they don't exist yet
 	errs := []error{
-		os.MkdirAll(upperDir, os.FileMode(0522)),
-		os.MkdirAll(workDir, os.FileMode(0522)),
+		os.MkdirAll(upperDir, DirectoryPermissions),
+		os.MkdirAll(workDir, DirectoryPermissions),
 	}
 
 	for _, err := range errs {
@@ -357,7 +369,7 @@ func (volp *DatasetVolumes) handleOutput(path string, output *transfer.Ref) erro
 	return nil
 }
 
-func (volp *DatasetVolumes) getRelPath(mountPath string, name string) string {
+func (volp *DatasetVolumes) getPath(mountPath string, name string) string {
 	return filepath.Join(mountPath, "..", filepath.Base(mountPath)+"."+name)
 }
 
@@ -392,11 +404,11 @@ func (volp *DatasetVolumes) Init() (Capabilities, error) {
 //Mount the flex voume, path: '/var/lib/kubelet/pods/c911e5f7-0392-11e8-8237-32f9813bbd5a/volumes/foo~cifs/input', opts: &main.MountOptions{FSType:"", PodName:"imagemagick", PodNamespace:"default", PodUID:"c911e5f7-0392-11e8-8237-32f9813bbd5a", PVOrVolumeName:"input", ReadWrite:"rw", ServiceAccountName:"default"}
 func (volp *DatasetVolumes) Mount(kubeMountPath string, opts MountOptions) (err error) {
 	//Store dataset options
-	dsopts, err := volp.writeDatasetOpts(volp.getRelPath(kubeMountPath, "json"), opts)
+	dsopts, err := volp.writeDatasetOpts(volp.getPath(kubeMountPath, RelPathOptions), opts)
 
 	defer func() {
 		if err != nil {
-			volp.deleteDatasetOpts(volp.getRelPath(kubeMountPath, "json"))
+			volp.deleteDatasetOpts(volp.getPath(kubeMountPath, RelPathOptions))
 		}
 	}()
 
@@ -405,11 +417,11 @@ func (volp *DatasetVolumes) Mount(kubeMountPath string, opts MountOptions) (err 
 	}
 
 	//Set up input
-	err = volp.provisionInput(volp.getRelPath(kubeMountPath, "input"), dsopts.Input)
+	err = volp.provisionInput(volp.getPath(kubeMountPath, RelPathInput), dsopts.Input)
 
 	defer func() {
 		if err != nil {
-			volp.destroyInput(volp.getRelPath(kubeMountPath, "input"))
+			volp.destroyInput(volp.getPath(kubeMountPath, RelPathInput))
 		}
 	}()
 
@@ -418,11 +430,11 @@ func (volp *DatasetVolumes) Mount(kubeMountPath string, opts MountOptions) (err 
 	}
 
 	//Create volume to contain pod writes
-	err = volp.createFSInFile(volp.getRelPath(kubeMountPath, "volume"), FileSystemExt4, WriteSpace)
+	err = volp.createFSInFile(volp.getPath(kubeMountPath, RelPathFSInFile), FileSystemExt4, WriteSpace)
 
 	defer func() {
 		if err != nil {
-			volp.destroyFSInFile(volp.getRelPath(kubeMountPath, "volume"))
+			volp.destroyFSInFile(volp.getPath(kubeMountPath, RelPathFSInFile))
 		}
 	}()
 
@@ -431,11 +443,14 @@ func (volp *DatasetVolumes) Mount(kubeMountPath string, opts MountOptions) (err 
 	}
 
 	//Mount the file system
-	err = volp.mountFSInFile(volp.getRelPath(kubeMountPath, "volume"), volp.getRelPath(kubeMountPath, "mount"))
+	err = volp.mountFSInFile(
+		volp.getPath(kubeMountPath, RelPathFSInFile),
+		volp.getPath(kubeMountPath, RelPathFSInFileMount),
+	)
 
 	defer func() {
 		if err != nil {
-			volp.unmountFSInFile(volp.getRelPath(kubeMountPath, "mount"))
+			volp.unmountFSInFile(volp.getPath(kubeMountPath, RelPathFSInFileMount))
 		}
 	}()
 
@@ -445,17 +460,17 @@ func (volp *DatasetVolumes) Mount(kubeMountPath string, opts MountOptions) (err 
 
 	//Set up overlay file system using input and writable fs-in-file
 	err = volp.mountOverlayFS(
-		filepath.Join(volp.getRelPath(kubeMountPath, "mount"), "upper"),
-		filepath.Join(volp.getRelPath(kubeMountPath, "mount"), "work"),
-		volp.getRelPath(kubeMountPath, "input"),
+		filepath.Join(volp.getPath(kubeMountPath, RelPathFSInFileMount), "upper"),
+		filepath.Join(volp.getPath(kubeMountPath, RelPathFSInFileMount), "work"),
+		volp.getPath(kubeMountPath, RelPathInput),
 		kubeMountPath,
 	)
 
 	defer func() {
 		if err != nil {
 			volp.unmountOverlayFS(
-				filepath.Join(volp.getRelPath(kubeMountPath, "mount"), "upper"),
-				filepath.Join(volp.getRelPath(kubeMountPath, "mount"), "work"),
+				filepath.Join(volp.getPath(kubeMountPath, RelPathFSInFileMount), "upper"),
+				filepath.Join(volp.getPath(kubeMountPath, RelPathFSInFileMount), "work"),
 				kubeMountPath,
 			)
 		}
@@ -472,7 +487,7 @@ func (volp *DatasetVolumes) Mount(kubeMountPath string, opts MountOptions) (err 
 func (volp *DatasetVolumes) Unmount(kubeMountPath string) (err error) {
 	// Upload any output
 	var dsopts *datasetOpts
-	dsopts, err = volp.readDatasetOpts(volp.getRelPath(kubeMountPath, "json"))
+	dsopts, err = volp.readDatasetOpts(volp.getPath(kubeMountPath, RelPathOptions))
 	if err != nil {
 		return errors.Wrap(err, "failed to read volume database")
 	}
@@ -486,30 +501,30 @@ func (volp *DatasetVolumes) Unmount(kubeMountPath string) (err error) {
 	errs := []error{
 		errors.Wrap(
 			volp.unmountOverlayFS(
-				filepath.Join(volp.getRelPath(kubeMountPath, "mount"), "upper"),
-				filepath.Join(volp.getRelPath(kubeMountPath, "mount"), "work"),
+				filepath.Join(volp.getPath(kubeMountPath, RelPathFSInFileMount), "upper"),
+				filepath.Join(volp.getPath(kubeMountPath, RelPathFSInFileMount), "work"),
 				kubeMountPath,
 			),
 			"failed to unmount overlayfs",
 		),
 
 		errors.Wrap(
-			volp.unmountFSInFile(volp.getRelPath(kubeMountPath, "mount")),
+			volp.unmountFSInFile(volp.getPath(kubeMountPath, RelPathFSInFileMount)),
 			"failed to unmount file system in a file",
 		),
 
 		errors.Wrap(
-			volp.destroyFSInFile(volp.getRelPath(kubeMountPath, "volume")),
+			volp.destroyFSInFile(volp.getPath(kubeMountPath, RelPathFSInFile)),
 			"failed to delete file system in a file",
 		),
 
 		errors.Wrap(
-			volp.destroyInput(volp.getRelPath(kubeMountPath, "input")),
+			volp.destroyInput(volp.getPath(kubeMountPath, RelPathInput)),
 			"failed to delete input data",
 		),
 
 		errors.Wrap(
-			volp.deleteDatasetOpts(volp.getRelPath(kubeMountPath, "json")),
+			volp.deleteDatasetOpts(volp.getPath(kubeMountPath, RelPathOptions)),
 			"failed to delete dataset",
 		),
 	}
