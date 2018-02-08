@@ -41,6 +41,18 @@ const (
 	StatusNotSupported = "Not supported"
 )
 
+//File systems to back file system in a file
+type FileSystem string
+
+const (
+	//Standard, supported everywhere
+	FileSystemExt4 = "ext4"
+)
+
+//Amount of space available for writing data
+//@TODO: Should be based on dataset size or customer details?
+const WriteSpace = 100 * 1024 * 1024
+
 //Output is returned by the flex volume implementation
 type Output struct {
 	Status       Status       `json:"status"`
@@ -78,7 +90,7 @@ type datasetOpts struct {
 	Output *transfer.Ref
 }
 
-func (volp *DatasetVolumes) writeDatasetOpts(mountPath string, opts MountOptions) (*datasetOpts, error) {
+func (volp *DatasetVolumes) writeDatasetOpts(path string, opts MountOptions) (*datasetOpts, error) {
 	dsopts := &datasetOpts{}
 	if opts.InputS3Key != "" {
 		dsopts.Input = &transfer.Ref{
@@ -102,7 +114,6 @@ func (volp *DatasetVolumes) writeDatasetOpts(mountPath string, opts MountOptions
 		}
 	}
 
-	path := volp.getRelPath(mountPath, "json")
 	f, err := os.Create(path)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create metadata file")
@@ -119,8 +130,7 @@ func (volp *DatasetVolumes) writeDatasetOpts(mountPath string, opts MountOptions
 	return dsopts, nil
 }
 
-func (volp *DatasetVolumes) readDatasetOpts(mountPath string) (*datasetOpts, error) {
-	path := volp.getRelPath(mountPath, "json")
+func (volp *DatasetVolumes) readDatasetOpts(path string) (*datasetOpts, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open metadata file")
@@ -138,53 +148,103 @@ func (volp *DatasetVolumes) readDatasetOpts(mountPath string) (*datasetOpts, err
 	return dsopts, nil
 }
 
-func (volp *DatasetVolumes) deleteDatasetOpts(mountPath string) error {
-	path := volp.getRelPath(mountPath, "json")
+func (volp *DatasetVolumes) deleteDatasetOpts(path string) error {
 	err := os.Remove(path)
 	return errors.Wrap(err, "failed to delete metadata file")
 }
 
-func (volp *DatasetVolumes) createFSInFile(mountPath string, size int64) (string, error) {
-	volumePath := volp.getRelPath(mountPath, "volume")
-
+//Creates a file with a file system inside of it that can be mounted
+func (volp *DatasetVolumes) createFSInFile(path string, filesystem string, size int64) error {
 	//Create file with room to contain writable file system
-	f, err := os.Create(volumePath)
+	f, err := os.Create(path)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create file system file")
-		return volumePath, err
+		return err
 	}
 
 	err = f.Truncate(size)
 	if err != nil {
 		err = errors.Wrap(err, "failed to allocate file system size")
-		return volumePath, err
+		return err
 	}
 
 	//Build file system within
-	cmd := exec.Command("mkfs.ext4", volumePath)
+	cmd := exec.Command("mkfs", "-t", filesystem, path)
 	buf := bytes.NewBuffer(nil)
 	cmd.Stderr = buf
 	err = cmd.Run()
 	if err != nil {
 		err = errors.Wrap(errors.New(strings.TrimSpace(buf.String())), "failed to execute mkfs command")
-		return volumePath, err
+		return err
 	}
 
-	return volumePath, nil
+	return nil
 }
 
-//@TODO: Parameters for this function need to be reconsidered, especially mountPath confusion
-func (volp *DatasetVolumes) mountFSInFile(mountPath string, volumePath string) error {
-	mountPoint := volp.getRelPath(mountPath, "mount")
+//Clean up file system in file
+func (volp *DatasetVolumes) destroyFSInFile(path string) error {
+	err := os.RemoveAll(path)
+	if err != nil {
+		err = errors.Wrap(err, "failed to delete fs-in-file file")
+	}
 
+	return err
+}
+
+//Make specified input available at given path (input may be nil)
+func (volp *DatasetVolumes) provisionInput(path string, input *transfer.Ref) error {
+	//Create directory at path in case it doesn't exist yet
+	err := os.MkdirAll(path, os.FileMode(0522))
+	if err != nil {
+		return errors.Wrap(err, "failed to create input directory")
+	}
+
+	//Abort if there is nothing to download to it
+	if input == nil {
+		return nil
+	}
+
+	//Download input to it
+	var trans transfer.Transfer
+	if trans, err = transfer.NewS3(&transfer.S3Conf{
+		Bucket: input.Bucket,
+	}); err != nil {
+		return errors.Wrap(err, "failed to set up S3 transfer")
+	}
+
+	ref := &transfer.Ref{
+		Bucket: input.Bucket,
+		Key:    input.Key,
+	}
+
+	err = trans.Download(context.Background(), ref, path)
+	if err != nil {
+		return errors.Wrap(err, "failed to download data from S3")
+	}
+
+	return nil
+}
+
+//Clean up input data
+func (volp *DatasetVolumes) destroyInput(path string) error {
+	err := os.RemoveAll(path)
+	if err != nil {
+		err = errors.Wrap(err, "failed to destroy input directory")
+	}
+
+	return err
+}
+
+//Mounts FS-in-file at specified path
+func (volp *DatasetVolumes) mountFSInFile(volumePath string, mountPath string) error {
 	//Create mount point
-	err := os.Mkdir(mountPoint, os.FileMode(0522))
+	err := os.Mkdir(mountPath, os.FileMode(0522))
 	if err != nil {
 		return errors.Wrap(err, "failed to create mount directory")
 	}
 
 	//Mount file system
-	cmd := exec.Command("mount", volumePath, mountPoint)
+	cmd := exec.Command("mount", volumePath, mountPath)
 	buf := bytes.NewBuffer(nil)
 	cmd.Stderr = buf
 	err = cmd.Run()
@@ -195,15 +255,103 @@ func (volp *DatasetVolumes) mountFSInFile(mountPath string, volumePath string) e
 	return nil
 }
 
-func (volp *DatasetVolumes) createOverlayFS(upperDir string, workDir string, lowerDir string, mountPoint string) error {
+func (volp *DatasetVolumes) unmountFSInFile(mountPath string) error {
+	//Unmount
+	cmd := exec.Command("umount", mountPath)
+	buf := bytes.NewBuffer(nil)
+	cmd.Stderr = buf
+	err := cmd.Run()
+	if err != nil {
+		return errors.Wrap(errors.New(strings.TrimSpace(buf.String())), "failed to unmount fs-in-file")
+	}
+
+	//Delete mount path
+	err = os.RemoveAll(mountPath)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete fs-in-file mount point")
+	}
+
+	return nil
+}
+
+//Mount OverlayFS with given directories (upperDir and workDir may be auto-created)
+func (volp *DatasetVolumes) mountOverlayFS(upperDir string, workDir string, lowerDir string, mountPath string) error {
+	//Create directories in case they don't exist yet
+	errs := []error{
+		os.MkdirAll(upperDir, os.FileMode(0522)),
+		os.MkdirAll(workDir, os.FileMode(0522)),
+	}
+
+	for _, err := range errs {
+		if err != nil {
+			return errors.Wrap(err, "failed to create directories")
+		}
+	}
+
+	//Mount OverlayFS
 	overlayArgs := fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s", lowerDir, upperDir, workDir)
 
-	cmd := exec.Command("mount", "-t", "overlay", "overlay", "-o", overlayArgs, mountPoint)
+	cmd := exec.Command("mount", "-t", "overlay", "overlay", "-o", overlayArgs, mountPath)
 	buf := bytes.NewBuffer(nil)
 	cmd.Stderr = buf
 	err := cmd.Run()
 	if err != nil {
 		return errors.Wrap(errors.New(strings.TrimSpace(buf.String())), "failed to execute mount command")
+	}
+
+	return nil
+}
+
+//Unmount OverlayFS with given directories (upperDir and workDir will be deleted)
+func (volp *DatasetVolumes) unmountOverlayFS(upperDir string, workDir string, mountPath string) error {
+	//Unmount OverlayFS
+	cmd := exec.Command("umount", mountPath)
+	buf := bytes.NewBuffer(nil)
+	cmd.Stderr = buf
+	err := cmd.Run()
+	if err != nil {
+		return errors.Wrap(errors.New(strings.TrimSpace(buf.String())), "failed to unmount overlayfs")
+	}
+
+	//Delete directories
+	errs := []error{
+		os.RemoveAll(upperDir),
+		os.RemoveAll(workDir),
+	}
+
+	for _, err := range errs {
+		if err != nil {
+			return errors.Wrap(err, "failed to delete directories")
+		}
+	}
+
+	return nil
+}
+
+//Upload any output
+func (volp *DatasetVolumes) handleOutput(path string, output *transfer.Ref) error {
+	// Nothing to do
+	if output == nil {
+		return nil
+	}
+
+	trans, err := transfer.NewS3(&transfer.S3Conf{
+		Bucket: output.Bucket,
+	})
+	if err != nil {
+		err = errors.Wrap(err, "failed to set up S3 transfer")
+		return err
+	}
+
+	ref := &transfer.Ref{
+		Bucket: output.Bucket,
+		Key:    output.Key,
+	}
+
+	_, err = trans.Upload(context.Background(), ref, path)
+	if err != nil {
+		err = errors.Wrap(err, "failed to upload data to S3")
+		return err
 	}
 
 	return nil
@@ -242,12 +390,13 @@ func (volp *DatasetVolumes) Init() (Capabilities, error) {
 }
 
 //Mount the flex voume, path: '/var/lib/kubelet/pods/c911e5f7-0392-11e8-8237-32f9813bbd5a/volumes/foo~cifs/input', opts: &main.MountOptions{FSType:"", PodName:"imagemagick", PodNamespace:"default", PodUID:"c911e5f7-0392-11e8-8237-32f9813bbd5a", PVOrVolumeName:"input", ReadWrite:"rw", ServiceAccountName:"default"}
-func (volp *DatasetVolumes) Mount(mountPath string, opts MountOptions) (err error) {
-	dsopts, err := volp.writeDatasetOpts(mountPath, opts)
+func (volp *DatasetVolumes) Mount(kubeMountPath string, opts MountOptions) (err error) {
+	//Store dataset options
+	dsopts, err := volp.writeDatasetOpts(volp.getRelPath(kubeMountPath, "json"), opts)
 
 	defer func() {
 		if err != nil {
-			volp.deleteDatasetOpts(mountPath)
+			volp.deleteDatasetOpts(volp.getRelPath(kubeMountPath, "json"))
 		}
 	}()
 
@@ -255,46 +404,25 @@ func (volp *DatasetVolumes) Mount(mountPath string, opts MountOptions) (err erro
 		return errors.Wrap(err, "failed to write volume database")
 	}
 
-	//Set up directory to hold base data
-	basePath := volp.getRelPath(mountPath, "base")
-	err = os.Mkdir(basePath, os.FileMode(0522))
+	//Set up input
+	err = volp.provisionInput(volp.getRelPath(kubeMountPath, "input"), dsopts.Input)
 
 	defer func() {
 		if err != nil {
-			os.RemoveAll(basePath)
+			volp.destroyInput(volp.getRelPath(kubeMountPath, "input"))
 		}
 	}()
 
 	if err != nil {
-		return errors.Wrap(err, "failed to create input data directory")
+		return errors.Wrap(err, "failed to provision input")
 	}
 
-	// Download data to it if an input was specified
-	if dsopts.Input != nil {
-		var trans transfer.Transfer
-		if trans, err = transfer.NewS3(&transfer.S3Conf{
-			Bucket: dsopts.Input.Bucket,
-		}); err != nil {
-			return errors.Wrap(err, "failed to set up S3 transfer")
-		}
-
-		ref := &transfer.Ref{
-			Bucket: dsopts.Input.Bucket,
-			Key:    dsopts.Input.Key,
-		}
-
-		err = trans.Download(context.Background(), ref, basePath)
-		if err != nil {
-			return errors.Wrap(err, "failed to download data from S3")
-		}
-	}
-
-	//Create volume to contain pod writes (hardcoded as 100 MB right now)
-	volumePath, err := volp.createFSInFile(mountPath, 100*1024*1024)
+	//Create volume to contain pod writes
+	err = volp.createFSInFile(volp.getRelPath(kubeMountPath, "volume"), FileSystemExt4, WriteSpace)
 
 	defer func() {
 		if err != nil {
-			os.RemoveAll(volumePath)
+			volp.destroyFSInFile(volp.getRelPath(kubeMountPath, "volume"))
 		}
 	}()
 
@@ -303,14 +431,11 @@ func (volp *DatasetVolumes) Mount(mountPath string, opts MountOptions) (err erro
 	}
 
 	//Mount the file system
-	err = volp.mountFSInFile(mountPath, volumePath)
+	err = volp.mountFSInFile(volp.getRelPath(kubeMountPath, "volume"), volp.getRelPath(kubeMountPath, "mount"))
 
 	defer func() {
 		if err != nil {
-			cmd := exec.Command("umount", volp.getRelPath(mountPath, "mount"))
-			cmd.Run()
-
-			os.RemoveAll(volp.getRelPath(mountPath, "mount"))
+			volp.unmountFSInFile(volp.getRelPath(kubeMountPath, "mount"))
 		}
 	}()
 
@@ -318,43 +443,21 @@ func (volp *DatasetVolumes) Mount(mountPath string, opts MountOptions) (err erro
 		return errors.Wrap(err, "failed to mount file system in a file")
 	}
 
-	//Set up overlay file system using base and write restricted FS-in-file
-	upperDir := filepath.Join(volp.getRelPath(mountPath, "mount"), "upper")
-	workDir := filepath.Join(volp.getRelPath(mountPath, "mount"), "work")
-	lowerDir := basePath
-
-	err = os.Mkdir(upperDir, os.FileMode(0522))
-
-	defer func() {
-		if err != nil {
-			os.RemoveAll(upperDir)
-		}
-	}()
-
-	if err != nil {
-		return errors.Wrap(err, "failed to make upper directory for overlayfs")
-	}
-
-	err = os.Mkdir(workDir, os.FileMode(0522))
+	//Set up overlay file system using input and writable fs-in-file
+	err = volp.mountOverlayFS(
+		filepath.Join(volp.getRelPath(kubeMountPath, "mount"), "upper"),
+		filepath.Join(volp.getRelPath(kubeMountPath, "mount"), "work"),
+		volp.getRelPath(kubeMountPath, "input"),
+		kubeMountPath,
+	)
 
 	defer func() {
 		if err != nil {
-			os.RemoveAll(workDir)
-		}
-	}()
-
-	if err != nil {
-		return errors.Wrap(err, "failed to make work directory for overlayfs")
-	}
-
-	err = volp.createOverlayFS(upperDir, workDir, lowerDir, mountPath)
-
-	defer func() {
-		if err != nil {
-			cmd := exec.Command("umount", mountPath)
-			cmd.Run()
-
-			volp.cleanDirectory(mountPath)
+			volp.unmountOverlayFS(
+				filepath.Join(volp.getRelPath(kubeMountPath, "mount"), "upper"),
+				filepath.Join(volp.getRelPath(kubeMountPath, "mount"), "work"),
+				kubeMountPath,
+			)
 		}
 	}()
 
@@ -365,85 +468,56 @@ func (volp *DatasetVolumes) Mount(mountPath string, opts MountOptions) (err erro
 	return nil
 }
 
-//Unmount the flex voume
-func (volp *DatasetVolumes) Unmount(mountPath string) (err error) {
+//Unmount the flex volume
+func (volp *DatasetVolumes) Unmount(kubeMountPath string) (err error) {
+	// Upload any output
 	var dsopts *datasetOpts
-	dsopts, err = volp.readDatasetOpts(mountPath)
+	dsopts, err = volp.readDatasetOpts(volp.getRelPath(kubeMountPath, "json"))
 	if err != nil {
 		return errors.Wrap(err, "failed to read volume database")
 	}
 
-	defer func() {
-		//if there was no error during upload remove all data
-		if err == nil {
-			//Unmount overlay and FS-in-file
-			cmd := exec.Command("umount", mountPath)
-			err = cmd.Run()
-			if err != nil {
-				err = errors.Wrap(err, "failed to unmount overlayfs")
-				return
-			}
-
-			cmd = exec.Command("umount", volp.getRelPath(mountPath, "mount"))
-			err = cmd.Run()
-			if err != nil {
-				err = errors.Wrap(err, "failed to unmount file system in a file")
-				return
-			}
-
-			err = os.Remove(volp.getRelPath(mountPath, "volume"))
-			if err != nil {
-				err = errors.Wrap(err, "failed to delete file system in a file")
-				return
-			}
-
-			err = os.RemoveAll(volp.getRelPath(mountPath, "base"))
-			if err != nil {
-				err = errors.Wrap(err, "failed to delete input data")
-				return
-			}
-
-			err = os.RemoveAll(volp.getRelPath(mountPath, "mount"))
-			if err != nil {
-				err = errors.Wrap(err, "failed to delete mount point for file system in a file")
-				return
-			}
-
-			//Clean up everything else
-			err = volp.cleanDirectory(mountPath)
-			if err != nil {
-				err = errors.Wrap(err, "failed to delete mount point")
-				return
-			}
-
-			err = volp.deleteDatasetOpts(mountPath)
-			if err != nil {
-				err = errors.Wrap(err, "failed to delete dataset")
-			}
-		}
-	}()
-
-	if dsopts.Output == nil {
-		return nil //no output dataset, do nothing with the volume data
-	}
-
-	var trans transfer.Transfer
-	if trans, err = transfer.NewS3(&transfer.S3Conf{
-		Bucket: dsopts.Output.Bucket,
-	}); err != nil {
-		err = errors.Wrap(err, "failed to set up S3 transfer")
-		return err
-	}
-
-	ref := &transfer.Ref{
-		Bucket: dsopts.Output.Bucket,
-		Key:    dsopts.Output.Key,
-	}
-
-	_, err = trans.Upload(context.Background(), ref, mountPath)
+	err = volp.handleOutput(kubeMountPath, dsopts.Output)
 	if err != nil {
-		err = errors.Wrap(err, "failed to upload data to S3")
-		return err
+		return errors.Wrap(err, "failed to upload output")
+	}
+
+	//Clean up (as much as possible)
+	errs := []error{
+		errors.Wrap(
+			volp.unmountOverlayFS(
+				filepath.Join(volp.getRelPath(kubeMountPath, "mount"), "upper"),
+				filepath.Join(volp.getRelPath(kubeMountPath, "mount"), "work"),
+				kubeMountPath,
+			),
+			"failed to unmount overlayfs",
+		),
+
+		errors.Wrap(
+			volp.unmountFSInFile(volp.getRelPath(kubeMountPath, "mount")),
+			"failed to unmount file system in a file",
+		),
+
+		errors.Wrap(
+			volp.destroyFSInFile(volp.getRelPath(kubeMountPath, "volume")),
+			"failed to delete file system in a file",
+		),
+
+		errors.Wrap(
+			volp.destroyInput(volp.getRelPath(kubeMountPath, "input")),
+			"failed to delete input data",
+		),
+
+		errors.Wrap(
+			volp.deleteDatasetOpts(volp.getRelPath(kubeMountPath, "json")),
+			"failed to delete dataset",
+		),
+	}
+
+	for _, err := range errs {
+		if err != nil {
+			return errors.Wrap(err, "failed to clean up")
+		}
 	}
 
 	return nil
