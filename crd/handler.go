@@ -13,7 +13,7 @@ import (
 type Handler interface {
 	Init() error
 	ObjectCreated(obj interface{})
-	ObjectDeleted(obj interface{})
+	ObjectDeleted(obj interface{}, key string)
 	ObjectUpdated(oldObj, newObj interface{})
 }
 
@@ -46,19 +46,19 @@ func (s *S3AWS) ObjectCreated(obj interface{}) {
 
 // ObjectDeleted will be called each time an object is deleted
 // If the object is a dataset, the corresponding dataset will be removed from s3
-func (s *S3AWS) ObjectDeleted(obj interface{}) {
+func (s *S3AWS) ObjectDeleted(obj interface{}, key string) {
 	var ref transfer.Ref
 	if dataset, ok := obj.(*datasetsv1.Dataset); ok {
-		glog.Infof("New dataset deleted: %s with bucket %s and key %s", dataset.Name, dataset.Spec.Bucket, dataset.Spec.Key)
 		ref.Bucket = dataset.Spec.Bucket
 		ref.Key = dataset.Spec.Key
 	} else {
-		glog.Infof("Object not found %+v", obj)
+		glog.Infof("Object %s not found %+v", key, obj)
 		return
 	}
 	if err := s.conf.Delete(context.Background(), &ref); err != nil {
 		glog.Errorf("Could not delete dataset from aws: %+v", err)
 	}
+	glog.Infof("New dataset deleted: %s with bucket %s and key %s", key, ref.Bucket, ref.Key)
 }
 
 // ObjectUpdated will be called each time an object is updated

@@ -108,6 +108,7 @@ func NewController(
 			key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 			if err == nil {
 				queue.Add(key)
+				eventHandler.ObjectDeleted(obj, key)
 			}
 		},
 	})
@@ -176,7 +177,7 @@ func (c *Controller) processNextItem() bool {
 }
 
 func (c *Controller) processItem(key string, kobj string) error {
-	glog.Infof("Processing change to %v: %s", kobj, key)
+	glog.Infof("Processing change to %s: %s", kobj, key)
 
 	obj, exists, err := c.informer.GetIndexer().GetByKey(key)
 	glog.Info(obj)
@@ -185,12 +186,10 @@ func (c *Controller) processItem(key string, kobj string) error {
 	}
 
 	if !exists {
-		glog.Info("calling object deleted")
-		c.eventHandler.ObjectDeleted(obj)
+		glog.Infof("Object %s already deleted", key)
 		return nil
 	}
 
-	glog.Info("calling object created")
 	c.eventHandler.ObjectCreated(obj)
 	return nil
 }
