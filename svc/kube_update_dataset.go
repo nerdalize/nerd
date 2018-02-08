@@ -13,6 +13,7 @@ import (
 type UpdateDatasetInput struct {
 	Name       string `validate:"printascii"`
 	NewName    string `validate:"printascii"`
+	Size       int64
 	InputFor   string
 	OutputFrom string
 }
@@ -33,6 +34,9 @@ func (k *Kube) UpdateDataset(ctx context.Context, in *UpdateDatasetInput) (out *
 
 	if in.NewName != "" {
 		dataset.SetName(in.NewName)
+	}
+	if in.Size >= 0 {
+		dataset.Spec.Size = uint64(in.Size)
 	}
 	if in.InputFor != "" {
 		dataset.Spec.InputFor = append(dataset.Spec.InputFor, in.InputFor)
