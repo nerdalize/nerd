@@ -25,6 +25,7 @@ func TestUpdateDataset(t *testing.T) {
 		Name:       out.Name,
 		InputFor:   "j-123abc",
 		OutputFrom: "j-456def",
+		Size:       1337,
 	})
 	ok(t, err)
 
@@ -32,4 +33,5 @@ func TestUpdateDataset(t *testing.T) {
 	ok(t, err)
 	assert(t, strings.Contains(strings.Join(o.InputFor, ""), "j-123abc"), "expected dataset to be up to date")
 	assert(t, strings.Contains(strings.Join(o.OutputFrom, ""), "j-456def"), "expected dataset to be up to date and to contain job info for output section")
+	assert(t, o.Size == 1337, "expected dataset to be up to date and contain new size")
 }
