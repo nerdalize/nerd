@@ -2,6 +2,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: custom-dataset-controller
+  namespace: kube-system
   labels:
     app: nerd-cli
     project: cli
@@ -20,6 +21,7 @@ spec:
     spec:
       containers:
       - name: controller
+        imagePullPolicy: Always
         image: nerdalize/custom-dataset-controller:v0.2
         args:
           - -alsologtostderr 
