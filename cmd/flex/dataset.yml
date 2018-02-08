@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
-  generateName: nlz-nerd-datasets
+  name: nlz-nerd-datasets
 spec:
   template:
     metadata:

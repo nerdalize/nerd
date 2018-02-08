@@ -4,13 +4,21 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net"
 	"os"
 	"path/filepath"
 
+	"github.com/joho/godotenv"
 	"github.com/nerdalize/nerd/pkg/transfer"
+	"github.com/pkg/errors"
+	"k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	certutil "k8s.io/client-go/util/cert"
 )
 
 //Operation can be provided to the flex volume
@@ -142,6 +150,75 @@ func (volp *DatasetVolumes) Init() (Capabilities, error) {
 
 //Mount the flex voume, path: '/var/lib/kubelet/pods/c911e5f7-0392-11e8-8237-32f9813bbd5a/volumes/foo~cifs/input', opts: &main.MountOptions{FSType:"", PodName:"imagemagick", PodNamespace:"default", PodUID:"c911e5f7-0392-11e8-8237-32f9813bbd5a", PVOrVolumeName:"input", ReadWrite:"rw", ServiceAccountName:"default"}
 func (volp *DatasetVolumes) Mount(mountPath string, opts MountOptions) error {
+
+	//
+	// EXPERIMENTAL
+	//
+
+	//installation
+	//step 1: write env variables to file; to later load them
+	//step 2: copy service account folder to the flex mnt (host folder)
+	//step 3: write flex volume executable to the flex volume
+
+	//we will read the service account relative to the flex volume executable
+	exep, err := os.Executable()
+	if err != nil {
+		return errors.Wrap(err, "failed to load executable path")
+	}
+
+	exedir := filepath.Join(filepath.Dir(exep))
+
+	//read environment from .env file
+	err = godotenv.Load(filepath.Join(exedir, "flex.env"))
+	if err != nil {
+		return errors.Wrap(err, "failed to load flex environment")
+	}
+
+	//read token file from service account
+	token, err := ioutil.ReadFile(filepath.Join(exedir, "serviceaccount", v1.ServiceAccountTokenKey))
+	if err != nil {
+		return errors.Wrap(err, "failed to read service account token key")
+	}
+
+	//read CA config from service account
+	tlsClientConfig := rest.TLSClientConfig{}
+	rootCAFile := filepath.Join(exedir, "serviceaccount", v1.ServiceAccountRootCAKey)
+	if _, err = certutil.NewPool(rootCAFile); err != nil {
+		return errors.Wrap(err, "failed to load service account CA files")
+	}
+
+	tlsClientConfig.CAFile = rootCAFile
+
+	//read kubernetes api host and port from (imported) evironment
+	host, port := os.Getenv("KUBERNETES_SERVICE_HOST"), os.Getenv("KUBERNETES_SERVICE_PORT")
+	if len(host) == 0 || len(port) == 0 {
+		return errors.Errorf("unable to load in-cluster configuration, KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT must be defined")
+	}
+
+	//create rest config
+	config := &rest.Config{
+		Host:            "https://" + net.JoinHostPort(host, port),
+		BearerToken:     string(token),
+		TLSClientConfig: tlsClientConfig,
+	}
+
+	// creates the clientset
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return errors.Wrap(err, "failed to create Kubernetes clientset")
+	}
+
+	pods, err := clientset.CoreV1().Pods("").List(metav1.ListOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to get Kubernetes pods")
+	}
+
+	_ = pods
+
+	//
+	// EXPERIMENTAL
+	//
+
 	dsopts, err := volp.writeDatasetOpts(mountPath, opts)
 	if err != nil {
 		return fmt.Errorf("failed to write volume database: %v", err)
@@ -166,7 +243,7 @@ func (volp *DatasetVolumes) Mount(mountPath string, opts MountOptions) error {
 	//@TODO when this fails flex volume retry mechanism will never succeed because the directory is not empty
 	err = trans.Download(context.Background(), ref, mountPath)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to download to '%s'", mountPath)
 	}
 
 	return nil
