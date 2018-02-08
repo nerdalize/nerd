@@ -27,3 +27,4 @@ secrets.env
 bin
 vendor
 installers/msi/obj
+crd/controller
