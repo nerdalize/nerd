@@ -48,7 +48,7 @@ func (cmd *JobList) Execute(args []string) (err error) {
 	}
 
 	if len(out.Items) == 0 {
-		cmd.out.Infof("No resources found.")
+		cmd.out.Infof("No job found.")
 		return nil
 	}
 
