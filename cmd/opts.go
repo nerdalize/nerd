@@ -126,6 +126,7 @@ func (deps *Deps) Namespace() string {
 	return deps.ns
 }
 
+//Crd provides the custom resource definition API
 func (deps *Deps) Crd() crd.Interface {
 	return deps.crd
 }

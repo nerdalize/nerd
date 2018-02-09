@@ -22,4 +22,4 @@ spec:
       volumes:
         - name: flexvolume-mount
           hostPath:
-            path: /var/lib/kubelet/volumeplugins/
+            path: /usr/libexec/kubernetes/kubelet-plugins/volume/exec #minikube specific

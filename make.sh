@@ -41,6 +41,9 @@ function run_dev { #setup dev environment
 	echo "--> setting up custom resource definition for datasets"
 	kubectl apply -f crd/artifacts/datasets.yaml
 
+	echo "--> installing flex volume deamon set"
+	kubectl apply -f cmd/flex/dataset-dev.yml
+
 	echo "--> updating dependencies"
 	glide up
 
@@ -62,15 +65,6 @@ function run_docs { #run godoc
 
 function run_test { #unit test project
 	command -v go >/dev/null 2>&1 || { echo "executable 'go' (the language sdk) must be installed" >&2; exit 1; }
-
-	echo "--> building (new) flex volume"
-	GOOS=linux go build -o $GOPATH/bin/nerd-flex-volume cmd/flex/main.go
-
-	echo "--> transfer flex volume"
-	scp -i ~/.minikube/machines/$dev_profile/id_rsa $GOPATH/bin/nerd-flex-volume docker@$(minikube ip --profile=$dev_profile):/home/docker/nerd-flex-volume
-	ssh -i ~/.minikube/machines/$dev_profile/id_rsa docker@$(minikube ip --profile=$dev_profile) sudo mkdir -p /usr/libexec/kubernetes/kubelet-plugins/volume/exec/nerdalize.com~dataset
-	ssh -i ~/.minikube/machines/$dev_profile/id_rsa docker@$(minikube ip --profile=$dev_profile) sudo cp /home/docker/nerd-flex-volume /usr/libexec/kubernetes/kubelet-plugins/volume/exec/nerdalize.com~dataset/dataset
-	minikube ssh /usr/libexec/kubernetes/kubelet-plugins/volume/exec/nerdalize.com~dataset/dataset
 
 	echo "--> running service tests"
 	go test -cover -v ./svc/...
@@ -122,19 +116,12 @@ function run_docker { #build docker container
 
 	echo "--> building flex volume container"
 	docker build -f flex.Dockerfile -t nerdalize/nerd-flex-volume:$(cat VERSION) .
-
-	# echo "--> building container for nerd"
-	# docker build -t nerdalize/nerd .
-	# docker tag nerdalize/nerd nerdalize/nerd:`cat VERSION`
 }
 
 function run_dockerpush { #build and push docker container
 	command -v docker >/dev/null 2>&1 || { echo "executable 'docker' (container runtime) must be installed" >&2; exit 1; }
 
-	# run_docker
-	# docker push nerdalize/nerd:latest
-	# docker push nerdalize/nerd:`cat VERSION`
-	echo "--> push flex volume release"
+	echo "--> publish flex volume container"
 	docker push nerdalize/nerd-flex-volume:$(cat VERSION)
 }
 
