@@ -13,6 +13,7 @@ import (
 type UpdateDatasetInput struct {
 	Name       string `validate:"printascii"`
 	NewName    string `validate:"printascii"`
+	Size       *uint64
 	InputFor   string
 	OutputFrom string
 }
@@ -23,7 +24,7 @@ type UpdateDatasetOutput struct {
 }
 
 // UpdateDataset will update a dataset resource.
-// Fields that can be updated: name, input, and output. Input and output are the jobs the dataset is used for or coming from.
+// Fields that can be updated: name, input, output and size. Input and output are the jobs the dataset is used for or coming from.
 func (k *Kube) UpdateDataset(ctx context.Context, in *UpdateDatasetInput) (out *UpdateDatasetOutput, err error) {
 	dataset := &datasetsv1.Dataset{}
 	err = k.visor.GetResource(ctx, kubevisor.ResourceTypeDatasets, dataset, in.Name)
@@ -34,9 +35,14 @@ func (k *Kube) UpdateDataset(ctx context.Context, in *UpdateDatasetInput) (out *
 	if in.NewName != "" {
 		dataset.SetName(in.NewName)
 	}
-	dataset.Spec = datasetsv1.DatasetSpec{
-		InputFor:   in.InputFor,
-		OutputFrom: in.OutputFrom,
+	if in.Size != nil {
+		dataset.Spec.Size = *in.Size
+	}
+	if in.InputFor != "" {
+		dataset.Spec.InputFor = append(dataset.Spec.InputFor, in.InputFor)
+	}
+	if in.OutputFrom != "" {
+		dataset.Spec.OutputFrom = append(dataset.Spec.OutputFrom, in.OutputFrom)
 	}
 
 	err = k.visor.UpdateResource(ctx, kubevisor.ResourceTypeDatasets, dataset, in.Name)

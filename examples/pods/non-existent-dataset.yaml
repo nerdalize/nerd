@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: non-existent-dataset
+  labels:
+    app: non-existent-dataset
+spec:
+  containers:
+  - image: busybox
+    command: [/bin/sh, -c, 'sleep 3600']
+    imagePullPolicy: IfNotPresent
+    name: busybox
+    volumeMounts:
+    - name: dataset
+      mountPath: /dataset
+  restartPolicy: Always
+  volumes:
+  - name: dataset
+    flexVolume:
+      driver: "nerdalize.com/dataset"
+      options:
+        input/s3Bucket: nlz-datasets-dev
+        input/s3Key: test-nonexistent.zip

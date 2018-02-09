@@ -48,3 +48,5 @@ import:
 - package: github.com/google/go-github
   subpackages:
   - github
+- package: github.com/joho/godotenv
+  version: 1.2.0

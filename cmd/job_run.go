@@ -69,6 +69,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 
 	//start with input volumes
 	//@TODO move this logic to a separate package and test is
+	var inputDataset string
 	vols := map[string]*svc.JobVolume{}
 	for _, input := range cmd.Inputs {
 		parts := strings.Split(input, ":")
@@ -86,8 +87,8 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		}
 
 		//if the input spec has an absolute path as its first part, try to upload it for the user
-		var bucket string
-		var key string
+		// var bucket string
+		// var key string
 		if filepath.IsAbs(parts[0]) {
 
 			//the user has provided a path as its input
@@ -97,16 +98,13 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 				return errors.Wrap(err, "failed configure transfer")
 			}
 
-			var ref *transfer.Ref
-			var name string
-			ref, name, err = uploadToDataset(ctx, trans, cmd.AWSS3Bucket, kube, parts[0], "")
+			// var ref *transfer.Ref
+			_, inputDataset, err = uploadToDataset(ctx, trans, cmd.AWSS3Bucket, kube, parts[0], "")
 			if err != nil {
 				return err
 			}
 
-			cmd.out.Infof("Uploaded input dataset: '%s'", name)
-			bucket = ref.Bucket
-			key = ref.Key
+			cmd.out.Infof("Uploaded input dataset: '%s'", inputDataset)
 		} else {
 
 			//the user (probably) has provided a dataset id as input
@@ -120,19 +118,16 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 				return errors.Errorf("the dataset '%s' cannot be used as input it has no key and/or bucket configured", parts[0])
 			}
 
-			bucket = out.Bucket
-			key = out.Key
+			inputDataset = out.Name
 		}
 
 		vols[parts[1]] = &svc.JobVolume{
-			MountPath: parts[1],
-			Input: &transfer.Ref{
-				Bucket: bucket,
-				Key:    key,
-			},
+			MountPath:    parts[1],
+			InputDataset: inputDataset,
 		}
 	}
 
+	var outputDataset string
 	for _, output := range cmd.Outputs {
 		parts := strings.Split(output, ":")
 		if len(parts) < 1 || len(parts) > 2 {
@@ -160,10 +155,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 				return errors.Errorf("the dataset '%s' cannot be used as output as it has no key and/or bucket configured", parts[0])
 			}
 
-			vol.Output = &transfer.Ref{
-				Key:    out.Key,
-				Bucket: out.Bucket,
-			}
+			outputDataset = out.Name
 		} else {
 			var trans transfer.Transfer
 			trans, err = cmd.TransferOpts.Transfer()
@@ -171,19 +163,15 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 				return errors.Wrap(err, "failed configure transfer")
 			}
 
-			var ref *transfer.Ref
-			var name string
-			ref, name, err = uploadToDataset(ctx, trans, cmd.AWSS3Bucket, kube, "", "")
+			_, outputDataset, err = uploadToDataset(ctx, trans, cmd.AWSS3Bucket, kube, "", "")
 			if err != nil {
 				return err
 			}
 
-			cmd.out.Infof("Setup empty output dataset: '%s'", name)
-			vol.Output = &transfer.Ref{
-				Key:    ref.Key,
-				Bucket: ref.Bucket,
-			}
+			cmd.out.Infof("Setup empty output dataset: '%s'", outputDataset)
 		}
+
+		vol.OutputDataset = outputDataset
 	}
 
 	in := &svc.RunJobInput{
@@ -202,8 +190,25 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		return renderServiceError(err, "failed to run job")
 	}
 
+	err = updateDataset(ctx, inputDataset, outputDataset, out.Name, kube)
+	if err != nil {
+		return err
+	}
+
 	cmd.out.Infof("Submitted job: '%s'", out.Name)
 	cmd.out.Infof("To see whats happening, use: 'nerd job list'")
+	return nil
+}
+
+func updateDataset(ctx context.Context, inputDataset, outputDataset, job string, kube *svc.Kube) error {
+	_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: inputDataset, InputFor: job})
+	if err != nil {
+		return err
+	}
+	_, err = kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: outputDataset, OutputFrom: job})
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
