@@ -46,19 +46,24 @@ func (cmd *DatasetList) Execute(args []string) (err error) {
 		return renderServiceError(err, "failed to list datasets")
 	}
 
+	if len(out.Items) == 0 {
+		cmd.out.Infof("No dataset found.")
+		return nil
+	}
+
 	sort.Slice(out.Items, func(i int, j int) bool {
 		return out.Items[i].Details.CreatedAt.After(out.Items[j].Details.CreatedAt)
 	})
 
-	hdr := []string{"DATASET", "CREATED AT", "SIZE", "OUTPUT OF", "INPUT FOR"}
+	hdr := []string{"DATASET", "CREATED AT", "SIZE", "INPUT FOR", "OUTPUT FROM"}
 	rows := [][]string{}
 	for _, item := range out.Items {
 		rows = append(rows, []string{
 			item.Name,
 			humanize.Time(item.Details.CreatedAt),
 			humanize.Bytes(item.Details.Size),
-			strings.Join(item.Details.OutputOf, ","),
 			strings.Join(item.Details.InputFor, ","),
+			strings.Join(item.Details.OutputFrom, ","),
 		})
 	}
 

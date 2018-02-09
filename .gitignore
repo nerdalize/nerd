@@ -26,3 +26,5 @@ secrets.env
 .DS_STORE
 bin
 vendor
+installers/msi/obj
+crd/controller

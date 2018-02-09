@@ -23,6 +23,16 @@ func TestFetchJobLogs(t *testing.T) {
 		IsErr    func(error) bool
 	}{
 		{
+			Name:    "when a zero value input is provided it should return a validation error",
+			Timeout: time.Second * 5,
+			Jobs:    nil,
+			Input:   nil,
+			IsErr:   svc.IsValidationErr,
+			IsOutput: func(t testing.TB, out *svc.FetchJobLogsOutput) bool {
+				return true
+			},
+		},
+		{
 			Name:    "when job doesnt exist it should that there were no logs available",
 			Timeout: time.Second * 5,
 			Input:   &svc.FetchJobLogsInput{Name: "my-job"},
@@ -46,7 +56,6 @@ func TestFetchJobLogs(t *testing.T) {
 				return true
 			},
 		},
-
 		{
 			Name:    "tail option should allow for limiting the nr of lines to return",
 			Timeout: time.Minute,
@@ -63,6 +72,35 @@ func TestFetchJobLogs(t *testing.T) {
 				return true
 			},
 		},
+
+		//@TODO find a way to not be dependant on a specific key to be present on s3
+		// {
+		// 	Name:    "when one job with a volume is run it should return logs indicating the download",
+		// 	Timeout: time.Minute,
+		// 	Jobs: []*svc.RunJobInput{{
+		// 		Image: "alpine",
+		// 		Name:  "my-job",
+		// 		Args:  []string{"ls", "-la", "/input"},
+		// 		Volumes: []svc.JobVolume{
+		// 			{
+		// 				Path:   "/input",
+		// 				Type:   svc.JobVolumeTypeInput,
+		// 				Bucket: "nlz-datasets-dev",
+		// 				Key:    "959d240b-4abb-43ba-b253-98b024541e09.zip",
+		// 			},
+		// 		},
+		// 	}},
+		// 	Input: &svc.FetchJobLogsInput{Name: "my-job"},
+		// 	IsErr: nil,
+		// 	IsOutput: func(t testing.TB, out *svc.FetchJobLogsOutput) bool {
+		// 		if out == nil || len(out.Data) < 1 {
+		// 			return false
+		// 		}
+		//
+		// 		assert(t, bytes.Contains(out.Data, []byte("westerscheldt_0001_19920831_020000")), "logs should contain the data we expect")
+		// 		return true
+		// 	},
+		// },
 
 		//@TODO add a test with multiple jobs, make sure logs are returned from earlier jobs
 	} {

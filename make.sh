@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+dev_profile="nerd-cli-dev"
+
 function print_help {
 	printf "Available Commands:\n";
 	awk -v sq="'" '/^function run_([a-zA-Z0-9-]*)\s*/ {print "-e " sq NR "p" sq " -e " sq NR-1 "p" sq }' make.sh \
@@ -24,14 +26,18 @@ function run_dev { #setup dev environment
 	command -v kubectl >/dev/null 2>&1 || { echo "executable 'kubectl' (kubernetes cli https://kubernetes.io/docs/tasks/tools/install-kubectl/) must be installed" >&2; exit 1; }
 	command -v glide >/dev/null 2>&1 || { echo "executable glide (https://github.com/Masterminds/glide) must be installed" >&2; exit 1; }
 
-	dev_profile="nerd-cli-dev"
+	#develop against specific version and configure flex volume to reflect prod setup
 	kube_version="v1.8.0"
+	flexvolume_config="--extra-config=controller-manager.FlexVolumePluginDir=/var/lib/kubelet/volumeplugins/ --extra-config=kubelet.VolumePluginDir=/var/lib/kubelet/volumeplugins/"
 	if minikube status --profile=$dev_profile | grep Running; then
 	    echo "--> minikube vm (profile: $dev_profile) is already running (check: $kube_version), skipping restart"
 			minikube profile $dev_profile
 	else
 			echo "--> starting minikube using the default 'vm-driver',to configure: https://github.com/kubernetes/minikube/issues/637)"
-		  minikube start --profile=$dev_profile --kubernetes-version=$kube_version
+		  minikube start $flexvolume_config --profile=$dev_profile --kubernetes-version=$kube_version
+
+			echo "--> sleeping to let k8s initial setup take place"
+			sleep 10
 	fi
 
 	echo "--> setting up kube config"
@@ -39,6 +45,9 @@ function run_dev { #setup dev environment
 
 	echo "--> setting up custom resource definition for datasets"
 	kubectl apply -f crd/artifacts/datasets.yaml
+
+	echo "--> installing flex volume deamon set"
+	kubectl apply -f cmd/flex/dataset.yml
 
 	echo "--> updating dependencies"
 	glide up
@@ -108,14 +117,28 @@ function run_publish { #publish cross compiled binaries
 }
 
 function run_docker { #build docker container
-	docker build -t nerdalize/nerd .
-	docker tag nerdalize/nerd nerdalize/nerd:`cat VERSION`
+	command -v docker >/dev/null 2>&1 || { echo "executable 'docker' (container runtime) must be installed" >&2; exit 1; }
+
+	echo "--> building flex volume container"
+	docker build -f flex.Dockerfile -t nerdalize/nerd-flex-volume:$(cat VERSION) .
 }
 
 function run_dockerpush { #build and push docker container
-	run_docker
-	docker push nerdalize/nerd:latest
-	docker push nerdalize/nerd:`cat VERSION`
+	command -v docker >/dev/null 2>&1 || { echo "executable 'docker' (container runtime) must be installed" >&2; exit 1; }
+
+	echo "--> publish flex volume container"
+	docker push nerdalize/nerd-flex-volume:$(cat VERSION)
+}
+
+function run_crdbuild { #build docker container for custom dataset controller
+	docker build -t nerdalize/custom-dataset-controller crd
+	docker tag nerdalize/custom-dataset-controller nerdalize/custom-dataset-controller:`cat crd/VERSION`
+}
+
+function run_crdpush { #build and push docker container for custom dataset controller
+	run_crdbuild
+	docker push nerdalize/custom-dataset-controller:latest
+	docker push nerdalize/custom-dataset-controller:`cat crd/VERSION`
 }
 
 case $1 in
@@ -128,5 +151,7 @@ case $1 in
 	"publish") run_publish ;;
 	"docker") run_docker ;;
 	"dockerpush") run_dockerpush ;;
+	"crdbuild") run_crdbuild ;;
+	"crdpush") run_crdpush ;;
 	*) print_help ;;
 esac

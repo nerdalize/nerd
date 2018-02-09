@@ -16,11 +16,11 @@ func TestDeleteDataset(t *testing.T) {
 	for _, c := range []struct {
 		Name     string
 		Timeout  time.Duration
-		Datasets []*svc.UploadDatasetInput
+		Datasets []*svc.CreateDatasetInput
 		Input    *svc.DeleteDatasetInput
 		Output   *svc.DeleteDatasetOutput
 		Listing  *svc.ListDatasetsOutput
-		IsOutput func(tb testing.TB, out *svc.DeleteDatasetOutput, list *svc.ListDatasetsOutput)
+		IsOutput func(tb testing.TB, out *svc.DeleteDatasetOutput, l *svc.ListDatasetsOutput)
 		IsErr    func(error) bool
 	}{
 		{
@@ -48,7 +48,7 @@ func TestDeleteDataset(t *testing.T) {
 
 			kube := svc.NewKube(di)
 			for _, dataset := range c.Datasets {
-				_, err := kube.UploadDataset(ctx, dataset)
+				_, err := kube.CreateDataset(ctx, dataset)
 				ok(t, err)
 			}
 

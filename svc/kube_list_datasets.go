@@ -12,10 +12,10 @@ import (
 
 //DatasetDetails tells us more about the dataset by looking at underlying resources
 type DatasetDetails struct {
-	CreatedAt time.Time
-	Size      uint64
-	OutputOf  []string
-	InputFor  []string
+	CreatedAt  time.Time
+	Size       uint64
+	InputFor   []string
+	OutputFrom []string
 }
 
 //ListDatasetItem is a dataset listing item
@@ -52,35 +52,16 @@ func (k *Kube) ListDatasets(ctx context.Context, in *ListDatasetsInput) (out *Li
 		item := &ListDatasetItem{
 			Name: dataset.GetName(),
 			Details: DatasetDetails{
-				CreatedAt: dataset.CreationTimestamp.Local(),
+				Size:       dataset.Spec.Size,
+				InputFor:   dataset.Spec.InputFor,
+				OutputFrom: dataset.Spec.OutputFrom,
+				CreatedAt:  dataset.CreationTimestamp.Local(),
 			},
 		}
 
 		mapping[dataset.UID] = item
 		out.Items = append(out.Items, item)
 	}
-
-	// //Step 2: Get all pods under nerd-app=cli
-	// pods := &pods{}
-	// err = k.visor.ListResources(ctx, kubevisor.ResourceTypePods, pods, nil)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// //Step 3: Match pods to the datasets we got earlier
-	// for _, pod := range pods.Items {
-	// 	uid, ok := pod.Labels["controller-uid"]
-	// 	if !ok {
-	// 		continue //not part of a controller
-	// 	}
-
-	// 	datasetItem, ok := mapping[types.UID(uid)]
-	// 	if !ok {
-	// 		continue //not part of any dataset
-	// 	}
-	// 	datasetItem.Details.InputFor = append(datasetItem.Details.InputFor, pod.Labels["job"])
-
-	// }
 
 	return out, nil
 }
