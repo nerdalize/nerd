@@ -1,10 +1,10 @@
 hash: 5b594e52eb212b7f509d879bc7d74dfd21c2e405f72e908fe81cad20b252807d
-updated: 2018-02-01T09:42:38.4145033+01:00
+updated: 2018-02-09T14:26:16.277240257+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
-  version: 1b176c5c6b57adb03bb982c21930e708ebca5a77
+  version: de28909e9837364f0368d94ddcba085c57af3c12
   subpackages:
   - aws
   - aws/awserr
@@ -72,7 +72,7 @@ imports:
 - name: github.com/go-playground/universal-translator
   version: 71201497bace774495daed26a3874fd339e0b538
 - name: github.com/go-playground/validator
-  version: 48a433ba4bcadc5be9aa16d4bdcb383d3f57a741
+  version: 3620d3c0694119b61c72071ff5a05a976e97b05a
 - name: github.com/gogo/protobuf
   version: c0656edd0d9eab7c66d1eb0c568f9039345796f7
   subpackages:
@@ -91,7 +91,7 @@ imports:
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-github
-  version: 897969cdc831052c4694e205e24a033fe7248c2f
+  version: 08e68b58d6369e25c2375020353d0d642aa4b2b1
   subpackages:
   - github
 - name: github.com/google/go-querystring
@@ -129,7 +129,7 @@ imports:
 - name: github.com/jessevdk/go-flags
   version: 4e64e4a4e2552194cf594243e23aa9baf3b4297e
 - name: github.com/jmespath/go-jmespath
-  version: dd801d4f4ce7ac746e7e7b4489d2fa600b3b096b
+  version: c2b33e8439af944379acbdd9c3a5fe0bc44bd8a5
 - name: github.com/json-iterator/go
   version: 36b14963da70d11297d313183d7e6388c8510e1e
 - name: github.com/juju/ratelimit
@@ -177,7 +177,7 @@ imports:
 - name: github.com/spf13/pflag
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - name: golang.org/x/crypto
-  version: 81e90905daefcd6fd217b62423c0908922eadb30
+  version: 5119cf507ed5294cc409c092980c7497ee5d6fd2
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
@@ -361,8 +361,9 @@ imports:
   - util/flowcontrol
   - util/homedir
   - util/integer
+  - util/workqueue
 - name: k8s.io/code-generator
-  version: 64ca0808efd56c2418939848947c06b8d495144d
+  version: 4fdcc27750e20a0d0fe12007ddfb235ba657529c
 - name: k8s.io/kube-openapi
   version: 868f2f29720b192240e18284659231b440f9cda5
   subpackages:

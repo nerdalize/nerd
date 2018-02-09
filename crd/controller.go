@@ -39,7 +39,7 @@ type Controller struct {
 	eventHandler   Handler
 }
 
-// NewController returns a new sample controller
+// NewController returns a new dataset controller
 func NewController(
 	nerdalizeclientset clientset.Interface,
 	datasetInformerFactory informers.SharedInformerFactory,
