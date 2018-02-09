@@ -175,14 +175,12 @@ func (volp *DatasetVolumes) createFSInFile(path string, filesystem FileSystem, s
 	//Create file with room to contain writable file system
 	f, err := os.Create(path)
 	if err != nil {
-		err = errors.Wrap(err, "failed to create file system file")
-		return err
+		return errors.Wrap(err, "failed to create file system file")
 	}
 
 	err = f.Truncate(size)
 	if err != nil {
-		err = errors.Wrap(err, "failed to allocate file system size")
-		return err
+		return errors.Wrap(err, "failed to allocate file system size")
 	}
 
 	//Build file system within
@@ -191,8 +189,7 @@ func (volp *DatasetVolumes) createFSInFile(path string, filesystem FileSystem, s
 	cmd.Stderr = buf
 	err = cmd.Run()
 	if err != nil {
-		err = errors.Wrap(errors.New(strings.TrimSpace(buf.String())), "failed to execute mkfs command")
-		return err
+		return errors.Wrap(errors.New(strings.TrimSpace(buf.String())), "failed to execute mkfs command")
 	}
 
 	return nil
@@ -244,12 +241,7 @@ func (volp *DatasetVolumes) provisionInput(path string, input *transfer.Ref) err
 
 //destroyInput cleans up a folder with input data.
 func (volp *DatasetVolumes) destroyInput(path string) error {
-	err := os.RemoveAll(path)
-	if err != nil {
-		err = errors.Wrap(err, "failed to destroy input directory")
-	}
-
-	return err
+	return errors.Wrap(os.RemoveAll(path), "failed to destroy input directory")
 }
 
 //mountFSInFile mounts an FS-in-file at the specified path.
