@@ -25,7 +25,6 @@ type UpdateDatasetOutput struct {
 
 // UpdateDataset will update a dataset resource.
 // Fields that can be updated: name, input, output and size. Input and output are the jobs the dataset is used for or coming from.
-// Size is only updated if it's 0 or higher
 func (k *Kube) UpdateDataset(ctx context.Context, in *UpdateDatasetInput) (out *UpdateDatasetOutput, err error) {
 	dataset := &datasetsv1.Dataset{}
 	err = k.visor.GetResource(ctx, kubevisor.ResourceTypeDatasets, dataset, in.Name)
