@@ -10,6 +10,7 @@ import (
 	"github.com/mitchellh/cli"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
 	"github.com/nerdalize/nerd/nerd/conf"
+	"github.com/nerdalize/nerd/nerd/oauth"
 	"github.com/pkg/errors"
 	"github.com/skratchdot/open-golang/open"
 )
@@ -18,19 +19,28 @@ const (
 	authorizeEndpoint = "o/authorize"
 )
 
+//LoginOpts defines options for login command
+type LoginOpts struct {
+	Config     string `long:"config-src" default:"oidc" default-mask:"" description:"type of configuration to use (from env, endpoint, or oidc)"`
+	KubeConfig string `long:"kube-config" env:"KUBECONFIG" description:"file at which Nerd will look for Kubernetes credentials" default-mask:"~/.kube/config"`
+}
+
 //Login command
 type Login struct {
 	*command
+	opts *LoginOpts
 }
 
 //LoginFactory returns a factory method for the join command
 func LoginFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd login", "Start a new authorized session.", "", nil)
+	opts := &LoginOpts{}
+	comm, err := newCommand("nerd login", "Start a new authorized session.", "", opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
 	cmd := &Login{
 		command: comm,
+		opts:    opts,
 	}
 	cmd.runFunc = cmd.DoRun
 
@@ -75,7 +85,43 @@ func (cmd *Login) DoRun(args []string) error {
 	if err != nil {
 		return HandleError(errors.Wrap(err, "failed to write oauth tokens to config"))
 	}
-	cmd.ui.Info("Successful login. You can now select a project using 'nerd project set'")
+
+	client := v1auth.NewClient(v1auth.ClientConfig{
+		Base:               authbase,
+		Logger:             cmd.outputter.Logger,
+		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.SecureClientID, cmd.config.Auth.SecureClientSecret, cmd.session),
+	})
+	list, err := client.ListProjects()
+	if err != nil {
+		return HandleError(err)
+	}
+
+	if len(list.Projects) == 0 {
+		cmd.ui.Info("Successful login, but you don't have any project. Please contact mayday@nerdalize.com.")
+		return nil
+	}
+	var projectSlug string
+	for _, project := range list.Projects {
+		projectSlug = project.Nk
+		err = setProject(cmd.opts.KubeConfig, cmd.opts.Config, project, cmd.outputter.Logger)
+		if err != nil {
+			cmd.ui.Info(fmt.Sprintf("Could not set project %s, trying with another one. Error: %v", projectSlug, err))
+			projectSlug = ""
+			continue
+		}
+		break
+	}
+	if projectSlug == "" {
+		cmd.ui.Info("Successful login. You can now list your projects using 'nerd project list'.")
+		return nil
+	}
+
+	err = cmd.session.WriteProject(projectSlug, conf.DefaultAWSRegion)
+	if err != nil {
+		return HandleError(err)
+	}
+
+	cmd.ui.Info(fmt.Sprintf("Successful login. Default project set: %s.", projectSlug))
 	return nil
 }
 

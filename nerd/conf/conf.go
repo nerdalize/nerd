@@ -41,18 +41,17 @@ type LoggingConfig struct {
 func Defaults() *Config {
 	return &Config{
 		Auth: AuthConfig{
-			APIEndpoint:        "https://auth.nerdalize.com/v1/",
+			APIEndpoint:        "https://auth.staging.nlze.nl/v1/",
 			OAuthLocalServer:   "localhost:9876",
-			OAuthSuccessURL:    "https://auth.nerdalize.com/do/login_complete/?client=CLI",
+			OAuthSuccessURL:    "https://auth.staging.nlze.nl/do/login_complete/?client=CLI",
 			SecureClientID:     "ckvyq40yyGSH",
-			SecureClientSecret: "f9ef9cb57f5a76e0715def8e7c4c609a1b8872912bc09208cb75d71f",
+			SecureClientSecret: "0c4feb1e9d11790451a4364e803284a60905cef1a5f9bf7bad5f0eeb",
 			PublicKey: `-----BEGIN PUBLIC KEY-----
 MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEBthEmchVCtA3ZPXqiCXdj+7/ZFuhxRgx
 grTxIHK+b0vEqKqA3O++ggD1GgjqtTfNLGUjLCE3KxyIN78TsK+HU4VVexTjlWXy
 WPtidD68xGD0JVPU1cSfu8iP0XzwgttG
 -----END PUBLIC KEY-----
-`,
-		},
+`},
 		Logging: LoggingConfig{
 			Enabled:      false,
 			FileLocation: "~/.nerd/log",

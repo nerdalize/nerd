@@ -26,10 +26,10 @@ type P interface {
 }
 
 //New instantiates a new P interface using the conf parameter. It can return a env, endpoint or oidc populator.
-func New(conf, kubeConfigFile string, project *v1payload.GetProjectOutput) (P, error) {
+func New(conf, kubeConfigFile, homedir string, project *v1payload.GetProjectOutput) (P, error) {
 	switch conf {
 	case "oidc":
-		return newOIDC(kubeConfigFile, project), nil
+		return newOIDC(kubeConfigFile, homedir, project), nil
 	case "endpoint":
 		return newEndpoint(kubeConfigFile), nil
 	case "env":

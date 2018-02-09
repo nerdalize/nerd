@@ -4,11 +4,12 @@ import "time"
 
 //ListProjectsOutput contains a list of projects
 type ListProjectsOutput struct {
-	Projects []*Project
+	Projects []*GetProjectOutput
 }
 
 //GetProjectOutput get some details of a specific project. Useful to setup kube config.
 type GetProjectOutput struct {
+	ID       int    `json:"id"`
 	URL      string `json:"url"`
 	Nk       string `json:"nk"`
 	Name     string `json:"name"`

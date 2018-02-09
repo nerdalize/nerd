@@ -1,7 +1,11 @@
 package populator
 
 import (
+	"encoding/base64"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"sync/atomic"
 
 	"github.com/nerdalize/nerd/nerd/conf"
@@ -15,11 +19,13 @@ import (
 
 const (
 	// ClientSecret necessary for OpenID connect
-	ClientSecret = "f9ef9cb57f5a76e0715def8e7c4c609a1b8872912bc09208cb75d71f"
+	ClientSecret = "0c4feb1e9d11790451a4364e803284a60905cef1a5f9bf7bad5f0eeb"
 	// ClientID is a client id that all tokens must be issued for.
 	ClientID = "ckvyq40yyGSH"
 	// IDPIssuerURL is the URL of the provider which allows the API server to discover public signing keys.
-	IDPIssuerURL = "https://auth.nerdalize.com"
+	IDPIssuerURL = "https://auth.staging.nlze.nl"
+	// DirPermissions are the output directory's permissions.
+	DirPermissions = 0755
 )
 
 var (
@@ -34,11 +40,13 @@ type OIDCPopulator struct {
 	kubeConfigFile atomic.Value
 
 	project *v1payload.GetProjectOutput
+	homedir string
 }
 
-func newOIDC(kubeConfigFile string, project *v1payload.GetProjectOutput) *OIDCPopulator {
+func newOIDC(kubeConfigFile, homedir string, project *v1payload.GetProjectOutput) *OIDCPopulator {
 	o := &OIDCPopulator{
 		project: project,
+		homedir: homedir,
 	}
 	o.kubeConfigFile.Store(kubeConfigFile)
 	return o
@@ -74,7 +82,11 @@ func (o *OIDCPopulator) PopulateKubeConfig(project string) error {
 	if o.project.Services.Cluster.B64CaData == "" {
 		cluster.InsecureSkipTLSVerify = true
 	} else {
-		cluster.CertificateAuthorityData = []byte(o.project.Services.Cluster.B64CaData)
+		cert, err := o.createCertificate(o.project.Services.Cluster.B64CaData, project, o.homedir)
+		if err != nil {
+			return err
+		}
+		cluster.CertificateAuthority = cert
 	}
 	cluster.Server = o.project.Services.Cluster.Address
 
@@ -95,12 +107,11 @@ func (o *OIDCPopulator) PopulateKubeConfig(project string) error {
 	auth.AuthProvider = &api.AuthProviderConfig{
 		Name: "oidc",
 		Config: map[string]string{
-			"client-id":                 ClientID,
-			"client-secret":             ClientSecret,
-			"id-token":                  config.OAuth.IDToken,
-			"idp-certificate-authority": o.project.Services.Cluster.B64CaData,
-			"idp-issuer-url":            IDPIssuerURL,
-			"refresh-token":             config.OAuth.RefreshToken,
+			"client-id":      ClientID,
+			"client-secret":  ClientSecret,
+			"id-token":       config.OAuth.IDToken,
+			"idp-issuer-url": IDPIssuerURL,
+			"refresh-token":  config.OAuth.RefreshToken,
 		},
 	}
 
@@ -127,4 +138,35 @@ func (o *OIDCPopulator) PopulateKubeConfig(project string) error {
 	}
 
 	return nil
+}
+
+func (o *OIDCPopulator) createCertificate(data, project, homedir string) (string, error) {
+	if data == "" {
+		return "", nil
+	}
+	dir := filepath.Join(homedir, ".nerd", "certs")
+	filename := filepath.Join(dir, project+".cert")
+	_, err := os.Stat(dir)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return "", errors.Errorf("'%v' is not a path", dir)
+		}
+		err = os.MkdirAll(dir, DirPermissions)
+		if err != nil {
+			return "", errors.Wrap(err, fmt.Sprintf("The provided path '%s' does not exist and could not be created.", dir))
+		}
+		_, err = os.Stat(dir)
+		if err != nil {
+			return "", err
+		}
+	}
+	d, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return "", err
+	}
+	err = ioutil.WriteFile(filename, d, 0644)
+	if err != nil {
+		return "", err
+	}
+	return filename, nil
 }

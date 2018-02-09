@@ -1,6 +1,7 @@
 package command
 
 import (
+	"log"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -9,6 +10,8 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/nerdalize/nerd/cmd"
 	"github.com/nerdalize/nerd/nerd/client/auth/v1"
+	v1payload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
+
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/oauth"
 	"github.com/nerdalize/nerd/pkg/populator"
@@ -72,25 +75,8 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 		return HandleError(errors.Wrap(err, "Project not found, please check the project name. You can get a list of your projects by running `nerd project list`."))
 	}
 
-	if cmd.opts.KubeConfig == "" {
-		hdir, err := homedir.Dir()
-		if err != nil {
-			return HandleError(err)
-		}
-		cmd.opts.KubeConfig = filepath.Join(hdir, ".kube", "config")
-	}
-
-	p, err := populator.New(cmd.opts.Config, cmd.opts.KubeConfig, project)
+	err = setProject(cmd.opts.KubeConfig, cmd.opts.Config, project, cmd.outputter.Logger)
 	if err != nil {
-		return HandleError(err)
-	}
-	err = p.PopulateKubeConfig(projectSlug)
-	if err != nil {
-		return HandleError(err)
-	}
-
-	if err := checkNamespace(cmd.opts.KubeConfig, projectSlug); err != nil {
-		p.RemoveConfig(projectSlug)
 		return HandleError(err)
 	}
 
@@ -103,6 +89,34 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 	return nil
 }
 
+func setProject(kubeConfig, conf string, project *v1payload.GetProjectOutput, logger *log.Logger) error {
+	var (
+		hdir string
+		err  error
+	)
+	hdir, err = homedir.Dir()
+	if err != nil {
+		return err
+	}
+	if kubeConfig == "" {
+		kubeConfig = filepath.Join(hdir, ".kube", "config")
+	}
+	p, err := populator.New(conf, kubeConfig, hdir, project)
+	if err != nil {
+		return err
+	}
+	err = p.PopulateKubeConfig(project.Nk)
+	if err != nil {
+		return err
+	}
+	if err := checkNamespace(kubeConfig, project.Nk); err != nil {
+		p.RemoveConfig(project.Nk)
+		return err
+	}
+	return nil
+
+}
+
 func checkNamespace(kubeConfig, ns string) error {
 	kcfg, err := clientcmd.BuildConfigFromFlags("", kubeConfig)
 	if err != nil {
@@ -111,7 +125,6 @@ func checkNamespace(kubeConfig, ns string) error {
 		}
 		return errors.Wrap(err, "failed to build Kubernetes config from provided kube config path")
 	}
-
 	kube, err := kubernetes.NewForConfig(kcfg)
 	if err != nil {
 		return errors.Wrap(err, "failed to create Kubernetes configuration")
