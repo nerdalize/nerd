@@ -209,10 +209,9 @@ func (volp *DatasetVolumes) destroyFSInFile(path string) error {
 }
 
 func (volp *DatasetVolumes) datasetS3(namespace, dataset string) (string, string, error) {
-
 	di, err := NewDeps(namespace)
 	if err != nil {
-		return "", "", errors.Wrapf(err, "failed to setup dependencies")
+		return "", "", errors.Wrap(err, "failed to setup dependencies")
 	}
 
 	kube := svc.NewKube(di)
@@ -375,12 +374,12 @@ func (volp *DatasetVolumes) handleOutput(path, namespace, dataset string) error 
 		return errors.Wrap(err, "failed to get dataset s3 info from dataset id")
 	}
 
+	// Upload data
 	trans, err := transfer.NewS3(&transfer.S3Conf{
 		Bucket: bucket,
 	})
 	if err != nil {
-		err = errors.Wrap(err, "failed to set up S3 transfer")
-		return err
+		return errors.Wrap(err, "failed to set up S3 transfer")
 	}
 
 	ref := &transfer.Ref{
@@ -388,10 +387,24 @@ func (volp *DatasetVolumes) handleOutput(path, namespace, dataset string) error 
 		Key:    key,
 	}
 
-	_, err = trans.Upload(context.Background(), ref, path)
+	size, err := trans.Upload(context.Background(), ref, path)
 	if err != nil {
-		err = errors.Wrap(err, "failed to upload data to S3")
-		return err
+		return errors.Wrap(err, "failed to upload data to S3")
+	}
+
+	// Update size in resource
+	di, err := NewDeps(namespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to setup dependencies")
+	}
+
+	kube := svc.NewKube(di)
+	_, err = kube.UpdateDataset(context.TODO(), &svc.UpdateDatasetInput{
+		Name:       dataset,
+		Size:       &size,
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to update size in dataset resource")
 	}
 
 	return nil
