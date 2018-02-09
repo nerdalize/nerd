@@ -145,7 +145,7 @@ func (trans *S3) Download(ctx context.Context, r *Ref, path string) (err error) 
 }
 
 //Upload data at a local path to the remote storage and return a reference
-func (trans *S3) Upload(ctx context.Context, r *Ref, path string) (size int, err error) {
+func (trans *S3) Upload(ctx context.Context, r *Ref, path string) (size uint64, err error) {
 	buf := bytes.NewBuffer(nil) //@TODO we cannot zip to memory as these files can be very large
 	zipw := zip.NewWriter(buf)
 	if err = func() error {
@@ -182,7 +182,7 @@ func (trans *S3) Upload(ctx context.Context, r *Ref, path string) (size int, err
 		return 0, errors.Wrap(err, "failed to create zip file")
 	}
 
-	size = buf.Len()
+	size = uint64(buf.Len())
 	if _, err = trans.upl.UploadWithContext(ctx, &s3manager.UploadInput{
 		Bucket: aws.String(r.Bucket),
 		Key:    aws.String(r.Key),
