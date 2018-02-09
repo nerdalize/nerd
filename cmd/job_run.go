@@ -210,11 +210,11 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 }
 
 func updateDataset(ctx context.Context, inputDataset, outputDataset, job string, kube *svc.Kube) error {
-	_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: inputDataset, InputFor: job, Size: -1})
+	_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: inputDataset, InputFor: job})
 	if err != nil {
 		return err
 	}
-	_, err = kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: outputDataset, OutputFrom: job, Size: -1})
+	_, err = kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: outputDataset, OutputFrom: job})
 	if err != nil {
 		return err
 	}
