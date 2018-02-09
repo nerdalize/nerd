@@ -1,0 +1,35 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: custom-dataset-controller
+  namespace: kube-system
+  labels:
+    app: nerd-cli
+    project: cli
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nerd-cli
+      project: cli
+  template:
+    metadata:
+      name: custom-dataset-controller
+      labels:
+        app: nerd-cli
+        project: cli
+    spec:
+      containers:
+      - name: controller
+        imagePullPolicy: Always
+        image: nerdalize/custom-dataset-controller:v0.2
+        args:
+          - -alsologtostderr 
+          - -v=4
+        # resources:
+        #   limits:
+        #     cpu: "1"
+        #     memory: "1Gi"
+        #   requests:
+        #     cpu: "500m"
+        #     memory: "512Mi"

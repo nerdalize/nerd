@@ -26,6 +26,7 @@ type S3 struct {
 	cfg  *S3Conf
 	upl  *s3manager.Uploader
 	dwn  *s3manager.Downloader
+	api  *s3.S3
 }
 
 //NewS3 creates an S3 transfer
@@ -60,6 +61,7 @@ func NewS3(cfg *S3Conf) (trans *S3, err error) {
 	//setup the official uploader
 	trans.upl = s3manager.NewUploaderWithClient(s3api)
 	trans.dwn = s3manager.NewDownloaderWithClient(s3api)
+	trans.api = s3api
 	return trans, nil
 }
 
@@ -190,4 +192,12 @@ func (trans *S3) Upload(ctx context.Context, r *Ref, path string) (size int, err
 	}
 
 	return size, nil
+}
+
+//Delete data from the remote storage
+func (trans *S3) Delete(ctx context.Context, r *Ref) (err error) {
+	if _, err = trans.api.DeleteObject(&s3.DeleteObjectInput{Bucket: aws.String(r.Bucket), Key: aws.String(r.Key)}); err != nil {
+		return errors.Wrap(err, "failed to perform delete")
+	}
+	return nil
 }

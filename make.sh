@@ -130,6 +130,17 @@ function run_dockerpush { #build and push docker container
 	docker push nerdalize/nerd-flex-volume:$(cat VERSION)
 }
 
+function run_crdbuild { #build docker container for custom dataset controller
+	docker build -t nerdalize/custom-dataset-controller crd
+	docker tag nerdalize/custom-dataset-controller nerdalize/custom-dataset-controller:`cat crd/VERSION`
+}
+
+function run_crdpush { #build and push docker container for custom dataset controller
+	run_crdbuild
+	docker push nerdalize/custom-dataset-controller:latest
+	docker push nerdalize/custom-dataset-controller:`cat crd/VERSION`
+}
+
 case $1 in
 	"build") run_build ;;
 	"dev") run_dev ;;
@@ -140,5 +151,7 @@ case $1 in
 	"publish") run_publish ;;
 	"docker") run_docker ;;
 	"dockerpush") run_dockerpush ;;
+	"crdbuild") run_crdbuild ;;
+	"crdpush") run_crdpush ;;
 	*) print_help ;;
 esac

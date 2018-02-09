@@ -14,4 +14,5 @@ type Ref struct {
 type Transfer interface {
 	Upload(ctx context.Context, r *Ref, from string) (n int, err error)
 	Download(ctx context.Context, r *Ref, to string) (err error)
+	Delete(ctx context.Context, r *Ref) (err error)
 }
