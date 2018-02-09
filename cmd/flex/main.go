@@ -1,3 +1,4 @@
+//main holds the flex volume executable, compiled separately
 package main
 
 import (
@@ -5,16 +6,33 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
-	"github.com/hashicorp/go-multierror"
+	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
 	"github.com/nerdalize/nerd/pkg/transfer"
+	"github.com/nerdalize/nerd/svc"
+
+	"github.com/go-playground/validator"
+	"github.com/hashicorp/go-multierror"
+	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
+	"k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	certutil "k8s.io/client-go/util/cert"
 )
+
+//DevNullLogger is used to disable kube visor logging
+type DevNullLogger struct{}
+
+//Debugf implementation
+func (l *DevNullLogger) Debugf(format string, args ...interface{}) {}
 
 //Operation is an action that can be performed with the flex volume.
 type Operation string
@@ -77,10 +95,9 @@ type Output struct {
 //the following keys: kubernetes.io/fsType, kubernetes.io/pod.name, kubernetes.io/pod.namespace
 //kubernetes.io/pod.uid, kubernetes.io/pvOrVolumeName, kubernetes.io/readwrite, kubernetes.io/serviceAccount.name
 type MountOptions struct {
-	InputS3Key     string `json:"input/s3Key"`
-	InputS3Bucket  string `json:"input/s3Bucket"`
-	OutputS3Key    string `json:"output/s3Key"`
-	OutputS3Bucket string `json:"output/s3Bucket"`
+	InputDataset  string `json:"input/dataset"`
+	OutputDataset string `json:"output/dataset"`
+	Namespace     string `json:"kubernetes.io/pod.namespace"`
 }
 
 //Capabilities represents the supported features of a flex volume.
@@ -100,34 +117,20 @@ type DatasetVolumes struct{}
 
 //datasetOpts describes any input and output for a volume.
 type datasetOpts struct {
-	Input  *transfer.Ref
-	Output *transfer.Ref
+	Namespace     string
+	InputDataset  string
+	OutputDataset string
 }
 
 //writeDatasetOpts writes dataset options to a JSON file.
 func (volp *DatasetVolumes) writeDatasetOpts(path string, opts MountOptions) (*datasetOpts, error) {
-	dsopts := &datasetOpts{}
-	if opts.InputS3Key != "" {
-		dsopts.Input = &transfer.Ref{
-			Key:    opts.InputS3Key,
-			Bucket: opts.InputS3Bucket,
-		}
-
-		if dsopts.Input.Bucket == "" {
-			return nil, errors.New("input key configured without a bucket")
-		}
+	dsopts := &datasetOpts{Namespace: opts.Namespace}
+	if dsopts.Namespace == "" {
+		return nil, errors.New("pod namespace was not configured for flex volume")
 	}
 
-	if opts.OutputS3Key != "" {
-		dsopts.Output = &transfer.Ref{
-			Key:    opts.OutputS3Key,
-			Bucket: opts.OutputS3Bucket,
-		}
-
-		if dsopts.Output.Bucket == "" {
-			return nil, errors.New("output key configured without a bucket")
-		}
-	}
+	dsopts.InputDataset = opts.InputDataset
+	dsopts.OutputDataset = opts.OutputDataset
 
 	f, err := os.Create(path)
 	if err != nil {
@@ -205,8 +208,25 @@ func (volp *DatasetVolumes) destroyFSInFile(path string) error {
 	return err
 }
 
+func (volp *DatasetVolumes) datasetS3(namespace, dataset string) (string, string, error) {
+
+	di, err := NewDeps(namespace)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "failed to setup dependencies")
+	}
+
+	kube := svc.NewKube(di)
+	out, err := kube.GetDataset(context.TODO(), &svc.GetDatasetInput{Name: dataset})
+	if err != nil {
+		//@TODO if the dataset doesn't exist it might be deleted, error more gracefully
+		return "", "", errors.Wrap(err, "failed to get dataset")
+	}
+
+	return out.Bucket, out.Key, nil
+}
+
 //provisionInput makes the specified input available at given path (input may be nil).
-func (volp *DatasetVolumes) provisionInput(path string, input *transfer.Ref) error {
+func (volp *DatasetVolumes) provisionInput(path, namespace, dataset string) error {
 	//Create directory at path in case it doesn't exist yet
 	err := os.MkdirAll(path, DirectoryPermissions)
 	if err != nil {
@@ -214,21 +234,26 @@ func (volp *DatasetVolumes) provisionInput(path string, input *transfer.Ref) err
 	}
 
 	//Abort if there is nothing to download to it
-	if input == nil {
+	if dataset == "" {
 		return nil
+	}
+
+	bucket, key, err := volp.datasetS3(namespace, dataset)
+	if err != nil {
+		return errors.Wrap(err, "failed to get dataset s3 info from dataset id")
 	}
 
 	//Download input to it
 	var trans transfer.Transfer
 	if trans, err = transfer.NewS3(&transfer.S3Conf{
-		Bucket: input.Bucket,
+		Bucket: bucket,
 	}); err != nil {
 		return errors.Wrap(err, "failed to set up S3 transfer")
 	}
 
 	ref := &transfer.Ref{
-		Bucket: input.Bucket,
-		Key:    input.Key,
+		Bucket: bucket,
+		Key:    key,
 	}
 
 	err = trans.Download(context.Background(), ref, path)
@@ -339,14 +364,19 @@ func (volp *DatasetVolumes) unmountOverlayFS(upperDir string, workDir string, mo
 }
 
 //handleOutput uploads any output in the specified directory.
-func (volp *DatasetVolumes) handleOutput(path string, output *transfer.Ref) error {
+func (volp *DatasetVolumes) handleOutput(path, namespace, dataset string) error {
 	// Nothing to do
-	if output == nil {
+	if dataset == "" {
 		return nil
 	}
 
+	bucket, key, err := volp.datasetS3(namespace, dataset)
+	if err != nil {
+		return errors.Wrap(err, "failed to get dataset s3 info from dataset id")
+	}
+
 	trans, err := transfer.NewS3(&transfer.S3Conf{
-		Bucket: output.Bucket,
+		Bucket: bucket,
 	})
 	if err != nil {
 		err = errors.Wrap(err, "failed to set up S3 transfer")
@@ -354,8 +384,8 @@ func (volp *DatasetVolumes) handleOutput(path string, output *transfer.Ref) erro
 	}
 
 	ref := &transfer.Ref{
-		Bucket: output.Bucket,
-		Key:    output.Key,
+		Bucket: bucket,
+		Key:    key,
 	}
 
 	_, err = trans.Upload(context.Background(), ref, path)
@@ -416,7 +446,7 @@ func (volp *DatasetVolumes) Mount(kubeMountPath string, opts MountOptions) (err 
 	}
 
 	//Set up input
-	err = volp.provisionInput(volp.getPath(kubeMountPath, RelPathInput), dsopts.Input)
+	err = volp.provisionInput(volp.getPath(kubeMountPath, RelPathInput), dsopts.Namespace, dsopts.InputDataset)
 
 	defer func() {
 		if err != nil {
@@ -491,7 +521,7 @@ func (volp *DatasetVolumes) Unmount(kubeMountPath string) (err error) {
 		return errors.Wrap(err, "failed to read volume database")
 	}
 
-	err = volp.handleOutput(kubeMountPath, dsopts.Output)
+	err = volp.handleOutput(kubeMountPath, dsopts.Namespace, dsopts.OutputDataset)
 	if err != nil {
 		return errors.Wrap(err, "failed to upload output")
 	}
@@ -607,4 +637,113 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to encode output: %v", err)
 	}
+}
+
+//CreateKubernetesConfig will read a envionment file and service account
+//specifically setup to provide a connection from the host to the API server
+func CreateKubernetesConfig() (*rest.Config, error) {
+	exep, err := os.Executable()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load executable path")
+	}
+
+	exedir := filepath.Join(filepath.Dir(exep))
+
+	//read environment from .env file
+	err = godotenv.Load(filepath.Join(exedir, "flex.env"))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load flex environment")
+	}
+
+	//read token file from service account
+	token, err := ioutil.ReadFile(filepath.Join(exedir, "serviceaccount", v1.ServiceAccountTokenKey))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read service account token key")
+	}
+
+	//read CA config from service account
+	tlsClientConfig := rest.TLSClientConfig{}
+	rootCAFile := filepath.Join(exedir, "serviceaccount", v1.ServiceAccountRootCAKey)
+	if _, err = certutil.NewPool(rootCAFile); err != nil {
+		return nil, errors.Wrap(err, "failed to load service account CA files")
+	}
+
+	tlsClientConfig.CAFile = rootCAFile
+
+	//read kubernetes api host and port from (imported) evironment
+	host, port := os.Getenv("KUBERNETES_SERVICE_HOST"), os.Getenv("KUBERNETES_SERVICE_PORT")
+	if len(host) == 0 || len(port) == 0 {
+		return nil, errors.Errorf("unable to load in-cluster configuration, KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT must be defined")
+	}
+
+	//create rest config
+	config := &rest.Config{
+		Host:            "https://" + net.JoinHostPort(host, port),
+		BearerToken:     string(token),
+		TLSClientConfig: tlsClientConfig,
+	}
+
+	return config, nil
+}
+
+//Deps holds flex volume dependencies to setup
+//our kubernetes service
+type Deps struct {
+	val  svc.Validator
+	kube kubernetes.Interface
+	crd  crd.Interface
+	logs svc.Logger
+	ns   string
+}
+
+//NewDeps sets up the Kubernetes service dependencies specifically for
+//the flex volume client
+func NewDeps(namespace string) (d *Deps, err error) {
+	d = &Deps{
+		ns:   namespace,
+		val:  validator.New(),
+		logs: &DevNullLogger{},
+	}
+
+	kcfg, err := CreateKubernetesConfig()
+	if err != nil {
+		return d, errors.Wrap(err, "failed to setup Kubernetes connection")
+	}
+
+	d.crd, err = crd.NewForConfig(kcfg)
+	if err != nil {
+		return d, errors.Wrap(err, "failed to create Kubernetes CRD interface")
+	}
+
+	d.kube, err = kubernetes.NewForConfig(kcfg)
+	if err != nil {
+		return d, errors.Wrap(err, "failed to create Kubernetes configuration")
+	}
+
+	return d, nil
+}
+
+//Kube provides the kubernetes dependency
+func (deps *Deps) Kube() kubernetes.Interface {
+	return deps.kube
+}
+
+//Validator provides the Validator dependency
+func (deps *Deps) Validator() svc.Validator {
+	return deps.val
+}
+
+//Logger provides the Logger dependency
+func (deps *Deps) Logger() svc.Logger {
+	return deps.logs
+}
+
+//Namespace provides the namespace dependency
+func (deps *Deps) Namespace() string {
+	return deps.ns
+}
+
+//Crd returns the custom resource depenition interface
+func (deps *Deps) Crd() crd.Interface {
+	return deps.crd
 }

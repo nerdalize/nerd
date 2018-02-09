@@ -87,8 +87,8 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		}
 
 		//if the input spec has an absolute path as its first part, try to upload it for the user
-		var bucket string
-		var key string
+		// var bucket string
+		// var key string
 		if filepath.IsAbs(parts[0]) {
 
 			//the user has provided a path as its input
@@ -98,15 +98,13 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 				return errors.Wrap(err, "failed configure transfer")
 			}
 
-			var ref *transfer.Ref
-			ref, inputDataset, err = uploadToDataset(ctx, trans, cmd.AWSS3Bucket, kube, parts[0], "")
+			// var ref *transfer.Ref
+			_, inputDataset, err = uploadToDataset(ctx, trans, cmd.AWSS3Bucket, kube, parts[0], "")
 			if err != nil {
 				return err
 			}
 
 			cmd.out.Infof("Uploaded input dataset: '%s'", inputDataset)
-			bucket = ref.Bucket
-			key = ref.Key
 		} else {
 
 			//the user (probably) has provided a dataset id as input
@@ -119,17 +117,13 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 			if out.Bucket == "" || out.Key == "" {
 				return errors.Errorf("the dataset '%s' cannot be used as input it has no key and/or bucket configured", parts[0])
 			}
-			bucket = out.Bucket
-			key = out.Key
+
 			inputDataset = out.Name
 		}
 
 		vols[parts[1]] = &svc.JobVolume{
-			MountPath: parts[1],
-			Input: &transfer.Ref{
-				Bucket: bucket,
-				Key:    key,
-			},
+			MountPath:    parts[1],
+			InputDataset: inputDataset,
 		}
 	}
 
@@ -161,10 +155,6 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 				return errors.Errorf("the dataset '%s' cannot be used as output as it has no key and/or bucket configured", parts[0])
 			}
 
-			vol.Output = &transfer.Ref{
-				Key:    out.Key,
-				Bucket: out.Bucket,
-			}
 			outputDataset = out.Name
 		} else {
 			var trans transfer.Transfer
@@ -173,18 +163,15 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 				return errors.Wrap(err, "failed configure transfer")
 			}
 
-			var ref *transfer.Ref
-			ref, outputDataset, err = uploadToDataset(ctx, trans, cmd.AWSS3Bucket, kube, "", "")
+			_, outputDataset, err = uploadToDataset(ctx, trans, cmd.AWSS3Bucket, kube, "", "")
 			if err != nil {
 				return err
 			}
 
 			cmd.out.Infof("Setup empty output dataset: '%s'", outputDataset)
-			vol.Output = &transfer.Ref{
-				Key:    ref.Key,
-				Bucket: ref.Bucket,
-			}
 		}
+
+		vol.OutputDataset = outputDataset
 	}
 
 	in := &svc.RunJobInput{
@@ -204,6 +191,10 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 	}
 
 	err = updateDataset(ctx, inputDataset, outputDataset, out.Name, kube)
+	if err != nil {
+		return err
+	}
+
 	cmd.out.Infof("Submitted job: '%s'", out.Name)
 	cmd.out.Infof("To see whats happening, use: 'nerd job list'")
 	return nil

@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 
 	"github.com/nerdalize/nerd/pkg/kubevisor"
-	"github.com/nerdalize/nerd/pkg/transfer"
 
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/api/core/v1"
@@ -40,9 +39,9 @@ const (
 
 //JobVolume can be used in a job
 type JobVolume struct {
-	MountPath string
-	Input     *transfer.Ref
-	Output    *transfer.Ref
+	MountPath     string
+	InputDataset  string
+	OutputDataset string
 }
 
 //RunJobOutput is the output to RunJob
@@ -99,14 +98,12 @@ func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, 
 
 	for _, vol := range in.Volumes {
 		opts := map[string]string{}
-		if vol.Input != nil {
-			opts["input/s3Key"] = vol.Input.Key
-			opts["input/s3Bucket"] = vol.Input.Bucket
+		if vol.InputDataset != "" {
+			opts["input/dataset"] = vol.InputDataset
 		}
 
-		if vol.Output != nil {
-			opts["output/s3Key"] = vol.Output.Key
-			opts["output/s3Bucket"] = vol.Output.Bucket
+		if vol.OutputDataset != "" {
+			opts["output/dataset"] = vol.OutputDataset
 		}
 
 		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, v1.Volume{

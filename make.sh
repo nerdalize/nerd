@@ -26,13 +26,18 @@ function run_dev { #setup dev environment
 	command -v kubectl >/dev/null 2>&1 || { echo "executable 'kubectl' (kubernetes cli https://kubernetes.io/docs/tasks/tools/install-kubectl/) must be installed" >&2; exit 1; }
 	command -v glide >/dev/null 2>&1 || { echo "executable glide (https://github.com/Masterminds/glide) must be installed" >&2; exit 1; }
 
+	#develop against specific version and configure flex volume to reflect prod setup
 	kube_version="v1.8.0"
+	flexvolume_config="--extra-config=controller-manager.FlexVolumePluginDir=/var/lib/kubelet/volumeplugins/ --extra-config=kubelet.VolumePluginDir=/var/lib/kubelet/volumeplugins/"
 	if minikube status --profile=$dev_profile | grep Running; then
 	    echo "--> minikube vm (profile: $dev_profile) is already running (check: $kube_version), skipping restart"
 			minikube profile $dev_profile
 	else
 			echo "--> starting minikube using the default 'vm-driver',to configure: https://github.com/kubernetes/minikube/issues/637)"
-		  minikube start --profile=$dev_profile --kubernetes-version=$kube_version
+		  minikube start $flexvolume_config --profile=$dev_profile --kubernetes-version=$kube_version
+
+			echo "--> sleeping to let k8s initial setup take place"
+			sleep 10
 	fi
 
 	echo "--> setting up kube config"
@@ -40,6 +45,9 @@ function run_dev { #setup dev environment
 
 	echo "--> setting up custom resource definition for datasets"
 	kubectl apply -f crd/artifacts/datasets.yaml
+
+	echo "--> installing flex volume deamon set"
+	kubectl apply -f cmd/flex/dataset.yml
 
 	echo "--> updating dependencies"
 	glide up
@@ -62,18 +70,6 @@ function run_docs { #run godoc
 
 function run_test { #unit test project
 	command -v go >/dev/null 2>&1 || { echo "executable 'go' (the language sdk) must be installed" >&2; exit 1; }
-
-	echo "--> building (new) flex volume"
-	GOOS=linux go build -o $GOPATH/bin/nerd-flex-volume pkg/transfer/flex/main.go
-
-	# Disable checking of host key in minikube because it changes every time
-	ssh_options="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-
-	echo "--> transfer flex volume"
-	scp $ssh_options -i ~/.minikube/machines/$dev_profile/id_rsa $GOPATH/bin/nerd-flex-volume docker@$(minikube ip --profile=$dev_profile):/home/docker/nerd-flex-volume
-	ssh $ssh_options -i ~/.minikube/machines/$dev_profile/id_rsa docker@$(minikube ip --profile=$dev_profile) sudo mkdir -p /usr/libexec/kubernetes/kubelet-plugins/volume/exec/nerdalize.com~dataset
-	ssh $ssh_options -i ~/.minikube/machines/$dev_profile/id_rsa docker@$(minikube ip --profile=$dev_profile) sudo cp /home/docker/nerd-flex-volume /usr/libexec/kubernetes/kubelet-plugins/volume/exec/nerdalize.com~dataset/dataset
-	minikube ssh /usr/libexec/kubernetes/kubelet-plugins/volume/exec/nerdalize.com~dataset/dataset
 
 	echo "--> running service tests"
 	go test -cover -v ./svc/...
@@ -121,14 +117,17 @@ function run_publish { #publish cross compiled binaries
 }
 
 function run_docker { #build docker container
-	docker build -t nerdalize/nerd .
-	docker tag nerdalize/nerd nerdalize/nerd:`cat VERSION`
+	command -v docker >/dev/null 2>&1 || { echo "executable 'docker' (container runtime) must be installed" >&2; exit 1; }
+
+	echo "--> building flex volume container"
+	docker build -f flex.Dockerfile -t nerdalize/nerd-flex-volume:$(cat VERSION) .
 }
 
 function run_dockerpush { #build and push docker container
-	run_docker
-	docker push nerdalize/nerd:latest
-	docker push nerdalize/nerd:`cat VERSION`
+	command -v docker >/dev/null 2>&1 || { echo "executable 'docker' (container runtime) must be installed" >&2; exit 1; }
+
+	echo "--> publish flex volume container"
+	docker push nerdalize/nerd-flex-volume:$(cat VERSION)
 }
 
 case $1 in
