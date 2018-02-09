@@ -1,5 +1,5 @@
-hash: 5b594e52eb212b7f509d879bc7d74dfd21c2e405f72e908fe81cad20b252807d
-updated: 2018-02-09T14:26:16.277240257+01:00
+hash: a52de57f5fbc914056e4e96f15d49cb585dec7d2c05dafd5997365aecd4bee88
+updated: 2018-02-09T15:31:30.354216+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
@@ -170,6 +170,9 @@ imports:
   version: bb2ecf9a98e35a0b336ffc23fc515fb6e7961577
 - name: github.com/satori/go.uuid
   version: 36e9d2ebbde5e3f13ab2e25625fd453271d6522e
+  subpackages:
+  - kubernetes
+  - tools/clientcmd
 - name: github.com/sirupsen/logrus
   version: f006c2ac4710855cf0f916dd6b77acf6b048dc6e
 - name: github.com/skratchdot/open-golang
@@ -179,7 +182,7 @@ imports:
 - name: github.com/spf13/pflag
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - name: golang.org/x/crypto
-  version: 5119cf507ed5294cc409c092980c7497ee5d6fd2
+  version: 6bd909f163c83732e0b5e22a27154b1a112c3ff9
   subpackages:
   - ssh/terminal
 - name: golang.org/x/net
@@ -365,7 +368,7 @@ imports:
   - util/integer
   - util/workqueue
 - name: k8s.io/code-generator
-  version: 4fdcc27750e20a0d0fe12007ddfb235ba657529c
+  version: 3c1fe2637f4efce271f1e6f50e039b2a0467c60c
 - name: k8s.io/kube-openapi
   version: 868f2f29720b192240e18284659231b440f9cda5
   subpackages:
