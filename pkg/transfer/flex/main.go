@@ -42,11 +42,11 @@ const (
 	StatusNotSupported = "Not supported"
 )
 
-//FileSystems can be used to specify a type of file system in a file.
+//FileSystem can be used to specify a type of file system in a file.
 type FileSystem string
 
 const (
-	//Standard, supported everywhere
+	//FileSystemExt4 is the standard, supported everywhere
 	FileSystemExt4 FileSystem = "ext4"
 )
 
