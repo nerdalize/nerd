@@ -42,7 +42,7 @@ func uploadToDataset(ctx context.Context, trans transfer.Transfer, bucket string
 		Key:    uid.String() + ".zip", //@TODO move this to a library
 	}
 
-	var n int
+	var n uint64
 	if path != "" { //path is optional
 		n, err = trans.Upload(ctx, ref, path)
 		if err != nil {
