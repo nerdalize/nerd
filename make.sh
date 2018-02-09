@@ -26,13 +26,18 @@ function run_dev { #setup dev environment
 	command -v kubectl >/dev/null 2>&1 || { echo "executable 'kubectl' (kubernetes cli https://kubernetes.io/docs/tasks/tools/install-kubectl/) must be installed" >&2; exit 1; }
 	command -v glide >/dev/null 2>&1 || { echo "executable glide (https://github.com/Masterminds/glide) must be installed" >&2; exit 1; }
 
+	#develop against specific version and configure flex volume to reflect prod setup
 	kube_version="v1.8.0"
+	flexvolume_config="--extra-config=controller-manager.FlexVolumePluginDir=/var/lib/kubelet/volumeplugins/ --extra-config=kubelet.VolumePluginDir=/var/lib/kubelet/volumeplugins/"
 	if minikube status --profile=$dev_profile | grep Running; then
 	    echo "--> minikube vm (profile: $dev_profile) is already running (check: $kube_version), skipping restart"
 			minikube profile $dev_profile
 	else
 			echo "--> starting minikube using the default 'vm-driver',to configure: https://github.com/kubernetes/minikube/issues/637)"
-		  minikube start --profile=$dev_profile --kubernetes-version=$kube_version
+		  minikube start $flexvolume_config --profile=$dev_profile --kubernetes-version=$kube_version
+
+			echo "--> sleeping to let k8s initial setup take place"
+			sleep 10
 	fi
 
 	echo "--> setting up kube config"
@@ -42,7 +47,7 @@ function run_dev { #setup dev environment
 	kubectl apply -f crd/artifacts/datasets.yaml
 
 	echo "--> installing flex volume deamon set"
-	kubectl apply -f cmd/flex/dataset-dev.yml
+	kubectl apply -f cmd/flex/dataset.yml
 
 	echo "--> updating dependencies"
 	glide up
