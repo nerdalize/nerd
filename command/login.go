@@ -97,7 +97,7 @@ func (cmd *Login) DoRun(args []string) error {
 	}
 
 	if len(list.Projects) == 0 {
-		cmd.ui.Info("Successful login. You can now list your projects using 'nerd project list'.")
+		cmd.ui.Info("Successful login, but you don't have any project. Please contact mayday@nerdalize.com.")
 		return nil
 	}
 	var projectSlug string
