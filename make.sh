@@ -16,6 +16,7 @@ function print_help {
 function run_build { #compile versioned executable and place it in $GOPATH/bin
 	go build \
     -ldflags "-X main.version=$(cat VERSION) -X main.commit=$(git rev-parse --short HEAD )" \
+	-tags "forceposix" \
     -o $GOPATH/bin/nerd \
     main.go
 }
@@ -77,7 +78,7 @@ function run_test { #unit test project
 
 function run_release { #cross compile new release builds
 	mkdir -p bin
-	gox -ldflags "-X main.version=$(cat VERSION) -X main.commit=$(git rev-parse --short HEAD )" -osarch="linux/amd64 windows/amd64 darwin/amd64" -output=./bin/{{.OS}}_{{.Arch}}/nerd
+	gox -ldflags "-X main.version=$(cat VERSION) -X main.commit=$(git rev-parse --short HEAD )" -tags "forceposix" -osarch="linux/amd64 windows/amd64 darwin/amd64" -output=./bin/{{.OS}}_{{.Arch}}/nerd
 }
 
 function run_publish { #publish cross compiled binaries
