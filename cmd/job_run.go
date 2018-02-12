@@ -8,8 +8,9 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
-
+	"github.com/mitchellh/go-homedir"
 	"github.com/mitchellh/cli"
+
 	"github.com/nerdalize/nerd/pkg/transfer"
 	"github.com/nerdalize/nerd/svc"
 )
@@ -88,6 +89,12 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		//and should be turned into []string{"C:/foo/bar", "/input"}
 		//We assume that POSIX paths will never have colons
 		parts = []string{strings.Join(parts[:len(parts)-1], ":"), parts[len(parts)-1]}
+
+		//Expand tilde for homedir
+		parts[0], err = homedir.Expand(parts[0])
+		if err != nil {
+			return errors.Wrap(err, "failed to expand home directory in dataset input path")
+		}
 
 		if !isPathAbsUnix(parts[1]) {
 			return fmt.Errorf("the job directory for the input dataset must be provided as an absolute path")
