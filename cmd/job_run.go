@@ -80,7 +80,11 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 	vols := map[string]*svc.JobVolume{}
 	for _, input := range cmd.Inputs {
 		parts := strings.Split(input, ":")
-		if len(parts) < 1 {
+
+		//Two accepted cases:
+		//- Two unix paths with a colon separating them, e.g. ~/data:/input
+		//- Windows path with a disk specification, e.g. C:/data:/input
+		if len(parts) != 2 && len(parts) != 3 {
 			return fmt.Errorf("invalid input specified, expected '<DIR|DATASET_ID>:<JOB_DIR>' format, got: %s", input)
 		}
 
@@ -95,6 +99,9 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		if err != nil {
 			return errors.Wrap(err, "failed to expand home directory in dataset local path")
 		}
+
+		//Normalize all slashes to native platform slashes (e.g. / to \ on Windows)
+		parts[0] = filepath.FromSlash(parts[0])
 
 		if !isPathAbsUnix(parts[1]) {
 			return fmt.Errorf("the job directory for the input dataset must be provided as an absolute path")
