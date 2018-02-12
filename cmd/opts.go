@@ -3,8 +3,8 @@ package cmd
 import (
 	"os"
 	"path/filepath"
-	"time"
 	"strings"
+	"time"
 
 	"github.com/nerdalize/nerd/nerd"
 

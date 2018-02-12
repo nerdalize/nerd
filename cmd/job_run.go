@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/pkg/errors"
-	"github.com/mitchellh/go-homedir"
 	"github.com/mitchellh/cli"
+	"github.com/mitchellh/go-homedir"
+	"github.com/pkg/errors"
 
 	"github.com/nerdalize/nerd/pkg/transfer"
 	"github.com/nerdalize/nerd/svc"
