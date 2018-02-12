@@ -93,24 +93,23 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		//Expand tilde for homedir
 		parts[0], err = homedir.Expand(parts[0])
 		if err != nil {
-			return errors.Wrap(err, "failed to expand home directory in dataset input path")
+			return errors.Wrap(err, "failed to expand home directory in dataset local path")
 		}
 
 		if !isPathAbsUnix(parts[1]) {
 			return fmt.Errorf("the job directory for the input dataset must be provided as an absolute path")
 		}
 
-		//detect if the users tries to refer to a path to upload but it is not absolute
-		if strings.Contains(parts[0], string(filepath.Separator)) && !filepath.IsAbs(parts[0]) {
-			return fmt.Errorf("when providing a local directory as input it must be given as an absolute path")
-		}
-
-		//if the input spec has an absolute path as its first part, try to upload it for the user
+		//if the input spec has a path-like string, try to upload it for the user
 		// var bucket string
 		// var key string
-		if filepath.IsAbs(parts[0]) {
+		if strings.Contains(parts[0], string(filepath.Separator)) {
+			//the user has provided a path as its input, clean it and make it absolute
+			parts[0], err = filepath.Abs(parts[0])
+			if err != nil {
+				return errors.Wrap(err, "failed to turn local dataset path into absolute path")
+			}
 
-			//the user has provided a path as its input
 			var trans transfer.Transfer
 			trans, err = cmd.TransferOpts.Transfer()
 			if err != nil {
