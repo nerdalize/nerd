@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-	"fmt"
 	"strings"
 
 	"github.com/nerdalize/nerd/nerd"

@@ -70,9 +70,11 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 
 	//start with input volumes
 	//@TODO move this logic to a separate package and test is
-	var inputDataset string
+	var inputDatasets []string
 	vols := map[string]*svc.JobVolume{}
 	for _, input := range cmd.Inputs {
+		var inputDataset string
+
 		parts := strings.Split(input, ":")
 
 		//Two accepted cases:
@@ -136,6 +138,8 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 			inputDataset = out.Name
 		}
 
+		inputDatasets = append(inputDatasets, inputDataset)
+
 		vols[parts[1]] = &svc.JobVolume{
 			MountPath:    parts[1],
 			InputDataset: inputDataset,
@@ -147,8 +151,10 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		}
 	}
 
-	var outputDataset string
+	var outputDatasets []string
 	for _, output := range cmd.Outputs {
+		var outputDataset string
+
 		parts := strings.Split(output, ":")
 		if len(parts) < 1 || len(parts) > 2 {
 			return fmt.Errorf("invalid output specified, expected '<JOB_DIR>:[DATASET_NAME]' format, got: %s", output)
@@ -192,6 +198,8 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 			cmd.out.Infof("Setup empty output dataset: '%s'", outputDataset)
 		}
 
+		outputDatasets = append(outputDatasets, outputDataset)
+
 		vol.OutputDataset = outputDataset
 	}
 
@@ -211,25 +219,22 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		return renderServiceError(err, "failed to run job")
 	}
 
-	err = updateDataset(ctx, inputDataset, outputDataset, out.Name, kube)
-	if err != nil {
-		return err
+	//Register datasets as being used
+	for _, inputDataset := range inputDatasets {
+		_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: inputDataset, InputFor: out.Name})
+		if err != nil {
+			return errors.Wrapf(err, "failed to update input dataset '%s'", inputDataset)
+		}
+	}
+	for _, outputDataset := range outputDatasets {
+		_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: outputDataset, OutputFrom: out.Name})
+		if err != nil {
+			return errors.Wrapf(err, "failed to update output dataset '%s'", outputDataset)
+		}
 	}
 
 	cmd.out.Infof("Submitted job: '%s'", out.Name)
 	cmd.out.Infof("To see whats happening, use: 'nerd job list'")
-	return nil
-}
-
-func updateDataset(ctx context.Context, inputDataset, outputDataset, job string, kube *svc.Kube) error {
-	_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: inputDataset, InputFor: job})
-	if err != nil {
-		return err
-	}
-	_, err = kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: outputDataset, OutputFrom: job})
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
