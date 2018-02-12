@@ -36,12 +36,6 @@ func JobRunFactory(ui cli.Ui) cli.CommandFactory {
 	}
 }
 
-//isPathAbsUnix checks if a path is absolute on a Unix system.
-//Derived from https://github.com/golang/go/blob/1106512db54fc2736c7a9a67dd553fc9e1fca742/src/path/filepath/path_unix.go#L12
-func isPathAbsUnix(path string) bool {
-	return strings.HasPrefix(path, "/")
-}
-
 //Execute runs the command
 func (cmd *JobRun) Execute(args []string) (err error) {
 	if len(args) < 1 {
@@ -103,10 +97,6 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		//Normalize all slashes to native platform slashes (e.g. / to \ on Windows)
 		parts[0] = filepath.FromSlash(parts[0])
 
-		if !isPathAbsUnix(parts[1]) {
-			return fmt.Errorf("the job directory for the input dataset must be provided as an absolute path")
-		}
-
 		//if the input spec has a path-like string, try to upload it for the user
 		// var bucket string
 		// var key string
@@ -150,6 +140,11 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 			MountPath:    parts[1],
 			InputDataset: inputDataset,
 		}
+
+		err = deps.val.Struct(vols[parts[1]])
+		if err != nil {
+			return errors.Wrap(err, "incorrect input")
+		}
 	}
 
 	var outputDataset string
@@ -159,14 +154,15 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 			return fmt.Errorf("invalid output specified, expected '<JOB_DIR>:[DATASET_NAME]' format, got: %s", output)
 		}
 
-		if !isPathAbsUnix(parts[0]) {
-			return fmt.Errorf("the job directory for the output dataset must be provided as an absolute path")
-		}
-
 		vol, ok := vols[parts[0]]
 		if !ok {
 			vol = &svc.JobVolume{MountPath: parts[0]}
 			vols[parts[0]] = vol
+		}
+
+		err = deps.val.Struct(vol)
+		if err != nil {
+			return errors.Wrap(err, "incorrect output")
 		}
 
 		if len(parts) == 2 {
