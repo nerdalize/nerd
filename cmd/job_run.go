@@ -79,9 +79,15 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 	vols := map[string]*svc.JobVolume{}
 	for _, input := range cmd.Inputs {
 		parts := strings.Split(input, ":")
-		if len(parts) != 2 {
+		if len(parts) < 1 {
 			return fmt.Errorf("invalid input specified, expected '<DIR|DATASET_ID>:<JOB_DIR>' format, got: %s", input)
 		}
+
+		//Handle Windows paths where DIR may contain colons
+		//e.g. C:/foo/bar:/input will be parsed into []string{"C", "/foo/bar", "/input"}
+		//and should be turned into []string{"C:/foo/bar", "/input"}
+		//We assume that POSIX paths will never have colons
+		parts = []string{strings.Join(parts[:len(parts)-1], ":"), parts[len(parts)-1]}
 
 		if !isPathAbsUnix(parts[1]) {
 			return fmt.Errorf("the job directory for the input dataset must be provided as an absolute path")
