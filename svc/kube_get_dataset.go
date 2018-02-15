@@ -15,12 +15,16 @@ type GetDatasetInput struct {
 
 //GetDatasetOutput is the output to GetDataset
 type GetDatasetOutput struct {
-	Name       string
-	Bucket     string
-	Key        string
-	Size       uint64
-	InputFor   []string
-	OutputFrom []string
+	Bucket string //@TODO deprecate
+	Key    string //@TODO deprecate
+
+	Name         string
+	Size         uint64
+	StoreType    string
+	ArchiverType string
+	Options      map[string]string
+	InputFor     []string
+	OutputFrom   []string
 }
 
 //GetDataset will create a dataset on kubernetes
@@ -36,11 +40,14 @@ func (k *Kube) GetDataset(ctx context.Context, in *GetDatasetInput) (out *GetDat
 	}
 
 	return &GetDatasetOutput{
-		Name:       dataset.Name,
-		Size:       dataset.Spec.Size,
-		Bucket:     dataset.Spec.Bucket,
-		Key:        dataset.Spec.Key,
-		InputFor:   dataset.Spec.InputFor,
-		OutputFrom: dataset.Spec.OutputFrom,
+		Name:         dataset.Name,
+		Size:         dataset.Spec.Size,
+		Bucket:       dataset.Spec.Bucket, //@TODO deprecate
+		Key:          dataset.Spec.Key,    //@TODO deprecate
+		InputFor:     dataset.Spec.InputFor,
+		OutputFrom:   dataset.Spec.OutputFrom,
+		Options:      dataset.Spec.Options,
+		StoreType:    dataset.Spec.StoreType,
+		ArchiverType: dataset.Spec.ArchiverType,
 	}, nil
 }

@@ -43,7 +43,7 @@ func TestListDatasets(t *testing.T) {
 		{
 			Name:     "when one correct dataset was uploaded it should be listed",
 			Timeout:  time.Minute,
-			Datasets: []*svc.CreateDatasetInput{{Name: "my-dataset", Bucket: "bogus", Key: "my-key"}},
+			Datasets: []*svc.CreateDatasetInput{{Name: "my-dataset", Bucket: "bogus", Key: "my-key", StoreType: "s3", ArchiverType: "tar"}},
 			Input:    &svc.ListDatasetsInput{},
 			IsErr:    isNilErr,
 			IsOutput: func(t testing.TB, out *svc.ListDatasetsOutput) bool {

@@ -43,7 +43,7 @@ func TestGetDataset(t *testing.T) {
 		{
 			Name:     "when one dataset has been uploaded it should be available for download",
 			Timeout:  time.Minute,
-			Datasets: []*svc.CreateDatasetInput{{Name: "my-dataset", Bucket: "bogus", Key: "my-key"}},
+			Datasets: []*svc.CreateDatasetInput{{Name: "my-dataset", Bucket: "bogus", Key: "my-key", StoreType: "s3", ArchiverType: "tar"}},
 			Input:    &svc.GetDatasetInput{Name: "my-datasets"},
 			IsErr:    nil,
 			IsOutput: func(t testing.TB, out *svc.GetDatasetOutput) bool {

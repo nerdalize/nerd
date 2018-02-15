@@ -28,3 +28,4 @@ bin
 vendor
 installers/msi/obj
 crd/controller
+*.env

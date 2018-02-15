@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/pkg/transfer"
+	transfer "github.com/nerdalize/nerd/pkg/transfer/v2"
 	"github.com/nerdalize/nerd/svc"
 )
 
@@ -47,10 +47,12 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		return renderConfigError(err, "failed to configure")
 	}
 
+	//setup a context with a timeout
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
 	defer cancel()
 
+	//setup job arguments
 	jargs := []string{}
 	if len(args) > 1 {
 		jargs = args[1:]
@@ -65,11 +67,18 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		jenv[split[0]] = split[1]
 	}
 
+	//setup the transfer manager
 	kube := svc.NewKube(deps)
+	mgr, opts, err := cmd.TransferOpts.TransferManager(kube)
+	if err != nil {
+		return errors.Wrap(err, "failed to setup transfer manager")
+	}
+
+	//keep handles to update the job froms and to
+	inputs := []transfer.Handle{}
+	outputs := []transfer.Handle{}
 
 	//start with input volumes
-	//@TODO move this logic to a separate package and test is
-	var inputDataset string
 	vols := map[string]*svc.JobVolume{}
 	for _, input := range cmd.Inputs {
 		parts := strings.Split(input, ":")
@@ -86,48 +95,41 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 			return fmt.Errorf("when providing a local directory as input it must be given as an absolute path")
 		}
 
-		//if the input spec has an absolute path as its first part, try to upload it for the user
-		// var bucket string
-		// var key string
-		if filepath.IsAbs(parts[0]) {
-
-			//the user has provided a path as its input
-			var trans transfer.Transfer
-			trans, err = cmd.TransferOpts.Transfer()
+		//if the first part can be considered a path, upload it immediately
+		var h transfer.Handle
+		if filepath.IsAbs(parts[0]) { //create (and upload) a new dataset
+			h, err = mgr.Create(ctx, "", transfer.StoreTypeS3, transfer.ArchiverTypeTar, opts)
 			if err != nil {
-				return errors.Wrap(err, "failed configure transfer")
+				return errors.Wrap(err, "failed to create dataset")
 			}
 
-			// var ref *transfer.Ref
-			_, inputDataset, err = uploadToDataset(ctx, trans, cmd.AWSS3Bucket, kube, parts[0], "")
+			//@TODO extend ctx deadline
+
+			err = h.Push(ctx, parts[0], transfer.DiscardReporter())
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to update dataset")
 			}
 
-			cmd.out.Infof("Uploaded input dataset: '%s'", inputDataset)
-		} else {
-
-			//the user (probably) has provided a dataset id as input
-			var out *svc.GetDatasetOutput
-			out, err = kube.GetDataset(ctx, &svc.GetDatasetInput{Name: parts[0]})
+			cmd.out.Infof("Uploaded input dataset: '%s'", h.Name())
+		} else { //open an existing dataset
+			h, err = mgr.Open(ctx, parts[0])
 			if err != nil {
-				return errors.Wrapf(err, "failed to get dataset '%s' ", parts[0])
+				return errors.Wrap(err, "failed to open dataset")
 			}
 
-			if out.Bucket == "" || out.Key == "" {
-				return errors.Errorf("the dataset '%s' cannot be used as input it has no key and/or bucket configured", parts[0])
-			}
-
-			inputDataset = out.Name
 		}
+
+		//add handler for job mapping
+		inputs = append(inputs, h)
+		defer h.Close()
 
 		vols[parts[1]] = &svc.JobVolume{
 			MountPath:    parts[1],
-			InputDataset: inputDataset,
+			InputDataset: h.Name(),
 		}
 	}
 
-	var outputDataset string
+	// var outputDataset string
 	for _, output := range cmd.Outputs {
 		parts := strings.Split(output, ":")
 		if len(parts) < 1 || len(parts) > 2 {
@@ -144,36 +146,31 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 			vols[parts[0]] = vol
 		}
 
-		if len(parts) == 2 {
-			var out *svc.GetDatasetOutput
-			out, err = kube.GetDataset(ctx, &svc.GetDatasetInput{Name: parts[1]})
+		//if the second part is provided we want to upload the output to a specific  dataset
+		var h transfer.Handle
+		if len(parts) == 2 { //open an existing dataset
+			h, err = mgr.Open(ctx, parts[1])
 			if err != nil {
-				return errors.Wrapf(err, "failed to get dataset '%s' ", parts[1]) //@TODO do we want to hint the user that he might meant to specify a releative directory(?)
+				return errors.Wrap(err, "failed to open dataset")
 			}
 
-			if out.Bucket == "" || out.Key == "" {
-				return errors.Errorf("the dataset '%s' cannot be used as output as it has no key and/or bucket configured", parts[0])
-			}
-
-			outputDataset = out.Name
-		} else {
-			var trans transfer.Transfer
-			trans, err = cmd.TransferOpts.Transfer()
+		} else { //create an empty dataset for the output
+			h, err = mgr.Create(ctx, "", transfer.StoreTypeS3, transfer.ArchiverTypeTar, opts)
 			if err != nil {
-				return errors.Wrap(err, "failed configure transfer")
+				return errors.Wrap(err, "failed to create dataset")
 			}
 
-			_, outputDataset, err = uploadToDataset(ctx, trans, cmd.AWSS3Bucket, kube, "", "")
-			if err != nil {
-				return err
-			}
-
-			cmd.out.Infof("Setup empty output dataset: '%s'", outputDataset)
+			cmd.out.Infof("Setup empty output dataset: '%s'", h.Name())
 		}
 
-		vol.OutputDataset = outputDataset
+		//register for job mapping and cleanup
+		outputs = append(outputs, h)
+		defer h.Close()
+
+		vol.OutputDataset = h.Name()
 	}
 
+	//continue with actuall creating the job
 	in := &svc.RunJobInput{
 		Image: args[0],
 		Name:  cmd.Name,
@@ -190,25 +187,24 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		return renderServiceError(err, "failed to run job")
 	}
 
-	err = updateDataset(ctx, inputDataset, outputDataset, out.Name, kube)
-	if err != nil {
-		return err
+	//add job to each dataset's InputFor
+	for _, h := range inputs {
+		_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: h.Name(), InputFor: out.Name})
+		if err != nil {
+			return err
+		}
+	}
+
+	//add job to each dataset's OutputOf
+	for _, h := range outputs {
+		_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: h.Name(), OutputFrom: out.Name})
+		if err != nil {
+			return err
+		}
 	}
 
 	cmd.out.Infof("Submitted job: '%s'", out.Name)
 	cmd.out.Infof("To see whats happening, use: 'nerd job list'")
-	return nil
-}
-
-func updateDataset(ctx context.Context, inputDataset, outputDataset, job string, kube *svc.Kube) error {
-	_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: inputDataset, InputFor: job})
-	if err != nil {
-		return err
-	}
-	_, err = kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: outputDataset, OutputFrom: job})
-	if err != nil {
-		return err
-	}
 	return nil
 }
 

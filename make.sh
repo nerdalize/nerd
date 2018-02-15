@@ -71,6 +71,12 @@ function run_docs { #run godoc
 function run_test { #unit test project
 	command -v go >/dev/null 2>&1 || { echo "executable 'go' (the language sdk) must be installed" >&2; exit 1; }
 
+	echo "--> sourcing test.env"
+	export $(cat test.env | xargs)
+
+	echo "--> running library tests"
+	go test -cover -v ./pkg/...
+
 	echo "--> running service tests"
 	go test -cover -v ./svc/...
 }

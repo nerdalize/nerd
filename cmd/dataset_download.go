@@ -5,7 +5,7 @@ import (
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/pkg/transfer"
+	transfer "github.com/nerdalize/nerd/pkg/transfer/v2"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
 )
@@ -18,7 +18,6 @@ const (
 //DatasetDownload command
 type DatasetDownload struct {
 	KubeOpts
-	TransferOpts
 
 	*command
 }
@@ -43,41 +42,38 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 		return renderConfigError(err, "failed to configure")
 	}
 
-	trans, err := cmd.TransferOpts.Transfer()
-	if err != nil {
-		return errors.Wrap(err, "failed configure transfer")
+	kube := svc.NewKube(deps)
+	var mgr transfer.Manager
+	if mgr, err = transfer.NewKubeManager(
+		kube,
+		map[transfer.StoreType]transfer.StoreFactory{
+			transfer.StoreTypeS3: transfer.CreateS3Store,
+		},
+		map[transfer.ArchiverType]transfer.ArchiverFactory{
+			transfer.ArchiverTypeTar: transfer.CreateTarArchiver,
+		},
+	); err != nil {
+		return errors.Wrap(err, "failed to setup transfer manager")
 	}
-
-	//get the dataset by name
 
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
-	defer cancel()
-
-	in := &svc.GetDatasetInput{
-		Name: args[0],
+	var h transfer.Handle
+	if h, err = mgr.Open(
+		ctx,
+		args[0],
+	); err != nil {
+		return errors.Wrap(err, "failed to create transfer handle")
 	}
 
-	kube := svc.NewKube(deps)
-	out, err := kube.GetDataset(ctx, in)
+	defer h.Close()
+
+	err = h.Pull(ctx, args[1], nil)
 	if err != nil {
-		return renderServiceError(err, "failed to download dataset")
+		return errors.Wrap(err, "failed to download dataste")
 	}
 
-	//Use dataset spec to downloa
-
-	ref := &transfer.Ref{
-		Bucket: out.Bucket,
-		Key:    out.Key,
-	}
-
-	err = trans.Download(ctx, ref, args[1])
-	if err != nil {
-		return errors.Wrap(err, "failed to download")
-	}
-
-	cmd.out.Infof("Downloaded dataset: '%s'", out.Name)
-	cmd.out.Infof("To delete the dataset from the cloud, use: `nerd dataset delete %s`", out.Name)
+	cmd.out.Infof("Downloaded dataset: '%s'", h.Name())
+	cmd.out.Infof("To delete the dataset from the cloud, use: `nerd dataset delete %s`", h.Name())
 	return nil
 }
 

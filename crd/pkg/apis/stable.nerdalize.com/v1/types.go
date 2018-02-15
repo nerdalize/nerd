@@ -18,11 +18,15 @@ type Dataset struct {
 
 // DatasetSpec is the spec for a Dataset resource
 type DatasetSpec struct {
-	Key        string   `json:"key"`
-	Bucket     string   `json:"bucket"`
-	Size       uint64   `json:"size"`
-	InputFor   []string `json:"input"`
-	OutputFrom []string `json:"output"`
+	Key    string `json:"key"`    //@TODO deprecate in more flexible options map
+	Bucket string `json:"bucket"` //@TODO deprecate in more flexible options map
+
+	StoreType    string            `json:"store"`
+	ArchiverType string            `json:"archiver"`
+	Options      map[string]string `json:"options"`
+	Size         uint64            `json:"size"`
+	InputFor     []string          `json:"input"`
+	OutputFrom   []string          `json:"output"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

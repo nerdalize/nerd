@@ -18,7 +18,13 @@ func TestUpdateDataset(t *testing.T) {
 	defer cancel()
 
 	kube := svc.NewKube(di)
-	out, err := kube.CreateDataset(ctx, &svc.CreateDatasetInput{Name: "my-dataset", Bucket: "bogus", Key: "my-key"})
+	out, err := kube.CreateDataset(ctx, &svc.CreateDatasetInput{
+		Name:         "my-dataset",
+		Bucket:       "bogus",
+		Key:          "my-key",
+		ArchiverType: "tar",
+		StoreType:    "s3",
+	})
 	ok(t, err)
 
 	newSize := uint64(1337)
@@ -38,7 +44,7 @@ func TestUpdateDataset(t *testing.T) {
 
 	//Check if the output remains the same when not specifying any changes
 	_, err = kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{
-		Name:       out.Name,
+		Name: out.Name,
 	})
 	ok(t, err)
 

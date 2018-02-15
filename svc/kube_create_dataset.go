@@ -11,10 +11,14 @@ import (
 
 //CreateDatasetInput is the input to CreateDataset
 type CreateDatasetInput struct {
-	Name   string `validate:"printascii"`
-	Bucket string `validate:"min=1"`
-	Key    string `validate:"min=1"`
-	Size   uint64
+	Bucket string //@TODO deprecate for more flexible options
+	Key    string //@TODO deprecate for more flexible options
+
+	Name         string `validate:"printascii"`
+	Size         uint64
+	StoreType    string `validate:"min=1"`
+	ArchiverType string `validate:"min=1"`
+	Options      map[string]string
 }
 
 //CreateDatasetOutput is the output to CreateDataset
@@ -32,8 +36,12 @@ func (k *Kube) CreateDataset(ctx context.Context, in *CreateDatasetInput) (out *
 		ObjectMeta: metav1.ObjectMeta{},
 		Spec: datasetsv1.DatasetSpec{
 			Size:   in.Size,
-			Bucket: in.Bucket,
-			Key:    in.Key,
+			Bucket: in.Bucket, //@TODO deprecate
+			Key:    in.Key,    //@TODO deprecate
+
+			StoreType:    in.StoreType,
+			ArchiverType: in.ArchiverType,
+			Options:      in.Options,
 		},
 	}
 

@@ -42,7 +42,24 @@
 			"usage": "nerd login",
 			"synopsis": "Start a new authorized session.",
 			"description": "Start a new authorized session.",
-			"options": {}
+			"options": {
+				"Options": [
+					{
+						"long_name": "config-src",
+						"description": "type of configuration to use (from env, endpoint, or oidc)",
+						"default_value": [
+							"oidc"
+						],
+						"choices": null
+					},
+					{
+						"long_name": "kube-config",
+						"description": "file at which Nerd will look for Kubernetes credentials",
+						"default_value": null,
+						"choices": null
+					}
+				]
+			}
 		},
 		"project": {
 			"usage": "nerd project \u003csubcommand\u003e",

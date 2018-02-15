@@ -43,7 +43,7 @@ var ErrMinikubeOnly = errors.New("temp DI can only be created on Minikube")
 
 //TempDI returns a temporary DI for the Kube service that sets up
 //a temporary namespace which can be deleted using clean. Mostly
-//usefull for testing purposes. If name is empty a 32 byte random
+//usefull for testing purposes. If name is empty a 16 byte random
 //one will be generated
 func TempDI(name string) (di DI, clean func(), err error) {
 	hdir, err := homedir.Dir()
@@ -75,7 +75,7 @@ func TempDI(name string) (di DI, clean func(), err error) {
 	}
 
 	if name == "" {
-		d := make([]byte, 32)
+		d := make([]byte, 16)
 		_, err = rand.Read(d)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "failed to read random bytes")

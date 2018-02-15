@@ -15,7 +15,7 @@ import (
 	"strings"
 
 	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
-	"github.com/nerdalize/nerd/pkg/transfer"
+	transfer "github.com/nerdalize/nerd/pkg/transfer/v2"
 	"github.com/nerdalize/nerd/svc"
 
 	"github.com/go-playground/validator"
@@ -208,20 +208,20 @@ func (volp *DatasetVolumes) destroyFSInFile(path string) error {
 	return err
 }
 
-func (volp *DatasetVolumes) datasetS3(namespace, dataset string) (string, string, error) {
-	di, err := NewDeps(namespace)
-	if err != nil {
-		return "", "", errors.Wrap(err, "failed to setup dependencies")
+func (volp *DatasetVolumes) transferManager(kube *svc.Kube) (mgr transfer.Manager, err error) {
+	if mgr, err = transfer.NewKubeManager(
+		kube,
+		map[transfer.StoreType]transfer.StoreFactory{
+			transfer.StoreTypeS3: transfer.CreateS3Store,
+		},
+		map[transfer.ArchiverType]transfer.ArchiverFactory{
+			transfer.ArchiverTypeTar: transfer.CreateTarArchiver,
+		},
+	); err != nil {
+		return nil, errors.Wrap(err, "failed to setup transfer manager")
 	}
 
-	kube := svc.NewKube(di)
-	out, err := kube.GetDataset(context.TODO(), &svc.GetDatasetInput{Name: dataset})
-	if err != nil {
-		//@TODO if the dataset doesn't exist it might be deleted, error more gracefully
-		return "", "", errors.Wrap(err, "failed to get dataset")
-	}
-
-	return out.Bucket, out.Key, nil
+	return mgr, nil
 }
 
 //provisionInput makes the specified input available at given path (input may be nil).
@@ -237,27 +237,27 @@ func (volp *DatasetVolumes) provisionInput(path, namespace, dataset string) erro
 		return nil
 	}
 
-	bucket, key, err := volp.datasetS3(namespace, dataset)
+	di, err := NewDeps(namespace)
 	if err != nil {
-		return errors.Wrap(err, "failed to get dataset s3 info from dataset id")
+		return errors.Wrap(err, "failed to setup dependencies")
 	}
 
-	//Download input to it
-	var trans transfer.Transfer
-	if trans, err = transfer.NewS3(&transfer.S3Conf{
-		Bucket: bucket,
-	}); err != nil {
-		return errors.Wrap(err, "failed to set up S3 transfer")
-	}
-
-	ref := &transfer.Ref{
-		Bucket: bucket,
-		Key:    key,
-	}
-
-	err = trans.Download(context.Background(), ref, path)
+	mgr, err := volp.transferManager(svc.NewKube(di))
 	if err != nil {
-		return errors.Wrap(err, "failed to download data from S3")
+		return errors.Wrap(err, "failed to setup transfer manager")
+	}
+
+	ctx := context.TODO() //@TODO decide on a deadline for this
+
+	h, err := mgr.Open(ctx, dataset)
+	if err != nil {
+		return errors.Wrap(err, "failed to open dataset")
+	}
+
+	defer h.Close()
+	err = h.Pull(ctx, path, transfer.DiscardReporter())
+	if err != nil {
+		return errors.Wrap(err, "failed to download dataset")
 	}
 
 	return nil
@@ -369,42 +369,27 @@ func (volp *DatasetVolumes) handleOutput(path, namespace, dataset string) error 
 		return nil
 	}
 
-	bucket, key, err := volp.datasetS3(namespace, dataset)
-	if err != nil {
-		return errors.Wrap(err, "failed to get dataset s3 info from dataset id")
-	}
-
-	// Upload data
-	trans, err := transfer.NewS3(&transfer.S3Conf{
-		Bucket: bucket,
-	})
-	if err != nil {
-		return errors.Wrap(err, "failed to set up S3 transfer")
-	}
-
-	ref := &transfer.Ref{
-		Bucket: bucket,
-		Key:    key,
-	}
-
-	size, err := trans.Upload(context.Background(), ref, path)
-	if err != nil {
-		return errors.Wrap(err, "failed to upload data to S3")
-	}
-
-	// Update size in resource
 	di, err := NewDeps(namespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to setup dependencies")
 	}
 
-	kube := svc.NewKube(di)
-	_, err = kube.UpdateDataset(context.TODO(), &svc.UpdateDatasetInput{
-		Name:       dataset,
-		Size:       &size,
-	})
+	mgr, err := volp.transferManager(svc.NewKube(di))
 	if err != nil {
-		return errors.Wrap(err, "failed to update size in dataset resource")
+		return errors.Wrap(err, "failed to setup transfer manager")
+	}
+
+	ctx := context.TODO() //@TODO decide on a deadline for this
+
+	h, err := mgr.Open(ctx, dataset)
+	if err != nil {
+		return errors.Wrap(err, "failed to open dataset")
+	}
+
+	defer h.Close()
+	err = h.Push(ctx, path, transfer.DiscardReporter())
+	if err != nil {
+		return errors.Wrap(err, "failed to download dataset")
 	}
 
 	return nil

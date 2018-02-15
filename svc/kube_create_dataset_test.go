@@ -43,7 +43,7 @@ func TestCreateDataset(t *testing.T) {
 		{
 			Name:    "when a dataset is uploaded with just an input dir it should generate a name and return it",
 			Timeout: time.Second * 5,
-			Input:   &svc.CreateDatasetInput{Bucket: "bogus", Key: "my-key"},
+			Input:   &svc.CreateDatasetInput{Bucket: "bogus", Key: "my-key", StoreType: "s3", ArchiverType: "tar"},
 			IsErr:   isNilErr,
 			IsOutput: func(t testing.TB, out *svc.CreateDatasetOutput) {
 				assert(t, out != nil, "output should not be nil")
@@ -53,7 +53,7 @@ func TestCreateDataset(t *testing.T) {
 		{
 			Name:    "when a dataset is uploaded with an invalid name it should return a invalid name error",
 			Timeout: time.Second * 5,
-			Input:   &svc.CreateDatasetInput{Name: "my-name-", Bucket: "bogus", Key: "my-key"},
+			Input:   &svc.CreateDatasetInput{Name: "my-name-", Bucket: "bogus", Key: "my-key", StoreType: "s3", ArchiverType: "tar"},
 			IsErr:   kubevisor.IsInvalidNameErr,
 		},
 	} {
@@ -87,9 +87,21 @@ func TestCreateDatasetWithNameThatAlreadyExists(t *testing.T) {
 	defer cancel()
 
 	kube := svc.NewKube(di)
-	out, err := kube.CreateDataset(ctx, &svc.CreateDatasetInput{Name: "my-dataset", Bucket: "bogus", Key: "my-key"})
+	out, err := kube.CreateDataset(ctx, &svc.CreateDatasetInput{
+		Name:         "my-dataset",
+		Bucket:       "bogus",
+		Key:          "my-key",
+		StoreType:    "s3",
+		ArchiverType: "tar",
+	})
 	ok(t, err)
 
-	_, err = kube.CreateDataset(ctx, &svc.CreateDatasetInput{Name: out.Name, Bucket: "bogus", Key: "my-key"})
+	_, err = kube.CreateDataset(ctx, &svc.CreateDatasetInput{
+		Name:         out.Name,
+		Bucket:       "bogus",
+		Key:          "my-key",
+		StoreType:    "s3",
+		ArchiverType: "tar",
+	})
 	assert(t, kubevisor.IsAlreadyExistsErr(err), "expected error to be already exists")
 }

@@ -11,7 +11,7 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
 	"github.com/nerdalize/nerd/pkg/populator"
-	"github.com/nerdalize/nerd/pkg/transfer"
+	transfer "github.com/nerdalize/nerd/pkg/transfer/v2"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
@@ -28,21 +28,41 @@ type TransferOpts struct {
 }
 
 //Transfer creates an concrete transfer service using the configuration
-func (opts TransferOpts) Transfer() (trans transfer.Transfer, err error) {
-	s3cfg := &transfer.S3Conf{
-		Bucket:       opts.AWSS3Bucket,
-		Region:       opts.AWSRegion,
-		AccessKey:    opts.AWSAccessKeyID,
-		SecretKey:    opts.AWSSecretAccessKey,
-		SessionToken: opts.AWSSessionToken,
+//@TODO deprecate
+// func (opts TransferOpts) Transfer() (trans transfer.Transfer, err error) {
+// 	s3cfg := &transfer.S3Conf{
+// 		Bucket:       opts.AWSS3Bucket,
+// 		Region:       opts.AWSRegion,
+// 		AccessKey:    opts.AWSAccessKeyID,
+// 		SecretKey:    opts.AWSSecretAccessKey,
+// 		SessionToken: opts.AWSSessionToken,
+// 	}
+//
+// 	trans, err = transfer.NewS3(s3cfg)
+// 	if err != nil {
+// 		return nil, errors.Wrap(err, "failed to create s3 uploader")
+// 	}
+//
+// 	return trans, nil
+// }
+
+func (opts TransferOpts) TransferManager(kube *svc.Kube) (mgr transfer.Manager, o map[string]string, err error) {
+	if mgr, err = transfer.NewKubeManager(
+		kube,
+		map[transfer.StoreType]transfer.StoreFactory{
+			transfer.StoreTypeS3: transfer.CreateS3Store,
+		},
+		map[transfer.ArchiverType]transfer.ArchiverFactory{
+			transfer.ArchiverTypeTar: transfer.CreateTarArchiver,
+		},
+	); err != nil {
+		return nil, nil, errors.Wrap(err, "failed to setup transfer manager")
 	}
 
-	trans, err = transfer.NewS3(s3cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create s3 uploader")
-	}
-
-	return trans, nil
+	return mgr, map[string]string{
+		"aws_s3_bucket": opts.AWSS3Bucket,
+		//@TODO add other options
+	}, nil
 }
 
 //KubeOpts can be used to create a Kubernetes service
