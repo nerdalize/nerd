@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	slashpath "path"
+
 	"github.com/pkg/errors"
 )
 
@@ -20,17 +22,26 @@ var (
 )
 
 //TarArchiver will archive a directory into a single tar file
-type TarArchiver struct{}
+type TarArchiver struct {
+	keyPrefix string
+}
 
 //NewTarArchiver will setup the tar archiver
-func NewTarArchiver() (a *TarArchiver, err error) {
-	a = &TarArchiver{}
+func NewTarArchiver(keyPrefix string) (a *TarArchiver, err error) {
+	a = &TarArchiver{keyPrefix: keyPrefix}
+
+	if a.keyPrefix != "" && !strings.HasSuffix(a.keyPrefix, "/") {
+		return nil, errors.Errorf("archiver key prefix must end with a forward slash")
+	}
+
 	return a, nil
 }
 
 //CreateTarArchiver is the factory method for the archiver
 func CreateTarArchiver(opts map[string]string) (a Archiver, err error) {
-	return NewTarArchiver()
+	keyPrefix, _ := opts["tar_key_prefix"]
+
+	return NewTarArchiver(keyPrefix)
 }
 
 //tempFile will setup a temproary file that can easily be cleaned
@@ -78,7 +89,7 @@ func (a *TarArchiver) checkTargetDir(path string) error {
 
 //Index calls 'fn' for all object keys that are part of the archive
 func (a *TarArchiver) Index(fn func(k string) error) error {
-	return fn(TarArchiverKey)
+	return fn(slashpath.Join(a.keyPrefix, TarArchiverKey))
 }
 
 //Archive will take a file system path and call 'fn' for N number of keys
@@ -149,7 +160,7 @@ func (a *TarArchiver) Archive(path string, fn func(k string, r io.Reader) error)
 		return errors.Wrap(err, "failed to seek to beginning of file")
 	}
 
-	return fn(TarArchiverKey, tmpf)
+	return fn(slashpath.Join(a.keyPrefix, TarArchiverKey), tmpf)
 }
 
 //Unarchive will take a file system path and call 'fn' for each object that it needs for unarchiving.
@@ -161,7 +172,7 @@ func (a *TarArchiver) Unarchive(path string, fn func(k string, w io.WriterAt) er
 	}
 
 	defer clean()
-	err = fn(TarArchiverKey, tmpf)
+	err = fn(slashpath.Join(a.keyPrefix, TarArchiverKey), tmpf)
 	if err != nil {
 		return errors.Wrap(err, "failed to download to temporary file")
 	}

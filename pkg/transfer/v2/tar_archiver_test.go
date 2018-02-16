@@ -34,7 +34,7 @@ func TestTarArchiver(t *testing.T) {
 		err error
 	)
 
-	a, err = transfer.NewTarArchiver()
+	a, err = transfer.NewTarArchiver("")
 	if err != nil {
 		t.Fatal(err)
 	}

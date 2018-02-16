@@ -2,6 +2,8 @@ package transfer
 
 import (
 	"context"
+	"crypto/rand"
+	"fmt"
 
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
@@ -63,6 +65,23 @@ func NewKubeManager(kube *svc.Kube, stores map[StoreType]StoreFactory, archivers
 
 //Create a dataset with provided name and return a handle to it, dataset must not yet exist
 func (mgr *KubeManager) Create(ctx context.Context, name string, st StoreType, at ArchiverType, opts map[string]string) (h Handle, err error) {
+
+	//step 0: implementation options for
+	if opts == nil {
+		opts = map[string]string{}
+	}
+
+	d := make([]byte, 16)
+	_, err = rand.Read(d)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read random bytes")
+	}
+
+	//archiver is in control of key prefixes inside the store prefix
+	//@TODO we would preferrably have the kubernetes name here as well
+	//but that one can be generated and is options, hence is only known
+	//after the dataset has been created
+	opts["tar_key_prefix"] = fmt.Sprintf("%x/", d)
 
 	//step 1: initate stores and archivers from options
 	storef, ok := mgr.stores[st]
