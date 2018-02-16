@@ -67,7 +67,7 @@ func (cmd *Login) DoRun(args []string) error {
 
 	err = open.Run(fmt.Sprintf("http://%s/oauth?state=%s", cmd.config.Auth.OAuthLocalServer, randomState))
 	if err != nil {
-		return HandleError(errors.Wrap(err, "Failed to open browser window. Please see for alternative ways of authenticating on https://www.nerdalize.com/docs/basics/http-proxy/."))
+		cmd.ui.Info(fmt.Sprintf("Failed to open browser window, access the login at http://%s/oauth?state=%s", cmd.config.Auth.OAuthLocalServer, randomState))
 	}
 
 	oauthResponse := <-doneCh
