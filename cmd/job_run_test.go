@@ -66,7 +66,7 @@ func TestParseInputSpecification(t *testing.T) {
 		if testCase.err && err == nil {
 			t.Errorf("expected error for input %s, but got no error and output %v", testCase.input, parts)
 		} else if !testCase.err && err != nil {
-			t.Errorf("expected no error for input %s, but got %s", err)
+			t.Errorf("expected no error for input %s, but got %s", testCase.input, err)
 		}
 
 		if !reflect.DeepEqual(parts, testCase.parts) {

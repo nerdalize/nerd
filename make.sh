@@ -74,6 +74,9 @@ function run_test { #unit test project
 
 	echo "--> running service tests"
 	go test -cover -v ./svc/...
+
+    echo "--> running command tests"
+    go test -cover -v ./cmd/...
 }
 
 function run_release { #cross compile new release builds

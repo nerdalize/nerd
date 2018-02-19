@@ -171,3 +171,29 @@ func TestRunJobWithNameThatAlreadyExists(t *testing.T) {
 	_, err = kube.RunJob(ctx, &svc.RunJobInput{Image: "hello-world", Name: out.Name})
 	assert(t, kubevisor.IsAlreadyExistsErr(err), "expected error to be already exists")
 }
+
+func TestJobVolumeMountPathValidation(t *testing.T) {
+	var mountPathTests = []struct {
+		path string
+		err  bool
+	}{
+		{"/input", false},
+		{"./relative/path", true},
+		{"~/home/directory", true},
+		{"/~/weird/absolute/path", false},
+	}
+
+	di, clean := testDI(t)
+	defer clean()
+
+	for _, testCase := range mountPathTests {
+		jv := &svc.JobVolume{MountPath: testCase.path}
+		err := di.Validator().Struct(jv)
+
+		if testCase.err && err == nil {
+			t.Errorf("expected error for mount path %s, but got no error", testCase.path)
+		} else if !testCase.err && err != nil {
+			t.Errorf("expected no error for mount path %s, but got %s", testCase.path, err)
+		}
+	}
+}
