@@ -61,6 +61,13 @@ func ParseInputSpecification(input string) (parts []string, err error) {
 	//Normalize all slashes to native platform slashes (e.g. / to \ on Windows)
 	parts[0] = filepath.FromSlash(parts[0])
 
+	// Ensure that all parts are non-empty
+	if len(strings.TrimSpace(parts[0])) == 0 {
+		return nil, errors.New("input source is empty")
+	} else if len(strings.TrimSpace(parts[1])) == 0 {
+		return nil, errors.New("input mount path is empty")
+	}
+
 	return parts, nil
 }
 

@@ -46,11 +46,10 @@ func TestParseInputSpecification(t *testing.T) {
 		{"", nil, true},
 		{"nocolons", nil, true},
 		{"/too:/many:/colons:/here", nil, true},
-		{"./data:./relative/path", nil, true},
-		{"./data:~/home/dir", nil, true},
 		{"./data:", nil, true},
 		{":/input", nil, true},
-		{"./data:\\wrong\\separators", nil, true},
+		{" :/input", nil, true},
+		{"./data:    ", nil, true},
 
 		// Windows
 		{"C:/some/dir:/input", []string{"C:/some/dir", "/input"}, false},
@@ -65,7 +64,7 @@ func TestParseInputSpecification(t *testing.T) {
 		parts, err := cmd.ParseInputSpecification(testCase.input)
 
 		if testCase.err && err == nil {
-			t.Errorf("expected error for input %s, but got no error", testCase.input)
+			t.Errorf("expected error for input %s, but got no error and output %v", testCase.input, parts)
 		} else if !testCase.err && err != nil {
 			t.Errorf("expected no error for input %s, but got %s", err)
 		}
