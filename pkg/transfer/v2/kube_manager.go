@@ -9,24 +9,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-type kubeMeta struct {
+type kubeDelegate struct {
 	name string
 	kube *svc.Kube
 }
 
-//Name returns the unique handle name
-func (h *kubeMeta) Name() string {
-	return h.name
+func (d *kubeDelegate) PostClean(ctx context.Context) error {
+	return d.PostPush(ctx, 0)
 }
 
-func (h *kubeMeta) Close() error {
-	//@TODO remove lock, for now a no-op
-	return nil
-}
-
-func (h *kubeMeta) UpdateMeta(ctx context.Context, size uint64) error {
-	if _, err := h.kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{
-		Name: h.name,
+func (d *kubeDelegate) PostPush(ctx context.Context, size uint64) error {
+	if _, err := d.kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{
+		Name: d.name,
 		Size: &size,
 	}); err != nil {
 		return errors.Wrap(err, "failed to update dataset")
@@ -35,14 +29,8 @@ func (h *kubeMeta) UpdateMeta(ctx context.Context, size uint64) error {
 	return nil
 }
 
-func (h *kubeMeta) ReadMeta(ctx context.Context) (size uint64, err error) {
-	out, err := h.kube.GetDataset(ctx, &svc.GetDatasetInput{Name: h.name})
-	if err != nil {
-		return 0, errors.Wrap(err, "failed to get dataset")
-	}
-
-	return out.Size, nil
-}
+func (d *kubeDelegate) PostPull(ctx context.Context) error { return nil }
+func (d *kubeDelegate) PostClose() error                   { return nil }
 
 //KubeManager is a dataset manager that uses Kubernetes as its metadata
 //store and locking service
@@ -81,6 +69,8 @@ func (mgr *KubeManager) Create(ctx context.Context, name string, st StoreType, a
 	//@TODO we would preferrably have the kubernetes name here as well
 	//but that one can be generated and is options, hence is only known
 	//after the dataset has been created
+	//@TODO this should probably a mandatory argument of any archiver so
+	//to be addedd to the ArchiverFactory type
 	opts["tar_key_prefix"] = fmt.Sprintf("%x/", d)
 
 	//step 1: initate stores and archivers from options
@@ -104,12 +94,6 @@ func (mgr *KubeManager) Create(ctx context.Context, name string, st StoreType, a
 		return nil, errors.Wrapf(err, "failed to create archiver from options")
 	}
 
-	//step 2: initiate the handle
-	kh := &StdHandle{
-		store:    store,
-		archiver: archiver,
-	}
-
 	//step 3: create the dataset resource
 	in := &svc.CreateDatasetInput{
 		Name:         name,
@@ -124,27 +108,16 @@ func (mgr *KubeManager) Create(ctx context.Context, name string, st StoreType, a
 		return nil, errors.Wrap(err, "failed to create dataset resource")
 	}
 
-	//step 3: fill handle with resource info
-	kh.Meta = &kubeMeta{
+	//step 2: initiate the handle
+	return CreateStdHandle(store, archiver, &kubeDelegate{
 		name: out.Name,
 		kube: mgr.kube,
-	}
-
-	return kh, nil
+	})
 }
 
-//Open an existing dataset and return a handle to it, dataset must exist
-func (mgr *KubeManager) Open(ctx context.Context, name string) (Handle, error) {
-
-	//Step 1: Get the dataset by name
-	in := &svc.GetDatasetInput{
-		Name: name,
-	}
-
-	out, err := mgr.kube.GetDataset(ctx, in)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get dataset resource")
-	}
+//OpenHandle allows creation of a handle without talking to kubernetes, this
+//is a low level function, must users would like to use Open
+func (mgr *KubeManager) openHandle(out *svc.GetDatasetOutput) (Handle, error) {
 
 	//Step 2: Create store and archivers
 	storef, ok := mgr.stores[StoreType(out.StoreType)]
@@ -167,18 +140,24 @@ func (mgr *KubeManager) Open(ctx context.Context, name string) (Handle, error) {
 		return nil, errors.Wrapf(err, "failed to create archiver from options")
 	}
 
-	//step 3: Create handle
-	kh := &StdHandle{
-		store:    store,
-		archiver: archiver,
+	return CreateStdHandle(store, archiver, &kubeDelegate{
+		name: out.Name,
+		kube: mgr.kube,
+	})
+}
 
-		Meta: &kubeMeta{
-			name: out.Name,
-			kube: mgr.kube,
-		},
+//Open an existing dataset and return a handle to it, dataset must exist
+func (mgr *KubeManager) Open(ctx context.Context, name string) (Handle, error) {
+	in := &svc.GetDatasetInput{
+		Name: name,
 	}
 
-	return kh, nil
+	out, err := mgr.kube.GetDataset(ctx, in)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get dataset resource")
+	}
+
+	return mgr.openHandle(out)
 }
 
 //Remove an existing dataset, dataset must exist
@@ -189,4 +168,17 @@ func (mgr *KubeManager) Remove(ctx context.Context, name string) error {
 	}
 
 	return nil
+}
+
+//Info (re)fetches dataset info from the manager
+func (mgr *KubeManager) Info(ctx context.Context, name string) (size uint64, err error) {
+	out, err := mgr.kube.GetDataset(ctx, &svc.GetDatasetInput{
+		Name: name,
+	})
+
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to get dataset resource")
+	}
+
+	return out.Size, nil
 }

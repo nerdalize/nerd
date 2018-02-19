@@ -39,6 +39,11 @@ func (k *Kube) GetDataset(ctx context.Context, in *GetDatasetInput) (out *GetDat
 		return nil, err
 	}
 
+	return GetDatasetOutputFromSpec(dataset), nil
+}
+
+//GetDatasetOutputFromSpec allows easy output creation from dataset
+func GetDatasetOutputFromSpec(dataset *datasetsv1.Dataset) *GetDatasetOutput {
 	return &GetDatasetOutput{
 		Name:         dataset.Name,
 		Size:         dataset.Spec.Size,
@@ -49,5 +54,5 @@ func (k *Kube) GetDataset(ctx context.Context, in *GetDatasetInput) (out *GetDat
 		Options:      dataset.Spec.Options,
 		StoreType:    dataset.Spec.StoreType,
 		ArchiverType: dataset.Spec.ArchiverType,
-	}, nil
+	}
 }

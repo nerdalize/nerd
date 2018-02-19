@@ -17,20 +17,10 @@ func DiscardReporter() Reporter {
 
 //A Handle provides interactions with a dataset
 type Handle interface {
-	Meta
+	io.Closer
 	Clear(ctx context.Context, reporter Reporter) error
 	Push(ctx context.Context, fromPath string, rep Reporter) error
 	Pull(ctx context.Context, toPath string, rep Reporter) error
-}
-
-//Meta interface provides metadat reading and updating
-type Meta interface {
-	io.Closer
-	Name() string
-
-	//@TODO the signature and method for metadata updates of an handle are experimental
-	UpdateMeta(ctx context.Context, size uint64) error
-	ReadMeta(ctx context.Context) (size uint64, err error)
 }
 
 //Manager provides access to Transfer handles, this allows parallel
@@ -38,7 +28,8 @@ type Meta interface {
 type Manager interface {
 	Create(ctx context.Context, name string, st StoreType, at ArchiverType, opts map[string]string) (Handle, error) //must not exist, name is unique, claims dataset handle
 	Open(ctx context.Context, name string) (Handle, error)                                                          //must exist, claims dataset handle
-	Remove(ctx context.Context, name string) error                                                                  //must exist
+	Remove(ctx context.Context, name string) error
+	Info(ctx context.Context, name string) (size uint64, err error)
 }
 
 //Store provides an object storage interface
