@@ -36,6 +36,34 @@ func JobRunFactory(ui cli.Ui) cli.CommandFactory {
 	}
 }
 
+func ParseInputSpecification(input string) (parts []string, err error) {
+	parts = strings.Split(input, ":")
+
+	//Two accepted cases:
+	//- Two unix paths with a colon separating them, e.g. ~/data:/input
+	//- Windows path with a disk specification, e.g. C:/data:/input
+	if len(parts) != 2 && len(parts) != 3 {
+		return nil, fmt.Errorf("invalid input specified, expected '<DIR|DATASET_ID>:<JOB_DIR>' format, got: %s", input)
+	}
+
+	//Handle Windows paths where DIR may contain colons
+	//e.g. C:/foo/bar:/input will be parsed into []string{"C", "/foo/bar", "/input"}
+	//and should be turned into []string{"C:/foo/bar", "/input"}
+	//We assume that POSIX paths will never have colons
+	parts = []string{strings.Join(parts[:len(parts)-1], ":"), parts[len(parts)-1]}
+
+	//Expand tilde for homedir
+	parts[0], err = homedir.Expand(parts[0])
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to expand home directory in dataset local path")
+	}
+
+	//Normalize all slashes to native platform slashes (e.g. / to \ on Windows)
+	parts[0] = filepath.FromSlash(parts[0])
+
+	return parts, nil
+}
+
 //Execute runs the command
 func (cmd *JobRun) Execute(args []string) (err error) {
 	if len(args) < 1 {
@@ -69,35 +97,16 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 	kube := svc.NewKube(deps)
 
 	//start with input volumes
-	//@TODO move this logic to a separate package and test is
+	//@TODO move this logic to a separate package and test it
 	var inputDatasets []string
 	vols := map[string]*svc.JobVolume{}
 	for _, input := range cmd.Inputs {
 		var inputDataset string
 
-		parts := strings.Split(input, ":")
-
-		//Two accepted cases:
-		//- Two unix paths with a colon separating them, e.g. ~/data:/input
-		//- Windows path with a disk specification, e.g. C:/data:/input
-		if len(parts) != 2 && len(parts) != 3 {
-			return fmt.Errorf("invalid input specified, expected '<DIR|DATASET_ID>:<JOB_DIR>' format, got: %s", input)
-		}
-
-		//Handle Windows paths where DIR may contain colons
-		//e.g. C:/foo/bar:/input will be parsed into []string{"C", "/foo/bar", "/input"}
-		//and should be turned into []string{"C:/foo/bar", "/input"}
-		//We assume that POSIX paths will never have colons
-		parts = []string{strings.Join(parts[:len(parts)-1], ":"), parts[len(parts)-1]}
-
-		//Expand tilde for homedir
-		parts[0], err = homedir.Expand(parts[0])
+		parts, err := ParseInputSpecification(input)
 		if err != nil {
-			return errors.Wrap(err, "failed to expand home directory in dataset local path")
+			return errors.Wrap(err, "failed to parse parse input specification")
 		}
-
-		//Normalize all slashes to native platform slashes (e.g. / to \ on Windows)
-		parts[0] = filepath.FromSlash(parts[0])
 
 		//if the input spec has a path-like string, try to upload it for the user
 		// var bucket string
