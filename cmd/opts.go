@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/nerdalize/nerd/nerd"
@@ -102,8 +103,16 @@ func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
 		return nil, nerd.ErrProjectIDNotSet
 	}
 
-	d.val = validator.New()
+	val := validator.New()
+	val.RegisterValidation("is-abs-path", ValidateAbsPath)
+	d.val = val
+
 	return d, nil
+}
+
+//Derived from https://github.com/golang/go/blob/1106512db54fc2736c7a9a67dd553fc9e1fca742/src/path/filepath/path_unix.go#L12
+func ValidateAbsPath(fl validator.FieldLevel) bool {
+	return strings.HasPrefix(fl.Field().String(), "/")
 }
 
 //Kube provides the kubernetes dependency

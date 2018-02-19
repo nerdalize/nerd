@@ -7,9 +7,10 @@ import (
 	"strings"
 
 	"github.com/jessevdk/go-flags"
+	"github.com/mitchellh/cli"
+	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
 
-	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/pkg/transfer"
 	"github.com/nerdalize/nerd/svc"
 )
@@ -33,6 +34,41 @@ func JobRunFactory(ui cli.Ui) cli.CommandFactory {
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
+}
+
+func ParseInputSpecification(input string) (parts []string, err error) {
+	parts = strings.Split(input, ":")
+
+	//Two accepted cases:
+	//- Two unix paths with a colon separating them, e.g. ~/data:/input
+	//- Windows path with a disk specification, e.g. C:/data:/input
+	if len(parts) != 2 && len(parts) != 3 {
+		return nil, fmt.Errorf("invalid input specified, expected '<DIR|DATASET_ID>:<JOB_DIR>' format, got: %s", input)
+	}
+
+	//Handle Windows paths where DIR may contain colons
+	//e.g. C:/foo/bar:/input will be parsed into []string{"C", "/foo/bar", "/input"}
+	//and should be turned into []string{"C:/foo/bar", "/input"}
+	//We assume that POSIX paths will never have colons
+	parts = []string{strings.Join(parts[:len(parts)-1], ":"), parts[len(parts)-1]}
+
+	//Expand tilde for homedir
+	parts[0], err = homedir.Expand(parts[0])
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to expand home directory in dataset local path")
+	}
+
+	//Normalize all slashes to native platform slashes (e.g. / to \ on Windows)
+	parts[0] = filepath.FromSlash(parts[0])
+
+	// Ensure that all parts are non-empty
+	if len(strings.TrimSpace(parts[0])) == 0 {
+		return nil, errors.New("input source is empty")
+	} else if len(strings.TrimSpace(parts[1])) == 0 {
+		return nil, errors.New("input mount path is empty")
+	}
+
+	return parts, nil
 }
 
 //Execute runs the command
@@ -68,30 +104,27 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 	kube := svc.NewKube(deps)
 
 	//start with input volumes
-	//@TODO move this logic to a separate package and test is
-	var inputDataset string
+	//@TODO move this logic to a separate package and test it
+	var inputDatasets []string
 	vols := map[string]*svc.JobVolume{}
 	for _, input := range cmd.Inputs {
-		parts := strings.Split(input, ":")
-		if len(parts) != 2 {
-			return fmt.Errorf("invalid input specified, expected '<DIR|DATASET_ID>:<JOB_DIR>' format, got: %s", input)
+		var inputDataset string
+
+		parts, err := ParseInputSpecification(input)
+		if err != nil {
+			return errors.Wrap(err, "failed to parse parse input specification")
 		}
 
-		if !filepath.IsAbs(parts[1]) {
-			return fmt.Errorf("the job directory for the input dataset must be provided as an absolute path")
-		}
-
-		//detect if the users tries to refer to a path to upload but it is not absolute
-		if strings.Contains(parts[0], string(filepath.Separator)) && !filepath.IsAbs(parts[0]) {
-			return fmt.Errorf("when providing a local directory as input it must be given as an absolute path")
-		}
-
-		//if the input spec has an absolute path as its first part, try to upload it for the user
+		//if the input spec has a path-like string, try to upload it for the user
 		// var bucket string
 		// var key string
-		if filepath.IsAbs(parts[0]) {
+		if strings.Contains(parts[0], string(filepath.Separator)) {
+			//the user has provided a path as its input, clean it and make it absolute
+			parts[0], err = filepath.Abs(parts[0])
+			if err != nil {
+				return errors.Wrap(err, "failed to turn local dataset path into absolute path")
+			}
 
-			//the user has provided a path as its input
 			var trans transfer.Transfer
 			trans, err = cmd.TransferOpts.Transfer()
 			if err != nil {
@@ -121,27 +154,37 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 			inputDataset = out.Name
 		}
 
+		inputDatasets = append(inputDatasets, inputDataset)
+
 		vols[parts[1]] = &svc.JobVolume{
 			MountPath:    parts[1],
 			InputDataset: inputDataset,
 		}
+
+		err = deps.val.Struct(vols[parts[1]])
+		if err != nil {
+			return errors.Wrap(err, "incorrect input")
+		}
 	}
 
-	var outputDataset string
+	var outputDatasets []string
 	for _, output := range cmd.Outputs {
+		var outputDataset string
+
 		parts := strings.Split(output, ":")
 		if len(parts) < 1 || len(parts) > 2 {
 			return fmt.Errorf("invalid output specified, expected '<JOB_DIR>:[DATASET_NAME]' format, got: %s", output)
-		}
-
-		if !filepath.IsAbs(parts[0]) {
-			return fmt.Errorf("the job directory for the output dataset must be provided as an absolute path")
 		}
 
 		vol, ok := vols[parts[0]]
 		if !ok {
 			vol = &svc.JobVolume{MountPath: parts[0]}
 			vols[parts[0]] = vol
+		}
+
+		err = deps.val.Struct(vol)
+		if err != nil {
+			return errors.Wrap(err, "incorrect output")
 		}
 
 		if len(parts) == 2 {
@@ -171,6 +214,8 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 			cmd.out.Infof("Setup empty output dataset: '%s'", outputDataset)
 		}
 
+		outputDatasets = append(outputDatasets, outputDataset)
+
 		vol.OutputDataset = outputDataset
 	}
 
@@ -190,25 +235,22 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		return renderServiceError(err, "failed to run job")
 	}
 
-	err = updateDataset(ctx, inputDataset, outputDataset, out.Name, kube)
-	if err != nil {
-		return err
+	//Register datasets as being used
+	for _, inputDataset := range inputDatasets {
+		_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: inputDataset, InputFor: out.Name})
+		if err != nil {
+			return errors.Wrapf(err, "failed to update input dataset '%s'", inputDataset)
+		}
+	}
+	for _, outputDataset := range outputDatasets {
+		_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: outputDataset, OutputFrom: out.Name})
+		if err != nil {
+			return errors.Wrapf(err, "failed to update output dataset '%s'", outputDataset)
+		}
 	}
 
 	cmd.out.Infof("Submitted job: '%s'", out.Name)
 	cmd.out.Infof("To see whats happening, use: 'nerd job list'")
-	return nil
-}
-
-func updateDataset(ctx context.Context, inputDataset, outputDataset, job string, kube *svc.Kube) error {
-	_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: inputDataset, InputFor: job})
-	if err != nil {
-		return err
-	}
-	_, err = kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: outputDataset, OutputFrom: job})
-	if err != nil {
-		return err
-	}
 	return nil
 }
 

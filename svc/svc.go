@@ -10,6 +10,7 @@ import (
 //Validator describes the validation dependency we require
 type Validator interface {
 	StructCtx(ctx context.Context, s interface{}) (err error)
+	Struct(s interface{}) (err error)
 }
 
 //Logger describes the logging dependency the services require

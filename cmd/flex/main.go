@@ -400,8 +400,8 @@ func (volp *DatasetVolumes) handleOutput(path, namespace, dataset string) error 
 
 	kube := svc.NewKube(di)
 	_, err = kube.UpdateDataset(context.TODO(), &svc.UpdateDatasetInput{
-		Name:       dataset,
-		Size:       &size,
+		Name: dataset,
+		Size: &size,
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to update size in dataset resource")

@@ -38,7 +38,7 @@ func TestUpdateDataset(t *testing.T) {
 
 	//Check if the output remains the same when not specifying any changes
 	_, err = kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{
-		Name:       out.Name,
+		Name: out.Name,
 	})
 	ok(t, err)
 
