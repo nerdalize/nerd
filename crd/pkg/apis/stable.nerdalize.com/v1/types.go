@@ -20,11 +20,6 @@ type Dataset struct {
 
 // DatasetSpec is the spec for a Dataset resource
 type DatasetSpec struct {
-	Key          string `json:"key"`      //@TODO deprecate in more flexible options map
-	Bucket       string `json:"bucket"`   //@TODO deprecate in more flexible options map
-	StoreType    string `json:"store"`    //@TODO deprecate
-	ArchiverType string `json:"archiver"` //@TODO deprecate
-
 	StoreOptions    transferstore.StoreOptions
 	ArchiverOptions transferarchiver.ArchiverOptions
 

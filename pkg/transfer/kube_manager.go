@@ -85,9 +85,6 @@ func (mgr *KubeManager) Create(ctx context.Context, name string, sto transfersto
 		Size:            0,
 		StoreOptions:    sto,
 		ArchiverOptions: ato,
-		// StoreType:    string(st),
-		// ArchiverType: string(at),
-		// Options:      opts,
 	}
 
 	out, err := mgr.kube.CreateDataset(ctx, in)
@@ -115,12 +112,12 @@ func (mgr *KubeManager) Open(ctx context.Context, name string) (Handle, error) {
 
 	store, err := CreateStore(out.StoreOptions)
 	if err != nil {
-		return nil, errors.Errorf("failed to setup store '%s' with options: %#v", out.StoreType, out.StoreOptions)
+		return nil, errors.Errorf("failed to setup store '%s' with options: %#v", out.StoreOptions.Type, out.StoreOptions)
 	}
 
 	archiver, err := CreateArchiver(out.ArchiverOptions)
 	if err != nil {
-		return nil, errors.Errorf("failed to setup archiver '%s' with options: %#v", out.ArchiverType, out.ArchiverOptions)
+		return nil, errors.Errorf("failed to setup archiver '%s' with options: %#v", out.ArchiverOptions.Type, out.ArchiverOptions)
 	}
 
 	return CreateStdHandle(out.Name, store, archiver, &kubeDelegate{

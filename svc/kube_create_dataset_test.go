@@ -45,7 +45,7 @@ func TestCreateDataset(t *testing.T) {
 		{
 			Name:    "when a dataset is uploaded with just an input dir it should generate a name and return it",
 			Timeout: time.Second * 5,
-			Input:   &svc.CreateDatasetInput{Bucket: "bogus", Key: "my-key", StoreOptions: transferstore.StoreOptions{Type: transferstore.StoreTypeS3}, ArchiverOptions: transferarchiver.ArchiverOptions{Type: transferarchiver.ArchiverTypeTar}},
+			Input:   &svc.CreateDatasetInput{StoreOptions: transferstore.StoreOptions{Type: transferstore.StoreTypeS3}, ArchiverOptions: transferarchiver.ArchiverOptions{Type: transferarchiver.ArchiverTypeTar}},
 			IsErr:   isNilErr,
 			IsOutput: func(t testing.TB, out *svc.CreateDatasetOutput) {
 				assert(t, out != nil, "output should not be nil")
@@ -55,7 +55,7 @@ func TestCreateDataset(t *testing.T) {
 		{
 			Name:    "when a dataset is uploaded with an invalid name it should return a invalid name error",
 			Timeout: time.Second * 5,
-			Input:   &svc.CreateDatasetInput{Name: "&notallowed", Bucket: "bogus", Key: "my-key", StoreOptions: transferstore.StoreOptions{Type: transferstore.StoreTypeS3}, ArchiverOptions: transferarchiver.ArchiverOptions{Type: transferarchiver.ArchiverTypeTar}},
+			Input:   &svc.CreateDatasetInput{Name: "&notallowed", StoreOptions: transferstore.StoreOptions{Type: transferstore.StoreTypeS3}, ArchiverOptions: transferarchiver.ArchiverOptions{Type: transferarchiver.ArchiverTypeTar}},
 			IsErr:   kubevisor.IsInvalidNameErr,
 		},
 	} {
@@ -90,20 +90,13 @@ func TestCreateDatasetWithNameThatAlreadyExists(t *testing.T) {
 
 	kube := svc.NewKube(di)
 	out, err := kube.CreateDataset(ctx, &svc.CreateDatasetInput{
-		Name:   "my-dataset",
-		Bucket: "bogus",
-		Key:    "my-key",
-		// Bucket: "bogus", Key: "my-key",
+		Name:         "my-dataset",
 		StoreOptions: transferstore.StoreOptions{Type: transferstore.StoreTypeS3}, ArchiverOptions: transferarchiver.ArchiverOptions{Type: transferarchiver.ArchiverTypeTar},
 	})
 	ok(t, err)
 
 	_, err = kube.CreateDataset(ctx, &svc.CreateDatasetInput{
-		Name:   out.Name,
-		Bucket: "bogus",
-		Key:    "my-key",
-		// StoreType:    "s3",
-		// ArchiverType: "tar",
+		Name:         out.Name,
 		StoreOptions: transferstore.StoreOptions{Type: transferstore.StoreTypeS3}, ArchiverOptions: transferarchiver.ArchiverOptions{Type: transferarchiver.ArchiverTypeTar},
 	})
 	assert(t, kubevisor.IsAlreadyExistsErr(err), "expected error to be already exists")

@@ -21,11 +21,7 @@ func TestUpdateDataset(t *testing.T) {
 
 	kube := svc.NewKube(di)
 	out, err := kube.CreateDataset(ctx, &svc.CreateDatasetInput{
-		Name:   "my-dataset",
-		Bucket: "bogus",
-		Key:    "my-key",
-		// ArchiverType: "tar",
-		// StoreType:    "s3",
+		Name: "my-dataset",
 
 		StoreOptions: transferstore.StoreOptions{Type: transferstore.StoreTypeS3}, ArchiverOptions: transferarchiver.ArchiverOptions{Type: transferarchiver.ArchiverTypeTar},
 	})

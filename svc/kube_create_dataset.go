@@ -13,19 +13,11 @@ import (
 
 //CreateDatasetInput is the input to CreateDataset
 type CreateDatasetInput struct {
-	Bucket string //@TODO deprecate for more flexible options
-	Key    string //@TODO deprecate for more flexible options
-
 	Name string `validate:"printascii"`
 	Size uint64
 
-	//@TODO add concrete type
 	StoreOptions    transferstore.StoreOptions       `validate:"required"`
 	ArchiverOptions transferarchiver.ArchiverOptions `validate:"required"`
-
-	// StoreType    string `validate:"min=1"`
-	// ArchiverType string `validate:"min=1"`
-	// Options      map[string]string
 }
 
 //CreateDatasetOutput is the output to CreateDataset
@@ -42,16 +34,9 @@ func (k *Kube) CreateDataset(ctx context.Context, in *CreateDatasetInput) (out *
 	dataset := &datasetsv1.Dataset{
 		ObjectMeta: metav1.ObjectMeta{},
 		Spec: datasetsv1.DatasetSpec{
-			Size:   in.Size,
-			Bucket: in.Bucket, //@TODO deprecate
-			Key:    in.Key,    //@TODO deprecate
-
+			Size:            in.Size,
 			StoreOptions:    in.StoreOptions,
 			ArchiverOptions: in.ArchiverOptions,
-
-			// StoreType:    in.StoreType,
-			// ArchiverType: in.ArchiverType,
-			// Options:      in.Options,
 		},
 	}
 

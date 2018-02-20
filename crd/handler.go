@@ -38,13 +38,13 @@ func (s *S3AWS) ObjectDeleted(obj interface{}, key string) {
 	if dataset, ok := obj.(*datasetsv1.Dataset); ok {
 		store, err := transferv2.CreateStore(dataset.Spec.StoreOptions)
 		if err != nil {
-			glog.Errorf("failed to create store with type '%s': %v", dataset.Spec.StoreType, err)
+			glog.Errorf("failed to create store with options '%#v': %v", dataset.Spec.StoreOptions, err)
 			return
 		}
 
 		archiver, err := transferv2.CreateArchiver(dataset.Spec.ArchiverOptions)
 		if err != nil {
-			glog.Errorf("failed to create archiver with type '%s': %v", dataset.Spec.ArchiverType, err)
+			glog.Errorf("failed to create archiver with options '%#v': %v", dataset.Spec.ArchiverOptions, err)
 			return
 		}
 

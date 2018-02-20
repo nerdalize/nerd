@@ -17,16 +17,11 @@ type GetDatasetInput struct {
 
 //GetDatasetOutput is the output to GetDataset
 type GetDatasetOutput struct {
-	Bucket string //@TODO deprecate
-	Key    string //@TODO deprecate
+	Name string
+	Size uint64
 
-	Name         string
-	Size         uint64
-	StoreType    string            //@TODO deprecate
-	ArchiverType string            //@TODO deprecate
-	Options      map[string]string //@TODO deprecate
-	InputFor     []string
-	OutputFrom   []string
+	InputFor   []string
+	OutputFrom []string
 
 	StoreOptions    transferstore.StoreOptions
 	ArchiverOptions transferarchiver.ArchiverOptions
@@ -50,12 +45,6 @@ func (k *Kube) GetDataset(ctx context.Context, in *GetDatasetInput) (out *GetDat
 //GetDatasetOutputFromSpec allows easy output creation from dataset
 func GetDatasetOutputFromSpec(dataset *datasetsv1.Dataset) *GetDatasetOutput {
 	return &GetDatasetOutput{
-		Bucket:       dataset.Spec.Bucket,       //@TODO deprecate
-		Key:          dataset.Spec.Key,          //@TODO deprecate
-		Options:      dataset.Spec.Options,      //@TODO deprecate
-		StoreType:    dataset.Spec.StoreType,    //@TODO deprecate
-		ArchiverType: dataset.Spec.ArchiverType, //@TODO deprecate
-
 		Name:            dataset.Name,
 		Size:            dataset.Spec.Size,
 		InputFor:        dataset.Spec.InputFor,
