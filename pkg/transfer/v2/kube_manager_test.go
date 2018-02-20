@@ -13,15 +13,6 @@ import (
 )
 
 func testManager(tb testing.TB) (mgr *transfer.KubeManager, clean func()) {
-	var err error
-	stores := map[transfer.StoreType]transfer.StoreFactory{
-		transfer.StoreTypeS3: transfer.CreateS3Store,
-	}
-
-	archivers := map[transfer.ArchiverType]transfer.ArchiverFactory{
-		transfer.ArchiverTypeTar: transfer.CreateTarArchiver,
-	}
-
 	di, cleanNs, err := svc.TempDI("")
 	if err != nil {
 		tb.Fatal(err)
@@ -29,7 +20,7 @@ func testManager(tb testing.TB) (mgr *transfer.KubeManager, clean func()) {
 
 	kube := svc.NewKube(di)
 
-	mgr, err = transfer.NewKubeManager(kube, stores, archivers)
+	mgr, err = transfer.NewKubeManager(kube)
 	if err != nil {
 		tb.Fatal(err)
 	}

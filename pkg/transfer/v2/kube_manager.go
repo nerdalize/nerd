@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+//kubeDelegate updates metadat in kubernetes after lifecycle events
 type kubeDelegate struct {
 	name string
 	kube *svc.Kube
@@ -35,17 +36,13 @@ func (d *kubeDelegate) PostClose() error                   { return nil }
 //KubeManager is a dataset manager that uses Kubernetes as its metadata
 //store and locking service
 type KubeManager struct {
-	kube      *svc.Kube
-	stores    map[StoreType]StoreFactory
-	archivers map[ArchiverType]ArchiverFactory
+	kube *svc.Kube
 }
 
 //NewKubeManager creates a transferManager that uses our kubevisor implementation
-func NewKubeManager(kube *svc.Kube, stores map[StoreType]StoreFactory, archivers map[ArchiverType]ArchiverFactory) (mgr *KubeManager, err error) {
+func NewKubeManager(kube *svc.Kube) (mgr *KubeManager, err error) {
 	mgr = &KubeManager{
-		kube:      kube,
-		stores:    stores,
-		archivers: archivers,
+		kube: kube,
 	}
 
 	return mgr, nil
@@ -74,24 +71,14 @@ func (mgr *KubeManager) Create(ctx context.Context, name string, st StoreType, a
 	opts["tar_key_prefix"] = fmt.Sprintf("%x/", d)
 
 	//step 1: initate stores and archivers from options
-	storef, ok := mgr.stores[st]
-	if !ok {
-		return nil, errors.Errorf("store type '%s' is not configured in the manager", st)
-	}
-
-	store, err := storef(opts)
+	store, err := CreateStore(st, opts)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to create store from options")
+		return nil, errors.Errorf("failed to setup store '%s' with options: %#v", st, opts)
 	}
 
-	archiverf, ok := mgr.archivers[at]
-	if !ok {
-		return nil, errors.Errorf("archiver '%s' is not configured in the manager", at)
-	}
-
-	archiver, err := archiverf(opts)
+	archiver, err := CreateArchiver(at, opts)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to create archiver from options")
+		return nil, errors.Errorf("failed to setup archiver '%s' with options: %#v", at, opts)
 	}
 
 	//step 3: create the dataset resource
@@ -115,37 +102,6 @@ func (mgr *KubeManager) Create(ctx context.Context, name string, st StoreType, a
 	})
 }
 
-//OpenHandle allows creation of a handle without talking to kubernetes, this
-//is a low level function, must users would like to use Open
-func (mgr *KubeManager) openHandle(out *svc.GetDatasetOutput) (Handle, error) {
-
-	//Step 2: Create store and archivers
-	storef, ok := mgr.stores[StoreType(out.StoreType)]
-	if !ok {
-		return nil, errors.Errorf("store type '%s' is not configured in the manager", out.StoreType)
-	}
-
-	store, err := storef(out.Options)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to create store from options")
-	}
-
-	archiverf, ok := mgr.archivers[ArchiverType(out.ArchiverType)]
-	if !ok {
-		return nil, errors.Errorf("archiver '%s' is not configured in the manager", out.ArchiverType)
-	}
-
-	archiver, err := archiverf(out.Options)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to create archiver from options")
-	}
-
-	return CreateStdHandle(store, archiver, &kubeDelegate{
-		name: out.Name,
-		kube: mgr.kube,
-	})
-}
-
 //Open an existing dataset and return a handle to it, dataset must exist
 func (mgr *KubeManager) Open(ctx context.Context, name string) (Handle, error) {
 	in := &svc.GetDatasetInput{
@@ -157,7 +113,20 @@ func (mgr *KubeManager) Open(ctx context.Context, name string) (Handle, error) {
 		return nil, errors.Wrap(err, "failed to get dataset resource")
 	}
 
-	return mgr.openHandle(out)
+	store, err := CreateStore(StoreType(out.StoreType), out.Options)
+	if err != nil {
+		return nil, errors.Errorf("failed to setup store '%s' with options: %#v", out.StoreType, out.Options)
+	}
+
+	archiver, err := CreateArchiver(ArchiverType(out.ArchiverType), out.Options)
+	if err != nil {
+		return nil, errors.Errorf("failed to setup archiver '%s' with options: %#v", out.ArchiverType, out.Options)
+	}
+
+	return CreateStdHandle(store, archiver, &kubeDelegate{
+		name: out.Name,
+		kube: mgr.kube,
+	})
 }
 
 //Remove an existing dataset, dataset must exist

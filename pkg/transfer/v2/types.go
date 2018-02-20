@@ -2,6 +2,7 @@ package transfer
 
 import (
 	"context"
+	"errors"
 	"io"
 )
 
@@ -10,7 +11,7 @@ type Reporter interface {
 	//@TODO think of what interface we would like here
 }
 
-//DiscardReporter discards any progress reporting
+//DiscardReporter discards all progress reports
 func DiscardReporter() Reporter {
 	return struct{}{}
 }
@@ -62,8 +63,22 @@ const (
 	ArchiverTypeTar ArchiverType = "tar"
 )
 
-//StoreFactory creates stores using an opaque set of options
-type StoreFactory func(opts map[string]string) (Store, error)
+//CreateStore will creates one of the standard storews with the provided options
+func CreateStore(st StoreType, opts map[string]string) (Store, error) {
+	switch st {
+	case StoreTypeS3:
+		return CreateS3Store(opts)
+	default:
+		return nil, errors.New("unsupported store")
+	}
+}
 
-//ArchiverFactory creates archivers based on opaque options map
-type ArchiverFactory func(opts map[string]string) (Archiver, error)
+//CreateArchiver will creates one of the standard storews with the provided options
+func CreateArchiver(at ArchiverType, opts map[string]string) (Archiver, error) {
+	switch at {
+	case ArchiverTypeTar:
+		return CreateTarArchiver(opts)
+	default:
+		return nil, errors.New("unsupported archiver")
+	}
+}
