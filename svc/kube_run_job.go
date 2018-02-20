@@ -39,7 +39,7 @@ const (
 
 //JobVolume can be used in a job
 type JobVolume struct {
-	MountPath     string
+	MountPath     string `validate:"is-abs-path"`
 	InputDataset  string
 	OutputDataset string
 }
