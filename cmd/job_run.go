@@ -117,16 +117,13 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 	//start with input volumes
 	vols := map[string]*svc.JobVolume{}
 	for _, input := range cmd.Inputs {
-		var inputDataset string
-
 		parts, err := ParseInputSpecification(input)
 		if err != nil {
 			return errors.Wrap(err, "failed to parse parse input specification")
 		}
 
 		//if the input spec has a path-like string, try to upload it for the user
-		// var bucket string
-		// var key string
+		var h transfer.Handle
 		if strings.Contains(parts[0], string(filepath.Separator)) {
 			//the user has provided a path as its input, clean it and make it absolute
 			parts[0], err = filepath.Abs(parts[0])
@@ -172,8 +169,6 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 
 	// var outputDataset string
 	for _, output := range cmd.Outputs {
-		var outputDataset string
-
 		parts := strings.Split(output, ":")
 		if len(parts) < 1 || len(parts) > 2 {
 			return fmt.Errorf("invalid output specified, expected '<JOB_DIR>:[DATASET_NAME]' format, got: %s", output)
@@ -185,11 +180,11 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 			vols[parts[0]] = vol
 		}
 
-    err = deps.val.Struct(vol)
+		err = deps.val.Struct(vol)
 		if err != nil {
 			return errors.Wrap(err, "incorrect output")
 		}
-    
+
 		//if the second part is provided we want to upload the output to a specific  dataset
 		var h transfer.Handle
 		if len(parts) == 2 { //open an existing dataset
@@ -206,7 +201,6 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 
 			cmd.out.Infof("Setup empty output dataset: '%s'", h.Name())
 		}
-
 
 		//register for job mapping and cleanup
 		outputs = append(outputs, h)

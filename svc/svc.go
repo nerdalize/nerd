@@ -42,6 +42,11 @@ type DI interface {
 //ErrMinikubeOnly is returned when a temp di is created on something thats not minikube
 var ErrMinikubeOnly = errors.New("temp DI can only be created on Minikube")
 
+//Derived from https://github.com/golang/go/blob/1106512db54fc2736c7a9a67dd553fc9e1fca742/src/path/filepath/path_unix.go#L12
+func ValidateAbsPath(fl validator.FieldLevel) bool {
+	return strings.HasPrefix(fl.Field().String(), "/")
+}
+
 //TempDI returns a temporary DI for the Kube service that sets up
 //a temporary namespace which can be deleted using clean. Mostly
 //usefull for testing purposes. If name is empty a 16 byte random
@@ -61,10 +66,14 @@ func TempDI(name string) (di DI, clean func(), err error) {
 		return nil, nil, ErrMinikubeOnly
 	}
 
+	val := validator.New()
+	val.RegisterValidation("is-abs-path", ValidateAbsPath)
+
 	tdi := &tmpDI{
 		logs: logrus.New(),
-		val:  validator.New(),
+		val:  val,
 	}
+
 	tdi.kube, err = kubernetes.NewForConfig(kcfg)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to create kube client from config")

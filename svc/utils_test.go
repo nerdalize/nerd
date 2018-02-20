@@ -13,7 +13,6 @@ import (
 
 	"github.com/go-playground/validator"
 	homedir "github.com/mitchellh/go-homedir"
-	"github.com/nerdalize/nerd/cmd"
 	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
 	"github.com/nerdalize/nerd/pkg/kubevisor"
 	"github.com/nerdalize/nerd/svc"
