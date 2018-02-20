@@ -25,6 +25,7 @@ const (
 )
 
 // Controller is the controller implementation for Dataset resources
+// Good to read to understand the different components: https://engineering.bitnami.com/articles/a-deep-dive-into-kubernetes-controllers.html
 type Controller struct {
 	// nerdalizeclientset is a clientset for our own API group
 	nerdalizeclientset clientset.Interface
@@ -61,7 +62,7 @@ func NewController(
 			},
 		},
 		&datasetsv1.Dataset{},
-		0, //Skip resync
+		time.Second*10, //resync every 10 seconds
 		cache.Indexers{},
 	)
 
@@ -80,6 +81,7 @@ func NewController(
 			key, err := cache.MetaNamespaceKeyFunc(obj)
 			if err == nil {
 				queue.Add(key)
+				eventHandler.ObjectCreated(obj)
 			}
 		},
 		UpdateFunc: func(old, new interface{}) {
@@ -143,7 +145,7 @@ func (c *Controller) processNextItem() bool {
 	}
 	defer c.workqueue.Done(key)
 
-	err := c.processItem(key.(string), "datasets")
+	err := c.processItem(key.(string), "dataset")
 	if err == nil {
 		// No error, reset the ratelimit counters
 		c.workqueue.Forget(key)
@@ -161,9 +163,9 @@ func (c *Controller) processNextItem() bool {
 }
 
 func (c *Controller) processItem(key string, kobj string) error {
-	glog.Infof("Processing change to %s: %s", kobj, key)
+	glog.Infof("Processing %s object: %s", kobj, key)
 
-	obj, exists, err := c.informer.GetIndexer().GetByKey(key)
+	_, exists, err := c.informer.GetIndexer().GetByKey(key)
 	if err != nil {
 		return fmt.Errorf("Error fetching object with key %s from store: %v", key, err)
 	}
@@ -172,7 +174,5 @@ func (c *Controller) processItem(key string, kobj string) error {
 		glog.Infof("Object %s already deleted", key)
 		return nil
 	}
-
-	c.eventHandler.ObjectCreated(obj)
 	return nil
 }

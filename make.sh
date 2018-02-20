@@ -140,8 +140,9 @@ function run_flexpush { #build and push docker container
 function run_crdbuild { #build docker container for custom dataset controller
 	command -v docker >/dev/null 2>&1 || { echo "executable 'docker' (container runtime) must be installed" >&2; exit 1; }
 
+	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o controller ./crd/
 	echo "--> building crd controller container"
-	docker build -f crd.Dockerfile -t nerdalize/custom-dataset-controller:$(cat crd/VERSION) .
+	docker build -f crd/Dockerfile -t nerdalize/custom-dataset-controller:$(cat crd/VERSION) .
 }
 
 function run_crdpush { #build and push docker container for custom dataset controller
