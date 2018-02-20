@@ -209,15 +209,7 @@ func (volp *DatasetVolumes) destroyFSInFile(path string) error {
 }
 
 func (volp *DatasetVolumes) transferManager(kube *svc.Kube) (mgr transfer.Manager, err error) {
-	if mgr, err = transfer.NewKubeManager(
-		kube,
-		map[transfer.StoreType]transfer.StoreFactory{
-			transfer.StoreTypeS3: transfer.CreateS3Store,
-		},
-		map[transfer.ArchiverType]transfer.ArchiverFactory{
-			transfer.ArchiverTypeTar: transfer.CreateTarArchiver,
-		},
-	); err != nil {
+	if mgr, err = transfer.NewKubeManager(kube); err != nil {
 		return nil, errors.Wrap(err, "failed to setup transfer manager")
 	}
 
@@ -255,7 +247,7 @@ func (volp *DatasetVolumes) provisionInput(path, namespace, dataset string) erro
 	}
 
 	defer h.Close()
-	err = h.Pull(ctx, path, transfer.DiscardReporter())
+	err = h.Pull(ctx, path, transfer.NewDiscardReporter())
 	if err != nil {
 		return errors.Wrap(err, "failed to download dataset")
 	}
@@ -387,7 +379,7 @@ func (volp *DatasetVolumes) handleOutput(path, namespace, dataset string) error 
 	}
 
 	defer h.Close()
-	err = h.Push(ctx, path, transfer.DiscardReporter())
+	err = h.Push(ctx, path, transfer.NewDiscardReporter())
 	if err != nil {
 		return errors.Wrap(err, "failed to download dataset")
 	}

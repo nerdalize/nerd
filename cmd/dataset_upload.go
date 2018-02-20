@@ -42,7 +42,7 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 	}
 
 	kube := svc.NewKube(deps)
-	mgr, opts, err := cmd.TransferOpts.TransferManager(kube)
+	mgr, sto, sta, err := cmd.TransferOpts.TransferManager(kube)
 	if err != nil {
 		return errors.Wrap(err, "failed to setup transfer manager")
 	}
@@ -52,9 +52,8 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 	if h, err = mgr.Create(
 		ctx,
 		cmd.Name,
-		transfer.StoreTypeS3,
-		transfer.ArchiverTypeTar,
-		opts,
+		*sto,
+		*sta,
 	); err != nil {
 		return errors.Wrap(err, "failed to create transfer handle")
 	}

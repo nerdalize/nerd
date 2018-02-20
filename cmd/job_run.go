@@ -69,7 +69,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 
 	//setup the transfer manager
 	kube := svc.NewKube(deps)
-	mgr, opts, err := cmd.TransferOpts.TransferManager(kube)
+	mgr, sto, sta, err := cmd.TransferOpts.TransferManager(kube)
 	if err != nil {
 		return errors.Wrap(err, "failed to setup transfer manager")
 	}
@@ -98,7 +98,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		//if the first part can be considered a path, upload it immediately
 		var h transfer.Handle
 		if filepath.IsAbs(parts[0]) { //create (and upload) a new dataset
-			h, err = mgr.Create(ctx, "", transfer.StoreTypeS3, transfer.ArchiverTypeTar, opts)
+			h, err = mgr.Create(ctx, "", *sto, *sta)
 			if err != nil {
 				return errors.Wrap(err, "failed to create dataset")
 			}
@@ -155,7 +155,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 			}
 
 		} else { //create an empty dataset for the output
-			h, err = mgr.Create(ctx, "", transfer.StoreTypeS3, transfer.ArchiverTypeTar, opts)
+			h, err = mgr.Create(ctx, "", *sto, *sta)
 			if err != nil {
 				return errors.Wrap(err, "failed to create dataset")
 			}

@@ -36,13 +36,13 @@ func (s *S3AWS) ObjectCreated(obj interface{}) {
 // If the object is a dataset, the corresponding dataset will be removed from s3
 func (s *S3AWS) ObjectDeleted(obj interface{}, key string) {
 	if dataset, ok := obj.(*datasetsv1.Dataset); ok {
-		store, err := transferv2.CreateStore(transferv2.StoreType(dataset.Spec.StoreType), dataset.Spec.Options)
+		store, err := transferv2.CreateStore(dataset.Spec.StoreOptions)
 		if err != nil {
 			glog.Errorf("failed to create store with type '%s': %v", dataset.Spec.StoreType, err)
 			return
 		}
 
-		archiver, err := transferv2.CreateArchiver(transferv2.ArchiverType(dataset.Spec.ArchiverType), dataset.Spec.Options)
+		archiver, err := transferv2.CreateArchiver(dataset.Spec.ArchiverOptions)
 		if err != nil {
 			glog.Errorf("failed to create archiver with type '%s': %v", dataset.Spec.ArchiverType, err)
 			return

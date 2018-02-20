@@ -3,6 +3,7 @@ package transfer
 import (
 	"context"
 	"crypto/rand"
+	"fmt"
 
 	"github.com/nerdalize/nerd/pkg/transfer/archiver"
 	"github.com/nerdalize/nerd/pkg/transfer/store"
@@ -65,7 +66,7 @@ func (mgr *KubeManager) Create(ctx context.Context, name string, sto transfersto
 	//after the dataset has been created
 	//@TODO this should probably a mandatory argument of any archiver so
 	//to be addedd to the ArchiverFactory type
-	// opts["tar_key_prefix"] = fmt.Sprintf("%x/", d)
+	ato.TarArchiverKeyPrefix = fmt.Sprintf("%x/", d)
 
 	//step 1: initate stores and archivers from options
 	store, err := CreateStore(sto)

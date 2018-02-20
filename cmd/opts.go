@@ -12,6 +12,8 @@ import (
 	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
 	"github.com/nerdalize/nerd/pkg/populator"
 	transfer "github.com/nerdalize/nerd/pkg/transfer"
+	"github.com/nerdalize/nerd/pkg/transfer/archiver"
+	"github.com/nerdalize/nerd/pkg/transfer/store"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
@@ -47,17 +49,22 @@ type TransferOpts struct {
 // }
 
 //TransferManager creates a transfermanager using the command line options
-func (opts TransferOpts) TransferManager(kube *svc.Kube) (mgr transfer.Manager, o map[string]string, err error) {
+func (opts TransferOpts) TransferManager(kube *svc.Kube) (mgr transfer.Manager, sto *transferstore.StoreOptions, sta *transferarchiver.ArchiverOptions, err error) {
 	if mgr, err = transfer.NewKubeManager(
 		kube,
 	); err != nil {
-		return nil, nil, errors.Wrap(err, "failed to setup transfer manager")
+		return nil, nil, nil, errors.Wrap(err, "failed to setup transfer manager")
 	}
 
-	return mgr, map[string]string{
-		"aws_s3_bucket": opts.AWSS3Bucket,
-		//@TODO add other options
-	}, nil
+	sto = &transferstore.StoreOptions{
+		Type:          transferstore.StoreTypeS3,
+		S3StoreBucket: "nlz-datasets-dev",
+	}
+	sta = &transferarchiver.ArchiverOptions{
+		Type: transferarchiver.ArchiverTypeTar,
+	}
+
+	return mgr, sto, sta, nil
 }
 
 //KubeOpts can be used to create a Kubernetes service
