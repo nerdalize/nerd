@@ -29,3 +29,4 @@ vendor
 installers/msi/obj
 crd/controller
 *.env
+controller
