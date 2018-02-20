@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"github.com/nerdalize/nerd/pkg/transfer/archiver"
+	"github.com/nerdalize/nerd/pkg/transfer/store"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -18,11 +20,13 @@ type Dataset struct {
 
 // DatasetSpec is the spec for a Dataset resource
 type DatasetSpec struct {
-	Key        string   `json:"key"`
-	Bucket     string   `json:"bucket"`
-	Size       uint64   `json:"size"`
-	InputFor   []string `json:"input"`
-	OutputFrom []string `json:"output"`
+	StoreOptions    transferstore.StoreOptions
+	ArchiverOptions transferarchiver.ArchiverOptions
+
+	Options    map[string]string `json:"options"`
+	Size       uint64            `json:"size"`
+	InputFor   []string          `json:"input"`
+	OutputFrom []string          `json:"output"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

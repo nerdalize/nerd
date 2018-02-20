@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nerdalize/nerd/pkg/transfer/archiver"
+	"github.com/nerdalize/nerd/pkg/transfer/store"
 	"github.com/nerdalize/nerd/svc"
 )
 
@@ -18,7 +20,11 @@ func TestUpdateDataset(t *testing.T) {
 	defer cancel()
 
 	kube := svc.NewKube(di)
-	out, err := kube.CreateDataset(ctx, &svc.CreateDatasetInput{Name: "my-dataset", Bucket: "bogus", Key: "my-key"})
+	out, err := kube.CreateDataset(ctx, &svc.CreateDatasetInput{
+		Name: "my-dataset",
+
+		StoreOptions: transferstore.StoreOptions{Type: transferstore.StoreTypeS3}, ArchiverOptions: transferarchiver.ArchiverOptions{Type: transferarchiver.ArchiverTypeTar},
+	})
 	ok(t, err)
 
 	newSize := uint64(1337)

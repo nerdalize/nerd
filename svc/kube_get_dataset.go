@@ -6,6 +6,8 @@ import (
 	"github.com/nerdalize/nerd/pkg/kubevisor"
 
 	datasetsv1 "github.com/nerdalize/nerd/crd/pkg/apis/stable.nerdalize.com/v1"
+	"github.com/nerdalize/nerd/pkg/transfer/archiver"
+	"github.com/nerdalize/nerd/pkg/transfer/store"
 )
 
 //GetDatasetInput is the input to GetDataset
@@ -15,12 +17,14 @@ type GetDatasetInput struct {
 
 //GetDatasetOutput is the output to GetDataset
 type GetDatasetOutput struct {
-	Name       string
-	Bucket     string
-	Key        string
-	Size       uint64
+	Name string
+	Size uint64
+
 	InputFor   []string
 	OutputFrom []string
+
+	StoreOptions    transferstore.StoreOptions
+	ArchiverOptions transferarchiver.ArchiverOptions
 }
 
 //GetDataset will create a dataset on kubernetes
@@ -35,12 +39,17 @@ func (k *Kube) GetDataset(ctx context.Context, in *GetDatasetInput) (out *GetDat
 		return nil, err
 	}
 
+	return GetDatasetOutputFromSpec(dataset), nil
+}
+
+//GetDatasetOutputFromSpec allows easy output creation from dataset
+func GetDatasetOutputFromSpec(dataset *datasetsv1.Dataset) *GetDatasetOutput {
 	return &GetDatasetOutput{
-		Name:       dataset.Name,
-		Size:       dataset.Spec.Size,
-		Bucket:     dataset.Spec.Bucket,
-		Key:        dataset.Spec.Key,
-		InputFor:   dataset.Spec.InputFor,
-		OutputFrom: dataset.Spec.OutputFrom,
-	}, nil
+		Name:            dataset.Name,
+		Size:            dataset.Spec.Size,
+		InputFor:        dataset.Spec.InputFor,
+		OutputFrom:      dataset.Spec.OutputFrom,
+		StoreOptions:    dataset.Spec.StoreOptions,
+		ArchiverOptions: dataset.Spec.ArchiverOptions,
+	}
 }

@@ -8,14 +8,11 @@ import (
 	"strings"
 	"testing"
 
-	"k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/go-playground/validator"
 	homedir "github.com/mitchellh/go-homedir"
-	"github.com/nerdalize/nerd/cmd"
 	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
 	"github.com/nerdalize/nerd/pkg/kubevisor"
 	"github.com/nerdalize/nerd/svc"
@@ -64,37 +61,14 @@ func testNamespaceName(tb testing.TB) string {
 func testDI(tb testing.TB) (svc.DI, func()) {
 	tb.Helper()
 
-	hdir, err := homedir.Dir()
-	ok(tb, err)
-
-	tdi := &testingDI{}
-	kcfg, err := clientcmd.BuildConfigFromFlags("", filepath.Join(hdir, ".kube", "config"))
-	ok(tb, err)
-
-	if !strings.Contains(fmt.Sprintf("%#v", kcfg), "minikube") {
+	di, clean, err := svc.TempDI(testNamespaceName(tb))
+	if err == svc.ErrMinikubeOnly {
 		tb.Skipf("kube config needs to contain 'minikube' for local testing")
+		return nil, nil
 	}
 
-	tdi.logs = logrus.New()
-	tdi.kube, err = kubernetes.NewForConfig(kcfg)
 	ok(tb, err)
-	tdi.crd, err = crd.NewForConfig(kcfg)
-	ok(tb, err)
-	val := validator.New()
-	val.RegisterValidation("is-abs-path", cmd.ValidateAbsPath)
-	tdi.val = val
-
-	ns, err := tdi.kube.CoreV1().Namespaces().Create(&v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{GenerateName: testNamespaceName(tb)},
-	})
-	tdi.ns = ns.Name
-	ok(tb, err)
-
-	return tdi, func() {
-		err := tdi.kube.CoreV1().Namespaces().Delete(ns.Name, nil)
-		ok(tb, err)
-	}
-
+	return di, clean
 }
 
 func testDIWithoutNamespace(tb testing.TB) svc.DI {

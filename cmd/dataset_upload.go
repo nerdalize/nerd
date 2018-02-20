@@ -4,12 +4,12 @@ import (
 	"context"
 
 	"github.com/jessevdk/go-flags"
-	uuid "github.com/satori/go.uuid"
+	"github.com/pkg/errors"
 
-	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/pkg/transfer"
 	"github.com/nerdalize/nerd/svc"
-	"github.com/pkg/errors"
+
+	"github.com/mitchellh/cli"
 )
 
 //DatasetUpload command
@@ -30,41 +30,6 @@ func DatasetUploadFactory(ui cli.Ui) cli.CommandFactory {
 	}
 }
 
-//@TODO needs a better place instead of the cmd package
-func uploadToDataset(ctx context.Context, trans transfer.Transfer, bucket string, kube *svc.Kube, path, datasetName string) (ref *transfer.Ref, name string, err error) {
-	uid, err := uuid.NewV4()
-	if err != nil {
-		return nil, "", err
-	}
-
-	ref = &transfer.Ref{
-		Bucket: bucket,
-		Key:    uid.String() + ".zip", //@TODO move this to a library
-	}
-
-	var n uint64
-	if path != "" { //path is optional
-		n, err = trans.Upload(ctx, ref, path)
-		if err != nil {
-			return nil, "", errors.Wrap(err, "failed to perform upload")
-		}
-	}
-
-	in := &svc.CreateDatasetInput{
-		Name:   datasetName,
-		Bucket: ref.Bucket,
-		Key:    ref.Key,
-		Size:   uint64(n),
-	}
-
-	out, err := kube.CreateDataset(ctx, in)
-	if err != nil {
-		return nil, "", renderServiceError(err, "failed to upload dataset")
-	}
-
-	return ref, out.Name, nil
-}
-
 //Execute runs the command
 func (cmd *DatasetUpload) Execute(args []string) (err error) {
 	if len(args) < 1 {
@@ -76,23 +41,31 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 		return renderConfigError(err, "failed to configure")
 	}
 
-	trans, err := cmd.TransferOpts.Transfer()
+	kube := svc.NewKube(deps)
+	mgr, sto, sta, err := cmd.TransferOpts.TransferManager(kube)
 	if err != nil {
-		return errors.Wrap(err, "failed configure transfer")
+		return errors.Wrap(err, "failed to setup transfer manager")
 	}
 
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
-	defer cancel()
-
-	kube := svc.NewKube(deps)
-
-	_, name, err := uploadToDataset(ctx, trans, cmd.AWSS3Bucket, kube, args[0], cmd.Name)
-	if err != nil {
-		return err
+	var h transfer.Handle
+	if h, err = mgr.Create(
+		ctx,
+		cmd.Name,
+		*sto,
+		*sta,
+	); err != nil {
+		return errors.Wrap(err, "failed to create transfer handle")
 	}
 
-	cmd.out.Infof("Uploaded dataset: '%s'", name)
+	defer h.Close()
+
+	err = h.Push(ctx, args[0], transfer.NewDiscardReporter())
+	if err != nil {
+		return errors.Wrap(err, "failed to upload dataset")
+	}
+
+	cmd.out.Infof("Uploaded dataset: '%s'", h.Name())
 	cmd.out.Infof("To run a job with a dataset, use: 'nerd job run'")
 	return nil
 }

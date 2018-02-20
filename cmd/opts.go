@@ -3,7 +3,6 @@ package cmd
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/nerdalize/nerd/nerd"
@@ -12,7 +11,9 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
 	"github.com/nerdalize/nerd/pkg/populator"
-	"github.com/nerdalize/nerd/pkg/transfer"
+	transfer "github.com/nerdalize/nerd/pkg/transfer"
+	"github.com/nerdalize/nerd/pkg/transfer/archiver"
+	"github.com/nerdalize/nerd/pkg/transfer/store"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
@@ -29,21 +30,41 @@ type TransferOpts struct {
 }
 
 //Transfer creates an concrete transfer service using the configuration
-func (opts TransferOpts) Transfer() (trans transfer.Transfer, err error) {
-	s3cfg := &transfer.S3Conf{
-		Bucket:       opts.AWSS3Bucket,
-		Region:       opts.AWSRegion,
-		AccessKey:    opts.AWSAccessKeyID,
-		SecretKey:    opts.AWSSecretAccessKey,
-		SessionToken: opts.AWSSessionToken,
+//@TODO deprecate
+// func (opts TransferOpts) Transfer() (trans transfer.Transfer, err error) {
+// 	s3cfg := &transfer.S3Conf{
+// 		Bucket:       opts.AWSS3Bucket,
+// 		Region:       opts.AWSRegion,
+// 		AccessKey:    opts.AWSAccessKeyID,
+// 		SecretKey:    opts.AWSSecretAccessKey,
+// 		SessionToken: opts.AWSSessionToken,
+// 	}
+//
+// 	trans, err = transfer.NewS3(s3cfg)
+// 	if err != nil {
+// 		return nil, errors.Wrap(err, "failed to create s3 uploader")
+// 	}
+//
+// 	return trans, nil
+// }
+
+//TransferManager creates a transfermanager using the command line options
+func (opts TransferOpts) TransferManager(kube *svc.Kube) (mgr transfer.Manager, sto *transferstore.StoreOptions, sta *transferarchiver.ArchiverOptions, err error) {
+	if mgr, err = transfer.NewKubeManager(
+		kube,
+	); err != nil {
+		return nil, nil, nil, errors.Wrap(err, "failed to setup transfer manager")
 	}
 
-	trans, err = transfer.NewS3(s3cfg)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create s3 uploader")
+	sto = &transferstore.StoreOptions{
+		Type:          transferstore.StoreTypeS3,
+		S3StoreBucket: "nlz-datasets-dev",
+	}
+	sta = &transferarchiver.ArchiverOptions{
+		Type: transferarchiver.ArchiverTypeTar,
 	}
 
-	return trans, nil
+	return mgr, sto, sta, nil
 }
 
 //KubeOpts can be used to create a Kubernetes service
@@ -104,15 +125,10 @@ func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
 	}
 
 	val := validator.New()
-	val.RegisterValidation("is-abs-path", ValidateAbsPath)
+	val.RegisterValidation("is-abs-path", svc.ValidateAbsPath)
 	d.val = val
 
 	return d, nil
-}
-
-//Derived from https://github.com/golang/go/blob/1106512db54fc2736c7a9a67dd553fc9e1fca742/src/path/filepath/path_unix.go#L12
-func ValidateAbsPath(fl validator.FieldLevel) bool {
-	return strings.HasPrefix(fl.Field().String(), "/")
 }
 
 //Kube provides the kubernetes dependency

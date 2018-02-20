@@ -1,10 +1,10 @@
 hash: a52de57f5fbc914056e4e96f15d49cb585dec7d2c05dafd5997365aecd4bee88
-updated: 2018-02-09T15:31:30.354216+01:00
+updated: 2018-02-20T12:33:30.035163+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
-  version: de28909e9837364f0368d94ddcba085c57af3c12
+  version: 63324a33d7e42a386c04d4daec764a3de243492e
   subpackages:
   - aws
   - aws/awserr
@@ -22,6 +22,7 @@ imports:
   - aws/request
   - aws/session
   - aws/signer/v4
+  - internal/sdkrand
   - internal/shareddefaults
   - private/protocol
   - private/protocol/query
@@ -32,6 +33,7 @@ imports:
   - service/s3
   - service/s3/s3iface
   - service/s3/s3manager
+  - service/s3/s3manager/s3manageriface
   - service/sns
   - service/sqs
   - service/sts
@@ -91,7 +93,7 @@ imports:
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-github
-  version: 08e68b58d6369e25c2375020353d0d642aa4b2b1
+  version: 632a2caf6d3d380753dc7e422748202982ad18a3
   subpackages:
   - github
 - name: github.com/google/go-querystring
