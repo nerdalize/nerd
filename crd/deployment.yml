@@ -22,10 +22,9 @@ spec:
       containers:
       - name: controller
         imagePullPolicy: Always
-        image: nerdalize/custom-dataset-controller:v0.2
+        image: nerdalize/custom-dataset-controller:0.3
         args:
           - -alsologtostderr 
-          - -v=4
         # resources:
         #   limits:
         #     cpu: "1"

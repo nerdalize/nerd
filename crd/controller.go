@@ -25,6 +25,7 @@ const (
 )
 
 // Controller is the controller implementation for Dataset resources
+// Good to read to understand the different components: https://engineering.bitnami.com/articles/a-deep-dive-into-kubernetes-controllers.html
 type Controller struct {
 	// nerdalizeclientset is a clientset for our own API group
 	nerdalizeclientset clientset.Interface
