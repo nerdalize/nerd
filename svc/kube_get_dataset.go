@@ -6,6 +6,8 @@ import (
 	"github.com/nerdalize/nerd/pkg/kubevisor"
 
 	datasetsv1 "github.com/nerdalize/nerd/crd/pkg/apis/stable.nerdalize.com/v1"
+	"github.com/nerdalize/nerd/pkg/transfer/archiver"
+	"github.com/nerdalize/nerd/pkg/transfer/store"
 )
 
 //GetDatasetInput is the input to GetDataset
@@ -20,11 +22,14 @@ type GetDatasetOutput struct {
 
 	Name         string
 	Size         uint64
-	StoreType    string
-	ArchiverType string
-	Options      map[string]string
+	StoreType    string            //@TODO deprecate
+	ArchiverType string            //@TODO deprecate
+	Options      map[string]string //@TODO deprecate
 	InputFor     []string
 	OutputFrom   []string
+
+	StoreOptions    transferstore.StoreOptions
+	ArchiverOptions transferarchiver.ArchiverOptions
 }
 
 //GetDataset will create a dataset on kubernetes
@@ -45,14 +50,17 @@ func (k *Kube) GetDataset(ctx context.Context, in *GetDatasetInput) (out *GetDat
 //GetDatasetOutputFromSpec allows easy output creation from dataset
 func GetDatasetOutputFromSpec(dataset *datasetsv1.Dataset) *GetDatasetOutput {
 	return &GetDatasetOutput{
-		Name:         dataset.Name,
-		Size:         dataset.Spec.Size,
-		Bucket:       dataset.Spec.Bucket, //@TODO deprecate
-		Key:          dataset.Spec.Key,    //@TODO deprecate
-		InputFor:     dataset.Spec.InputFor,
-		OutputFrom:   dataset.Spec.OutputFrom,
-		Options:      dataset.Spec.Options,
-		StoreType:    dataset.Spec.StoreType,
-		ArchiverType: dataset.Spec.ArchiverType,
+		Bucket:       dataset.Spec.Bucket,       //@TODO deprecate
+		Key:          dataset.Spec.Key,          //@TODO deprecate
+		Options:      dataset.Spec.Options,      //@TODO deprecate
+		StoreType:    dataset.Spec.StoreType,    //@TODO deprecate
+		ArchiverType: dataset.Spec.ArchiverType, //@TODO deprecate
+
+		Name:            dataset.Name,
+		Size:            dataset.Spec.Size,
+		InputFor:        dataset.Spec.InputFor,
+		OutputFrom:      dataset.Spec.OutputFrom,
+		StoreOptions:    dataset.Spec.StoreOptions,
+		ArchiverOptions: dataset.Spec.ArchiverOptions,
 	}
 }

@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang/glog"
 	datasetsv1 "github.com/nerdalize/nerd/crd/pkg/apis/stable.nerdalize.com/v1"
-	transferv2 "github.com/nerdalize/nerd/pkg/transfer/v2"
+	transferv2 "github.com/nerdalize/nerd/pkg/transfer"
 )
 
 type glogReporter struct{}

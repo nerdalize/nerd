@@ -1,4 +1,4 @@
-package transfer
+package transferarchiver
 
 import (
 	"archive/tar"
@@ -27,8 +27,8 @@ type TarArchiver struct {
 }
 
 //NewTarArchiver will setup the tar archiver
-func NewTarArchiver(keyPrefix string) (a *TarArchiver, err error) {
-	a = &TarArchiver{keyPrefix: keyPrefix}
+func NewTarArchiver(opts ArchiverOptions) (a *TarArchiver, err error) {
+	a = &TarArchiver{keyPrefix: opts.TarArchiverKeyPrefix}
 
 	if a.keyPrefix != "" && !strings.HasSuffix(a.keyPrefix, "/") {
 		return nil, errors.Errorf("archiver key prefix must end with a forward slash")
@@ -38,11 +38,11 @@ func NewTarArchiver(keyPrefix string) (a *TarArchiver, err error) {
 }
 
 //CreateTarArchiver is the factory method for the archiver
-func CreateTarArchiver(opts map[string]string) (a Archiver, err error) {
-	keyPrefix, _ := opts["tar_key_prefix"]
-
-	return NewTarArchiver(keyPrefix)
-}
+// func CreateTarArchiver(opts map[string]string) (a Archiver, err error) {
+// 	keyPrefix, _ := opts["tar_key_prefix"]
+//
+// 	return NewTarArchiver(keyPrefix)
+// }
 
 //tempFile will setup a temproary file that can easily be cleaned
 func (a *TarArchiver) tempFile() (f *os.File, clean func(), err error) {

@@ -8,9 +8,41 @@ import (
 	"testing"
 	"time"
 
-	transfer "github.com/nerdalize/nerd/pkg/transfer/v2"
+	transfer "github.com/nerdalize/nerd/pkg/transfer"
+	"github.com/nerdalize/nerd/pkg/transfer/archiver"
+	"github.com/nerdalize/nerd/pkg/transfer/store"
 	"github.com/nerdalize/nerd/svc"
 )
+
+func testS3Store(tb testing.TB) (opts transferstore.StoreOptions, store transfer.Store, clean func()) {
+	if os.Getenv("AWS_ACCESS_KEY_ID") == "" || os.Getenv("AWS_REGION") == "" {
+		tb.Skip("must have configured AWS_ACCESS_KEY or AWS_REGION env variable")
+	}
+
+	name, cleanBucket, err := transferstore.TempS3Bucket()
+	if err != nil {
+		tb.Fatal(err)
+	}
+
+	opts = transferstore.StoreOptions{
+		Type: transferstore.StoreTypeS3,
+
+		S3StoreBucket:    name,
+		S3StoreAWSRegion: os.Getenv("AWS_REGION"),
+		S3StoreAccessKey: os.Getenv("AWS_ACCESS_KEY_ID"),
+		S3StoreSecretKey: os.Getenv("AWS_SECRET_ACCESS_KEY"),
+		S3StorePrefix:    "tests/",
+	}
+
+	store, err = transferstore.NewS3Store(opts)
+	if err != nil {
+		tb.Fatal(err)
+	}
+
+	return opts, store, func() {
+		cleanBucket()
+	}
+}
 
 func testManager(tb testing.TB) (mgr *transfer.KubeManager, clean func()) {
 	di, cleanNs, err := svc.TempDI("")
@@ -37,15 +69,17 @@ func TestKubeManager(t *testing.T) {
 	mgr, clean = testManager(t)
 	defer clean()
 
-	opts, _, clean := testS3Store(t)
+	sto, _, clean := testS3Store(t)
 	defer clean()
 
 	ctx := context.Background()
-	st := transfer.StoreTypeS3
-	at := transfer.ArchiverTypeTar
+	ato := transferarchiver.ArchiverOptions{Type: transferarchiver.ArchiverTypeTar}
+	// st := transfer.StoreTypeS3
+	// opts := map[string]string{}
+	// at := transfer.ArchiverTypeTar
 
 	t.Run("create should succeed on non-existing dataset", func(t *testing.T) {
-		h1, err := mgr.Create(ctx, "ds-1", st, at, opts)
+		h1, err := mgr.Create(ctx, "ds-1", sto, ato)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -55,7 +89,7 @@ func TestKubeManager(t *testing.T) {
 		// }
 
 		t.Run("new create should fail on existing dataset", func(t *testing.T) {
-			_, err = mgr.Create(ctx, "ds-1", st, at, opts)
+			_, err = mgr.Create(ctx, "ds-1", sto, ato)
 			if err == nil {
 				t.Fatal("new create should fail on existing dataset")
 			}
@@ -105,15 +139,16 @@ func TestKubeHandle(t *testing.T) {
 	mgr, clean := testManager(t)
 	defer clean()
 
-	opts, _, clean := testS3Store(t)
+	sto, _, clean := testS3Store(t)
 	defer clean()
 
 	ctx := context.Background()
-	st := transfer.StoreTypeS3
-	at := transfer.ArchiverTypeTar
+	// st := transfer.StoreTypeS3
+	// opts := map[string]string{}
+	ato := transferarchiver.ArchiverOptions{Type: transferarchiver.ArchiverTypeTar}
 
 	t.Run("create should succeed for upload", func(t *testing.T) {
-		h1, err := mgr.Create(ctx, "ds-1", st, at, opts)
+		h1, err := mgr.Create(ctx, "ds-1", sto, ato)
 		if err != nil {
 			t.Fatal(err)
 		}

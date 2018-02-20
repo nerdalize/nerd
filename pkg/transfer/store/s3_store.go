@@ -1,4 +1,4 @@
-package transfer
+package transferstore
 
 import (
 	"context"
@@ -31,51 +31,25 @@ type S3Store struct {
 	api  s3iface.S3API
 }
 
-//S3StoreConfig allows configuration of the S3 object store implementation
-type S3StoreConfig struct {
-	Prefix       string
-	Region       string
-	AccessKey    string
-	SecretKey    string
-	SessionToken string
-}
-
-//CreateS3Store is the factory method for the s3 store
-func CreateS3Store(opts map[string]string) (store Store, err error) {
-	bucket, ok := opts["aws_s3_bucket"]
-	if !ok {
-		return nil, errors.New("aws_s3_bucket configuration is missing")
-	}
-
-	cfg := S3StoreConfig{}
-	cfg.Prefix, _ = opts["aws_s3_prefix"]
-	cfg.Region, _ = opts["aws_s3_region"]
-	cfg.AccessKey, _ = opts["aws_s3_access_key"]
-	cfg.SecretKey, _ = opts["aws_s3_secret_key"]
-	cfg.SessionToken, _ = opts["aws_s3_session_token"]
-
-	return NewS3Store(bucket, cfg)
-}
-
 //NewS3Store creates an s3 implementation of the object store
-func NewS3Store(bucket string, cfg S3StoreConfig) (store *S3Store, err error) {
+func NewS3Store(cfg StoreOptions) (store *S3Store, err error) {
 	store = &S3Store{
-		bucket: bucket,
-		prefix: cfg.Prefix,
+		bucket: cfg.S3StoreBucket,
+		prefix: cfg.S3StorePrefix,
 	}
 
 	if store.prefix != "" && !strings.HasSuffix(store.prefix, "/") {
 		return nil, errors.Errorf("store prefix must end with a forward slash")
 	}
 
-	if cfg.Region == "" {
-		cfg.Region = endpoints.UsEast1RegionID //this will make the sdk use the global s3 endpoint
+	if cfg.S3StoreAWSRegion == "" {
+		cfg.S3StoreAWSRegion = endpoints.UsEast1RegionID //this will make the sdk use the global s3 endpoint
 	}
 
-	awscfg := &aws.Config{Region: aws.String(cfg.Region)}
-	if cfg.AccessKey != "" { //if we have some credentials, configure the session as such
+	awscfg := &aws.Config{Region: aws.String(cfg.S3StoreAWSRegion)}
+	if cfg.S3StoreAWSRegion != "" { //if we have some credentials, configure the session as such
 		awscfg.Credentials = credentials.NewStaticCredentials(
-			cfg.AccessKey, cfg.SecretKey, cfg.SessionToken,
+			cfg.S3StoreAccessKey, cfg.S3StoreSecretKey, cfg.S3SessionToken,
 		)
 	}
 
@@ -85,7 +59,7 @@ func NewS3Store(bucket string, cfg S3StoreConfig) (store *S3Store, err error) {
 	}
 
 	s3api := s3.New(sess)
-	if cfg.AccessKey == "" { //without credentials we'll disable request signing
+	if cfg.S3StoreAccessKey == "" { //without credentials we'll disable request signing
 		s3api.Handlers.Sign.Clear()
 		s3api.Handlers.Sign.PushBackNamed(corehandlers.BuildContentLengthHandler)
 		//we delibrately don't add actual signing middleware for anonymous access

@@ -5,7 +5,7 @@ import (
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	transfer "github.com/nerdalize/nerd/pkg/transfer/v2"
+	"github.com/nerdalize/nerd/pkg/transfer"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
 )

@@ -1,4 +1,4 @@
-package transfer_test
+package transferstore_test
 
 import (
 	"bytes"
@@ -7,28 +7,29 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
-	transfer "github.com/nerdalize/nerd/pkg/transfer/v2"
+	transfer "github.com/nerdalize/nerd/pkg/transfer"
+	"github.com/nerdalize/nerd/pkg/transfer/store"
 )
 
-func testS3Store(tb testing.TB) (opts map[string]string, store transfer.Store, clean func()) {
+func testS3Store(tb testing.TB) (opts transferstore.StoreOptions, store transfer.Store, clean func()) {
 	if os.Getenv("AWS_ACCESS_KEY_ID") == "" || os.Getenv("AWS_REGION") == "" {
 		tb.Skip("must have configured AWS_ACCESS_KEY or AWS_REGION env variable")
 	}
 
-	name, cleanBucket, err := transfer.TempS3Bucket()
+	name, cleanBucket, err := transferstore.TempS3Bucket()
 	if err != nil {
 		tb.Fatal(err)
 	}
 
-	opts = map[string]string{
-		"aws_s3_region":     os.Getenv("AWS_REGION"),
-		"aws_s3_bucket":     name,
-		"aws_s3_access_key": os.Getenv("AWS_ACCESS_KEY_ID"),
-		"aws_s3_secret_key": os.Getenv("AWS_SECRET_ACCESS_KEY"),
-		"aws_s3_prefix":     "tests/",
+	opts = transferstore.StoreOptions{
+		S3StoreBucket:    name,
+		S3StoreAWSRegion: os.Getenv("AWS_REGION"),
+		S3StoreAccessKey: os.Getenv("AWS_ACCESS_KEY_ID"),
+		S3StoreSecretKey: os.Getenv("AWS_SECRET_ACCESS_KEY"),
+		S3StorePrefix:    "tests/",
 	}
 
-	store, err = transfer.CreateS3Store(opts)
+	store, err = transferstore.NewS3Store(opts)
 	if err != nil {
 		tb.Fatal(err)
 	}

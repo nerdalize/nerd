@@ -6,6 +6,8 @@ import (
 	"github.com/nerdalize/nerd/pkg/kubevisor"
 
 	datasetsv1 "github.com/nerdalize/nerd/crd/pkg/apis/stable.nerdalize.com/v1"
+	"github.com/nerdalize/nerd/pkg/transfer/archiver"
+	"github.com/nerdalize/nerd/pkg/transfer/store"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -14,11 +16,16 @@ type CreateDatasetInput struct {
 	Bucket string //@TODO deprecate for more flexible options
 	Key    string //@TODO deprecate for more flexible options
 
-	Name         string `validate:"printascii"`
-	Size         uint64
-	StoreType    string `validate:"min=1"`
-	ArchiverType string `validate:"min=1"`
-	Options      map[string]string
+	Name string `validate:"printascii"`
+	Size uint64
+
+	//@TODO add concrete type
+	StoreOptions    transferstore.StoreOptions       `validate:"required"`
+	ArchiverOptions transferarchiver.ArchiverOptions `validate:"required"`
+
+	// StoreType    string `validate:"min=1"`
+	// ArchiverType string `validate:"min=1"`
+	// Options      map[string]string
 }
 
 //CreateDatasetOutput is the output to CreateDataset
@@ -39,9 +46,12 @@ func (k *Kube) CreateDataset(ctx context.Context, in *CreateDatasetInput) (out *
 			Bucket: in.Bucket, //@TODO deprecate
 			Key:    in.Key,    //@TODO deprecate
 
-			StoreType:    in.StoreType,
-			ArchiverType: in.ArchiverType,
-			Options:      in.Options,
+			StoreOptions:    in.StoreOptions,
+			ArchiverOptions: in.ArchiverOptions,
+
+			// StoreType:    in.StoreType,
+			// ArchiverType: in.ArchiverType,
+			// Options:      in.Options,
 		},
 	}
 

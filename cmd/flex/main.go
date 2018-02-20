@@ -15,7 +15,7 @@ import (
 	"strings"
 
 	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
-	transfer "github.com/nerdalize/nerd/pkg/transfer/v2"
+	transfer "github.com/nerdalize/nerd/pkg/transfer"
 	"github.com/nerdalize/nerd/svc"
 
 	"github.com/go-playground/validator"

@@ -1,4 +1,4 @@
-package transfer_test
+package transferarchiver_test
 
 import (
 	"bytes"
@@ -9,7 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	transfer "github.com/nerdalize/nerd/pkg/transfer/v2"
+	transfer "github.com/nerdalize/nerd/pkg/transfer"
+	"github.com/nerdalize/nerd/pkg/transfer/archiver"
 )
 
 func archive(tb testing.TB, a transfer.Archiver, dir string) map[string][]byte {
@@ -34,7 +35,7 @@ func TestTarArchiver(t *testing.T) {
 		err error
 	)
 
-	a, err = transfer.NewTarArchiver("")
+	a, err = transferarchiver.NewTarArchiver(transferarchiver.ArchiverOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,13 +51,13 @@ func TestTarArchiver(t *testing.T) {
 			t.Fatal("expected exactly one object from tar archiver")
 		}
 
-		if len(objs[transfer.TarArchiverKey]) != 0 {
+		if len(objs[transferarchiver.TarArchiverKey]) != 0 {
 			t.Fatal("created tar bytes should be empty")
 		}
 
 		t.Run("unarchive to empty directory", func(t *testing.T) {
 			if err := a.Unarchive(dir, func(k string, w io.WriterAt) error {
-				_, err := w.WriteAt(objs[transfer.TarArchiverKey], 0)
+				_, err := w.WriteAt(objs[transferarchiver.TarArchiverKey], 0)
 				return err
 			}); err != nil {
 				t.Fatal(err)
@@ -93,13 +94,13 @@ func TestTarArchiver(t *testing.T) {
 			t.Fatal("expected exactly one object from tar archiver")
 		}
 
-		if len(objs[transfer.TarArchiverKey]) == 0 {
+		if len(objs[transferarchiver.TarArchiverKey]) == 0 {
 			t.Fatal("created tar bytes should not be empty")
 		}
 
 		t.Run("unarchive to non-empty directory", func(t *testing.T) {
 			if err := a.Unarchive(dir, func(k string, w io.WriterAt) error {
-				_, err := w.WriteAt(objs[transfer.TarArchiverKey], 0)
+				_, err := w.WriteAt(objs[transferarchiver.TarArchiverKey], 0)
 				return err
 			}); err == nil {
 				t.Fatal("should error upon encountering a non empty directory for untar")
@@ -113,7 +114,7 @@ func TestTarArchiver(t *testing.T) {
 			}
 
 			if err = a.Unarchive(tdir, func(k string, w io.WriterAt) error {
-				_, err = w.WriteAt(objs[transfer.TarArchiverKey], 0)
+				_, err = w.WriteAt(objs[transferarchiver.TarArchiverKey], 0)
 				return err
 			}); err != nil {
 				t.Fatal(err)

@@ -3,8 +3,9 @@ package transfer
 import (
 	"context"
 	"crypto/rand"
-	"fmt"
 
+	"github.com/nerdalize/nerd/pkg/transfer/archiver"
+	"github.com/nerdalize/nerd/pkg/transfer/store"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
 )
@@ -49,13 +50,9 @@ func NewKubeManager(kube *svc.Kube) (mgr *KubeManager, err error) {
 }
 
 //Create a dataset with provided name and return a handle to it, dataset must not yet exist
-func (mgr *KubeManager) Create(ctx context.Context, name string, st StoreType, at ArchiverType, opts map[string]string) (h Handle, err error) {
+func (mgr *KubeManager) Create(ctx context.Context, name string, sto transferstore.StoreOptions, ato transferarchiver.ArchiverOptions) (h Handle, err error) {
 
 	//step 0: implementation options for
-	if opts == nil {
-		opts = map[string]string{}
-	}
-
 	d := make([]byte, 16)
 	_, err = rand.Read(d)
 	if err != nil {
@@ -68,26 +65,28 @@ func (mgr *KubeManager) Create(ctx context.Context, name string, st StoreType, a
 	//after the dataset has been created
 	//@TODO this should probably a mandatory argument of any archiver so
 	//to be addedd to the ArchiverFactory type
-	opts["tar_key_prefix"] = fmt.Sprintf("%x/", d)
+	// opts["tar_key_prefix"] = fmt.Sprintf("%x/", d)
 
 	//step 1: initate stores and archivers from options
-	store, err := CreateStore(st, opts)
+	store, err := CreateStore(sto)
 	if err != nil {
-		return nil, errors.Errorf("failed to setup store '%s' with options: %#v", st, opts)
+		return nil, errors.Wrapf(err, "failed to setup store '%s' with options: %#v", sto.Type, sto)
 	}
 
-	archiver, err := CreateArchiver(at, opts)
+	archiver, err := CreateArchiver(ato)
 	if err != nil {
-		return nil, errors.Errorf("failed to setup archiver '%s' with options: %#v", at, opts)
+		return nil, errors.Wrapf(err, "failed to setup archiver '%s' with options: %#v", ato.Type, ato)
 	}
 
 	//step 3: create the dataset resource
 	in := &svc.CreateDatasetInput{
-		Name:         name,
-		Size:         0,
-		StoreType:    string(st),
-		ArchiverType: string(at),
-		Options:      opts,
+		Name:            name,
+		Size:            0,
+		StoreOptions:    sto,
+		ArchiverOptions: ato,
+		// StoreType:    string(st),
+		// ArchiverType: string(at),
+		// Options:      opts,
 	}
 
 	out, err := mgr.kube.CreateDataset(ctx, in)
@@ -113,14 +112,14 @@ func (mgr *KubeManager) Open(ctx context.Context, name string) (Handle, error) {
 		return nil, errors.Wrap(err, "failed to get dataset resource")
 	}
 
-	store, err := CreateStore(StoreType(out.StoreType), out.Options)
+	store, err := CreateStore(out.StoreOptions)
 	if err != nil {
-		return nil, errors.Errorf("failed to setup store '%s' with options: %#v", out.StoreType, out.Options)
+		return nil, errors.Errorf("failed to setup store '%s' with options: %#v", out.StoreType, out.StoreOptions)
 	}
 
-	archiver, err := CreateArchiver(ArchiverType(out.ArchiverType), out.Options)
+	archiver, err := CreateArchiver(out.ArchiverOptions)
 	if err != nil {
-		return nil, errors.Errorf("failed to setup archiver '%s' with options: %#v", out.ArchiverType, out.Options)
+		return nil, errors.Errorf("failed to setup archiver '%s' with options: %#v", out.ArchiverType, out.ArchiverOptions)
 	}
 
 	return CreateStdHandle(out.Name, store, archiver, &kubeDelegate{

@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/nerdalize/nerd/pkg/kubevisor"
+	"github.com/nerdalize/nerd/pkg/transfer/archiver"
+	"github.com/nerdalize/nerd/pkg/transfer/store"
 	"github.com/nerdalize/nerd/svc"
 )
 
@@ -43,7 +45,7 @@ func TestGetDataset(t *testing.T) {
 		{
 			Name:     "when one dataset has been uploaded it should be available for download",
 			Timeout:  time.Minute,
-			Datasets: []*svc.CreateDatasetInput{{Name: "my-dataset", Bucket: "bogus", Key: "my-key", StoreType: "s3", ArchiverType: "tar"}},
+			Datasets: []*svc.CreateDatasetInput{{Name: "my-dataset", Bucket: "bogus", Key: "my-key", StoreOptions: transferstore.StoreOptions{Type: transferstore.StoreTypeS3}, ArchiverOptions: transferarchiver.ArchiverOptions{Type: transferarchiver.ArchiverTypeTar}}},
 			Input:    &svc.GetDatasetInput{Name: "my-datasets"},
 			IsErr:    nil,
 			IsOutput: func(t testing.TB, out *svc.GetDatasetOutput) bool {
