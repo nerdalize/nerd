@@ -164,7 +164,6 @@ func (c *Controller) processItem(key string, kobj string) error {
 	glog.Infof("Processing change to %s: %s", kobj, key)
 
 	obj, exists, err := c.informer.GetIndexer().GetByKey(key)
-	glog.Info(obj)
 	if err != nil {
 		return fmt.Errorf("Error fetching object with key %s from store: %v", key, err)
 	}

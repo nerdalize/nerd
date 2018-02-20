@@ -36,10 +36,7 @@ func main() {
 
 	datasetInformerFactory := informers.NewSharedInformerFactory(datasetClient, time.Second*30)
 	eventHandler := new(S3AWS)
-	err = eventHandler.Init()
-	if err != nil {
-		glog.Fatalf("Error while init event handler : %+v", err)
-	}
+
 	controller := NewController(datasetClient, datasetInformerFactory, eventHandler)
 
 	go datasetInformerFactory.Start(stopCh)

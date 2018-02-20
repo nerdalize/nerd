@@ -96,7 +96,7 @@ func (mgr *KubeManager) Create(ctx context.Context, name string, st StoreType, a
 	}
 
 	//step 2: initiate the handle
-	return CreateStdHandle(store, archiver, &kubeDelegate{
+	return CreateStdHandle(out.Name, store, archiver, &kubeDelegate{
 		name: out.Name,
 		kube: mgr.kube,
 	})
@@ -123,7 +123,7 @@ func (mgr *KubeManager) Open(ctx context.Context, name string) (Handle, error) {
 		return nil, errors.Errorf("failed to setup archiver '%s' with options: %#v", out.ArchiverType, out.Options)
 	}
 
-	return CreateStdHandle(store, archiver, &kubeDelegate{
+	return CreateStdHandle(out.Name, store, archiver, &kubeDelegate{
 		name: out.Name,
 		kube: mgr.kube,
 	})

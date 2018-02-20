@@ -125,7 +125,7 @@ func TestKubeHandle(t *testing.T) {
 			t.Fatal(err1, err2, err3)
 		}
 
-		err = h1.Push(ctx, dir, transfer.DiscardReporter())
+		err = h1.Push(ctx, dir, transfer.NewDiscardReporter())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -135,7 +135,7 @@ func TestKubeHandle(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = h1.Pull(ctx, dir2, transfer.DiscardReporter())
+		err = h1.Pull(ctx, dir2, transfer.NewDiscardReporter())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -149,7 +149,7 @@ func TestKubeHandle(t *testing.T) {
 			t.Fatal("file size should be set to non-zero")
 		}
 
-		err = h1.Clear(ctx, transfer.DiscardReporter())
+		err = h1.Clear(ctx, transfer.NewDiscardReporter())
 		if err != nil {
 			t.Fatal(err)
 		}

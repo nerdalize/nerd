@@ -18,19 +18,23 @@ type HandleDelegate interface {
 
 //StdHandle provides a standard implementation for handling datasets
 type StdHandle struct {
+	name     string
 	delegate HandleDelegate
 	store    Store
 	archiver Archiver
 }
 
 //CreateStdHandle sets up a standard implementation of the handle
-func CreateStdHandle(store Store, a Archiver, del HandleDelegate) (*StdHandle, error) {
+func CreateStdHandle(name string, store Store, a Archiver, del HandleDelegate) (*StdHandle, error) {
 	if store == nil || a == nil {
 		return nil, errors.New("store")
 	}
 
-	return &StdHandle{store: store, archiver: a, delegate: del}, nil
+	return &StdHandle{name: name, store: store, archiver: a, delegate: del}, nil
 }
+
+//Name returns the name
+func (h *StdHandle) Name() string { return h.name }
 
 //Clear removes all objects related to a dataset
 func (h *StdHandle) Clear(ctx context.Context, reporter Reporter) (err error) {
@@ -39,6 +43,8 @@ func (h *StdHandle) Clear(ctx context.Context, reporter Reporter) (err error) {
 		if err = h.store.Del(ctx, k); err != nil {
 			return errors.Wrap(err, "failed to delete object key")
 		}
+
+		reporter.HandledKey(k)
 
 		//@TODO inform reporter
 

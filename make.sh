@@ -122,28 +122,32 @@ function run_publish { #publish cross compiled binaries
 			--file bin/nerd-$(cat VERSION)-win.zip || true
 }
 
-function run_docker { #build docker container
+function run_flexbuild { #build docker container
 	command -v docker >/dev/null 2>&1 || { echo "executable 'docker' (container runtime) must be installed" >&2; exit 1; }
 
 	echo "--> building flex volume container"
 	docker build -f flex.Dockerfile -t nerdalize/nerd-flex-volume:$(cat VERSION) .
 }
 
-function run_dockerpush { #build and push docker container
+function run_flexpush { #build and push docker container
 	command -v docker >/dev/null 2>&1 || { echo "executable 'docker' (container runtime) must be installed" >&2; exit 1; }
 
 	echo "--> publish flex volume container"
 	docker push nerdalize/nerd-flex-volume:$(cat VERSION)
 }
 
+
 function run_crdbuild { #build docker container for custom dataset controller
-	docker build -t nerdalize/custom-dataset-controller crd
-	docker tag nerdalize/custom-dataset-controller nerdalize/custom-dataset-controller:`cat crd/VERSION`
+	command -v docker >/dev/null 2>&1 || { echo "executable 'docker' (container runtime) must be installed" >&2; exit 1; }
+
+	echo "--> building crd controller container"
+	docker build -f crd.Dockerfile -t nerdalize/custom-dataset-controller:$(cat crd/VERSION) .
 }
 
 function run_crdpush { #build and push docker container for custom dataset controller
-	run_crdbuild
-	docker push nerdalize/custom-dataset-controller:latest
+	command -v docker >/dev/null 2>&1 || { echo "executable 'docker' (container runtime) must be installed" >&2; exit 1; }
+
+	echo "--> publish crd controller container"
 	docker push nerdalize/custom-dataset-controller:`cat crd/VERSION`
 }
 
@@ -155,8 +159,9 @@ case $1 in
 	"gen") run_gen ;;
 	"release") run_release ;;
 	"publish") run_publish ;;
-	"docker") run_docker ;;
-	"dockerpush") run_dockerpush ;;
+
+	"flexbuild") run_flexbuild ;;
+	"flexpush") run_flexpush ;;
 	"crdbuild") run_crdbuild ;;
 	"crdpush") run_crdpush ;;
 	*) print_help ;;

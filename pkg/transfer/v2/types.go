@@ -8,17 +8,26 @@ import (
 
 //Reporter handles progress reporting
 type Reporter interface {
+	HandledKey(key string)
+
+	//@TODO report the objects that were accessed
 	//@TODO think of what interface we would like here
 }
 
 //DiscardReporter discards all progress reports
-func DiscardReporter() Reporter {
-	return struct{}{}
+func NewDiscardReporter() *DiscardReporter {
+	return &DiscardReporter{}
 }
+
+type DiscardReporter struct{}
+
+//HandledKey discards the information a key was handled
+func (r *DiscardReporter) HandledKey(key string) {}
 
 //A Handle provides interactions with a dataset
 type Handle interface {
 	io.Closer
+	Name() string
 	Clear(ctx context.Context, reporter Reporter) error
 	Push(ctx context.Context, fromPath string, rep Reporter) error
 	Pull(ctx context.Context, toPath string, rep Reporter) error

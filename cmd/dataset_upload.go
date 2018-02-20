@@ -61,7 +61,7 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 
 	defer h.Close()
 
-	err = h.Push(ctx, args[0], transfer.DiscardReporter())
+	err = h.Push(ctx, args[0], transfer.NewDiscardReporter())
 	if err != nil {
 		return errors.Wrap(err, "failed to upload dataset")
 	}

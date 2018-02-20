@@ -46,12 +46,6 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 	var mgr transfer.Manager
 	if mgr, err = transfer.NewKubeManager(
 		kube,
-		map[transfer.StoreType]transfer.StoreFactory{
-			transfer.StoreTypeS3: transfer.CreateS3Store,
-		},
-		map[transfer.ArchiverType]transfer.ArchiverFactory{
-			transfer.ArchiverTypeTar: transfer.CreateTarArchiver,
-		},
 	); err != nil {
 		return errors.Wrap(err, "failed to setup transfer manager")
 	}
@@ -67,7 +61,7 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 
 	defer h.Close()
 
-	err = h.Pull(ctx, args[1], nil)
+	err = h.Pull(ctx, args[1], transfer.NewDiscardReporter())
 	if err != nil {
 		return errors.Wrap(err, "failed to download dataste")
 	}

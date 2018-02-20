@@ -105,7 +105,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 
 			//@TODO extend ctx deadline
 
-			err = h.Push(ctx, parts[0], transfer.DiscardReporter())
+			err = h.Push(ctx, parts[0], transfer.NewDiscardReporter())
 			if err != nil {
 				return errors.Wrap(err, "failed to update dataset")
 			}

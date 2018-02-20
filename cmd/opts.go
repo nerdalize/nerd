@@ -46,15 +46,10 @@ type TransferOpts struct {
 // 	return trans, nil
 // }
 
+//TransferManager creates a transfermanager using the command line options
 func (opts TransferOpts) TransferManager(kube *svc.Kube) (mgr transfer.Manager, o map[string]string, err error) {
 	if mgr, err = transfer.NewKubeManager(
 		kube,
-		map[transfer.StoreType]transfer.StoreFactory{
-			transfer.StoreTypeS3: transfer.CreateS3Store,
-		},
-		map[transfer.ArchiverType]transfer.ArchiverFactory{
-			transfer.ArchiverTypeTar: transfer.CreateTarArchiver,
-		},
 	); err != nil {
 		return nil, nil, errors.Wrap(err, "failed to setup transfer manager")
 	}
