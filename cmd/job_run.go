@@ -21,6 +21,8 @@ type JobRun struct {
 	TransferOpts
 	Name    string   `long:"name" short:"n" description:"assign a name to the job"`
 	Env     []string `long:"env" short:"e" description:"environment variables to use"`
+	Memory  string   `long:"memory" short:"m" description:"memory to use for this job. Units accepted: Ki, Mi, Gi, K, M, G" default:"3Gi"`
+	VPCU    string   `long:"vcpu" description:"number of vcpus to use for this job" default:"2"`
 	Inputs  []string `long:"input" description:"specify one or more inputs that will be downloaded for the job"`
 	Outputs []string `long:"output" description:"specify one or more output folders that will be uploaded as datasets after the job is finished"`
 
@@ -167,7 +169,6 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		}
 	}
 
-	// var outputDataset string
 	for _, output := range cmd.Outputs {
 		parts := strings.Split(output, ":")
 		if len(parts) < 1 || len(parts) > 2 {
@@ -211,10 +212,12 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 
 	//continue with actuall creating the job
 	in := &svc.RunJobInput{
-		Image: args[0],
-		Name:  cmd.Name,
-		Env:   jenv,
-		Args:  jargs,
+		Image:  args[0],
+		Name:   cmd.Name,
+		Env:    jenv,
+		Args:   jargs,
+		Memory: cmd.Memory,
+		VCPU:   cmd.VPCU,
 	}
 
 	for _, vol := range vols {
