@@ -5,9 +5,11 @@ import (
 	"encoding/hex"
 
 	"github.com/nerdalize/nerd/pkg/kubevisor"
+	"github.com/pkg/errors"
 
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -24,6 +26,8 @@ type RunJobInput struct {
 	BackoffLimit *int32
 	Args         []string
 	Volumes      []JobVolume
+	Memory       string
+	VCPU         string
 }
 
 //JobVolumeType determines if its content will be uploaded or downloaded
@@ -85,15 +89,18 @@ func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, 
 							Image: in.Image,
 							Env:   envs,
 							Args:  in.Args,
-							// Resources: v1.ResourceRequirements{
-							// 	Limits: v1.ResourceList{v1.ResourceCPU: resource.MustParse("10"), v1.ResourceMemory: resource.MustParse("256M")},
-							// 	// Requests: v1.ResourceList{v1.ResourceCPU: cpu, v1.ResourceMemory: memory},
-							// },
 						},
 					},
 				},
 			},
 		},
+	}
+	if in.Memory != "" || in.VCPU != "" {
+		resources, err := getResources(in.Memory, in.VCPU)
+		if err != nil {
+			return nil, err
+		}
+		job.Spec.Template.Spec.Containers[0].Resources = resources
 	}
 
 	for _, vol := range in.Volumes {
@@ -129,5 +136,22 @@ func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, 
 
 	return &RunJobOutput{
 		Name: job.Name,
+	}, nil
+}
+
+func getResources(memory, vcpu string) (v1.ResourceRequirements, error) {
+	m, err := resource.ParseQuantity(memory)
+	if err != nil {
+		return v1.ResourceRequirements{}, errors.Wrap(err, "could not create memory resource")
+	}
+
+	cpu, err := resource.ParseQuantity(vcpu)
+	if err != nil {
+		return v1.ResourceRequirements{}, errors.Wrap(err, "could not create cpu resource")
+	}
+
+	return v1.ResourceRequirements{
+		Limits:   v1.ResourceList{v1.ResourceCPU: cpu, v1.ResourceMemory: m},
+		Requests: v1.ResourceList{v1.ResourceCPU: cpu, v1.ResourceMemory: m},
 	}, nil
 }
