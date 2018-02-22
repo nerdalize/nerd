@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/jessevdk/go-flags"
@@ -21,8 +22,8 @@ type JobRun struct {
 	TransferOpts
 	Name    string   `long:"name" short:"n" description:"assign a name to the job"`
 	Env     []string `long:"env" short:"e" description:"environment variables to use"`
-	Memory  string   `long:"memory" short:"m" description:"memory to use for this job. Units accepted: Ki, Mi, Gi, K, M, G" default:"3Gi"`
-	VPCU    string   `long:"vcpu" description:"number of vcpus to use for this job" default:"2"`
+	Memory  string   `long:"memory" short:"m" description:"memory to use for this job, expressed in gigabytes" default:"3"`
+	VCPU    string   `long:"vcpu" description:"number of vcpus to use for this job" default:"2"`
 	Inputs  []string `long:"input" description:"specify one or more inputs that will be downloaded for the job"`
 	Outputs []string `long:"output" description:"specify one or more output folders that will be uploaded as datasets after the job is finished"`
 
@@ -89,6 +90,11 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
 	defer cancel()
+
+	err = checkResources(cmd.Memory, cmd.VCPU)
+	if err != nil {
+		return err
+	}
 
 	//setup job arguments
 	jargs := []string{}
@@ -216,8 +222,8 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		Name:   cmd.Name,
 		Env:    jenv,
 		Args:   jargs,
-		Memory: cmd.Memory,
-		VCPU:   cmd.VPCU,
+		Memory: fmt.Sprintf("%sGi", cmd.Memory),
+		VCPU:   cmd.VCPU,
 	}
 
 	for _, vol := range vols {
@@ -247,6 +253,28 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 
 	cmd.out.Infof("Submitted job: '%s'", out.Name)
 	cmd.out.Infof("To see whats happening, use: 'nerd job list'")
+	return nil
+}
+
+func checkResources(memory, vcpu string) error {
+	if memory != "" {
+		m, err := strconv.ParseFloat(memory, 64)
+		if err != nil {
+			return fmt.Errorf("invalid memory option format, %v", err)
+		}
+		if m > 60 {
+			return fmt.Errorf("invalid value for memory parameter. Memory request must be lower than 60Gbs")
+		}
+	}
+	if vcpu != "" {
+		v, err := strconv.ParseFloat(vcpu, 64)
+		if err != nil {
+			return fmt.Errorf("invalid vcpu option format, %v", err)
+		}
+		if v > 40 {
+			return fmt.Errorf("invalid value for vcpu parameter. VCPU request must be lower than 40")
+		}
+	}
 	return nil
 }
 
