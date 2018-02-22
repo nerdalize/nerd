@@ -37,13 +37,6 @@ func NewTarArchiver(opts ArchiverOptions) (a *TarArchiver, err error) {
 	return a, nil
 }
 
-//CreateTarArchiver is the factory method for the archiver
-// func CreateTarArchiver(opts map[string]string) (a Archiver, err error) {
-// 	keyPrefix, _ := opts["tar_key_prefix"]
-//
-// 	return NewTarArchiver(keyPrefix)
-// }
-
 //tempFile will setup a temproary file that can easily be cleaned
 func (a *TarArchiver) tempFile() (f *os.File, clean func(), err error) {
 	f, err = ioutil.TempFile("", "tar_archiver_")
@@ -92,18 +85,9 @@ func (a *TarArchiver) Index(fn func(k string) error) error {
 	return fn(slashpath.Join(a.keyPrefix, TarArchiverKey))
 }
 
-//Archive will take a file system path and call 'fn' for N number of keys
-func (a *TarArchiver) Archive(path string, fn func(k string, r io.Reader) error) (err error) {
-	tmpf, clean, err := a.tempFile()
-	if err != nil {
-		return err
-	}
-
-	defer clean()
-	tw := tar.NewWriter(tmpf)
-	defer tw.Close()
-
-	if err = filepath.Walk(path, func(p string, fi os.FileInfo, err error) error {
+//@TODO do we want to expose this through the interface?
+func (a *TarArchiver) indexFS(path string, fn func(p string, fi os.FileInfo, err error) error) error {
+	if err := filepath.Walk(path, func(p string, fi os.FileInfo, err error) error {
 		if fi == nil || path == p {
 			return nil //this is triggered when a directory doesn't have an executable bit
 		}
@@ -112,6 +96,41 @@ func (a *TarArchiver) Archive(path string, fn func(k string, r io.Reader) error)
 			return err
 		}
 
+		return fn(p, fi, nil)
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//Archive will archive a directory at 'path' into readable objects 'r' and calls 'fn' for each
+func (a *TarArchiver) Archive(path string, rep Reporter, fn func(k string, r io.ReadSeeker, nbytes int64) error) (err error) {
+	var totalToTar int64
+	if err = a.indexFS(path, func(p string, fi os.FileInfo, err error) error {
+		totalToTar += fi.Size()
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "failed to index filesystem")
+	}
+
+	tmpf, clean, err := a.tempFile()
+	if err != nil {
+		return err
+	}
+
+	//create writer that also reports progress
+	pw := io.MultiWriter(
+		tmpf,
+		rep.StartArchivingProgress(tmpf.Name(), totalToTar),
+	)
+
+	defer clean()
+	tw := tar.NewWriter(pw)
+	defer tw.Close()
+
+	var nbytes int64
+	if err = a.indexFS(path, func(p string, fi os.FileInfo, err error) error {
 		rel, err := filepath.Rel(path, p)
 		if err != nil {
 			return errors.Wrap(err, "failed to determine relative path")
@@ -141,9 +160,12 @@ func (a *TarArchiver) Archive(path string, fn func(k string, r io.Reader) error)
 		}
 
 		// copy file data into tar writer
-		if _, err := io.Copy(tw, f); err != nil {
+		var n int64
+		if n, err = io.Copy(tw, f); err != nil {
 			return errors.Wrap(err, "failed to copy file content to archive")
 		}
+
+		nbytes += n
 
 		return nil
 	}); err != nil {
@@ -160,12 +182,20 @@ func (a *TarArchiver) Archive(path string, fn func(k string, r io.Reader) error)
 		return errors.Wrap(err, "failed to seek to beginning of file")
 	}
 
-	return fn(slashpath.Join(a.keyPrefix, TarArchiverKey), tmpf)
+	//stop progress reporting, we're done
+	rep.StopArchivingProgress()
+
+	fi, err := tmpf.Stat()
+	if err != nil {
+		return errors.Wrap(err, "failed to stat the temporary file")
+	}
+
+	return fn(slashpath.Join(a.keyPrefix, TarArchiverKey), tmpf, fi.Size())
 }
 
 //Unarchive will take a file system path and call 'fn' for each object that it needs for unarchiving.
 //It writes to a temporary directory first and then moves this to the final location
-func (a *TarArchiver) Unarchive(path string, fn func(k string, w io.WriterAt) error) error {
+func (a *TarArchiver) Unarchive(path string, rep Reporter, fn func(k string, w io.WriterAt) error) error {
 	tmpf, clean, err := a.tempFile()
 	if err != nil {
 		return err
@@ -182,12 +212,20 @@ func (a *TarArchiver) Unarchive(path string, fn func(k string, w io.WriterAt) er
 		return errors.Wrap(err, "failed to seek to the beginning of file")
 	}
 
+	fi, err := tmpf.Stat()
+	if err != nil {
+		return errors.Wrap(err, "failed to stat temporary file")
+	}
+
 	err = a.checkTargetDir(path)
 	if err != nil {
 		return err
 	}
 
-	tr := tar.NewReader(tmpf)
+	pr := rep.StartUnarchivingProgress(tmpf.Name(), fi.Size(), tmpf)
+	defer rep.StopUnarchivingProgress()
+
+	tr := tar.NewReader(pr)
 	for {
 		hdr, err := tr.Next()
 		switch {

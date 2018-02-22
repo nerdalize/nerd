@@ -45,7 +45,6 @@ func (h *StdHandle) Clear(ctx context.Context, reporter Reporter) (err error) {
 		}
 
 		reporter.HandledKey(k)
-
 		//@TODO inform reporter
 
 		return nil
@@ -62,16 +61,30 @@ func (h *StdHandle) Clear(ctx context.Context, reporter Reporter) (err error) {
 	return nil
 }
 
+type progressReader struct {
+	io.ReadSeeker
+	proxy io.Reader
+}
+
+func newProgressReader(w io.Writer, r io.ReadSeeker, proxy io.Reader) io.ReadSeeker {
+	return &progressReader{ReadSeeker: r, proxy: io.TeeReader(proxy, w)}
+}
+
+func (pr *progressReader) Read(p []byte) (n int, err error) {
+	return pr.proxy.Read(p)
+}
+
 //Push pushes new content from a local filesystem
-func (h *StdHandle) Push(ctx context.Context, fromPath string, reporter Reporter) (err error) {
+func (h *StdHandle) Push(ctx context.Context, fromPath string, rep Reporter) (err error) {
 
 	wc := &writeCounter{}
-	if err = h.archiver.Archive(fromPath, func(k string, r io.Reader) error {
-		if err = h.store.Put(ctx, k, io.TeeReader(r, wc)); err != nil {
+	if err = h.archiver.Archive(fromPath, rep, func(k string, r io.ReadSeeker, nbytes int64) error {
+
+		//push bytes while counting the total number being pushed across all objects
+		defer rep.StopUploadProgress()
+		if err = h.store.Put(ctx, k, newProgressReader(wc, r, rep.StartUploadProgress(k, nbytes, r))); err != nil {
 			return errors.Wrap(err, "failed to put object")
 		}
-
-		//@TODO update progress, make sure per byte?
 
 		return nil
 	}); err != nil {
@@ -87,10 +100,35 @@ func (h *StdHandle) Push(ctx context.Context, fromPath string, reporter Reporter
 	return nil
 }
 
+type progressWriter struct {
+	io.WriterAt
+	proxy io.Writer
+}
+
+func newProgressWriter(w io.WriterAt, proxy io.Writer) io.WriterAt {
+	return &progressWriter{WriterAt: w, proxy: proxy}
+}
+
+func (pw *progressWriter) WriteAt(p []byte, off int64) (n int, err error) {
+	pw.proxy.Write(p) //unconditionally also write to the progress proxy
+	return pw.WriterAt.WriteAt(p, off)
+}
+
 //Pull content from the store to the local filesystem
-func (h *StdHandle) Pull(ctx context.Context, toPath string, reporter Reporter) (err error) {
-	if err = h.archiver.Unarchive(toPath, func(k string, w io.WriterAt) error {
-		if err = h.store.Get(ctx, k, w); err != nil {
+func (h *StdHandle) Pull(ctx context.Context, toPath string, rep Reporter) (err error) {
+	if err = h.archiver.Unarchive(toPath, rep, func(k string, w io.WriterAt) error {
+
+		var total int64
+		total, err = h.store.Head(ctx, k)
+		if err != nil {
+			return errors.Wrap(err, "failed to get object metadata")
+		}
+
+		pw := rep.StartDownloadProgress(k, total)
+		defer rep.StopDownloadProgress()
+
+		// proxy := rep.StartDownloadProgress(nbytes)
+		if err = h.store.Get(ctx, k, newProgressWriter(w, pw)); err != nil {
 			return errors.Wrap(err, "failed to get object")
 		}
 

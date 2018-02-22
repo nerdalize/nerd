@@ -52,3 +52,5 @@ import:
   - github
 - package: github.com/joho/godotenv
   version: 1.2.0
+- package: github.com/cheggaaa/pb
+  version: ~v1.0.22

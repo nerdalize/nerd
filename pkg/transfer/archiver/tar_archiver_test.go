@@ -15,9 +15,10 @@ import (
 
 func archive(tb testing.TB, a transfer.Archiver, dir string) map[string][]byte {
 	tb.Helper()
+	rep := transfer.NewDiscardReporter()
 
 	objs := map[string][]byte{}
-	if err := a.Archive(dir, func(k string, r io.Reader) error {
+	if err := a.Archive(dir, rep, func(k string, r io.ReadSeeker, nbytes int64) error {
 		buf := bytes.NewBuffer(nil)
 		_, err := io.Copy(buf, r)
 		objs[k] = buf.Bytes()
@@ -34,6 +35,8 @@ func TestTarArchiver(t *testing.T) {
 		a   transfer.Archiver
 		err error
 	)
+
+	rep := transfer.NewDiscardReporter()
 
 	a, err = transferarchiver.NewTarArchiver(transferarchiver.ArchiverOptions{})
 	if err != nil {
@@ -56,7 +59,7 @@ func TestTarArchiver(t *testing.T) {
 		}
 
 		t.Run("unarchive to empty directory", func(t *testing.T) {
-			if err := a.Unarchive(dir, func(k string, w io.WriterAt) error {
+			if err := a.Unarchive(dir, rep, func(k string, w io.WriterAt) error {
 				_, err := w.WriteAt(objs[transferarchiver.TarArchiverKey], 0)
 				return err
 			}); err != nil {
@@ -99,7 +102,7 @@ func TestTarArchiver(t *testing.T) {
 		}
 
 		t.Run("unarchive to non-empty directory", func(t *testing.T) {
-			if err := a.Unarchive(dir, func(k string, w io.WriterAt) error {
+			if err := a.Unarchive(dir, rep, func(k string, w io.WriterAt) error {
 				_, err := w.WriteAt(objs[transferarchiver.TarArchiverKey], 0)
 				return err
 			}); err == nil {
@@ -113,7 +116,7 @@ func TestTarArchiver(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if err = a.Unarchive(tdir, func(k string, w io.WriterAt) error {
+			if err = a.Unarchive(tdir, rep, func(k string, w io.WriterAt) error {
 				_, err = w.WriteAt(objs[transferarchiver.TarArchiverKey], 0)
 				return err
 			}); err != nil {

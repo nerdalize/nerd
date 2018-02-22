@@ -61,9 +61,9 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 
 	defer h.Close()
 
-	err = h.Pull(ctx, args[1], transfer.NewDiscardReporter())
+	err = h.Pull(ctx, args[1], &progressBarReporter{})
 	if err != nil {
-		return errors.Wrap(err, "failed to download dataste")
+		return errors.Wrap(err, "failed to download dataset")
 	}
 
 	cmd.out.Infof("Downloaded dataset: '%s'", h.Name())

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"io/ioutil"
 
 	"github.com/nerdalize/nerd/pkg/transfer/archiver"
 	"github.com/nerdalize/nerd/pkg/transfer/store"
@@ -11,28 +12,63 @@ import (
 
 //Reporter handles progress reporting
 type Reporter interface {
-	HandledKey(key string)
+	transferarchiver.Reporter
 
-	//@TODO report the objects that were accessed
-	//@TODO think of what interface we would like here
+	HandledKey(key string)
+	StartUploadProgress(label string, total int64, rr io.Reader) io.Reader
+	StopUploadProgress()
+	StartDownloadProgress(label string, total int64) io.Writer
+	StopDownloadProgress()
 }
 
-//DiscardReporter discards all progress reports
+//NewDiscardReporter discards all progress reports
 func NewDiscardReporter() *DiscardReporter {
 	return &DiscardReporter{}
 }
 
+//DiscardReporter is a reporter that discards
 type DiscardReporter struct{}
-
-//Store provides an object storage interface
-type Store interface {
-	Get(ctx context.Context, key string, w io.WriterAt) error
-	Put(ctx context.Context, key string, r io.Reader) error
-	Del(ctx context.Context, key string) error
-}
 
 //HandledKey discards the information a key was handled
 func (r *DiscardReporter) HandledKey(key string) {}
+
+//StartArchivingProgress is called when archiving has started and total size is known
+func (r *DiscardReporter) StartArchivingProgress(label string, total int64) io.Writer {
+	return ioutil.Discard
+}
+
+//StartUploadProgress is called when upload has started while total size is known
+func (r *DiscardReporter) StartUploadProgress(label string, total int64, rr io.Reader) io.Reader {
+	return rr
+}
+
+//StopUploadProgress is called when uploading has stopped
+func (r *DiscardReporter) StopUploadProgress() {}
+
+//StopArchivingProgress is called when archiving has stoppped
+func (r *DiscardReporter) StopArchivingProgress() {}
+
+//StartDownloadProgress will start the download progress
+func (r *DiscardReporter) StartDownloadProgress(label string, total int64) io.Writer {
+	return ioutil.Discard
+}
+
+//StopDownloadProgress will stop the download progress
+func (r *DiscardReporter) StopDownloadProgress() {}
+
+func (r *DiscardReporter) StartUnarchivingProgress(label string, total int64, rr io.Reader) io.Reader {
+	return rr
+}
+
+func (r *DiscardReporter) StopUnarchivingProgress() {}
+
+//Store provides an object storage interface
+type Store interface {
+	Head(ctx context.Context, k string) (size int64, err error)
+	Get(ctx context.Context, key string, w io.WriterAt) error
+	Put(ctx context.Context, key string, r io.ReadSeeker) error
+	Del(ctx context.Context, key string) error
+}
 
 //A Handle provides interactions with a dataset
 type Handle interface {
@@ -55,8 +91,8 @@ type Manager interface {
 //Archiver allows archiving a directory
 type Archiver interface {
 	Index(fn func(k string) error) error
-	Archive(path string, fn func(k string, r io.Reader) error) error
-	Unarchive(path string, fn func(k string, w io.WriterAt) error) error
+	Archive(path string, rep transferarchiver.Reporter, fn func(k string, r io.ReadSeeker, nbytes int64) error) error
+	Unarchive(path string, rep transferarchiver.Reporter, fn func(k string, w io.WriterAt) error) error
 }
 
 //CreateArchiver will creates one of the standard storews with the provided options

@@ -26,7 +26,6 @@ type S3Store struct {
 	prefix string
 
 	sess *session.Session
-	upl  s3manageriface.UploaderAPI
 	dwn  s3manageriface.DownloaderAPI
 	api  s3iface.S3API
 }
@@ -65,14 +64,27 @@ func NewS3Store(cfg StoreOptions) (store *S3Store, err error) {
 		//we delibrately don't add actual signing middleware for anonymous access
 	}
 
-	store.upl = s3manager.NewUploaderWithClient(s3api)
 	store.dwn = s3manager.NewDownloaderWithClient(s3api)
 	store.api = s3api
 
 	return store, nil
 }
 
-//Get a object from the store with key 'k'
+//Head returns metadata for the object
+func (store *S3Store) Head(ctx context.Context, k string) (size int64, err error) {
+	var out *s3.HeadObjectOutput
+	if out, err = store.api.HeadObjectWithContext(ctx, &s3.HeadObjectInput{
+		Bucket: aws.String(store.bucket),
+		Key:    aws.String(k),
+	}); err != nil {
+		return 0, errors.Wrapf(err, "failed to download object")
+	}
+
+	size = aws.Int64Value(out.ContentLength)
+	return size, nil
+}
+
+//Get a object from the store with key 'k' and write it to 'w'
 func (store *S3Store) Get(ctx context.Context, k string, w io.WriterAt) (err error) {
 	if _, err = store.dwn.DownloadWithContext(ctx, w, &s3.GetObjectInput{
 		Bucket: aws.String(store.bucket),
@@ -84,9 +96,9 @@ func (store *S3Store) Get(ctx context.Context, k string, w io.WriterAt) (err err
 	return nil
 }
 
-//Put an object into the store at key 'k'
-func (store *S3Store) Put(ctx context.Context, k string, r io.Reader) (err error) {
-	if _, err := store.upl.UploadWithContext(ctx, &s3manager.UploadInput{
+//Put an object into the store at key 'k' by reading from 'r'
+func (store *S3Store) Put(ctx context.Context, k string, r io.ReadSeeker) (err error) {
+	if _, err := store.api.PutObjectWithContext(ctx, &s3.PutObjectInput{
 		Body:   r,
 		Bucket: aws.String(store.bucket),
 		Key:    aws.String(k),
