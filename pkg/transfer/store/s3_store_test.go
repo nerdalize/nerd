@@ -3,6 +3,7 @@ package transferstore_test
 import (
 	"bytes"
 	"context"
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -46,7 +47,9 @@ func TestS3Store(t *testing.T) {
 
 	t.Run("put a non-existing key", func(t *testing.T) {
 		content1 := "hello, world"
-		buf1 := bytes.NewBufferString(content1)
+		buf1, _ := ioutil.TempFile("", "archiver_test_1_")
+		buf1.Write([]byte(content1))
+		defer buf1.Close()
 
 		err := store.Put(ctx, "hello.txt", buf1)
 		if err != nil {
@@ -55,23 +58,26 @@ func TestS3Store(t *testing.T) {
 
 		content2 := "hello, world2"
 		t.Run("putting an existing key", func(t *testing.T) {
-			buf2 := bytes.NewBufferString(content2)
+			buf2, _ := ioutil.TempFile("", "archiver_test_2_")
+			defer buf2.Close()
+			buf2.Write([]byte(content2))
+			buf2.Seek(0, 0)
 
-			err := store.Put(ctx, "hello.txt", buf2)
+			err = store.Put(ctx, "hello.txt", buf2)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			t.Run("get an existing key", func(t *testing.T) {
-				buf2 := aws.NewWriteAtBuffer(nil)
+				buf3 := aws.NewWriteAtBuffer(nil)
 
-				err := store.Get(ctx, "hello.txt", buf2)
+				err := store.Get(ctx, "hello.txt", buf3)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				if !bytes.Equal([]byte(content2), buf2.Bytes()) {
-					t.Fatalf("expected downloaded content to equal reuploaded content but got: '%x' vs '%x'", buf1.Bytes(), buf2.Bytes())
+				if !bytes.Equal([]byte(content2), buf3.Bytes()) {
+					t.Fatalf("expected downloaded content to equal reuploaded content but got: %x", buf3.Bytes())
 				}
 			})
 

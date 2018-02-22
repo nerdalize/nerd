@@ -81,7 +81,7 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 
 		defer h.Close()
 
-		err = h.Pull(ctx, outputDir, transfer.NewDiscardReporter())
+		err = h.Pull(ctx, outputDir, &progressBarReporter{})
 		if err != nil {
 			return errors.Wrap(err, "failed to download dataset")
 		}
@@ -94,6 +94,7 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 	if err != nil {
 		return errors.Wrap(err, "failed to download datasets")
 	}
+
 	_, err = os.Open(outputDir)
 	if err != nil {
 		if !os.IsNotExist(err) {
@@ -122,7 +123,7 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 
 		defer h.Close()
 
-		err = h.Pull(ctx, filepath.Join(outputDir, dataset.Name), transfer.NewDiscardReporter())
+		err = h.Pull(ctx, filepath.Join(outputDir, dataset.Name), &progressBarReporter{})
 		if err != nil {
 			return errors.Wrap(err, "failed to download dataset")
 		}

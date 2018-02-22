@@ -88,8 +88,6 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 
 	//setup a context with a timeout
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
-	defer cancel()
 
 	err = checkResources(cmd.Memory, cmd.VCPU)
 	if err != nil {
@@ -125,7 +123,8 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 	//start with input volumes
 	vols := map[string]*svc.JobVolume{}
 	for _, input := range cmd.Inputs {
-		parts, err := ParseInputSpecification(input)
+		var parts []string
+		parts, err = ParseInputSpecification(input)
 		if err != nil {
 			return errors.Wrap(err, "failed to parse parse input specification")
 		}
@@ -146,7 +145,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 
 			//@TODO extend ctx deadline
 
-			err = h.Push(ctx, parts[0], transfer.NewDiscardReporter())
+			err = h.Push(ctx, parts[0], &progressBarReporter{})
 			if err != nil {
 				return errors.Wrap(err, "failed to update dataset")
 			}

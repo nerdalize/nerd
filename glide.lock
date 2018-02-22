@@ -1,10 +1,10 @@
-hash: a52de57f5fbc914056e4e96f15d49cb585dec7d2c05dafd5997365aecd4bee88
-updated: 2018-02-20T12:33:30.035163+01:00
+hash: 13b4b3dec465878f83e8479710651c624d51a863223cff4b4653558485a93316
+updated: 2018-02-22T11:48:53.173184+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
-  version: 63324a33d7e42a386c04d4daec764a3de243492e
+  version: adeb60566bc8c9202b0f1be7e3a675beedbc11f0
   subpackages:
   - aws
   - aws/awserr
@@ -39,6 +39,8 @@ imports:
   - service/sts
 - name: github.com/bgentry/speakeasy
   version: 4aabc24848ce5fd31929f7d1e4ea74d3709c14cd
+- name: github.com/cheggaaa/pb
+  version: 72b964305fba1230d3d818711138195f22b9ceea
 - name: github.com/davecgh/go-spew
   version: 782f4967f2dc4564575ca782fe2d04090b5faca8
   subpackages:

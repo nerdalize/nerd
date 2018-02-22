@@ -3,8 +3,10 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"reflect"
 
+	"github.com/cheggaaa/pb"
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
@@ -139,4 +141,62 @@ func (cmd *command) fail(err error, message string) int {
 func (cmd *command) usage(cause error) int {
 	cmd.out.Output(fmt.Sprintf("%s\n\n%s", cause.Error(), cmd.usageFunc()))
 	return 254
+}
+
+//implements the transfer reporter such that it shows archiving progress
+type progressBarReporter struct {
+	uarch *pb.ProgressBar
+	arch  *pb.ProgressBar
+	upl   *pb.ProgressBar
+	dwn   *pb.ProgressBar
+}
+
+func (r *progressBarReporter) HandledKey(key string) {}
+
+func (r *progressBarReporter) StartArchivingProgress(label string, total int64) io.Writer {
+	r.arch = pb.New(int(total)).SetUnits(pb.U_BYTES_DEC)
+	r.arch.Prefix(fmt.Sprintf("Archiving (Step 1/2):")) //@TODO with debug flag show temp file
+	r.arch.Start()
+
+	return r.arch
+}
+
+func (r *progressBarReporter) StartUploadProgress(label string, total int64, rr io.Reader) io.Reader {
+	r.upl = pb.New(int(total)).SetUnits(pb.U_BYTES_DEC)
+	r.upl.Prefix(fmt.Sprintf("Uploading (Step 2/2):")) //@TODO with debug flag show key for uploading
+	r.upl.Start()
+
+	return r.upl.NewProxyReader(rr)
+}
+
+func (r *progressBarReporter) StopUploadProgress() {
+	r.upl.Finish()
+}
+
+func (r *progressBarReporter) StopArchivingProgress() {
+	r.arch.Finish()
+}
+
+func (r *progressBarReporter) StartDownloadProgress(label string, total int64) io.Writer {
+	r.dwn = pb.New(int(total)).SetUnits(pb.U_BYTES_DEC)
+	r.dwn.Prefix(fmt.Sprintf("Downloading (Step 1/2):")) //@TODO with debug flag show key
+	r.dwn.Start()
+
+	return r.dwn
+}
+
+func (r *progressBarReporter) StopDownloadProgress() {
+	r.dwn.Finish()
+}
+
+func (r *progressBarReporter) StartUnarchivingProgress(label string, total int64, rr io.Reader) io.Reader {
+	r.uarch = pb.New(int(total)).SetUnits(pb.U_BYTES_DEC)
+	r.uarch.Prefix(fmt.Sprintf("Unarchiving (Step 2/2):")) //@TODO with debug flag show temp file
+	r.uarch.Start()
+
+	return r.uarch.NewProxyReader(rr)
+}
+
+func (r *progressBarReporter) StopUnarchivingProgress() {
+	r.uarch.Finish()
 }
