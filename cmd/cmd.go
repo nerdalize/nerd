@@ -155,7 +155,7 @@ func (r *progressBarReporter) HandledKey(key string) {}
 
 func (r *progressBarReporter) StartArchivingProgress(label string, total int64) io.Writer {
 	r.arch = pb.New(int(total)).SetUnits(pb.U_BYTES_DEC)
-	r.arch.Prefix(fmt.Sprintf("Archiving:")) //@TODO with debug flag show temp file
+	r.arch.Prefix(fmt.Sprintf("Archiving (Step 1/2):")) //@TODO with debug flag show temp file
 	r.arch.Start()
 
 	return r.arch
@@ -163,7 +163,7 @@ func (r *progressBarReporter) StartArchivingProgress(label string, total int64) 
 
 func (r *progressBarReporter) StartUploadProgress(label string, total int64, rr io.Reader) io.Reader {
 	r.upl = pb.New(int(total)).SetUnits(pb.U_BYTES_DEC)
-	r.upl.Prefix(fmt.Sprintf("Uploading:")) //@TODO with debug flag show key for uploading
+	r.upl.Prefix(fmt.Sprintf("Uploading (Step 2/2):")) //@TODO with debug flag show key for uploading
 	r.upl.Start()
 
 	return r.upl.NewProxyReader(rr)
@@ -179,7 +179,7 @@ func (r *progressBarReporter) StopArchivingProgress() {
 
 func (r *progressBarReporter) StartDownloadProgress(label string, total int64) io.Writer {
 	r.dwn = pb.New(int(total)).SetUnits(pb.U_BYTES_DEC)
-	r.dwn.Prefix(fmt.Sprintf("Downloading:")) //@TODO with debug flag show key
+	r.dwn.Prefix(fmt.Sprintf("Downloading (Step 1/2):")) //@TODO with debug flag show key
 	r.dwn.Start()
 
 	return r.dwn
@@ -191,7 +191,7 @@ func (r *progressBarReporter) StopDownloadProgress() {
 
 func (r *progressBarReporter) StartUnarchivingProgress(label string, total int64, rr io.Reader) io.Reader {
 	r.uarch = pb.New(int(total)).SetUnits(pb.U_BYTES_DEC)
-	r.uarch.Prefix(fmt.Sprintf("Unarchiving:")) //@TODO with debug flag show temp file
+	r.uarch.Prefix(fmt.Sprintf("Unarchiving (Step 2/2):")) //@TODO with debug flag show temp file
 	r.uarch.Start()
 
 	return r.uarch.NewProxyReader(rr)

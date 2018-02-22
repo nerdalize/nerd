@@ -29,25 +29,6 @@ type TransferOpts struct {
 	AWSSessionToken    string `long:"aws-session-token" description:"AWS temporary auth token for the storage backend"`
 }
 
-//Transfer creates an concrete transfer service using the configuration
-//@TODO deprecate
-// func (opts TransferOpts) Transfer() (trans transfer.Transfer, err error) {
-// 	s3cfg := &transfer.S3Conf{
-// 		Bucket:       opts.AWSS3Bucket,
-// 		Region:       opts.AWSRegion,
-// 		AccessKey:    opts.AWSAccessKeyID,
-// 		SecretKey:    opts.AWSSecretAccessKey,
-// 		SessionToken: opts.AWSSessionToken,
-// 	}
-//
-// 	trans, err = transfer.NewS3(s3cfg)
-// 	if err != nil {
-// 		return nil, errors.Wrap(err, "failed to create s3 uploader")
-// 	}
-//
-// 	return trans, nil
-// }
-
 //TransferManager creates a transfermanager using the command line options
 func (opts TransferOpts) TransferManager(kube *svc.Kube) (mgr transfer.Manager, sto *transferstore.StoreOptions, sta *transferarchiver.ArchiverOptions, err error) {
 	if mgr, err = transfer.NewKubeManager(
