@@ -53,6 +53,8 @@ type ListJobItem struct {
 	Image       string
 	Input       string
 	Output      string
+	Memory      string
+	VCPU        string
 	CreatedAt   time.Time
 	DeletedAt   time.Time
 	ActiveAt    time.Time
@@ -139,6 +141,8 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 				item.FailedAt = cond.LastTransitionTime.Local()
 			}
 		}
+		item.Memory = job.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()
+		item.VCPU = job.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()
 
 		mapping[job.UID] = item
 		out.Items = append(out.Items, item)

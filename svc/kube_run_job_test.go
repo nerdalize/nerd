@@ -120,6 +120,21 @@ func TestRunJobTemplate(t *testing.T) {
 				return true
 			},
 		},
+		{
+			Name:    "when resources are requested they should be found in the job template",
+			Timeout: time.Second * 10,
+			Input:   &svc.RunJobInput{Image: "nginx", Name: "my-resources", Memory: "200Mi", VCPU: "0.1"},
+			IsOutput: func(t testing.TB, out *batchv1.Job) bool {
+				if len(out.Spec.Template.Spec.Containers) < 1 {
+					return false
+				}
+				assert(t, out.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String() == "100m", "cpu should be equal as requested value")
+				assert(t, out.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String() == "200Mi", "memory should be equal as requested value")
+				assert(t, out.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String() == "100m", "cpu should be equal as requested value")
+				assert(t, out.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String() == "200Mi", "memory should be equal as requested value")
+				return true
+			},
+		},
 	} {
 		t.Run(c.Name, func(t *testing.T) {
 			di, clean := testDI(t)
