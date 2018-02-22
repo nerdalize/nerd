@@ -89,6 +89,22 @@ func TestListJobs(t *testing.T) {
 			},
 		},
 		{
+			Name:    "when a job is started it should show its resource requests",
+			Timeout: time.Second * 5,
+			Jobs:    []*svc.RunJobInput{{Image: "hello-world", Name: "my-job", Memory: "200Mi", VCPU: "0.1"}},
+			Input:   &svc.ListJobsInput{},
+			IsErr:   isNilErr,
+			IsOutput: func(t testing.TB, out *svc.ListJobsOutput) bool {
+				assert(t, len(out.Items) == 1, "expected one job to be listed")
+				if out.Items[0].CompletedAt.IsZero() {
+					return false
+				}
+				assert(t, out.Items[0].Memory == "200Mi", "should have memory request details")
+				assert(t, out.Items[0].VCPU == "100m", "should contain details about vcpu requests")
+				return true
+			},
+		},
+		{
 			Name:    "when job is run with the wrong image it should show a waiting reason at some point",
 			Timeout: time.Minute,
 			Jobs:    []*svc.RunJobInput{{Image: "there-is-no-image-called-this", Name: "invalid-image-job"}},
