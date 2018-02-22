@@ -70,7 +70,7 @@ const (
 
 //WriteSpace is the amount of space available for writing data.
 //@TODO: Should be based on dataset size or customer details?
-const WriteSpace = 100 * 1024 * 1024
+const WriteSpace = 2 * 1024 * 1024 * 1024
 
 //DirectoryPermissions are the permissions for directories created as part of flexvolume operation.
 //@TODO: Spend more time checking if they make sense and are secure
