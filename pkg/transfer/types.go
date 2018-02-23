@@ -33,8 +33,8 @@ type DiscardReporter struct{}
 func (r *DiscardReporter) HandledKey(key string) {}
 
 //StartArchivingProgress is called when archiving has started and total size is known
-func (r *DiscardReporter) StartArchivingProgress(label string, total int64) io.Writer {
-	return ioutil.Discard
+func (r *DiscardReporter) StartArchivingProgress(label string, total int64) func(int64) {
+	return func(int64) {}
 }
 
 //StartUploadProgress is called when upload has started while total size is known

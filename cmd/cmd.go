@@ -153,12 +153,14 @@ type progressBarReporter struct {
 
 func (r *progressBarReporter) HandledKey(key string) {}
 
-func (r *progressBarReporter) StartArchivingProgress(label string, total int64) io.Writer {
+func (r *progressBarReporter) StartArchivingProgress(label string, total int64) func(int64) {
 	r.arch = pb.New(int(total)).SetUnits(pb.U_BYTES_DEC)
 	r.arch.Prefix(fmt.Sprintf("Archiving (Step 1/2):")) //@TODO with debug flag show temp file
 	r.arch.Start()
 
-	return r.arch
+	return func(n int64) {
+		r.arch.Add64(n)
+	}
 }
 
 func (r *progressBarReporter) StartUploadProgress(label string, total int64, rr io.Reader) io.Reader {
