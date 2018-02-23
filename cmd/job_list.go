@@ -63,8 +63,8 @@ func (cmd *JobList) Execute(args []string) (err error) {
 		rows = append(rows, []string{
 			item.Name,
 			item.Image,
-			item.Input,
-			item.Output,
+			strings.Join(item.Input, ","),
+			strings.Join(item.Output, ","),
 			item.Memory,
 			item.VCPU,
 			humanize.Time(item.CreatedAt),

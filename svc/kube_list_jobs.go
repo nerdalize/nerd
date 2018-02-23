@@ -51,8 +51,8 @@ type JobDetails struct {
 type ListJobItem struct {
 	Name        string
 	Image       string
-	Input       string
-	Output      string
+	Input       []string
+	Output      []string
 	Memory      string
 	VCPU        string
 	CreatedAt   time.Time
@@ -233,16 +233,16 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 	return out, nil
 }
 
-func mapDatasets(datasets *datasets) (map[string]string, map[string]string) {
-	inputs := map[string]string{}
-	outputs := map[string]string{}
+func mapDatasets(datasets *datasets) (map[string][]string, map[string][]string) {
+	inputs := map[string][]string{}
+	outputs := map[string][]string{}
 
 	for _, d := range datasets.Items {
 		for _, inputForJob := range d.Spec.InputFor {
-			inputs[inputForJob] = d.Name
+			inputs[inputForJob] = append(inputs[inputForJob], d.Name)
 		}
 		for _, outputOfJob := range d.Spec.OutputFrom {
-			outputs[outputOfJob] = d.Name
+			outputs[outputOfJob] = append(outputs[outputOfJob], d.Name)
 		}
 	}
 	return inputs, outputs
