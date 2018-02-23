@@ -49,6 +49,15 @@
 			</Component>
 		</DirectoryRef>
 
+
+    <Icon Id="icon.ico" SourceFile="icon.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="icon.ico" />
+
+    <WixVariable Id="WixUILicenseRtf" Value="terms_conditions.rtf" />
+
+    <WixVariable Id="WixUIDialogBmp" Value="WixUIDialogBmp-32bit.bmp" />
+    <WixVariable Id="WixUIBannerBmp" Value="WixUIBannerBmp-32bit.bmp" />
+
 		<Feature Id="FEATURE_Core" Title="Core Tooling" Level="1">
 		     <ComponentRef Id="CMP_PathEnv" />
 		     <ComponentRef Id="CMP_NerdExe" />
@@ -66,6 +75,7 @@
           Event="DoAction"
           Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
     </UI>
+
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1"/>
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Nerd" />
     <CustomAction Id="LaunchApplication"
