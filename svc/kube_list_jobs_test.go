@@ -96,9 +96,6 @@ func TestListJobs(t *testing.T) {
 			IsErr:   isNilErr,
 			IsOutput: func(t testing.TB, out *svc.ListJobsOutput) bool {
 				assert(t, len(out.Items) == 1, "expected one job to be listed")
-				if out.Items[0].CompletedAt.IsZero() {
-					return false
-				}
 				assert(t, out.Items[0].Memory == "200Mi", "should have memory request details")
 				assert(t, out.Items[0].VCPU == "100m", "should contain details about vcpu requests")
 				return true
