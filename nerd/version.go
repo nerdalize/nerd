@@ -73,7 +73,10 @@ type SemVer struct {
 
 //ParseSemVer parses a semantic version from string.
 func ParseSemVer(ver string) (*SemVer, error) {
-	parts := strings.Split(ver, ".")
+	parts := strings.Split(ver, "-")
+	ver = parts[0]
+
+	parts = strings.Split(ver, ".")
 	if len(parts) != 3 {
 		return nil, errors.Errorf("failed to parse semantic version '%v', because does not consist of 3 parts", ver)
 	}
