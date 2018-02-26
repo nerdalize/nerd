@@ -62,6 +62,10 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 
 	err = h.Push(ctx, args[0], &progressBarReporter{})
 	if err != nil {
+		e := mgr.Remove(ctx, h.Name())
+		if e != nil {
+			return errors.Wrapf(err, "failed to remove dataset: %v", e)
+		}
 		return errors.Wrap(err, "failed to upload dataset")
 	}
 

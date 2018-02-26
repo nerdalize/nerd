@@ -91,7 +91,6 @@ func (a *TarArchiver) indexFS(path string, fn func(p string, fi os.FileInfo, err
 		if fi == nil || path == p {
 			return nil //this is triggered when a directory doesn't have an executable bit
 		}
-
 		if err != nil {
 			return err
 		}
@@ -108,6 +107,9 @@ func (a *TarArchiver) indexFS(path string, fn func(p string, fi os.FileInfo, err
 func (a *TarArchiver) Archive(path string, rep Reporter, fn func(k string, r io.ReadSeeker, nbytes int64) error) (err error) {
 	var totalToTar int64
 	if err = a.indexFS(path, func(p string, fi os.FileInfo, err error) error {
+		if !fi.Mode().IsRegular() {
+			return nil //nothing to write for dirs or symlinks
+		}
 		totalToTar += fi.Size()
 		return nil
 	}); err != nil {
@@ -119,17 +121,12 @@ func (a *TarArchiver) Archive(path string, rep Reporter, fn func(k string, r io.
 		return err
 	}
 
-	//create writer that also reports progress
-	pw := io.MultiWriter(
-		tmpf,
-		rep.StartArchivingProgress(tmpf.Name(), totalToTar),
-	)
+	inc := rep.StartArchivingProgress(tmpf.Name(), totalToTar)
 
 	defer clean()
-	tw := tar.NewWriter(pw)
+	tw := tar.NewWriter(tmpf)
 	defer tw.Close()
 
-	var nbytes int64
 	if err = a.indexFS(path, func(p string, fi os.FileInfo, err error) error {
 		rel, err := filepath.Rel(path, p)
 		if err != nil {
@@ -164,14 +161,11 @@ func (a *TarArchiver) Archive(path string, rep Reporter, fn func(k string, r io.
 		if n, err = io.Copy(tw, f); err != nil {
 			return errors.Wrap(err, "failed to copy file content to archive")
 		}
-
-		nbytes += n
-
+		inc(n)
 		return nil
 	}); err != nil {
 		return errors.Wrap(err, "failed to perform filesystem walk")
 	}
-
 	err = tw.Flush()
 	if err != nil {
 		return errors.Wrap(err, "failed to flush tar writer to disk")
@@ -184,7 +178,6 @@ func (a *TarArchiver) Archive(path string, rep Reporter, fn func(k string, r io.
 
 	//stop progress reporting, we're done
 	rep.StopArchivingProgress()
-
 	fi, err := tmpf.Stat()
 	if err != nil {
 		return errors.Wrap(err, "failed to stat the temporary file")

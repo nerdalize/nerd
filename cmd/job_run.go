@@ -126,7 +126,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		var parts []string
 		parts, err = ParseInputSpecification(input)
 		if err != nil {
-			return errors.Wrap(err, "failed to parse parse input specification")
+			return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, errors.Wrap(err, "failed to parse input specification"))
 		}
 
 		//if the input spec has a path-like string, try to upload it for the user
@@ -135,26 +135,26 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 			//the user has provided a path as its input, clean it and make it absolute
 			parts[0], err = filepath.Abs(parts[0])
 			if err != nil {
-				return errors.Wrap(err, "failed to turn local dataset path into absolute path")
+				return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, errors.Wrap(err, "failed to turn local dataset path into absolute path"))
 			}
 
 			h, err = mgr.Create(ctx, "", *sto, *sta)
 			if err != nil {
-				return errors.Wrap(err, "failed to create dataset")
+				return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, errors.Wrap(err, "failed to create dataset"))
 			}
 
 			//@TODO extend ctx deadline
 
 			err = h.Push(ctx, parts[0], &progressBarReporter{})
 			if err != nil {
-				return errors.Wrap(err, "failed to update dataset")
+				return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, errors.Wrap(err, "failed to update dataset"))
 			}
 
 			cmd.out.Infof("Uploaded input dataset: '%s'", h.Name())
 		} else { //open an existing dataset
 			h, err = mgr.Open(ctx, parts[0])
 			if err != nil {
-				return errors.Wrap(err, "failed to open dataset")
+				return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, errors.Wrap(err, "failed to open dataset"))
 			}
 
 		}
@@ -170,14 +170,14 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 
 		err = deps.val.Struct(vols[parts[1]])
 		if err != nil {
-			return errors.Wrap(err, "incorrect input")
+			return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, errors.Wrap(err, "incorrect input"))
 		}
 	}
 
 	for _, output := range cmd.Outputs {
 		parts := strings.Split(output, ":")
 		if len(parts) < 1 || len(parts) > 2 {
-			return fmt.Errorf("invalid output specified, expected '<JOB_DIR>:[DATASET_NAME]' format, got: %s", output)
+			return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, fmt.Errorf("invalid output specified, expected '<JOB_DIR>:[DATASET_NAME]' format, got: %s", output))
 		}
 
 		vol, ok := vols[parts[0]]
@@ -188,7 +188,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 
 		err = deps.val.Struct(vol)
 		if err != nil {
-			return errors.Wrap(err, "incorrect output")
+			return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, errors.Wrap(err, "incorrect output"))
 		}
 
 		//if the second part is provided we want to upload the output to a specific  dataset
@@ -196,13 +196,13 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		if len(parts) == 2 { //open an existing dataset
 			h, err = mgr.Open(ctx, parts[1])
 			if err != nil {
-				return errors.Wrap(err, "failed to open dataset")
+				return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, errors.Wrap(err, "failed to open dataset"))
 			}
 
 		} else { //create an empty dataset for the output
 			h, err = mgr.Create(ctx, "", *sto, *sta)
 			if err != nil {
-				return errors.Wrap(err, "failed to create dataset")
+				return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, errors.Wrap(err, "failed to create dataset"))
 			}
 
 			cmd.out.Infof("Setup empty output dataset: '%s'", h.Name())
@@ -231,23 +231,13 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 
 	out, err := kube.RunJob(ctx, in)
 	if err != nil {
+		cmd.rollbackDatasets(ctx, mgr, inputs, outputs, nil)
 		return renderServiceError(err, "failed to run job")
 	}
 
-	//add job to each dataset's InputFor
-	for _, h := range inputs {
-		_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: h.Name(), InputFor: out.Name})
-		if err != nil {
-			return err
-		}
-	}
-
-	//add job to each dataset's OutputOf
-	for _, h := range outputs {
-		_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: h.Name(), OutputFrom: out.Name})
-		if err != nil {
-			return err
-		}
+	err = updateDatasets(ctx, kube, inputs, outputs, out.Name)
+	if err != nil {
+		return err
 	}
 
 	cmd.out.Infof("Submitted job: '%s'", out.Name)
@@ -272,6 +262,35 @@ func checkResources(memory, vcpu string) error {
 		}
 		if v > 40 {
 			return fmt.Errorf("invalid value for vcpu parameter. VCPU request must be lower than 40")
+		}
+	}
+	return nil
+}
+
+func (cmd *JobRun) rollbackDatasets(ctx context.Context, mgr transfer.Manager, inputs, outputs []transfer.Handle, err error) error {
+	for _, input := range inputs {
+		mgr.Remove(ctx, input.Name())
+	}
+	for _, output := range outputs {
+		mgr.Remove(ctx, output.Name())
+	}
+
+	return err
+}
+
+func updateDatasets(ctx context.Context, kube *svc.Kube, inputs, outputs []transfer.Handle, name string) error {
+	//add job to each dataset's InputFor
+	for _, h := range inputs {
+		_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: h.Name(), InputFor: name})
+		if err != nil {
+			return err
+		}
+	}
+	//add job to each dataset's OutputOf
+	for _, h := range outputs {
+		_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: h.Name(), OutputFrom: name})
+		if err != nil {
+			return err
 		}
 	}
 	return nil
