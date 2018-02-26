@@ -39,7 +39,11 @@ func create() *cli.CLI {
 		Name: name,
 		Args: args,
 		HiddenCommands: []string{
-			"job",
+			"project",
+			"workload",
+			"task",
+			"secret",
+			"worker",
 			"project expel",
 			"project place",
 			"task receive",

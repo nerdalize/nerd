@@ -61,12 +61,6 @@
 				]
 			}
 		},
-		"project": {
-			"usage": "nerd project \u003csubcommand\u003e",
-			"synopsis": "Set and list projects.",
-			"description": "Set and list projects.",
-			"options": {}
-		},
 		"project list": {
 			"usage": "nerd project list",
 			"synopsis": "List all your projects.",
@@ -95,12 +89,6 @@
 					}
 				]
 			}
-		},
-		"secret": {
-			"usage": "nerd secret \u003csubcommand\u003e",
-			"synopsis": "Set and list secrets (opaque or for a registry).",
-			"description": "A secret can be set to access a Docker registry (type registry),\nor to store sensitive information.",
-			"options": {}
 		},
 		"secret create": {
 			"usage": "nerd secret create \u003cregistry\u003e --type registry --username \u003cuser\u003e --password \u003cpwd\u003e\n   OR\n  nerd secret create \u003cname-for-secret\u003e \u003ckey=value\u003e [more]",
@@ -164,12 +152,6 @@
 				]
 			}
 		},
-		"task": {
-			"usage": "nerd task \u003csubcommand\u003e",
-			"synopsis": "Manage the lifecycle of compute tasks.",
-			"description": "Manage the lifecycle of compute tasks.",
-			"options": {}
-		},
 		"task create": {
 			"usage": "nerd task create \u003cworkload-id\u003e -- [cmd [args...]]",
 			"synopsis": "Create a new task for a workload.",
@@ -210,22 +192,10 @@
 			"description": "Check the current version.",
 			"options": {}
 		},
-		"worker": {
-			"usage": "nerd worker \u003csubcommand\u003e",
-			"synopsis": "Control individual compute processes.",
-			"description": "Control individual compute processes.",
-			"options": {}
-		},
 		"worker logs": {
 			"usage": "nerd worker logs \u003cworkload-id\u003e \u003cworker-id\u003e",
 			"synopsis": "Return recent logs from a worker.",
 			"description": "Return recent logs from a worker.",
-			"options": {}
-		},
-		"workload": {
-			"usage": "nerd workload \u003csubcommand\u003e",
-			"synopsis": "Control compute capacity for working on tasks.",
-			"description": "Control compute capacity for working on tasks.",
 			"options": {}
 		},
 		"workload describe": {
