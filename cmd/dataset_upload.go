@@ -64,7 +64,7 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 	if err != nil {
 		e := mgr.Remove(ctx, h.Name())
 		if e != nil {
-			return errors.Wrapf(err, "failed to upload dataset: %v", e)
+			return errors.Wrapf(err, "failed to remove dataset: %v", e)
 		}
 		return errors.Wrap(err, "failed to upload dataset")
 	}
