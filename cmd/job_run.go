@@ -74,6 +74,14 @@ func ParseInputSpecification(input string) (parts []string, err error) {
 	return parts, nil
 }
 
+// dsHandle keeps handles to update the job froms and to.
+// newDs helps us to keep track if the dataset used is an ad-hoc dataset or a dataset that was previously submitted,
+// so we know which ones we should delete in case of problems with `nerd job run`.
+type dsHandle struct {
+	handle transfer.Handle
+	newDs  bool
+}
+
 //Execute runs the command
 func (cmd *JobRun) Execute(args []string) (err error) {
 	if len(args) < 1 {
@@ -117,8 +125,8 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 	}
 
 	//keep handles to update the job froms and to
-	inputs := []transfer.Handle{}
-	outputs := []transfer.Handle{}
+	inputs := []dsHandle{}
+	outputs := []dsHandle{}
 
 	//start with input volumes
 	vols := map[string]*svc.JobVolume{}
@@ -130,7 +138,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		}
 
 		//if the input spec has a path-like string, try to upload it for the user
-		var h transfer.Handle
+		var h dsHandle
 		if strings.Contains(parts[0], string(filepath.Separator)) {
 			//the user has provided a path as its input, clean it and make it absolute
 			parts[0], err = filepath.Abs(parts[0])
@@ -138,34 +146,35 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 				return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, errors.Wrap(err, "failed to turn local dataset path into absolute path"))
 			}
 
-			h, err = mgr.Create(ctx, "", *sto, *sta)
+			h.handle, err = mgr.Create(ctx, "", *sto, *sta)
 			if err != nil {
 				return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, errors.Wrap(err, "failed to create dataset"))
 			}
 
 			//@TODO extend ctx deadline
 
-			err = h.Push(ctx, parts[0], &progressBarReporter{})
+			err = h.handle.Push(ctx, parts[0], &progressBarReporter{})
 			if err != nil {
 				return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, errors.Wrap(err, "failed to update dataset"))
 			}
-
-			cmd.out.Infof("Uploaded input dataset: '%s'", h.Name())
+			h.newDs = true
+			cmd.out.Infof("Uploaded input dataset: '%s'", h.handle.Name())
 		} else { //open an existing dataset
-			h, err = mgr.Open(ctx, parts[0])
+			h.handle, err = mgr.Open(ctx, parts[0])
 			if err != nil {
 				return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, errors.Wrap(err, "failed to open dataset"))
 			}
+			h.newDs = false
 
 		}
 
 		//add handler for job mapping
 		inputs = append(inputs, h)
-		defer h.Close()
+		defer h.handle.Close()
 
 		vols[parts[1]] = &svc.JobVolume{
 			MountPath:    parts[1],
-			InputDataset: h.Name(),
+			InputDataset: h.handle.Name(),
 		}
 
 		err = deps.val.Struct(vols[parts[1]])
@@ -192,27 +201,29 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		}
 
 		//if the second part is provided we want to upload the output to a specific  dataset
-		var h transfer.Handle
+		var h dsHandle
 		if len(parts) == 2 { //open an existing dataset
-			h, err = mgr.Open(ctx, parts[1])
+			h.handle, err = mgr.Open(ctx, parts[1])
 			if err != nil {
 				return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, errors.Wrap(err, "failed to open dataset"))
 			}
+			h.newDs = false
 
 		} else { //create an empty dataset for the output
-			h, err = mgr.Create(ctx, "", *sto, *sta)
+			h.handle, err = mgr.Create(ctx, "", *sto, *sta)
 			if err != nil {
 				return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, errors.Wrap(err, "failed to create dataset"))
 			}
+			h.newDs = true
 
-			cmd.out.Infof("Setup empty output dataset: '%s'", h.Name())
+			cmd.out.Infof("Setup empty output dataset: '%s'", h.handle.Name())
 		}
 
 		//register for job mapping and cleanup
 		outputs = append(outputs, h)
-		defer h.Close()
+		defer h.handle.Close()
 
-		vol.OutputDataset = h.Name()
+		vol.OutputDataset = h.handle.Name()
 	}
 
 	//continue with actuall creating the job
@@ -267,28 +278,32 @@ func checkResources(memory, vcpu string) error {
 	return nil
 }
 
-func (cmd *JobRun) rollbackDatasets(ctx context.Context, mgr transfer.Manager, inputs, outputs []transfer.Handle, err error) error {
+func (cmd *JobRun) rollbackDatasets(ctx context.Context, mgr transfer.Manager, inputs, outputs []dsHandle, err error) error {
 	for _, input := range inputs {
-		mgr.Remove(ctx, input.Name())
+		if input.newDs {
+			mgr.Remove(ctx, input.handle.Name())
+		}
 	}
 	for _, output := range outputs {
-		mgr.Remove(ctx, output.Name())
+		if output.newDs {
+			mgr.Remove(ctx, output.handle.Name())
+		}
 	}
 
 	return err
 }
 
-func updateDatasets(ctx context.Context, kube *svc.Kube, inputs, outputs []transfer.Handle, name string) error {
+func updateDatasets(ctx context.Context, kube *svc.Kube, inputs, outputs []dsHandle, name string) error {
 	//add job to each dataset's InputFor
-	for _, h := range inputs {
-		_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: h.Name(), InputFor: name})
+	for _, input := range inputs {
+		_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: input.handle.Name(), InputFor: name})
 		if err != nil {
 			return err
 		}
 	}
 	//add job to each dataset's OutputOf
-	for _, h := range outputs {
-		_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: h.Name(), OutputFrom: name})
+	for _, output := range outputs {
+		_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: output.handle.Name(), OutputFrom: name})
 		if err != nil {
 			return err
 		}
