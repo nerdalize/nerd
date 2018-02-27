@@ -107,6 +107,7 @@ func setProject(kubeConfig, conf string, project *v1payload.GetProjectOutput, lo
 	}
 	err = p.PopulateKubeConfig(project.Nk)
 	if err != nil {
+		p.RemoveConfig(project.Nk)
 		return err
 	}
 	if err := checkNamespace(kubeConfig, project.Nk); err != nil {
