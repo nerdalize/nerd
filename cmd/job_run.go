@@ -262,8 +262,8 @@ func checkResources(memory, vcpu string) error {
 		if err != nil {
 			return fmt.Errorf("invalid memory option format, %v", err)
 		}
-		if m > 60 {
-			return fmt.Errorf("invalid value for memory parameter. Memory request must be lower than 60Gbs")
+		if m > 60 || m <= 0 {
+			return fmt.Errorf("invalid value for memory parameter. Memory request must be greater than 0 and lower than 60Gbs")
 		}
 	}
 	if vcpu != "" {
@@ -271,8 +271,8 @@ func checkResources(memory, vcpu string) error {
 		if err != nil {
 			return fmt.Errorf("invalid vcpu option format, %v", err)
 		}
-		if v > 40 {
-			return fmt.Errorf("invalid value for vcpu parameter. VCPU request must be lower than 40")
+		if v > 40 || v <= 0 {
+			return fmt.Errorf("invalid value for vcpu parameter. VCPU request must be greater than 0 and lower than 40")
 		}
 	}
 	return nil
