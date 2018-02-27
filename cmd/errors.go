@@ -9,10 +9,10 @@ import (
 )
 
 var (
-	// ErrProjectNotSet is returned when no project config is found in the kube config file.
-	ErrProjectNotSet = errors.New("No project set, use `nerd project set` to configure a project to work on.")
+	// ErrNamespaceNotSet is returned when no namespace config is found in the kube config file.
+	ErrNamespaceNotSet = errors.New("no cluster set, use `nerd login` to update your configuration")
 	// ErrNotLoggedIn is returned when no oauth access token was found in the config file.
-	ErrNotLoggedIn = errors.New("You're not logged in. Please login with `nerd login`.")
+	ErrNotLoggedIn = errors.New("you're not logged in. Please login with `nerd login`")
 )
 
 // errShowHelp can be returned by commands to show the commands help message next to the error.
@@ -51,8 +51,8 @@ func renderServiceError(err error, format string, args ...interface{}) error {
 		return errors.Errorf("%s: you do not have permission to perform this action", fmt.Errorf(format, args...))
 	case svc.IsRaceConditionErr(err):
 		return errors.Errorf("%s: another process caused your action to fail, please try again", fmt.Errorf(format, args...))
-	case errors.Cause(err) == ErrProjectNotSet:
-		return ErrProjectNotSet
+	case errors.Cause(err) == ErrNamespaceNotSet:
+		return ErrNamespaceNotSet
 	case errors.Cause(err) == ErrNotLoggedIn:
 		return ErrNotLoggedIn
 	default:
@@ -68,8 +68,8 @@ func renderConfigError(err error, format string, args ...interface{}) error {
 	switch {
 	case errors.Cause(err) == ErrNotLoggedIn:
 		return ErrNotLoggedIn
-	case errors.Cause(err) == ErrProjectNotSet:
-		return ErrProjectNotSet
+	case errors.Cause(err) == ErrNamespaceNotSet:
+		return ErrNamespaceNotSet
 	default:
 		return err
 	}

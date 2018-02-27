@@ -97,7 +97,7 @@ func (cmd *Login) DoRun(args []string) error {
 	}
 
 	if len(list.Projects) == 0 {
-		cmd.ui.Info("Successful login, but you don't have any project. Please contact mayday@nerdalize.com.")
+		cmd.ui.Info("Successful login, but you don't have any cluster. Please contact mayday@nerdalize.com.")
 		return nil
 	}
 	var projectSlug string
@@ -105,14 +105,13 @@ func (cmd *Login) DoRun(args []string) error {
 		projectSlug = project.Nk
 		err = setProject(cmd.opts.KubeConfig, cmd.opts.Config, project, cmd.outputter.Logger)
 		if err != nil {
-			cmd.ui.Info(fmt.Sprintf("Could not set project %s, trying with another one. Error: %v", projectSlug, err))
 			projectSlug = ""
 			continue
 		}
 		break
 	}
 	if projectSlug == "" {
-		cmd.ui.Info("Successful login. You can now list your projects using 'nerd project list'.")
+		cmd.ui.Info("Successful login, but it seems that there is a connection problem to your cluster(s). Please try again, and if the problem persists, contact mayday@nerdalize.com.")
 		return nil
 	}
 
@@ -121,7 +120,7 @@ func (cmd *Login) DoRun(args []string) error {
 		return HandleError(err)
 	}
 
-	cmd.ui.Info(fmt.Sprintf("Successful login. Default project set: %s.", projectSlug))
+	cmd.ui.Info("Successful login. You can now start a job with the `nerd job run` command.")
 	return nil
 }
 

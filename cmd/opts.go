@@ -5,8 +5,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/nerdalize/nerd/nerd"
-
 	"github.com/go-playground/validator"
 	homedir "github.com/mitchellh/go-homedir"
 	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
@@ -97,12 +95,12 @@ func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
 	}
 
 	if !populator.Context(kopts.KubeConfig) {
-		return nil, nerd.ErrProjectIDNotSet
+		return nil, ErrNamespaceNotSet
 	}
 
 	d.ns, err = populator.Namespace(kopts.KubeConfig)
 	if err != nil || d.ns == "" {
-		return nil, nerd.ErrProjectIDNotSet
+		return nil, ErrNamespaceNotSet
 	}
 
 	val := validator.New()
