@@ -32,7 +32,7 @@ func renderServiceError(err error, format string, args ...interface{}) error {
 
 	switch {
 	case kubevisor.IsInvalidNameErr(err):
-		return errors.Errorf("%s: invalid name, must be an empty string or consist of alphanumeric characters, '-' or '.'", fmt.Errorf(format, args...))
+		return errors.Errorf("%s: invalid name, must consist of alphanumeric characters, '-' or '.'", fmt.Errorf(format, args...))
 	case kubevisor.IsDeadlineErr(err):
 		return errors.Errorf("%s: action took to long to complete, try again or check your internet connection", fmt.Errorf(format, args...))
 	case kubevisor.IsNetworkErr(err):
