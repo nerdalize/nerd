@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
@@ -40,17 +41,19 @@ func (cmd *JobDelete) Execute(args []string) (err error) {
 	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
 	defer cancel()
 
-	in := &svc.DeleteJobInput{
-		Name: args[0],
-	}
-
 	kube := svc.NewKube(deps)
-	_, err = kube.DeleteJob(ctx, in)
-	if err != nil {
-		return renderServiceError(err, "failed to delete job")
-	}
+	for x := range args {
+		in := &svc.DeleteJobInput{
+			Name: args[x],
+		}
 
-	cmd.out.Infof("Deleted job: '%s'", in.Name)
+		_, err = kube.DeleteJob(ctx, in)
+		if err != nil {
+			return renderServiceError(err, fmt.Sprintf("failed to delete job `%s`", args[x]))
+		}
+
+		cmd.out.Infof("Deleted job: '%s'", in.Name)
+	}
 	cmd.out.Infof("To see whats happening, use: 'nerd job list'")
 	return nil
 }
