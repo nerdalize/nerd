@@ -37,7 +37,7 @@ func (o *Output) Errorf(format string, a ...interface{}) {
 
 //Infof prints a formatted message to
 func (o *Output) Infof(format string, a ...interface{}) {
-	o.Error(fmt.Sprintf(format, a...))
+	o.Info(fmt.Sprintf(format, a...))
 }
 
 //Table will print a table
