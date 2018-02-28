@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -69,6 +70,11 @@ func ParseInputSpecification(input string) (parts []string, err error) {
 		return nil, errors.New("input source is empty")
 	} else if len(strings.TrimSpace(parts[1])) == 0 {
 		return nil, errors.New("input mount path is empty")
+	}
+	// Ensure that input source is an existing directory
+	_, err = os.Open(parts[0])
+	if err != nil {
+		return nil, err
 	}
 
 	return parts, nil
@@ -153,11 +159,11 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 
 			//@TODO extend ctx deadline
 
+			h.newDs = true
 			err = h.handle.Push(ctx, parts[0], &progressBarReporter{})
 			if err != nil {
-				return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, errors.Wrap(err, "failed to update dataset"))
+				return cmd.rollbackDatasets(ctx, mgr, append(inputs, h), outputs, errors.Wrap(err, "failed to upload dataset"))
 			}
-			h.newDs = true
 			cmd.out.Infof("Uploaded input dataset: '%s'", h.handle.Name())
 		} else { //open an existing dataset
 			h.handle, err = mgr.Open(ctx, parts[0])
@@ -210,11 +216,11 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 			h.newDs = false
 
 		} else { //create an empty dataset for the output
+			h.newDs = true
 			h.handle, err = mgr.Create(ctx, "", *sto, *sta)
 			if err != nil {
-				return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, errors.Wrap(err, "failed to create dataset"))
+				return cmd.rollbackDatasets(ctx, mgr, inputs, append(outputs, h), errors.Wrap(err, "failed to create dataset"))
 			}
-			h.newDs = true
 
 			cmd.out.Infof("Setup empty output dataset: '%s'", h.handle.Name())
 		}
