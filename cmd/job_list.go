@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -86,6 +87,11 @@ func (cmd *JobList) Synopsis() string { return "Return jobs that are managed by 
 func (cmd *JobList) Usage() string { return "nerd job list" }
 
 func renderItemDetails(item *svc.ListJobItem) (details []string) {
+	if item.Details.TerminatedExitCode != 0 {
+
+		details = append(details, fmt.Sprintf("Non-zero exit code: %d", item.Details.TerminatedExitCode))
+	}
+
 	if item.Details.WaitingReason != "" {
 		wreason := item.Details.WaitingReason
 		if strings.Contains(wreason, "Image") {

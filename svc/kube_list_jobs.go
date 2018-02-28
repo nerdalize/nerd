@@ -43,6 +43,7 @@ type JobDetails struct {
 	WaitingMessage       string //explains why we're waiting
 	TerminatedReason     string //termination of main container
 	TerminatedMessage    string //explains why its terminated
+	TerminatedExitCode   int32  //exit code it was terminated with
 	UnschedulableReason  string //when scheduling condition is false
 	UnschedulableMessage string
 }
@@ -226,6 +227,7 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 			if cstatus.State.Terminated != nil {
 				jobItem.Details.TerminatedReason = cstatus.State.Terminated.Reason
 				jobItem.Details.TerminatedMessage = cstatus.State.Terminated.Message
+				jobItem.Details.TerminatedExitCode = cstatus.State.Terminated.ExitCode
 			}
 		}
 	}
