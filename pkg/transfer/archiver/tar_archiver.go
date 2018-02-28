@@ -116,6 +116,10 @@ func (a *TarArchiver) Archive(path string, rep Reporter, fn func(k string, r io.
 		return errors.Wrap(err, "failed to index filesystem")
 	}
 
+	if totalToTar == 0 {
+		return errors.New("cannot archive empty directory")
+	}
+
 	tmpf, clean, err := a.tempFile()
 	if err != nil {
 		return err
