@@ -89,6 +89,11 @@ func (cmd *command) AutocompleteFlags() (fl complete.Flags) {
 	return fl
 }
 
+// Options returns the available options of a command
+func (cmd *command) Options() *flags.Parser {
+	return cmd.flagParser
+}
+
 //Help shows extensive help
 func (cmd *command) Help() string {
 	buf := bytes.NewBuffer(nil)
