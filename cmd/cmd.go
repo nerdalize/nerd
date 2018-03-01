@@ -154,6 +154,9 @@ type progressBarReporter struct {
 func (r *progressBarReporter) HandledKey(key string) {}
 
 func (r *progressBarReporter) StartArchivingProgress(label string, total int64) func(int64) {
+	if total == 0 {
+		return func(n int64) {}
+	}
 	r.arch = pb.New(int(total)).SetUnits(pb.U_BYTES_DEC)
 	r.arch.Prefix(fmt.Sprintf("Archiving (Step 1/2):")) //@TODO with debug flag show temp file
 	r.arch.Start()
@@ -165,7 +168,11 @@ func (r *progressBarReporter) StartArchivingProgress(label string, total int64) 
 
 func (r *progressBarReporter) StartUploadProgress(label string, total int64, rr io.Reader) io.Reader {
 	r.upl = pb.New(int(total)).SetUnits(pb.U_BYTES_DEC)
-	r.upl.Prefix(fmt.Sprintf("Uploading (Step 2/2):")) //@TODO with debug flag show key for uploading
+	if r.arch != nil {
+		r.upl.Prefix("Uploading (Step 2/2):") //@TODO with debug flag show key for uploading
+	} else {
+		r.upl.Prefix("Uploading:")
+	}
 	r.upl.Start()
 
 	return r.upl.NewProxyReader(rr)
@@ -176,6 +183,9 @@ func (r *progressBarReporter) StopUploadProgress() {
 }
 
 func (r *progressBarReporter) StopArchivingProgress() {
+	if r.arch == nil {
+		return
+	}
 	r.arch.Finish()
 }
 
