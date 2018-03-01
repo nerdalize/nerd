@@ -1,10 +1,10 @@
-hash: 13b4b3dec465878f83e8479710651c624d51a863223cff4b4653558485a93316
-updated: 2018-02-22T11:48:53.173184+01:00
+hash: 61ecfcdeb4f758340f0aff2ca96866d1ecfb7369aa74a662469bea1982ece938
+updated: 2018-03-01T08:44:08.966767+01:00
 imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
-  version: adeb60566bc8c9202b0f1be7e3a675beedbc11f0
+  version: 9a79087b1148376f4dd860c188c948479e2def3b
   subpackages:
   - aws
   - aws/awserr
@@ -95,7 +95,7 @@ imports:
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-github
-  version: 632a2caf6d3d380753dc7e422748202982ad18a3
+  version: ddf9d548a0f4d9b3fd42dd2add86e2c804860fef
   subpackages:
   - github
 - name: github.com/google/go-querystring
@@ -241,7 +241,7 @@ imports:
 - name: gopkg.in/yaml.v2
   version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/api
-  version: fe29995db37613b9c5b2a647544cf627bfa8d299
+  version: 389dfa299845bcf399c16af89987e8775718ea48
   subpackages:
   - admissionregistration/v1alpha1
   - apps/v1beta1
@@ -269,14 +269,12 @@ imports:
   - storage/v1
   - storage/v1beta1
 - name: k8s.io/apimachinery
-  version: 019ae5ada31de202164b118aee88ee2d14075c31
+  version: bc110fd540ab678abbf2bc71d9ce908eb9325ef6
   subpackages:
   - pkg/api/equality
   - pkg/api/errors
   - pkg/api/meta
   - pkg/api/resource
-  - pkg/apimachinery
-  - pkg/apimachinery/registered
   - pkg/apis/meta/internalversion
   - pkg/apis/meta/v1
   - pkg/apis/meta/v1/unstructured
@@ -321,7 +319,7 @@ imports:
   - third_party/forked/golang/netutil
   - third_party/forked/golang/reflect
 - name: k8s.io/client-go
-  version: 35874c597fed17ca62cd197e516d7d5ff9a2958c
+  version: 3a46b5de730a74e064197a157c96c2d29724a677
   subpackages:
   - discovery
   - discovery/fake
