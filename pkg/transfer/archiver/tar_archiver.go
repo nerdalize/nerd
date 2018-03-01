@@ -106,7 +106,9 @@ func (a *TarArchiver) indexFS(path string, fn func(p string, fi os.FileInfo, err
 //Archive will archive a directory at 'path' into readable objects 'r' and calls 'fn' for each
 func (a *TarArchiver) Archive(path string, rep Reporter, fn func(k string, r io.ReadSeeker, nbytes int64) error) (err error) {
 	var totalToTar int64
+	i := 0
 	if err = a.indexFS(path, func(p string, fi os.FileInfo, err error) error {
+		i++
 		if !fi.Mode().IsRegular() {
 			return nil //nothing to write for dirs or symlinks
 		}
@@ -114,6 +116,10 @@ func (a *TarArchiver) Archive(path string, rep Reporter, fn func(k string, r io.
 		return nil
 	}); err != nil {
 		return errors.Wrap(err, "failed to index filesystem")
+	}
+
+	if i <= 1 {
+		return errors.New("cannot archive empty directory")
 	}
 
 	tmpf, clean, err := a.tempFile()

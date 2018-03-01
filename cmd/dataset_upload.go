@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"os"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
@@ -34,6 +35,12 @@ func DatasetUploadFactory(ui cli.Ui) cli.CommandFactory {
 func (cmd *DatasetUpload) Execute(args []string) (err error) {
 	if len(args) < 1 {
 		return errShowUsage(MessageNotEnoughArguments)
+	}
+
+	// check if directory exists
+	_, err = os.Open(args[0])
+	if err != nil {
+		return errors.Wrap(err, "failed to upload dataset")
 	}
 
 	deps, err := NewDeps(cmd.Logger(), cmd.KubeOpts)
