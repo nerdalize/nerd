@@ -43,6 +43,12 @@ var (
 
 	//ResourceTypeDatasets is used for dataset management
 	ResourceTypeDatasets = ResourceType("datasets")
+
+	//ResourceTypeEvents is the resource type for event fetching
+	ResourceTypeEvents = ResourceType("events")
+
+	//ResourceTypeQuota can be used to retrieve quota information
+	ResourceTypeQuota = ResourceType("resourcequotas")
 )
 
 //ManagedNames allows for Nerd to transparently manage resources based on names and there prefixes
@@ -81,6 +87,10 @@ func NewVisor(ns, prefix string, api kubernetes.Interface, crd crd.Interface, lo
 		prefix = DefaultPrefix
 	}
 	return &Visor{prefix, ns, api, crd, logs}
+}
+
+func (k *Visor) hasPrefix(n string) bool {
+	return strings.HasPrefix(n, k.prefix)
 }
 
 func (k *Visor) applyPrefix(n string) string {
@@ -282,21 +292,23 @@ func (k *Visor) UpdateResource(ctx context.Context, t ResourceType, v ManagedNam
 
 //ListResources will use the RESTClient to list resources while using the context and transparently
 //filter resources managed by the CLI
-func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranformer, lselector []string) (err error) {
+func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranformer, lselector, fselector []string) (err error) {
 	vv, ok := v.(runtime.Object)
 	if !ok {
 		return errors.Errorf("provided value was not castable to runtime.Object")
 	}
 
 	var c rest.Interface
-	var s runtime.ParameterCodec
+	s := scheme.ParameterCodec
 	switch t {
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
-		s = scheme.ParameterCodec
 	case ResourceTypePods:
 		c = k.api.CoreV1().RESTClient()
-		s = scheme.ParameterCodec
+	case ResourceTypeEvents:
+		c = k.api.CoreV1().RESTClient()
+	case ResourceTypeQuota:
+		c = k.api.CoreV1().RESTClient()
 	case ResourceTypeDatasets:
 		c = k.crd.NerdalizeV1().RESTClient()
 		s = crdscheme.ParameterCodec
@@ -304,10 +316,18 @@ func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranfor
 		return errors.Errorf("unknown Kubernetes resource type provided for listing: '%s'", t)
 	}
 
-	labels := strings.Join(append(lselector, "nerd-app=cli"), ",")
+	//events are not  created by us so cannot be selected by our nerd label
+	if t != ResourceTypeEvents && t != ResourceTypeQuota {
+		lselector = append(lselector, "nerd-app=cli")
+	}
+
+	//get all the resources matching the selectors
 	err = c.Get().
 		Namespace(k.ns).
-		VersionedParams(&metav1.ListOptions{LabelSelector: labels}, s).
+		VersionedParams(&metav1.ListOptions{
+			LabelSelector: strings.Join(lselector, ","),
+			FieldSelector: strings.Join(fselector, ","),
+		}, s).
 		Resource(string(t)).
 		Context(ctx).
 		Do().
@@ -317,6 +337,7 @@ func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranfor
 		return k.tagError(err)
 	}
 
+	//if we have zero resources the namespace might not exists
 	if v.Len() == 0 {
 		_, err = k.api.CoreV1().Namespaces().Get(k.ns, metav1.GetOptions{})
 		if err != nil {
@@ -324,7 +345,18 @@ func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranfor
 		}
 	}
 
-	//transform each managed item to return unprefixed
+	//when it comes to events we do not want to return non-cli events
+	if t == ResourceTypeEvents {
+		v.Transform(func(in ManagedNames) ManagedNames {
+			if !k.hasPrefix(in.GetName()) {
+				return nil
+			}
+
+			return in
+		})
+	}
+
+	//transform each managed item to return with its name unprefixed
 	v.Transform(func(in ManagedNames) ManagedNames {
 		in.SetName(k.removePrefix(in.GetName()))
 		return in

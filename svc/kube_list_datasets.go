@@ -40,7 +40,7 @@ func (k *Kube) ListDatasets(ctx context.Context, in *ListDatasetsInput) (out *Li
 
 	//Step 0: Get all the datasets under nerd-app=cli
 	datasets := &datasets{}
-	err = k.visor.ListResources(ctx, kubevisor.ResourceTypeDatasets, datasets, nil)
+	err = k.visor.ListResources(ctx, kubevisor.ResourceTypeDatasets, datasets, nil, nil)
 	if err != nil {
 		return nil, err
 	}

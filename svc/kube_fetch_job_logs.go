@@ -33,7 +33,7 @@ func (k *Kube) FetchJobLogs(ctx context.Context, in *FetchJobLogsInput) (out *Fe
 	}
 
 	pods := &pods{}
-	err = k.visor.ListResources(ctx, kubevisor.ResourceTypePods, pods, []string{"controller-uid=" + string(job.GetUID())})
+	err = k.visor.ListResources(ctx, kubevisor.ResourceTypePods, pods, []string{"controller-uid=" + string(job.GetUID())}, []string{})
 	if err != nil {
 		return nil, err
 	}

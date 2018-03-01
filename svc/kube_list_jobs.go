@@ -33,6 +33,11 @@ var (
 	JobDetailsPhaseUnknown JobDetailsPhase = "Unknown"
 )
 
+//JobEvent contains infromation from the events
+type JobEvent struct {
+	Message string
+}
+
 //JobDetails tells us more about the job by looking at underlying resources
 type JobDetails struct {
 	SeenAt               time.Time
@@ -46,6 +51,7 @@ type JobDetails struct {
 	TerminatedExitCode   int32  //exit code it was terminated with
 	UnschedulableReason  string //when scheduling condition is false
 	UnschedulableMessage string
+	FailedCreateEvents   []JobEvent
 }
 
 //ListJobItem is a job listing item
@@ -54,8 +60,8 @@ type ListJobItem struct {
 	Image       string
 	Input       []string
 	Output      []string
-	Memory      string
-	VCPU        string
+	Memory      int64
+	VCPU        int64
 	CreatedAt   time.Time
 	DeletedAt   time.Time
 	ActiveAt    time.Time
@@ -79,20 +85,38 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 		return nil, err
 	}
 
-	//Step 0: Get all the jobs and datasets under nerd-app=cli
+	//List Jobs
 	jobs := &jobs{}
-	err = k.visor.ListResources(ctx, kubevisor.ResourceTypeJobs, jobs, nil)
+	err = k.visor.ListResources(ctx, kubevisor.ResourceTypeJobs, jobs, nil, nil)
 	if err != nil {
 		return nil, err
 	}
+
+	//List Datasets
 	datasets := &datasets{}
-	err = k.visor.ListResources(ctx, kubevisor.ResourceTypeDatasets, datasets, nil)
+	err = k.visor.ListResources(ctx, kubevisor.ResourceTypeDatasets, datasets, nil, nil)
 	if err != nil {
 		return nil, err
 	}
+
+	//Get Events
+	events := &events{}
+	err = k.visor.ListResources(ctx, kubevisor.ResourceTypeEvents, events, nil, []string{"involvedObject.kind=Job,reason=FailedCreate"})
+	if err != nil {
+		return nil, err
+	}
+
+	//Get Pods
+	pods := &pods{}
+	err = k.visor.ListResources(ctx, kubevisor.ResourceTypePods, pods, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	//map datasets
 	inputs, outputs := mapDatasets(datasets)
 
-	//Step 1: Analyse job structure and formulate our output items
+	//get jobs and investivate
 	out = &ListJobsOutput{}
 	mapping := map[types.UID]*ListJobItem{}
 	for _, job := range jobs.Items {
@@ -106,6 +130,7 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 			Name:      job.GetName(),
 			Image:     c.Image,
 			CreatedAt: job.CreationTimestamp.Local(),
+			Details:   JobDetails{},
 		}
 
 		if parr := job.Spec.Parallelism; parr != nil {
@@ -142,21 +167,25 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 				item.FailedAt = cond.LastTransitionTime.Local()
 			}
 		}
-		item.Memory = job.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()
-		item.VCPU = job.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()
+		item.Memory = job.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().MilliValue()
+		item.VCPU = job.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().MilliValue()
 
 		mapping[job.UID] = item
 		out.Items = append(out.Items, item)
 	}
 
-	//Step 2: Get all pods under nerd-app=cli
-	pods := &pods{}
-	err = k.visor.ListResources(ctx, kubevisor.ResourceTypePods, pods, nil)
-	if err != nil {
-		return nil, err
+	//map events to jobs
+	for _, ev := range events.Items {
+		_, ok := mapping[ev.InvolvedObject.UID]
+		if ok { //event for one of our jobs
+			mapping[ev.InvolvedObject.UID].Details.FailedCreateEvents = append(
+				mapping[ev.InvolvedObject.UID].Details.FailedCreateEvents,
+				JobEvent{Message: ev.Message},
+			)
+		}
 	}
 
-	//Step 3: Match pods to the jobs we got earlier and augment details with pod information
+	//map pods to jobs
 	for _, pod := range pods.Items {
 		uid, ok := pod.Labels["controller-uid"]
 		if !ok {
@@ -274,4 +303,24 @@ func (pods *pods) Transform(fn func(in kubevisor.ManagedNames) (out kubevisor.Ma
 
 func (pods *pods) Len() int {
 	return len(pods.PodList.Items)
+}
+
+//events implements the list transformer interface to allow the kubevisor the manage names for us
+type events struct{ *corev1.EventList }
+
+func (events *events) Transform(fn func(in kubevisor.ManagedNames) (out kubevisor.ManagedNames)) {
+	evs := events.Items
+	events.Items = events.Items[:0]
+	for _, j1 := range evs {
+		ev := fn(&j1)
+		if ev == nil {
+			continue
+		}
+
+		events.Items = append(events.Items, *(ev.(*corev1.Event)))
+	}
+}
+
+func (events *events) Len() int {
+	return len(events.EventList.Items)
 }
