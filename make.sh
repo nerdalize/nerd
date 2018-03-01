@@ -83,6 +83,14 @@ function run_test { #unit test project
 
     echo "--> running command tests"
     go test -cover -v ./cmd/...
+
+	echo "--> updating specs.json"
+	go test -v
+}
+
+function run_specs { #update specs.json
+	echo "--> updating specs.json"
+	go test -v
 }
 
 function run_release { #cross compile new release builds
@@ -91,6 +99,7 @@ function run_release { #cross compile new release builds
 }
 
 function run_publish { #publish cross compiled binaries
+	run_spec
 	cd bin/darwin_amd64; tar -zcvf ../nerd-$(cat ../../VERSION)-macos.tar.gz nerd
 	cd ../linux_amd64; tar -zcvf ../nerd-$(cat ../../VERSION)-linux.tar.gz nerd
 	cd ../windows_amd64; zip ../nerd-$(cat ../../VERSION)-win.zip ./nerd.exe; cd ../..
@@ -164,6 +173,7 @@ case $1 in
 	"gen") run_gen ;;
 	"release") run_release ;;
 	"publish") run_publish ;;
+	"specs") run_specs ;;
 
 	"flexbuild") run_flexbuild ;;
 	"flexpush") run_flexpush ;;
