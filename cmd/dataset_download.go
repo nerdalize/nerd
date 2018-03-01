@@ -113,6 +113,10 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 	}
 	datasets := extractDatasets(ds.Items, cmd.Input, cmd.Output)
 	for _, dataset := range datasets {
+		dir := outputDir
+		if len(datasets) > 1 {
+			dir = filepath.Join(outputDir, dataset.Name)
+		}
 		var h transfer.Handle
 		if h, err = mgr.Open(
 			ctx,
@@ -123,12 +127,16 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 
 		defer h.Close()
 
-		err = h.Pull(ctx, filepath.Join(outputDir, dataset.Name), &progressBarReporter{})
+		err = h.Pull(ctx, dir, &progressBarReporter{})
 		if err != nil {
 			return errors.Wrap(err, "failed to download dataset")
 		}
 	}
-	cmd.out.Infof("Downloaded %d datasets in %s", len(datasets), outputDir)
+	if len(datasets) > 1 {
+		cmd.out.Infof("Downloaded %d datasets in %s", len(datasets), outputDir)
+	} else {
+		cmd.out.Infof("Downloaded %d dataset in %s", len(datasets), outputDir)
+	}
 	return nil
 }
 
