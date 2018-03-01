@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -40,6 +39,7 @@ func JobRunFactory(ui cli.Ui) cli.CommandFactory {
 	}
 }
 
+//ParseInputSpecification will look at an input string and return its parts if valid
 func ParseInputSpecification(input string) (parts []string, err error) {
 	parts = strings.Split(input, ":")
 
@@ -71,11 +71,6 @@ func ParseInputSpecification(input string) (parts []string, err error) {
 	} else if len(strings.TrimSpace(parts[1])) == 0 {
 		return nil, errors.New("input mount path is empty")
 	}
-	// Ensure that input source is an existing directory
-	_, err = os.Open(parts[0])
-	if err != nil {
-		return nil, err
-	}
 
 	return parts, nil
 }
@@ -101,7 +96,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 	}
 
 	//setup a context with a timeout
-	ctx := context.Background()
+	ctx := context.TODO()
 
 	err = checkResources(cmd.Memory, cmd.VCPU)
 	if err != nil {
@@ -154,24 +149,31 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 
 			h.handle, err = mgr.Create(ctx, "", *sto, *sta)
 			if err != nil {
-				return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, errors.Wrap(err, "failed to create dataset"))
+				return renderServiceError(
+					cmd.rollbackDatasets(ctx, mgr, inputs, outputs, err),
+					"failed to create dataset",
+				)
 			}
-
-			//@TODO extend ctx deadline
 
 			h.newDs = true
 			err = h.handle.Push(ctx, parts[0], &progressBarReporter{})
 			if err != nil {
-				return cmd.rollbackDatasets(ctx, mgr, append(inputs, h), outputs, errors.Wrap(err, "failed to upload dataset"))
+				return renderServiceError(
+					cmd.rollbackDatasets(ctx, mgr, append(inputs, h), outputs, err),
+					"failed to upload dataset",
+				)
 			}
+
 			cmd.out.Infof("Uploaded input dataset: '%s'", h.handle.Name())
 		} else { //open an existing dataset
 			h.handle, err = mgr.Open(ctx, parts[0])
 			if err != nil {
-				return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, errors.Wrap(err, "failed to open dataset"))
+				return renderServiceError(
+					cmd.rollbackDatasets(ctx, mgr, inputs, outputs, err),
+					"failed to open dataset '%s'", parts[0],
+				)
 			}
 			h.newDs = false
-
 		}
 
 		//add handler for job mapping
@@ -211,15 +213,22 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		if len(parts) == 2 { //open an existing dataset
 			h.handle, err = mgr.Open(ctx, parts[1])
 			if err != nil {
-				return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, errors.Wrap(err, "failed to open dataset"))
+				return renderServiceError(
+					cmd.rollbackDatasets(ctx, mgr, inputs, outputs, err),
+					"failed to open dataset '%s'", parts[1],
+				)
 			}
+
 			h.newDs = false
 
 		} else { //create an empty dataset for the output
 			h.newDs = true
 			h.handle, err = mgr.Create(ctx, "", *sto, *sta)
 			if err != nil {
-				return cmd.rollbackDatasets(ctx, mgr, inputs, append(outputs, h), errors.Wrap(err, "failed to create dataset"))
+				return renderServiceError(
+					cmd.rollbackDatasets(ctx, mgr, inputs, append(outputs, h), err),
+					"failed to create dataset",
+				)
 			}
 
 			cmd.out.Infof("Setup empty output dataset: '%s'", h.handle.Name())

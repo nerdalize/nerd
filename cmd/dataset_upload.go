@@ -62,7 +62,7 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 		*sto,
 		*sta,
 	); err != nil {
-		return errors.Wrap(err, "failed to create transfer handle")
+		return renderServiceError(err, "failed to create dataset with name '%s'", cmd.Name)
 	}
 
 	defer h.Close()
@@ -73,7 +73,8 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 		if e != nil {
 			return errors.Wrapf(err, "failed to remove dataset: %v", e)
 		}
-		return errors.Wrap(err, "failed to upload dataset")
+
+		return renderServiceError(err, "failed to upload dataset")
 	}
 
 	cmd.out.Infof("Uploaded dataset: '%s'", h.Name())

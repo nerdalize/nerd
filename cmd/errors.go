@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/nerdalize/nerd/pkg/kubevisor"
+	transferstore "github.com/nerdalize/nerd/pkg/transfer/store"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
 )
@@ -30,6 +31,8 @@ func renderServiceError(err error, format string, args ...interface{}) error {
 		return nil
 	}
 
+	err = errors.Cause(err)
+
 	switch {
 	case kubevisor.IsInvalidNameErr(err):
 		return errors.Errorf("%s: invalid name, must consist of alphanumeric characters, '-' or '.'", fmt.Errorf(format, args...))
@@ -55,8 +58,10 @@ func renderServiceError(err error, format string, args ...interface{}) error {
 		return ErrNamespaceNotSet
 	case errors.Cause(err) == ErrNotLoggedIn:
 		return ErrNotLoggedIn
+	case errors.Cause(err) == transferstore.ErrObjectNotExists:
+		return errors.Errorf("%s: dataset data is not available, it might still be uploading, check back again later", fmt.Errorf(format, args...))
 	default:
-		return err
+		return errors.Wrapf(err, format, args...)
 	}
 }
 

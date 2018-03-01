@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/corehandlers"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
@@ -18,6 +19,14 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager/s3manageriface"
 	"github.com/pkg/errors"
+)
+
+var (
+	//ErrObjectNotExists is returned when a object does not exist
+	ErrObjectNotExists = errors.New("object does not exist")
+
+	awsErrCodeNotFound  = "ErrCodeNoSuchKey"
+	awsErrCodeForbidden = "Forbidden"
 )
 
 //S3Store provides an S3 Backed store
@@ -64,7 +73,10 @@ func NewS3Store(cfg StoreOptions) (store *S3Store, err error) {
 		//we delibrately don't add actual signing middleware for anonymous access
 	}
 
-	store.dwn = s3manager.NewDownloaderWithClient(s3api)
+	s3dwn := s3manager.NewDownloaderWithClient(s3api)
+	s3dwn.PartSize = 1024 * 1024 * 1024 * 5 //5Gib
+
+	store.dwn = s3dwn
 	store.api = s3api
 
 	return store, nil
@@ -77,6 +89,12 @@ func (store *S3Store) Head(ctx context.Context, k string) (size int64, err error
 		Bucket: aws.String(store.bucket),
 		Key:    aws.String(k),
 	}); err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			if aerr.Code() == awsErrCodeNotFound || aerr.Code() == awsErrCodeForbidden {
+				return 0, ErrObjectNotExists
+			}
+		}
+
 		return 0, errors.Wrapf(err, "failed to download object")
 	}
 
@@ -90,6 +108,12 @@ func (store *S3Store) Get(ctx context.Context, k string, w io.WriterAt) (err err
 		Bucket: aws.String(store.bucket),
 		Key:    aws.String(k),
 	}); err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			if aerr.Code() == awsErrCodeNotFound || aerr.Code() == awsErrCodeForbidden {
+				return ErrObjectNotExists
+			}
+		}
+
 		return errors.Wrapf(err, "failed to download object")
 	}
 
@@ -115,6 +139,12 @@ func (store *S3Store) Del(ctx context.Context, k string) error {
 		Bucket: aws.String(store.bucket),
 		Key:    aws.String(k),
 	}); err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			if aerr.Code() == awsErrCodeNotFound || aerr.Code() == awsErrCodeForbidden {
+				return ErrObjectNotExists
+			}
+		}
+
 		return errors.Wrap(err, "failed to delete object")
 	}
 

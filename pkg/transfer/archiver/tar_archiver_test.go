@@ -2,29 +2,32 @@ package transferarchiver_test
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	transfer "github.com/nerdalize/nerd/pkg/transfer"
 	"github.com/nerdalize/nerd/pkg/transfer/archiver"
 )
 
-func archive(tb testing.TB, a transfer.Archiver, dir string) map[string][]byte {
+func archive(tb testing.TB, a transfer.Archiver, dir string, assertErr error) map[string][]byte {
 	tb.Helper()
 	rep := transfer.NewDiscardReporter()
 
 	objs := map[string][]byte{}
-	if err := a.Archive(dir, rep, func(k string, r io.ReadSeeker, nbytes int64) error {
+	err := a.Archive(dir, rep, func(k string, r io.ReadSeeker, nbytes int64) error {
 		buf := bytes.NewBuffer(nil)
 		_, err := io.Copy(buf, r)
+
 		objs[k] = buf.Bytes()
 		return err
-	}); err != nil {
-		tb.Fatal(err)
+	})
+
+	if !reflect.DeepEqual(err, assertErr) {
+		tb.Fatalf("unexpected error, got: %v, want: %v", err, assertErr)
 	}
 
 	return objs
@@ -43,39 +46,17 @@ func TestTarArchiver(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	t.Run("archive non existing directory", func(t *testing.T) {
+		archive(t, a, "/bogus", transferarchiver.ErrNoSuchDirectory)
+	})
+
 	t.Run("archive empty directory", func(t *testing.T) {
 		dir, err := ioutil.TempDir("", "tar_archiver_tests_")
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		objs := archive(t, a, dir)
-		if len(objs) != 1 {
-			t.Fatal("expected exactly one object from tar archiver")
-		}
-
-		if len(objs[transferarchiver.TarArchiverKey]) != 0 {
-			t.Fatal("created tar bytes should be empty")
-		}
-
-		t.Run("unarchive to empty directory", func(t *testing.T) {
-			if err := a.Unarchive(dir, rep, func(k string, w io.WriterAt) error {
-				_, err := w.WriteAt(objs[transferarchiver.TarArchiverKey], 0)
-				return err
-			}); err != nil {
-				t.Fatal(err)
-			}
-
-			if err := filepath.Walk(dir, func(p string, fi os.FileInfo, err error) error {
-				if p == dir {
-					return nil
-				}
-
-				return errors.New("unarching an empty archive should result into a empty dir")
-			}); err != nil {
-				t.Fatal(err)
-			}
-		})
+		archive(t, a, dir, transferarchiver.ErrEmptyDirectory)
 	})
 
 	t.Run("archive non-empty directory", func(t *testing.T) {
@@ -92,7 +73,7 @@ func TestTarArchiver(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		objs := archive(t, a, dir)
+		objs := archive(t, a, dir, nil)
 		if len(objs) != 1 {
 			t.Fatal("expected exactly one object from tar archiver")
 		}

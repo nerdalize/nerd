@@ -76,15 +76,16 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 			ctx,
 			datasetName,
 		); err != nil {
-			return errors.Wrap(err, "failed to create transfer handle")
+			return renderServiceError(err, "failed to open dataset '%s'", datasetName)
 		}
 
 		defer h.Close()
 
 		err = h.Pull(ctx, outputDir, &progressBarReporter{})
 		if err != nil {
-			return errors.Wrap(err, "failed to download dataset")
+			return renderServiceError(err, "failed to download dataset")
 		}
+
 		cmd.out.Infof("Downloaded dataset: '%s'", h.Name())
 		cmd.out.Infof("To delete the dataset from the cloud, use: `nerd dataset delete %s`", h.Name())
 		return nil

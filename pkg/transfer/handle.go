@@ -127,7 +127,6 @@ func (h *StdHandle) Pull(ctx context.Context, toPath string, rep Reporter) (err 
 		pw := rep.StartDownloadProgress(k, total)
 		defer rep.StopDownloadProgress()
 
-		// proxy := rep.StartDownloadProgress(nbytes)
 		if err = h.store.Get(ctx, k, newProgressWriter(w, pw)); err != nil {
 			return errors.Wrap(err, "failed to get object")
 		}
