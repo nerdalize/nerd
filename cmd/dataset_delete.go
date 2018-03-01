@@ -42,14 +42,14 @@ func (cmd *DatasetDelete) Execute(args []string) (err error) {
 	defer cancel()
 
 	kube := svc.NewKube(deps)
-	for x := range args {
+	for i := range args {
 		in := &svc.DeleteDatasetInput{
-			Name: args[x],
+			Name: args[i],
 		}
 
 		_, err = kube.DeleteDataset(ctx, in)
 		if err != nil {
-			return renderServiceError(err, fmt.Sprintf("failed to delete dataset `%s`", args[x]))
+			return renderServiceError(err, fmt.Sprintf("failed to delete dataset `%s`", in.Name))
 		}
 
 		cmd.out.Infof("Deleted dataset: '%s'", in.Name)

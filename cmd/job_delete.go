@@ -42,14 +42,14 @@ func (cmd *JobDelete) Execute(args []string) (err error) {
 	defer cancel()
 
 	kube := svc.NewKube(deps)
-	for x := range args {
+	for i := range args {
 		in := &svc.DeleteJobInput{
-			Name: args[x],
+			Name: args[i],
 		}
 
 		_, err = kube.DeleteJob(ctx, in)
 		if err != nil {
-			return renderServiceError(err, fmt.Sprintf("failed to delete job `%s`", args[x]))
+			return renderServiceError(err, fmt.Sprintf("failed to delete job `%s`", in.Name))
 		}
 
 		cmd.out.Infof("Deleted job: '%s'", in.Name)
