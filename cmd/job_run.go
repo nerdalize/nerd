@@ -24,8 +24,8 @@ type JobRun struct {
 	Env     []string `long:"env" short:"e" description:"environment variables to use"`
 	Memory  string   `long:"memory" short:"m" description:"memory to use for this job, expressed in gigabytes" default:"3"`
 	VCPU    string   `long:"vcpu" description:"number of vcpus to use for this job" default:"2"`
-	Inputs  []string `long:"input" description:"specify one or more inputs that will be downloaded for the job"`
-	Outputs []string `long:"output" description:"specify one or more output folders that will be uploaded as datasets after the job is finished"`
+	Inputs  []string `long:"input" description:"specify one or more inputs that will be used for the job using the following format: <DIR|DATASET_NAME>:<JOB_DIR>"`
+	Outputs []string `long:"output" description:"specify one or more output folders that will be stored as datasets after the job is finished using the following format: <DIR>:<JOB_DIR>"`
 
 	*command
 }
@@ -33,7 +33,7 @@ type JobRun struct {
 //JobRunFactory creates the command
 func JobRunFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &JobRun{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.PassAfterNonOption)
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.PassAfterNonOption, "nerd job run")
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -86,7 +86,7 @@ type dsHandle struct {
 //Execute runs the command
 func (cmd *JobRun) Execute(args []string) (err error) {
 	if len(args) < 1 {
-		return errShowUsage(MessageNotEnoughArguments)
+		return errShowUsage(fmt.Sprintf(MessageNotEnoughArguments, 1, ""))
 	}
 
 	kopts := cmd.KubeOpts
@@ -333,4 +333,4 @@ func (cmd *JobRun) Description() string { return cmd.Synopsis() }
 func (cmd *JobRun) Synopsis() string { return "Runs a job on your compute cluster" }
 
 // Usage shows usage
-func (cmd *JobRun) Usage() string { return "nerd job run [OPTIONS] IMAGE [COMMAND] [ARG...]" }
+func (cmd *JobRun) Usage() string { return "nerd job run [OPTIONS] IMAGE [ARG...]" }

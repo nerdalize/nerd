@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"strings"
 
 	flags "github.com/jessevdk/go-flags"
@@ -22,7 +23,7 @@ type JobLogs struct {
 //JobLogsFactory creates the command
 func JobLogsFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &JobLogs{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None)
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None, "nerd job logs")
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -31,7 +32,7 @@ func JobLogsFactory(ui cli.Ui) cli.CommandFactory {
 //Execute runs the command
 func (cmd *JobLogs) Execute(args []string) (err error) {
 	if len(args) < 1 {
-		return errShowUsage(MessageNotEnoughArguments)
+		return errShowUsage(fmt.Sprintf(MessageNotEnoughArguments, 1, ""))
 	}
 
 	kopts := cmd.KubeOpts
@@ -76,4 +77,4 @@ func (cmd *JobLogs) Description() string { return cmd.Synopsis() }
 func (cmd *JobLogs) Synopsis() string { return "Return logs for a running job" }
 
 // Usage shows usage
-func (cmd *JobLogs) Usage() string { return "nerd job logs [NAME]" }
+func (cmd *JobLogs) Usage() string { return "nerd job logs [OPTIONS] JOB" }

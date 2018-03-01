@@ -13,7 +13,7 @@ type Dataset struct {
 //DatasetFactory creates the command
 func DatasetFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &Dataset{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None)
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None, "nerd dataset")
 
 	return func() (cli.Command, error) {
 		return cmd, nil

@@ -19,7 +19,7 @@ type DatasetDelete struct {
 //DatasetDeleteFactory creates the command
 func DatasetDeleteFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &DatasetDelete{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None)
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None, "nerd dataset delete")
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -28,7 +28,7 @@ func DatasetDeleteFactory(ui cli.Ui) cli.CommandFactory {
 //Execute runs the command
 func (cmd *DatasetDelete) Execute(args []string) (err error) {
 	if len(args) < 1 {
-		return errShowUsage(MessageNotEnoughArguments)
+		return errShowUsage(fmt.Sprintf(MessageNotEnoughArguments, 1, ""))
 	}
 
 	kopts := cmd.KubeOpts
@@ -64,4 +64,4 @@ func (cmd *DatasetDelete) Description() string { return cmd.Synopsis() }
 func (cmd *DatasetDelete) Synopsis() string { return "Remove a dataset from the cluster" }
 
 // Usage shows usage
-func (cmd *DatasetDelete) Usage() string { return "nerd dataset delete [NAME]" }
+func (cmd *DatasetDelete) Usage() string { return "nerd dataset delete DATASET_NAME [DATASET_NAME...]" }
