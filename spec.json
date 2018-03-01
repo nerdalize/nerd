@@ -55,7 +55,7 @@
 			}
 		},
 		"dataset delete": {
-			"usage": "nerd dataset delete DATASET [DATASET...]",
+			"usage": "nerd dataset delete DATASET_NAME [DATASET_NAME...]",
 			"synopsis": "Remove a dataset from the cluster",
 			"description": "Remove a dataset from the cluster",
 			"options": {
@@ -86,7 +86,7 @@
 			}
 		},
 		"dataset download": {
-			"usage": "nerd dataset [OPTIONS] download DATASET-NAME DOWNLOAD-PATH",
+			"usage": "nerd dataset [OPTIONS] download DATASET_NAME DOWNLOAD_PATH",
 			"synopsis": "Download results from a running job",
 			"description": "Download results from a running job",
 			"options": {
@@ -160,7 +160,7 @@
 			}
 		},
 		"dataset upload": {
-			"usage": "nerd dataset upload [OPTIONS] DATASET DIR_TO_UPLOAD",
+			"usage": "nerd dataset upload [OPTIONS] DIR_TO_UPLOAD",
 			"synopsis": "Upload a dataset to your compute cluster.",
 			"description": "Upload a dataset to your compute cluster.",
 			"options": {
@@ -277,7 +277,7 @@
 			}
 		},
 		"job list": {
-			"usage": "nerd job list",
+			"usage": "nerd job list [OPTIONS]",
 			"synopsis": "Return jobs that are managed by the cluster",
 			"description": "Return jobs that are managed by the cluster",
 			"options": {
@@ -438,13 +438,13 @@
 					},
 					{
 						"long_name": "input",
-						"description": "specify one or more inputs that will be downloaded for the job",
+						"description": "specify one or more inputs that will be used for the job using the following format: \u003cDIR|DATASET_NAME\u003e:\u003cJOB_DIR\u003e",
 						"default_value": null,
 						"choices": null
 					},
 					{
 						"long_name": "output",
-						"description": "specify one or more output folders that will be uploaded as datasets after the job is finished",
+						"description": "specify one or more output folders that will be stored as datasets after the job is finished using the following format: \u003cDIR\u003e:\u003cJOB_DIR\u003e",
 						"default_value": null,
 						"choices": null
 					}
@@ -452,7 +452,7 @@
 			}
 		},
 		"login": {
-			"usage": "nerd login [OPTIONS]",
+			"usage": "nerd login",
 			"synopsis": "Start a new authorized session.",
 			"description": "Start a new authorized session.",
 			"options": {
