@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
@@ -38,8 +39,13 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 		return errShowUsage(fmt.Sprintf(MessageNotEnoughArguments, 1, ""))
 	}
 
+	dir, err := filepath.Abs(args[0])
+	if err != nil {
+		return renderServiceError(err, "failed to turn local path into absolute path")
+	}
+
 	// check if directory exists
-	_, err = os.Open(args[0])
+	_, err = os.Open(dir)
 	if err != nil {
 		return errors.Wrap(err, "failed to upload dataset")
 	}
@@ -68,7 +74,7 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 
 	defer h.Close()
 
-	err = h.Push(ctx, args[0], &progressBarReporter{})
+	err = h.Push(ctx, dir, &progressBarReporter{})
 	if err != nil {
 		e := mgr.Remove(ctx, h.Name())
 		if e != nil {

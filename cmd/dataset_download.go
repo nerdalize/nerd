@@ -56,6 +56,11 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 		return errShowUsage(fmt.Sprintf(MessageNotEnoughArguments, 1, ""))
 	}
 
+	outputDir, err = filepath.Abs(outputDir)
+	if err != nil {
+		return renderServiceError(err, "failed to turn local path into absolute path")
+	}
+
 	deps, err := NewDeps(cmd.Logger(), cmd.KubeOpts)
 	if err != nil {
 		return renderConfigError(err, "failed to configure")
