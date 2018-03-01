@@ -8,6 +8,7 @@ import (
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	homedir "github.com/mitchellh/go-homedir"
 	"github.com/nerdalize/nerd/pkg/transfer"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
@@ -54,6 +55,12 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 		outputDir = args[0]
 	default:
 		return errShowUsage(fmt.Sprintf(MessageNotEnoughArguments, 1, ""))
+	}
+
+	//Expand tilde for homedir
+	outputDir, err = homedir.Expand(outputDir)
+	if err != nil {
+		return errors.Wrap(err, "failed to expand home directory in dataset local path")
 	}
 
 	outputDir, err = filepath.Abs(outputDir)
