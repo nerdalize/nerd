@@ -19,6 +19,12 @@ var (
 
 	//TarArchiverPathSeparator standardizes the header path for cross platform (un)archiving
 	TarArchiverPathSeparator = "/"
+
+	//ErrNoSuchDirectory is returned when an archiver expected a directory to exist
+	ErrNoSuchDirectory = errors.New("directory doesn't exist")
+
+	//ErrEmptyDirectory is returned when the archiver expected the directory to not be empty
+	ErrEmptyDirectory = errors.New("directory is empty")
 )
 
 //TarArchiver will archive a directory into a single tar file
@@ -105,6 +111,15 @@ func (a *TarArchiver) indexFS(path string, fn func(p string, fi os.FileInfo, err
 
 //Archive will archive a directory at 'path' into readable objects 'r' and calls 'fn' for each
 func (a *TarArchiver) Archive(path string, rep Reporter, fn func(k string, r io.ReadSeeker, nbytes int64) error) (err error) {
+	_, err = os.Open(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return ErrNoSuchDirectory
+		}
+
+		return err
+	}
+
 	var totalToTar int64
 	i := 0
 	if err = a.indexFS(path, func(p string, fi os.FileInfo, err error) error {
@@ -119,7 +134,8 @@ func (a *TarArchiver) Archive(path string, rep Reporter, fn func(k string, r io.
 	}
 
 	if i <= 1 {
-		return errors.New("cannot archive empty directory")
+		// return errors.New("cannot archive empty directory")
+		return ErrEmptyDirectory
 	}
 
 	tmpf, clean, err := a.tempFile()
