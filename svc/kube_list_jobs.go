@@ -116,7 +116,7 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 	//map datasets
 	inputs, outputs := mapDatasets(datasets)
 
-	//get jobs and investivate
+	//get jobs and investigate
 	out = &ListJobsOutput{}
 	mapping := map[types.UID]*ListJobItem{}
 	for _, job := range jobs.Items {

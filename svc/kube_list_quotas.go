@@ -32,20 +32,18 @@ type ListQuotasOutput struct {
 	Items []*ListQuotaItem
 }
 
-//ListQuotas will list jobs on kubernetes
+//ListQuotas will list quotas on kubernetes
 func (k *Kube) ListQuotas(ctx context.Context, in *ListQuotasInput) (out *ListQuotasOutput, err error) {
 	if err = k.checkInput(ctx, in); err != nil {
 		return nil, err
 	}
 
-	//Get the namespace quota
 	quotas := &quotas{}
 	err = k.visor.ListResources(ctx, kubevisor.ResourceTypeQuota, quotas, nil, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	//get jobs and investivate
 	out = &ListQuotasOutput{}
 	for _, q := range quotas.Items {
 		reqCPU, _ := q.Status.Hard[corev1.ResourceRequestsCPU]

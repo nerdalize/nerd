@@ -155,17 +155,22 @@ func renderItemDetails(item *svc.ListJobItem, quota *svc.ListQuotaItem) (details
 	}
 
 	if len(item.Details.FailedCreateEvents) > 0 {
+		lastMsg := ""
 		for _, ev := range item.Details.FailedCreateEvents {
 			if strings.Contains(ev.Message, "exceeded quota") && quota != nil {
 				if item.Memory > quota.RequestMemory || item.VCPU > quota.RequestCPU {
 					//user has specified something that will never fit with the curren quota settings
-					details = append(details, "Specified job size exceeds current resource maximum")
+					lastMsg = "Specified resource request exceeds maximum"
 				} else if !item.Details.Scheduled {
 					//we only show this event if the pod is no scheduled since events stay behind
 					//after the situation was fixed in that case don't want to show it anymore
-					details = append(details, "Queued for resources")
+					lastMsg = "Queued for resources"
 				}
 			}
+		}
+
+		if lastMsg != "" {
+			details = append(details, lastMsg)
 		}
 	}
 
