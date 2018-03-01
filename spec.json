@@ -55,7 +55,7 @@
 			}
 		},
 		"dataset delete": {
-			"usage": "nerd dataset delete [NAME]",
+			"usage": "nerd dataset delete DATASET [DATASET...]",
 			"synopsis": "Remove a dataset from the cluster",
 			"description": "Remove a dataset from the cluster",
 			"options": {
@@ -86,7 +86,7 @@
 			}
 		},
 		"dataset download": {
-			"usage": "nerd dataset download \u003cDATASET-NAME\u003e \u003cDOWNLOAD-PATH\u003e",
+			"usage": "nerd dataset [OPTIONS] download DATASET-NAME DOWNLOAD-PATH",
 			"synopsis": "Download results from a running job",
 			"description": "Download results from a running job",
 			"options": {
@@ -129,7 +129,7 @@
 			}
 		},
 		"dataset list": {
-			"usage": "nerd dataset list",
+			"usage": "nerd dataset list [OPTIONS]",
 			"synopsis": "Return datasets that are managed by the cluster",
 			"description": "Return datasets that are managed by the cluster",
 			"options": {
@@ -160,7 +160,7 @@
 			}
 		},
 		"dataset upload": {
-			"usage": "nerd dataset upload [--name=] ~/my-project/my-input-1",
+			"usage": "nerd dataset upload [OPTIONS] DATASET DIR_TO_UPLOAD",
 			"synopsis": "Upload a dataset to your compute cluster.",
 			"description": "Upload a dataset to your compute cluster.",
 			"options": {
@@ -246,9 +246,9 @@
 			}
 		},
 		"job delete": {
-			"usage": "nerd job delete [NAME]",
-			"synopsis": "Remove a job from the cluster",
-			"description": "Remove a job from the cluster",
+			"usage": "nerd job delete JOB [JOB...]",
+			"synopsis": "Remove one or more job(s) from the cluster",
+			"description": "Remove one or more job(s) from the cluster",
 			"options": {
 				"Global Options": [
 					{
@@ -303,19 +303,12 @@
 							"10s"
 						],
 						"choices": null
-					},
-					{
-						"long_name": "name",
-						"short_name": "n",
-						"description": "assign a name to the job",
-						"default_value": null,
-						"choices": null
 					}
 				]
 			}
 		},
 		"job logs": {
-			"usage": "nerd job logs [NAME]",
+			"usage": "nerd job logs [OPTIONS] JOB",
 			"synopsis": "Return logs for a running job",
 			"description": "Return logs for a running job",
 			"options": {
@@ -353,7 +346,7 @@
 			}
 		},
 		"job run": {
-			"usage": "nerd job run [OPTIONS] IMAGE [COMMAND] [ARG...]",
+			"usage": "nerd job run [OPTIONS] IMAGE [ARG...]",
 			"synopsis": "Runs a job on your compute cluster",
 			"description": "Runs a job on your compute cluster",
 			"options": {
@@ -459,7 +452,7 @@
 			}
 		},
 		"login": {
-			"usage": "nerd login",
+			"usage": "nerd login [OPTIONS]",
 			"synopsis": "Start a new authorized session.",
 			"description": "Start a new authorized session.",
 			"options": {
