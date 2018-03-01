@@ -14,7 +14,6 @@ import (
 //JobList command
 type JobList struct {
 	KubeOpts
-	Name string `long:"name" short:"n" description:"assign a name to the job"`
 
 	*command
 }
@@ -22,7 +21,7 @@ type JobList struct {
 //JobListFactory creates the command
 func JobListFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &JobList{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None)
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None, "nerd job list")
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -83,7 +82,7 @@ func (cmd *JobList) Description() string { return cmd.Synopsis() }
 func (cmd *JobList) Synopsis() string { return "Return jobs that are managed by the cluster" }
 
 // Usage shows usage
-func (cmd *JobList) Usage() string { return "nerd job list" }
+func (cmd *JobList) Usage() string { return "nerd job list [OPTIONS]" }
 
 func renderItemDetails(item *svc.ListJobItem) (details []string) {
 	if item.Details.WaitingReason != "" {

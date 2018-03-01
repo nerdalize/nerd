@@ -21,7 +21,7 @@ type DatasetList struct {
 //DatasetListFactory creates the command
 func DatasetListFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &DatasetList{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None)
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None, "nerd dataset list")
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -77,4 +77,4 @@ func (cmd *DatasetList) Description() string { return cmd.Synopsis() }
 func (cmd *DatasetList) Synopsis() string { return "Return datasets that are managed by the cluster" }
 
 // Usage shows usage
-func (cmd *DatasetList) Usage() string { return "nerd dataset list" }
+func (cmd *DatasetList) Usage() string { return "nerd dataset list [OPTIONS]" }

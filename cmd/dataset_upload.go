@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/jessevdk/go-flags"
@@ -25,7 +26,7 @@ type DatasetUpload struct {
 //DatasetUploadFactory creates the command
 func DatasetUploadFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &DatasetUpload{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.PassAfterNonOption)
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.PassAfterNonOption, "nerd dataset upload")
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -34,7 +35,7 @@ func DatasetUploadFactory(ui cli.Ui) cli.CommandFactory {
 //Execute runs the command
 func (cmd *DatasetUpload) Execute(args []string) (err error) {
 	if len(args) < 1 {
-		return errShowUsage(MessageNotEnoughArguments)
+		return errShowUsage(fmt.Sprintf(MessageNotEnoughArguments, 1, ""))
 	}
 
 	// check if directory exists
@@ -89,5 +90,5 @@ func (cmd *DatasetUpload) Synopsis() string { return "Upload a dataset to your c
 
 // Usage shows usage
 func (cmd *DatasetUpload) Usage() string {
-	return "nerd dataset upload [--name=] ~/my-project/my-input-1"
+	return "nerd dataset upload [OPTIONS] DIR_TO_UPLOAD"
 }

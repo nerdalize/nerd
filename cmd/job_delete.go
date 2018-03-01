@@ -19,7 +19,7 @@ type JobDelete struct {
 //JobDeleteFactory creates the command
 func JobDeleteFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &JobDelete{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None)
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None, "nerd job delete")
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -28,7 +28,7 @@ func JobDeleteFactory(ui cli.Ui) cli.CommandFactory {
 //Execute runs the command
 func (cmd *JobDelete) Execute(args []string) (err error) {
 	if len(args) < 1 {
-		return errShowUsage(MessageNotEnoughArguments)
+		return errShowUsage(fmt.Sprintf(MessageNotEnoughArguments, 1, ""))
 	}
 
 	kopts := cmd.KubeOpts
@@ -62,7 +62,7 @@ func (cmd *JobDelete) Execute(args []string) (err error) {
 func (cmd *JobDelete) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
-func (cmd *JobDelete) Synopsis() string { return "Remove a job from the cluster" }
+func (cmd *JobDelete) Synopsis() string { return "Remove one or more job(s) from the cluster" }
 
 // Usage shows usage
-func (cmd *JobDelete) Usage() string { return "nerd job delete [NAME]" }
+func (cmd *JobDelete) Usage() string { return "nerd job delete JOB [JOB...]" }

@@ -16,7 +16,7 @@ import (
 
 var (
 	//MessageNotEnoughArguments is shown when the user didn't provide enough arguments
-	MessageNotEnoughArguments = "not enough arguments, see below for usage"
+	MessageNotEnoughArguments = "Not enough arguments, this command requires at least %d argument%s."
 
 	//PlaceholderSynopsis is synopsis text when none is available
 	PlaceholderSynopsis = "<synopsis>"
@@ -33,6 +33,7 @@ type command struct {
 		Debug bool `long:"debug" description:"show verbose debug information"`
 	}
 
+	name       string
 	flagParser *flags.Parser
 	runFunc    func(args []string) error
 	helpFunc   func() string
@@ -40,13 +41,14 @@ type command struct {
 	out        *Output
 }
 
-func createCommand(ui cli.Ui, runFunc func([]string) error, helpFunc func() string, usageFunc func() string, fgroup interface{}, opts flags.Options) *command {
+func createCommand(ui cli.Ui, runFunc func([]string) error, helpFunc func() string, usageFunc func() string, fgroup interface{}, opts flags.Options, name string) *command {
 	c := &command{
 		flagParser: flags.NewNamedParser(usageFunc(), opts),
 		runFunc:    runFunc,
 		helpFunc:   helpFunc,
 		usageFunc:  usageFunc,
 		out:        NewOutput(ui),
+		name:       name,
 	}
 
 	_, err := c.flagParser.AddGroup("Options", "Options", fgroup)
@@ -107,7 +109,7 @@ func (cmd *command) Help() string {
 func (cmd *command) Run(args []string) int {
 	remaining, err := cmd.flagParser.ParseArgs(args)
 	if err != nil {
-		return cmd.fail(err, "failed to parse flags(s)")
+		return cmd.fail(err, "", true)
 	}
 
 	if err := cmd.runFunc(remaining); err != nil {
@@ -118,7 +120,7 @@ func (cmd *command) Run(args []string) int {
 			cmd.out.Output(cause.Error())
 			return cli.RunResultHelp
 		default:
-			return cmd.fail(err, "Error")
+			return cmd.fail(err, "Error", false)
 		}
 	}
 	return 0
@@ -138,13 +140,21 @@ func (cmd *command) AutocompleteArgs() complete.Predictor {
 	return complete.PredictNothing
 }
 
-func (cmd *command) fail(err error, message string) int {
-	cmd.out.Errorf("%v", errors.Wrap(err, message))
+func (cmd *command) fail(err error, message string, help bool) int {
+	if message != "" {
+		err = errors.Wrap(err, message)
+	}
+	cmd.out.Errorf("%v", err)
+	if help {
+		cmd.out.Infof("See '%s --help'.", cmd.name)
+	}
 	return 255
 }
 
 func (cmd *command) usage(cause error) int {
-	cmd.out.Output(fmt.Sprintf("%s\n\n%s", cause.Error(), cmd.usageFunc()))
+	cmd.out.Errorf("%v", cause.Error())
+	cmd.out.Infof("See '%s --help'.\n\nUsage: %s", cmd.name, cmd.usageFunc())
+
 	return 254
 }
 

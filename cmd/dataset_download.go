@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -30,7 +31,7 @@ type DatasetDownload struct {
 //DatasetDownloadFactory creates the command
 func DatasetDownloadFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &DatasetDownload{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None)
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None, "nerd dataset download")
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -48,11 +49,11 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 		outputDir = args[1]
 	case 1:
 		if cmd.Input == "" && cmd.Output == "" {
-			return errShowUsage(MessageNotEnoughArguments)
+			return errShowUsage(fmt.Sprintf(MessageNotEnoughArguments, 2, "s"))
 		}
 		outputDir = args[0]
 	default:
-		return errShowUsage(MessageNotEnoughArguments)
+		return errShowUsage(fmt.Sprintf(MessageNotEnoughArguments, 1, ""))
 	}
 
 	deps, err := NewDeps(cmd.Logger(), cmd.KubeOpts)
@@ -150,7 +151,7 @@ func (cmd *DatasetDownload) Synopsis() string {
 
 // Usage shows usage
 func (cmd *DatasetDownload) Usage() string {
-	return "nerd dataset download <DATASET-NAME> <DOWNLOAD-PATH>"
+	return "nerd dataset [OPTIONS] download DATASET_NAME DOWNLOAD_PATH"
 }
 
 func extractDatasets(ds []*svc.ListDatasetItem, input, output string) map[string]*svc.ListDatasetItem {
