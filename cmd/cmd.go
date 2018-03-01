@@ -113,7 +113,7 @@ func (cmd *command) Run(args []string) int {
 			cmd.out.Output(cause.Error())
 			return cli.RunResultHelp
 		default:
-			return cmd.fail(err, "error")
+			return cmd.fail(err, "Error")
 		}
 	}
 	return 0
