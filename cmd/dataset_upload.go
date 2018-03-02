@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
@@ -12,6 +13,7 @@ import (
 	"github.com/nerdalize/nerd/svc"
 
 	"github.com/mitchellh/cli"
+	homedir "github.com/mitchellh/go-homedir"
 )
 
 //DatasetUpload command
@@ -38,8 +40,19 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 		return errShowUsage(fmt.Sprintf(MessageNotEnoughArguments, 1, ""))
 	}
 
+	//Expand tilde for homedir
+	dir, err := homedir.Expand(args[0])
+	if err != nil {
+		return renderServiceError(err, "failed to expand home directory in dataset local path")
+	}
+
+	dir, err = filepath.Abs(args[0])
+	if err != nil {
+		return renderServiceError(err, "failed to turn local path into absolute path")
+	}
+
 	// check if directory exists
-	_, err = os.Open(args[0])
+	_, err = os.Open(dir)
 	if err != nil {
 		return errors.Wrap(err, "failed to upload dataset")
 	}
@@ -68,7 +81,7 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 
 	defer h.Close()
 
-	err = h.Push(ctx, args[0], &progressBarReporter{})
+	err = h.Push(ctx, dir, &progressBarReporter{})
 	if err != nil {
 		e := mgr.Remove(ctx, h.Name())
 		if e != nil {
