@@ -30,7 +30,7 @@ var (
 
 type command struct {
 	globalOpts struct {
-		Debug bool `long:"debug" description:"show verbose debug information"`
+		Debug bool `long:"debug" description:"show verbose debug information" hidden:"true"`
 	}
 
 	name       string
