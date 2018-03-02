@@ -12,7 +12,7 @@ import (
 //DatasetDelete command
 type DatasetDelete struct {
 	KubeOpts
-	All bool `long:"all" short:"a" description:"delete all your datasets at the same time"`
+	All bool `long:"all" short:"a" description:"delete all your datasets in one command"`
 
 	*command
 }
