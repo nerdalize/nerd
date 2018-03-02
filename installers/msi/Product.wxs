@@ -3,7 +3,7 @@
     <Product    Id="*"
                 Name="Nerd"
                 Language="1033"
-                Version="0.7.3"
+                Version="1.0.0"
                 Manufacturer="Nerdalize B.V."
                 UpgradeCode="d88cca11-8cfa-404f-8f3b-731ffce7c78f">
 

@@ -30,3 +30,5 @@ installers/msi/obj
 crd/controller
 *.env
 controller
+installers/msi/nerd
+installers/msi/nerd.*
