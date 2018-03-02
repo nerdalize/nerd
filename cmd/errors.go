@@ -39,7 +39,7 @@ func renderServiceError(err error, format string, args ...interface{}) error {
 	case kubevisor.IsDeadlineErr(err):
 		return errors.Errorf("%s: action took to long to complete, try again or check your internet connection", fmt.Errorf(format, args...))
 	case kubevisor.IsNetworkErr(err):
-		return errors.Errorf("%s: failed to reach the cluster, make sure you're connected to the internet and try again", fmt.Errorf(format, args...))
+		return errors.Errorf("%s: failed to reach the cluster, make sure you're connected to the internet and try again. Also, you can check the status page: http://status.nerdalize.com/", fmt.Errorf(format, args...))
 	case kubevisor.IsNotExistsErr(err):
 		return errors.Errorf("%s: it does not exist", fmt.Errorf(format, args...))
 	case kubevisor.IsKubernetesErr(err):
@@ -49,7 +49,7 @@ func renderServiceError(err error, format string, args ...interface{}) error {
 	case kubevisor.IsNamespaceNotExistsErr(err):
 		return errors.Errorf("%s: the namespace does not exist or you have no access. If the problem persists, please contact mayday@nerdalize.com.", fmt.Errorf(format, args...))
 	case kubevisor.IsServiceUnavailableErr(err):
-		return errors.Errorf("%s: cluster is currently unable to receive requests, try again later", fmt.Errorf(format, args...))
+		return errors.Errorf("%s: cluster is currently unable to receive requests, try again later. Also, you can check the status page: http://status.nerdalize.com/", fmt.Errorf(format, args...))
 	case kubevisor.IsUnauthorizedErr(err):
 		return errors.Errorf("%s: you do not have permission to perform this action", fmt.Errorf(format, args...))
 	case svc.IsRaceConditionErr(err):
