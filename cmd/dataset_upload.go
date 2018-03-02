@@ -38,6 +38,8 @@ func DatasetUploadFactory(ui cli.Ui) cli.CommandFactory {
 func (cmd *DatasetUpload) Execute(args []string) (err error) {
 	if len(args) < 1 {
 		return errShowUsage(fmt.Sprintf(MessageNotEnoughArguments, 1, ""))
+	} else if len(args) > 1 {
+		return errShowUsage(fmt.Sprintf(MessageTooManyArguments, 1, ""))
 	}
 
 	//Expand tilde for homedir
