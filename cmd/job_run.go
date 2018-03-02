@@ -197,10 +197,10 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 			return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, fmt.Errorf("invalid output specified, expected '<JOB_DIR>:[DATASET_NAME]' format, got: %s", output))
 		}
 
-		vol, ok := vols[parts[0]]
+		vol, ok := vols[parts[len(parts)-1]]
 		if !ok {
-			vol = &svc.JobVolume{MountPath: parts[0]}
-			vols[parts[0]] = vol
+			vol = &svc.JobVolume{MountPath: parts[len(parts)-1]}
+			vols[parts[len(parts)-1]] = vol
 		}
 
 		err = deps.val.Struct(vol)
@@ -211,15 +211,19 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		//if the second part is provided we want to upload the output to a specific  dataset
 		var h dsHandle
 		if len(parts) == 2 { //open an existing dataset
-			h.handle, err = mgr.Open(ctx, parts[1])
-			if err != nil {
-				return renderServiceError(
-					cmd.rollbackDatasets(ctx, mgr, inputs, outputs, err),
-					"failed to open dataset '%s'", parts[1],
-				)
-			}
-
+			h.handle, err = mgr.Open(ctx, parts[0])
 			h.newDs = false
+			// @TODO check if the error is "dataset doesn't exist", and only in this case we should create a new one
+			if err != nil {
+				h.handle, err = mgr.Create(ctx, parts[0], *sto, *sta)
+				if err != nil {
+					return renderServiceError(
+						cmd.rollbackDatasets(ctx, mgr, inputs, outputs, err),
+						"failed to open/create dataset '%s'", parts[0],
+					)
+				}
+				cmd.out.Infof("Setup empty output dataset: '%s'", h.handle.Name())
+			}
 
 		} else { //create an empty dataset for the output
 			h.newDs = true

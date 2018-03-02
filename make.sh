@@ -99,7 +99,8 @@ function run_release { #cross compile new release builds
 }
 
 function run_publish { #publish cross compiled binaries
-	run_spec
+	run_specs
+
 	cd bin/darwin_amd64; tar -zcvf ../nerd-$(cat ../../VERSION)-macos.tar.gz nerd
 	cd ../linux_amd64; tar -zcvf ../nerd-$(cat ../../VERSION)-linux.tar.gz nerd
 	cd ../windows_amd64; zip ../nerd-$(cat ../../VERSION)-win.zip ./nerd.exe; cd ../..
