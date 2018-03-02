@@ -25,6 +25,13 @@ var (
 
 	//ErrEmptyDirectory is returned when the archiver expected the directory to not be empty
 	ErrEmptyDirectory = errors.New("directory is empty")
+
+	//ErrDatasetTooLarge is returned when the dataset size is above 1Gb
+	ErrDatasetTooLarge = errors.New("dataset is too big, limit is 1Gb")
+
+	//SizeLimit is the maximum size allowed
+	//@TODO: Should be based on customer details?
+	SizeLimit = int64(1 * 1024 * 1024 * 1024)
 )
 
 //TarArchiver will archive a directory into a single tar file
@@ -138,6 +145,10 @@ func (a *TarArchiver) Archive(path string, rep Reporter, fn func(k string, r io.
 		return nil
 	}); err != nil {
 		return errors.Wrap(err, "failed to index filesystem")
+	}
+
+	if totalToTar > SizeLimit {
+		return ErrDatasetTooLarge
 	}
 
 	tmpf, clean, err := a.tempFile()
