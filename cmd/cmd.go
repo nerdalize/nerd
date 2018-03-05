@@ -35,9 +35,7 @@ var (
 )
 
 type command struct {
-	globalOpts struct {
-		Debug bool `long:"debug" description:"show verbose debug information"`
-	}
+	globalOpts struct{}
 
 	name       string
 	flagParser *flags.Parser
@@ -134,10 +132,6 @@ func (cmd *command) Run(args []string) int {
 
 //Logger returns the logger
 func (cmd *command) Logger() *logrus.Logger {
-	if cmd.globalOpts.Debug {
-		return cmd.out.Logger(logrus.DebugLevel)
-	}
-
 	return cmd.out.Logger(logrus.ErrorLevel)
 }
 

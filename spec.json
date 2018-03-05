@@ -43,14 +43,7 @@
 			"synopsis": "Manage job datasets.",
 			"description": "Manage job datasets.",
 			"options": {
-				"Global Options": [
-					{
-						"long_name": "debug",
-						"description": "show verbose debug information",
-						"default_value": null,
-						"choices": null
-					}
-				],
+				"Global Options": [],
 				"Options": []
 			}
 		},
@@ -59,14 +52,7 @@
 			"synopsis": "Remove a dataset from the cluster",
 			"description": "Remove a dataset from the cluster",
 			"options": {
-				"Global Options": [
-					{
-						"long_name": "debug",
-						"description": "show verbose debug information",
-						"default_value": null,
-						"choices": null
-					}
-				],
+				"Global Options": [],
 				"Options": [
 					{
 						"long_name": "kube-config",
@@ -90,14 +76,7 @@
 			"synopsis": "Download results from a running job",
 			"description": "Download results from a running job",
 			"options": {
-				"Global Options": [
-					{
-						"long_name": "debug",
-						"description": "show verbose debug information",
-						"default_value": null,
-						"choices": null
-					}
-				],
+				"Global Options": [],
 				"Options": [
 					{
 						"long_name": "kube-config",
@@ -133,14 +112,7 @@
 			"synopsis": "Return datasets that are managed by the cluster",
 			"description": "Return datasets that are managed by the cluster",
 			"options": {
-				"Global Options": [
-					{
-						"long_name": "debug",
-						"description": "show verbose debug information",
-						"default_value": null,
-						"choices": null
-					}
-				],
+				"Global Options": [],
 				"Options": [
 					{
 						"long_name": "kube-config",
@@ -164,14 +136,7 @@
 			"synopsis": "Upload a dataset to your compute cluster.",
 			"description": "Upload a dataset to your compute cluster.",
 			"options": {
-				"Global Options": [
-					{
-						"long_name": "debug",
-						"description": "show verbose debug information",
-						"default_value": null,
-						"choices": null
-					}
-				],
+				"Global Options": [],
 				"Options": [
 					{
 						"long_name": "kube-config",
@@ -234,14 +199,7 @@
 			"synopsis": "Manage the lifecycle of compute jobs.",
 			"description": "Manage the lifecycle of compute jobs.",
 			"options": {
-				"Global Options": [
-					{
-						"long_name": "debug",
-						"description": "show verbose debug information",
-						"default_value": null,
-						"choices": null
-					}
-				],
+				"Global Options": [],
 				"Options": []
 			}
 		},
@@ -250,14 +208,7 @@
 			"synopsis": "Remove one or more job(s) from the cluster",
 			"description": "Remove one or more job(s) from the cluster",
 			"options": {
-				"Global Options": [
-					{
-						"long_name": "debug",
-						"description": "show verbose debug information",
-						"default_value": null,
-						"choices": null
-					}
-				],
+				"Global Options": [],
 				"Options": [
 					{
 						"long_name": "kube-config",
@@ -281,14 +232,7 @@
 			"synopsis": "Return jobs that are managed by the cluster",
 			"description": "Return jobs that are managed by the cluster",
 			"options": {
-				"Global Options": [
-					{
-						"long_name": "debug",
-						"description": "show verbose debug information",
-						"default_value": null,
-						"choices": null
-					}
-				],
+				"Global Options": [],
 				"Options": [
 					{
 						"long_name": "kube-config",
@@ -312,14 +256,7 @@
 			"synopsis": "Return logs for a running job",
 			"description": "Return logs for a running job",
 			"options": {
-				"Global Options": [
-					{
-						"long_name": "debug",
-						"description": "show verbose debug information",
-						"default_value": null,
-						"choices": null
-					}
-				],
+				"Global Options": [],
 				"Options": [
 					{
 						"long_name": "kube-config",
@@ -350,14 +287,7 @@
 			"synopsis": "Runs a job on your compute cluster",
 			"description": "Runs a job on your compute cluster",
 			"options": {
-				"Global Options": [
-					{
-						"long_name": "debug",
-						"description": "show verbose debug information",
-						"default_value": null,
-						"choices": null
-					}
-				],
+				"Global Options": [],
 				"Options": [
 					{
 						"long_name": "kube-config",

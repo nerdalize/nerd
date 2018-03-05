@@ -18,14 +18,14 @@ import (
 
 //JobRun command
 type JobRun struct {
-	KubeOpts
-	TransferOpts
 	Name    string   `long:"name" short:"n" description:"assign a name to the job"`
 	Env     []string `long:"env" short:"e" description:"environment variables to use"`
 	Memory  string   `long:"memory" short:"m" description:"memory to use for this job, expressed in gigabytes" default:"3"`
 	VCPU    string   `long:"vcpu" description:"number of vcpus to use for this job" default:"2"`
 	Inputs  []string `long:"input" description:"specify one or more inputs that will be used for the job using the following format: <DIR|DATASET_NAME>:<JOB_DIR>"`
-	Outputs []string `long:"output" description:"specify one or more output folders that will be stored as datasets after the job is finished using the following format: <DIR>:<JOB_DIR>"`
+	Outputs []string `long:"output" description:"specify one or more output folders that will be stored as datasets after the job is finished using the following format: <DATASET_NAME>:<JOB_DIR>"`
+	KubeOpts
+	TransferOpts
 
 	*command
 }
