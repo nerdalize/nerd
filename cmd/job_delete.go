@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
@@ -12,6 +13,7 @@ import (
 //JobDelete command
 type JobDelete struct {
 	KubeOpts
+	All bool `long:"all" short:"a" description:"delete all your jobs in one command"`
 
 	*command
 }
@@ -27,6 +29,9 @@ func JobDeleteFactory(ui cli.Ui) cli.CommandFactory {
 
 //Execute runs the command
 func (cmd *JobDelete) Execute(args []string) (err error) {
+	if cmd.All {
+		return cmd.deleteAll()
+	}
 	if len(args) < 1 {
 		return errShowUsage(fmt.Sprintf(MessageNotEnoughArguments, 1, ""))
 	}
@@ -55,6 +60,47 @@ func (cmd *JobDelete) Execute(args []string) (err error) {
 		cmd.out.Infof("Deleted job: '%s'", in.Name)
 	}
 	cmd.out.Infof("To see whats happening, use: 'nerd job list'")
+	return nil
+}
+func (cmd *JobDelete) deleteAll() error {
+	kopts := cmd.KubeOpts
+	deps, err := NewDeps(cmd.Logger(), kopts)
+	if err != nil {
+		return renderConfigError(err, "failed to configure")
+	}
+
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
+	defer cancel()
+
+	s, err := cmd.out.Ask("Are you sure you want to delete all your jobs? (y/N)")
+	if err != nil {
+		return err
+	}
+	if !strings.HasPrefix(strings.ToLower(s), "y") {
+		return nil
+	}
+
+	kube := svc.NewKube(deps)
+	jobs, err := kube.ListJobs(ctx, &svc.ListJobsInput{})
+	if err != nil {
+		return renderServiceError(err, "failed to get all jobs")
+	}
+	if len(jobs.Items) == 0 {
+		cmd.out.Info("No job found.")
+	}
+	for _, job := range jobs.Items {
+		in := &svc.DeleteJobInput{
+			Name: job.Name,
+		}
+
+		_, err = kube.DeleteJob(ctx, in)
+		if err != nil {
+			return renderServiceError(err, fmt.Sprintf("failed to delete job `%s`", in.Name))
+		}
+
+		cmd.out.Infof("Deleted job: '%s'", in.Name)
+	}
 	return nil
 }
 
