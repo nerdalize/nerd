@@ -77,7 +77,7 @@ func (cmd *JobDelete) deleteAll() error {
 	if err != nil {
 		return err
 	}
-	if strings.ToLower(s) != "y" && strings.ToLower(s) != "yes" {
+	if !strings.HasPrefix(strings.ToLower(s), "y") {
 		return nil
 	}
 
