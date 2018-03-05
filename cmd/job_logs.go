@@ -33,6 +33,8 @@ func JobLogsFactory(ui cli.Ui) cli.CommandFactory {
 func (cmd *JobLogs) Execute(args []string) (err error) {
 	if len(args) < 1 {
 		return errShowUsage(fmt.Sprintf(MessageNotEnoughArguments, 1, ""))
+	} else if len(args) > 1 {
+		return errShowUsage(fmt.Sprintf(MessageTooManyArguments, 1, ""))
 	}
 
 	kopts := cmd.KubeOpts

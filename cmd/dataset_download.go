@@ -44,11 +44,13 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 		datasetName, outputDir string
 	)
 
-	switch len(args) {
-	case 2:
+	switch l := len(args); {
+	case l > 2:
+		return errShowUsage(fmt.Sprintf(MessageTooManyArguments, 2, "s"))
+	case l == 2:
 		datasetName = args[0]
 		outputDir = args[1]
-	case 1:
+	case l == 1:
 		if cmd.Input == "" && cmd.Output == "" {
 			return errShowUsage(fmt.Sprintf(MessageNotEnoughArguments, 2, "s"))
 		}

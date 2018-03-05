@@ -18,6 +18,12 @@ var (
 	//MessageNotEnoughArguments is shown when the user didn't provide enough arguments
 	MessageNotEnoughArguments = "Not enough arguments, this command requires at least %d argument%s."
 
+	//MessageTooManyArguments is shown when the user provides too many arguments
+	MessageTooManyArguments = "Too may arguments, this command takes at most %d argument%s."
+
+	//MessageNoArgumentRequired is shown when the user provides too many arguments and the command doesn't take any argument
+	MessageNoArgumentRequired = "Too many arguments, this command takes no argument."
+
 	//PlaceholderSynopsis is synopsis text when none is available
 	PlaceholderSynopsis = "<synopsis>"
 

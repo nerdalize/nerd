@@ -29,6 +29,9 @@ func DatasetListFactory(ui cli.Ui) cli.CommandFactory {
 
 //Execute runs the command
 func (cmd *DatasetList) Execute(args []string) (err error) {
+	if len(args) > 0 {
+		return errShowUsage(MessageNoArgumentRequired)
+	}
 	kopts := cmd.KubeOpts
 	deps, err := NewDeps(cmd.Logger(), kopts)
 	if err != nil {
