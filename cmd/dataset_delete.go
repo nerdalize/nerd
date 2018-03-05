@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
@@ -72,10 +73,21 @@ func (cmd *DatasetDelete) deleteAll() error {
 	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
 	defer cancel()
 
+	s, err := cmd.out.Ask("Are you sure you want to delete all your datasets? (y/N)")
+	if err != nil {
+		return err
+	}
+	if strings.ToLower(s) != "y" && strings.ToLower(s) != "yes" {
+		return nil
+	}
+
 	kube := svc.NewKube(deps)
 	datasets, err := kube.ListDatasets(ctx, &svc.ListDatasetsInput{})
 	if err != nil {
 		return renderServiceError(err, "failed to get all datasets")
+	}
+	if len(datasets.Items) == 0 {
+		cmd.out.Info("No dataset found.")
 	}
 	for _, ds := range datasets.Items {
 		in := &svc.DeleteDatasetInput{

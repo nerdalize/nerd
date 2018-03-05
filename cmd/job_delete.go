@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
@@ -72,10 +73,21 @@ func (cmd *JobDelete) deleteAll() error {
 	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
 	defer cancel()
 
+	s, err := cmd.out.Ask("Are you sure you want to delete all your jobs? (y/N)")
+	if err != nil {
+		return err
+	}
+	if strings.ToLower(s) != "y" && strings.ToLower(s) != "yes" {
+		return nil
+	}
+
 	kube := svc.NewKube(deps)
 	jobs, err := kube.ListJobs(ctx, &svc.ListJobsInput{})
 	if err != nil {
 		return renderServiceError(err, "failed to get all jobs")
+	}
+	if len(jobs.Items) == 0 {
+		cmd.out.Info("No job found.")
 	}
 	for _, job := range jobs.Items {
 		in := &svc.DeleteJobInput{
