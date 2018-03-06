@@ -149,7 +149,7 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 		}
 	}
 	if len(datasets) == 0 {
-		cmd.out.Infof("No dataset found, please check with `nerd job list` or `nerd dataset list` the job name(s) provided.")
+		cmd.out.Infof("No dataset found, maybe your job is not using any datasets? You can check with `nerd job list` the state of your job.")
 	} else if len(datasets) > 1 {
 		cmd.out.Infof("Downloaded %d datasets in %s", len(datasets), outputDir)
 	} else {
