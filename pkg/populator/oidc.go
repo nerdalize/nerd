@@ -19,11 +19,11 @@ import (
 
 const (
 	// ClientSecret necessary for OpenID connect
-	ClientSecret = "0c4feb1e9d11790451a4364e803284a60905cef1a5f9bf7bad5f0eeb"
+	ClientSecret = "93177b0e77369537ceac900b26f0a9600484564fdda5d431b05e994b"
 	// ClientID is a client id that all tokens must be issued for.
-	ClientID = "ckvyq40yyGSH"
+	ClientID = "T8I0H3qAeWGA"
 	// IDPIssuerURL is the URL of the provider which allows the API server to discover public signing keys.
-	IDPIssuerURL = "https://auth.staging.nlze.nl"
+	IDPIssuerURL = "https://auth.nerdalize.com"
 	// DirPermissions are the output directory's permissions.
 	DirPermissions = 0755
 )
