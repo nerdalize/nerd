@@ -25,3 +25,10 @@ _testmain.go
 secrets.env
 .DS_STORE
 bin
+vendor
+installers/msi/obj
+crd/controller
+*.env
+controller
+installers/msi/nerd
+installers/msi/nerd.*

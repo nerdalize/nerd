@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+dev_profile="nerd-cli-dev"
+
 function print_help {
 	printf "Available Commands:\n";
 	awk -v sq="'" '/^function run_([a-zA-Z0-9-]*)\s*/ {print "-e " sq NR "p" sq " -e " sq NR-1 "p" sq }' make.sh \
@@ -14,8 +16,50 @@ function print_help {
 function run_build { #compile versioned executable and place it in $GOPATH/bin
 	go build \
     -ldflags "-X main.version=$(cat VERSION) -X main.commit=$(git rev-parse --short HEAD )" \
+	-tags "forceposix" \
     -o $GOPATH/bin/nerd \
     main.go
+}
+
+function run_dev { #setup dev environment
+	command -v go >/dev/null 2>&1 || { echo "executable 'go' (the language sdk) must be installed" >&2; exit 1; }
+	command -v minikube >/dev/null 2>&1 || { echo "executable 'minikube' (local kubernetes cluster) must be installed" >&2; exit 1; }
+	command -v kubectl >/dev/null 2>&1 || { echo "executable 'kubectl' (kubernetes cli https://kubernetes.io/docs/tasks/tools/install-kubectl/) must be installed" >&2; exit 1; }
+	command -v glide >/dev/null 2>&1 || { echo "executable glide (https://github.com/Masterminds/glide) must be installed" >&2; exit 1; }
+
+	#develop against specific version and configure flex volume to reflect prod setup
+	kube_version="v1.8.0"
+	flexvolume_config="--extra-config=controller-manager.FlexVolumePluginDir=/var/lib/kubelet/volumeplugins/ --extra-config=kubelet.VolumePluginDir=/var/lib/kubelet/volumeplugins/"
+	if minikube status --profile=$dev_profile | grep Running; then
+	    echo "--> minikube vm (profile: $dev_profile) is already running (check: $kube_version), skipping restart"
+			minikube profile $dev_profile
+	else
+			echo "--> starting minikube using the default 'vm-driver',to configure: https://github.com/kubernetes/minikube/issues/637)"
+		  minikube start $flexvolume_config --profile=$dev_profile --kubernetes-version=$kube_version
+
+			echo "--> sleeping to let k8s initial setup take place"
+			sleep 10
+	fi
+
+	echo "--> setting up kube config"
+	kubectl config set-context $dev_profile --user=$dev_profile --cluster=$dev_profile --namespace=default && kubectl config use-context $dev_profile
+
+	echo "--> setting up custom resource definition for datasets"
+	kubectl apply -f crd/artifacts/datasets.yaml
+
+	echo "--> installing flex volume deamon set"
+	kubectl apply -f cmd/flex/dataset.yml
+
+	echo "--> updating dependencies"
+	glide up
+
+	echo "--> checking crd generated code is valid"
+	if ./crd/hack/verify-codegen.sh; then
+		echo "--> crd code is up-to-date"
+	else
+		echo "--> regenerating code for crd"
+		./crd/hack/update-codegen.sh
+	fi
 }
 
 function run_docs { #run godoc
@@ -26,32 +70,37 @@ function run_docs { #run godoc
 }
 
 function run_test { #unit test project
-	# go test -v ./command/...
-  # go test -v ./nerd/...
-
 	command -v go >/dev/null 2>&1 || { echo "executable 'go' (the language sdk) must be installed" >&2; exit 1; }
-	command -v minikube >/dev/null 2>&1 || { echo "executable 'minikube' (local kubernetes cluster) must be installed" >&2; exit 1; }
 
-	minikube_profile="clusterd-dev"
-	kube_version="v1.7.5"
-	if minikube status --profile=$minikube_profile | grep Running; then
-	    echo "--> minikube vm (profile: $minikube_profile) is already running (check: $kube_version), skipping restart"
-			minikube profile $minikube_profile
-	else
-			echo "--> starting minikube using the default 'vm-driver',to configure: https://github.com/kubernetes/minikube/issues/637)"
-		  minikube start --profile=$minikube_profile --kubernetes-version=$kube_version
-	fi
+	echo "--> sourcing test.env"
+	export $(cat test.env | xargs)
+
+	echo "--> running library tests"
+	go test -cover -v ./pkg/...
 
 	echo "--> running service tests"
 	go test -cover -v ./svc/...
+
+    echo "--> running command tests"
+    go test -cover -v ./cmd/...
+
+	echo "--> updating specs.json"
+	go test -v
+}
+
+function run_specs { #update specs.json
+	echo "--> updating specs.json"
+	go test -v
 }
 
 function run_release { #cross compile new release builds
 	mkdir -p bin
-	gox -ldflags "-X main.version=$(cat VERSION) -X main.commit=$(git rev-parse --short HEAD )" -osarch="linux/amd64 windows/amd64 darwin/amd64" -output=./bin/{{.OS}}_{{.Arch}}/nerd
+	gox -ldflags "-X main.version=$(cat VERSION) -X main.commit=$(git rev-parse --short HEAD )" -tags "forceposix" -osarch="linux/amd64 windows/amd64 darwin/amd64" -output=./bin/{{.OS}}_{{.Arch}}/nerd
 }
 
 function run_publish { #publish cross compiled binaries
+	run_specs
+
 	cd bin/darwin_amd64; tar -zcvf ../nerd-$(cat ../../VERSION)-macos.tar.gz nerd
 	cd ../linux_amd64; tar -zcvf ../nerd-$(cat ../../VERSION)-linux.tar.gz nerd
 	cd ../windows_amd64; zip ../nerd-$(cat ../../VERSION)-win.zip ./nerd.exe; cd ../..
@@ -87,25 +136,49 @@ function run_publish { #publish cross compiled binaries
 			--file bin/nerd-$(cat VERSION)-win.zip || true
 }
 
-function run_docker { #build docker container
-	docker build -t nerdalize/nerd .
-	docker tag nerdalize/nerd nerdalize/nerd:`cat VERSION`
+function run_flexbuild { #build docker container
+	command -v docker >/dev/null 2>&1 || { echo "executable 'docker' (container runtime) must be installed" >&2; exit 1; }
+
+	echo "--> building flex volume container"
+	docker build -f flex.Dockerfile -t nerdalize/nerd-flex-volume:$(cat VERSION) .
 }
 
-function run_dockerpush { #build and push docker container
-	run_docker
-	docker push nerdalize/nerd:latest
-	docker push nerdalize/nerd:`cat VERSION`
+function run_flexpush { #build and push docker container
+	command -v docker >/dev/null 2>&1 || { echo "executable 'docker' (container runtime) must be installed" >&2; exit 1; }
+
+	echo "--> publish flex volume container"
+	docker push nerdalize/nerd-flex-volume:$(cat VERSION)
+}
+
+
+function run_crdbuild { #build docker container for custom dataset controller
+	command -v docker >/dev/null 2>&1 || { echo "executable 'docker' (container runtime) must be installed" >&2; exit 1; }
+
+	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o controller ./crd/
+	echo "--> building crd controller container"
+	docker build -f crd/Dockerfile -t nerdalize/custom-dataset-controller:$(cat crd/VERSION) .
+}
+
+function run_crdpush { #build and push docker container for custom dataset controller
+	command -v docker >/dev/null 2>&1 || { echo "executable 'docker' (container runtime) must be installed" >&2; exit 1; }
+
+	echo "--> publish crd controller container"
+	docker push nerdalize/custom-dataset-controller:`cat crd/VERSION`
 }
 
 case $1 in
 	"build") run_build ;;
+	"dev") run_dev ;;
 	"docs") run_docs ;;
 	"test") run_test ;;
 	"gen") run_gen ;;
 	"release") run_release ;;
 	"publish") run_publish ;;
-	"docker") run_docker ;;
-	"dockerpush") run_dockerpush ;;
+	"specs") run_specs ;;
+
+	"flexbuild") run_flexbuild ;;
+	"flexpush") run_flexpush ;;
+	"crdbuild") run_crdbuild ;;
+	"crdpush") run_crdpush ;;
 	*) print_help ;;
 esac

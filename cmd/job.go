@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 )
 
@@ -10,9 +11,9 @@ type Job struct {
 }
 
 //JobFactory creates the command
-func JobFactory() cli.CommandFactory {
+func JobFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &Job{}
-	cmd.command = createCommand(cmd.Execute, cmd.Description, cmd.Usage, cmd)
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None, "nerd job")
 
 	return func() (cli.Command, error) {
 		return cmd, nil
@@ -20,7 +21,7 @@ func JobFactory() cli.CommandFactory {
 }
 
 //Execute runs the command
-func (cmd *Job) Execute(args []string) (err error) { return errShowHelp }
+func (cmd *Job) Execute(args []string) (err error) { return errShowHelp("") }
 
 // Description returns long-form help text
 func (cmd *Job) Description() string { return cmd.Synopsis() }

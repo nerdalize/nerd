@@ -3,8 +3,10 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"reflect"
 
+	"github.com/cheggaaa/pb"
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
@@ -13,13 +15,14 @@ import (
 )
 
 var (
-	// errShowHelp can be returned by commands to show the commands help message next to the error
-	errShowHelp = errors.New("show help")
-)
-
-var (
 	//MessageNotEnoughArguments is shown when the user didn't provide enough arguments
-	MessageNotEnoughArguments = "not enough arguments, see --help"
+	MessageNotEnoughArguments = "Not enough arguments, this command requires at least %d argument%s."
+
+	//MessageTooManyArguments is shown when the user provides too many arguments
+	MessageTooManyArguments = "Too may arguments, this command takes at most %d argument%s."
+
+	//MessageNoArgumentRequired is shown when the user provides too many arguments and the command doesn't take any argument
+	MessageNoArgumentRequired = "Too many arguments, this command takes no argument."
 
 	//PlaceholderSynopsis is synopsis text when none is available
 	PlaceholderSynopsis = "<synopsis>"
@@ -27,28 +30,29 @@ var (
 	//PlaceholderHelp is help when none is available
 	PlaceholderHelp = "<help>"
 
-	//PlaceholderUsage is sown when no specific implementation is available
+	//PlaceholderUsage is shown when no specific implementation is available
 	PlaceholderUsage = "<usage>"
 )
 
 type command struct {
-	globalOpts struct {
-		Debug bool `long:"debug" description:"show verbose debug information"`
-	}
+	globalOpts struct{}
 
+	name       string
 	flagParser *flags.Parser
 	runFunc    func(args []string) error
 	helpFunc   func() string
-	logs       *logrus.Logger
+	usageFunc  func() string
+	out        *Output
 }
 
-func createCommand(runFunc func([]string) error, helpFunc func() string, usageFunc func() string, fgroup interface{}) *command {
-	logs := logrus.New()
+func createCommand(ui cli.Ui, runFunc func([]string) error, helpFunc func() string, usageFunc func() string, fgroup interface{}, opts flags.Options, name string) *command {
 	c := &command{
-		flagParser: flags.NewNamedParser(usageFunc(), flags.None),
+		flagParser: flags.NewNamedParser(usageFunc(), opts),
 		runFunc:    runFunc,
 		helpFunc:   helpFunc,
-		logs:       logs,
+		usageFunc:  usageFunc,
+		out:        NewOutput(ui),
+		name:       name,
 	}
 
 	_, err := c.flagParser.AddGroup("Options", "Options", fgroup)
@@ -91,6 +95,11 @@ func (cmd *command) AutocompleteFlags() (fl complete.Flags) {
 	return fl
 }
 
+// Options returns the available options of a command
+func (cmd *command) Options() *flags.Parser {
+	return cmd.flagParser
+}
+
 //Help shows extensive help
 func (cmd *command) Help() string {
 	buf := bytes.NewBuffer(nil)
@@ -104,22 +113,26 @@ func (cmd *command) Help() string {
 func (cmd *command) Run(args []string) int {
 	remaining, err := cmd.flagParser.ParseArgs(args)
 	if err != nil {
-		return cmd.fail(err, "failed to parse flags(s)")
-	}
-
-	if cmd.globalOpts.Debug {
-		cmd.logs.Level = logrus.DebugLevel
+		return cmd.fail(err, "", true)
 	}
 
 	if err := cmd.runFunc(remaining); err != nil {
-		if err == errShowHelp {
+		switch cause := errors.Cause(err).(type) {
+		case errShowUsage:
+			return cmd.usage(cause)
+		case errShowHelp:
+			cmd.out.Output(cause.Error())
 			return cli.RunResultHelp
+		default:
+			return cmd.fail(err, "Error", false)
 		}
-
-		return cmd.fail(err, "error")
 	}
-
 	return 0
+}
+
+//Logger returns the logger
+func (cmd *command) Logger() *logrus.Logger {
+	return cmd.out.Logger(logrus.ErrorLevel)
 }
 
 // AutocompleteArgs returns the argument predictor for this command.
@@ -127,7 +140,90 @@ func (cmd *command) AutocompleteArgs() complete.Predictor {
 	return complete.PredictNothing
 }
 
-func (cmd *command) fail(err error, message string) int {
-	cmd.logs.Error(errors.Wrap(err, message))
+func (cmd *command) fail(err error, message string, help bool) int {
+	if message != "" {
+		err = errors.Wrap(err, message)
+	}
+	cmd.out.Errorf("%v", err)
+	if help {
+		cmd.out.Infof("See '%s --help'.", cmd.name)
+	}
 	return 255
+}
+
+func (cmd *command) usage(cause error) int {
+	cmd.out.Errorf("%v", cause.Error())
+	cmd.out.Infof("See '%s --help'.\n\nUsage: %s", cmd.name, cmd.usageFunc())
+
+	return 254
+}
+
+//implements the transfer reporter such that it shows archiving progress
+type progressBarReporter struct {
+	uarch *pb.ProgressBar
+	arch  *pb.ProgressBar
+	upl   *pb.ProgressBar
+	dwn   *pb.ProgressBar
+}
+
+func (r *progressBarReporter) HandledKey(key string) {}
+
+func (r *progressBarReporter) StartArchivingProgress(label string, total int64) func(int64) {
+	if total == 0 {
+		return func(n int64) {}
+	}
+	r.arch = pb.New(int(total)).SetUnits(pb.U_BYTES_DEC)
+	r.arch.Prefix(fmt.Sprintf("Archiving (Step 1/2):")) //@TODO with debug flag show temp file
+	r.arch.Start()
+
+	return func(n int64) {
+		r.arch.Add64(n)
+	}
+}
+
+func (r *progressBarReporter) StartUploadProgress(label string, total int64, rr io.Reader) io.Reader {
+	r.upl = pb.New(int(total)).SetUnits(pb.U_BYTES_DEC)
+	if r.arch != nil {
+		r.upl.Prefix("Uploading (Step 2/2):") //@TODO with debug flag show key for uploading
+	} else {
+		r.upl.Prefix("Uploading:")
+	}
+	r.upl.Start()
+
+	return r.upl.NewProxyReader(rr)
+}
+
+func (r *progressBarReporter) StopUploadProgress() {
+	r.upl.Finish()
+}
+
+func (r *progressBarReporter) StopArchivingProgress() {
+	if r.arch == nil {
+		return
+	}
+	r.arch.Finish()
+}
+
+func (r *progressBarReporter) StartDownloadProgress(label string, total int64) io.Writer {
+	r.dwn = pb.New(int(total)).SetUnits(pb.U_BYTES_DEC)
+	r.dwn.Prefix(fmt.Sprintf("Downloading (Step 1/2):")) //@TODO with debug flag show key
+	r.dwn.Start()
+
+	return r.dwn
+}
+
+func (r *progressBarReporter) StopDownloadProgress() {
+	r.dwn.Finish()
+}
+
+func (r *progressBarReporter) StartUnarchivingProgress(label string, total int64, rr io.Reader) io.Reader {
+	r.uarch = pb.New(int(total)).SetUnits(pb.U_BYTES_DEC)
+	r.uarch.Prefix(fmt.Sprintf("Unarchiving (Step 2/2):")) //@TODO with debug flag show temp file
+	r.uarch.Start()
+
+	return r.uarch.NewProxyReader(rr)
+}
+
+func (r *progressBarReporter) StopUnarchivingProgress() {
+	r.uarch.Finish()
 }

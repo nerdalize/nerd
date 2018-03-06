@@ -22,8 +22,8 @@ var _ OpsClientInterface = &OpsClient{}
 
 //OpsClientInterface is an interface so client calls can be mocked.
 type OpsClientInterface interface {
-	GetOAuthCredentials(code, clientID, localServerURL string) (output *v1payload.GetOAuthCredentialsOutput, err error)
-	RefreshOAuthCredentials(refreshToken, clientID string) (output *v1payload.RefreshOAuthCredentialsOutput, err error)
+	GetOAuthCredentials(code, clientID, clientSecret, localServerURL string) (output *v1payload.GetOAuthCredentialsOutput, err error)
+	RefreshOAuthCredentials(refreshToken, clientID, clientSecret string) (output *v1payload.RefreshOAuthCredentialsOutput, err error)
 }
 
 //OpsClientConfig is the config for OpsClient
@@ -101,7 +101,7 @@ func (c *OpsClient) doRequest(method, urlPath string, input, output interface{})
 	if output != nil {
 		err = dec.Decode(output)
 		if err != nil {
-			return client.NewError(fmt.Sprintf("failed to decode successfull HTTP response (%s)", resp.Status), err)
+			return client.NewError(fmt.Sprintf("failed to decode successful HTTP response (%s)", resp.Status), err)
 		}
 	}
 
@@ -109,23 +109,25 @@ func (c *OpsClient) doRequest(method, urlPath string, input, output interface{})
 }
 
 //GetOAuthCredentials gets oauth credentials based on a 'session' code
-func (c *OpsClient) GetOAuthCredentials(code, clientID, localServerURL string) (output *v1payload.GetOAuthCredentialsOutput, err error) {
+func (c *OpsClient) GetOAuthCredentials(code, clientID, clientSecret, localServerURL string) (output *v1payload.GetOAuthCredentialsOutput, err error) {
 	output = &v1payload.GetOAuthCredentialsOutput{}
 	input := &v1payload.GetOAuthCredentialsInput{
-		Code:        code,
-		ClientID:    clientID,
-		GrantType:   "authorization_code",
-		RedirectURI: localServerURL,
+		Code:         code,
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		GrantType:    "authorization_code",
+		RedirectURI:  localServerURL,
 	}
 	return output, c.doRequest(http.MethodPost, "o/token/", input, output)
 }
 
 //RefreshOAuthCredentials refreshes an oauth access token
-func (c *OpsClient) RefreshOAuthCredentials(refreshToken, clientID string) (output *v1payload.RefreshOAuthCredentialsOutput, err error) {
+func (c *OpsClient) RefreshOAuthCredentials(refreshToken, clientID, clientSecret string) (output *v1payload.RefreshOAuthCredentialsOutput, err error) {
 	output = &v1payload.RefreshOAuthCredentialsOutput{}
 	input := &v1payload.RefreshOAuthCredentialsInput{
 		RefreshToken: refreshToken,
 		ClientID:     clientID,
+		ClientSecret: clientSecret,
 		GrantType:    "refresh_token",
 	}
 	return output, c.doRequest(http.MethodPost, "o/token/", input, output)

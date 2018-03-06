@@ -69,6 +69,6 @@ func (cmd *ProjectPlace) DoRun(args []string) (err error) {
 		return HandleError(err)
 	}
 
-	cmd.outputter.Logger.Printf("Succesfully placed project")
+	cmd.outputter.Logger.Printf("Successfully placed project")
 	return nil
 }

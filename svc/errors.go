@@ -1,33 +1,5 @@
 package svc
 
-type errNoInput struct{}
-
-func (e errNoInput) Error() string { return "no input" }
-
-func (e errNoInput) IsNoInput() bool { return true }
-
-//IsNoInputErr will evaluate to true if there was no input provided
-func IsNoInputErr(err error) bool {
-	type iface interface {
-		IsNoInput() bool
-	}
-	te, ok := err.(iface)
-	return ok && te.IsNoInput()
-}
-
-type errKubernetes struct{ error }
-
-func (e errKubernetes) IsKubernetes() bool { return true }
-
-//IsKubernetesErr is for unexpected kubernetes errors
-func IsKubernetesErr(err error) bool {
-	type iface interface {
-		IsKubernetes() bool
-	}
-	te, ok := err.(iface)
-	return ok && te.IsKubernetes()
-}
-
 type errValidation struct{ error }
 
 func (e errValidation) IsValidation() bool { return true }
@@ -41,54 +13,28 @@ func IsValidationErr(err error) bool {
 	return ok && te.IsValidation()
 }
 
-type errDeadline struct{ error }
+type errRaceCondition struct{ error }
 
-func (e errDeadline) IsDeadline() bool { return true }
+func (e errRaceCondition) IsRaceCondition() bool { return true }
 
-//IsDeadlineErr indicates that a context deadline exceeded
-func IsDeadlineErr(err error) bool {
+//IsRaceConditionErr is returned when we couldn't retrieve any logs for the job
+func IsRaceConditionErr(err error) bool {
 	type iface interface {
-		IsDeadline() bool
+		IsRaceCondition() bool
 	}
 	te, ok := err.(iface)
-	return ok && te.IsDeadline()
+	return ok && te.IsRaceCondition()
 }
 
-type errAlreadyExists struct{ error }
+type errDatasetSpec struct{ error }
 
-func (e errAlreadyExists) IsAlreadyExists() bool { return true }
+func (e errDatasetSpec) IsDatasetSpec() bool { return true }
 
-//IsAlreadyExistsErr indicates that what is attempted to be created already exists
-func IsAlreadyExistsErr(err error) bool {
+//IsDatasetSpecErr is returned when a invalid input/output spec was given
+func IsDatasetSpecErr(err error) bool {
 	type iface interface {
-		IsAlreadyExists() bool
+		IsDatasetSpec() bool
 	}
 	te, ok := err.(iface)
-	return ok && te.IsAlreadyExists()
-}
-
-type errNamespaceNotExists struct{ error }
-
-func (e errNamespaceNotExists) IsNamespaceNotExists() bool { return true }
-
-//IsNamespaceNotExistsErr indicates that what is attempted to be created already exists
-func IsNamespaceNotExistsErr(err error) bool {
-	type iface interface {
-		IsNamespaceNotExists() bool
-	}
-	te, ok := err.(iface)
-	return ok && te.IsNamespaceNotExists()
-}
-
-type errInvalidName struct{ error }
-
-func (e errInvalidName) IsInvalidName() bool { return true }
-
-//IsInvalidNameErr indicates the provided name was invalid
-func IsInvalidNameErr(err error) bool {
-	type iface interface {
-		IsInvalidName() bool
-	}
-	te, ok := err.(iface)
-	return ok && te.IsInvalidName()
+	return ok && te.IsDatasetSpec()
 }

@@ -40,286 +40,389 @@
 	"commands": {
 		"dataset": {
 			"usage": "nerd dataset \u003csubcommand\u003e",
-			"synopsis": "Upload and download datasets for tasks to use.",
-			"description": "Upload and download datasets for tasks to use.",
-			"options": {}
+			"synopsis": "Manage job datasets.",
+			"description": "Manage job datasets.",
+			"options": {
+				"Global Options": [],
+				"Options": []
+			}
+		},
+		"dataset delete": {
+			"usage": "nerd dataset delete DATASET_NAME [DATASET_NAME...]",
+			"synopsis": "Remove a dataset from the cluster",
+			"description": "Remove a dataset from the cluster",
+			"options": {
+				"Global Options": [],
+				"Options": [
+					{
+						"long_name": "kube-config",
+						"description": "file at which Nerd will look for Kubernetes credentials",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "timeout",
+						"description": "duration for which Nerd will wait for Kubernetes",
+						"default_value": [
+							"10s"
+						],
+						"choices": null
+					},
+					{
+						"long_name": "all",
+						"short_name": "a",
+						"description": "delete all your datasets in one command",
+						"default_value": null,
+						"choices": null
+					}
+				]
+			}
 		},
 		"dataset download": {
-			"usage": "nerd dataset download \u003cdataset-id\u003e \u003coutput-dir\u003e",
-			"synopsis": "Download data from the cloud to a local directory.",
-			"description": "Download data from the cloud to a local directory.",
-			"options": {}
+			"usage": "nerd dataset [OPTIONS] download DATASET_NAME DOWNLOAD_PATH",
+			"synopsis": "Download results from a running job",
+			"description": "Download results from a running job",
+			"options": {
+				"Global Options": [],
+				"Options": [
+					{
+						"long_name": "kube-config",
+						"description": "file at which Nerd will look for Kubernetes credentials",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "timeout",
+						"description": "duration for which Nerd will wait for Kubernetes",
+						"default_value": [
+							"10s"
+						],
+						"choices": null
+					},
+					{
+						"long_name": "input-of",
+						"description": "specify a job name where the datasets were used as its input. Dataset name is no longer mandatory.",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "output-of",
+						"description": "specify a job name where the datasets were used as its output. Dataset name is no longer mandatory.",
+						"default_value": null,
+						"choices": null
+					}
+				]
+			}
 		},
 		"dataset list": {
-			"usage": "nerd dataset list",
-			"synopsis": "Show a list of all datasets.",
-			"description": "Show a list of all datasets.",
-			"options": {}
+			"usage": "nerd dataset list [OPTIONS]",
+			"synopsis": "Return datasets that are managed by the cluster",
+			"description": "Return datasets that are managed by the cluster",
+			"options": {
+				"Global Options": [],
+				"Options": [
+					{
+						"long_name": "kube-config",
+						"description": "file at which Nerd will look for Kubernetes credentials",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "timeout",
+						"description": "duration for which Nerd will wait for Kubernetes",
+						"default_value": [
+							"10s"
+						],
+						"choices": null
+					}
+				]
+			}
 		},
 		"dataset upload": {
-			"usage": "nerd dataset upload \u003cpath\u003e",
-			"synopsis": "Upload data from a directory to the cloud and create a new dataset.",
-			"description": "Upload data from a directory to the cloud and create a new dataset.",
-			"options": {}
-		},
-		"login": {
-			"usage": "nerd login",
-			"synopsis": "Start a new authorized session.",
-			"description": "Start a new authorized session.",
-			"options": {}
-		},
-		"project": {
-			"usage": "nerd project \u003csubcommand\u003e",
-			"synopsis": "Set and list projects.",
-			"description": "Set and list projects.",
-			"options": {}
-		},
-		"project list": {
-			"usage": "nerd project list",
-			"synopsis": "List all your projects.",
-			"description": "List all your projects.",
-			"options": {}
-		},
-		"project set": {
-			"usage": "nerd project set",
-			"synopsis": "Set current working project.",
-			"description": "Set current working project.",
-			"options": {}
-		},
-		"secret": {
-			"usage": "nerd secret \u003csubcommand\u003e",
-			"synopsis": "Set and list secrets (opaque or for a registry).",
-			"description": "A secret can be set to access a Docker registry (type registry),\nor to store sensitive information.",
-			"options": {}
-		},
-		"secret create": {
-			"usage": "nerd secret create \u003cregistry\u003e --type registry --username \u003cuser\u003e --password \u003cpwd\u003e\n   OR\n  nerd secret create \u003cname-for-secret\u003e \u003ckey=value\u003e [more]",
-			"synopsis": "Create secrets.",
-			"description": "A secret can contain either credentials for a registry,\nor key-value pairs that will be made available in your worker.",
+			"usage": "nerd dataset upload [OPTIONS] DIR_TO_UPLOAD",
+			"synopsis": "Upload a dataset to your compute cluster.",
+			"description": "Upload a dataset to your compute cluster.",
 			"options": {
+				"Global Options": [],
 				"Options": [
 					{
-						"long_name": "username",
-						"description": "Username for Docker registry authentication",
+						"long_name": "kube-config",
+						"description": "file at which Nerd will look for Kubernetes credentials",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "timeout",
+						"description": "duration for which Nerd will wait for Kubernetes",
 						"default_value": [
-							""
+							"10s"
 						],
 						"choices": null
 					},
 					{
-						"long_name": "password",
-						"description": "Password for Docker registry authentication",
+						"long_name": "aws-s3-bucket",
+						"description": "AWS S3 Bucket name that will be used for dataset storage",
 						"default_value": [
-							""
+							"nlz-datasets-dev"
 						],
 						"choices": null
 					},
 					{
-						"long_name": "type",
-						"description": "Type of secret to display",
+						"long_name": "aws-region",
+						"description": "AWS region used for dataset storage",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "aws-access-key-id",
+						"description": "AWS access key used for auth with the storage backend",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "aws-secret-access-key",
+						"description": "AWS secret key for auth with the storage backend",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "aws-session-token",
+						"description": "AWS temporary auth token for the storage backend",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "name",
+						"short_name": "n",
+						"description": "assign a name to the dataset",
+						"default_value": null,
+						"choices": null
+					}
+				]
+			}
+		},
+		"job": {
+			"usage": "nerd job \u003csubcommand\u003e",
+			"synopsis": "Manage the lifecycle of compute jobs.",
+			"description": "Manage the lifecycle of compute jobs.",
+			"options": {
+				"Global Options": [],
+				"Options": []
+			}
+		},
+		"job delete": {
+			"usage": "nerd job delete JOB [JOB...]",
+			"synopsis": "Remove one or more job(s) from the cluster",
+			"description": "Remove one or more job(s) from the cluster",
+			"options": {
+				"Global Options": [],
+				"Options": [
+					{
+						"long_name": "kube-config",
+						"description": "file at which Nerd will look for Kubernetes credentials",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "timeout",
+						"description": "duration for which Nerd will wait for Kubernetes",
 						"default_value": [
-							"opaque"
+							"10s"
+						],
+						"choices": null
+					},
+					{
+						"long_name": "all",
+						"short_name": "a",
+						"description": "delete all your jobs in one command",
+						"default_value": null,
+						"choices": null
+					}
+				]
+			}
+		},
+		"job list": {
+			"usage": "nerd job list [OPTIONS]",
+			"synopsis": "Return jobs that are managed by the cluster",
+			"description": "Return jobs that are managed by the cluster",
+			"options": {
+				"Global Options": [],
+				"Options": [
+					{
+						"long_name": "kube-config",
+						"description": "file at which Nerd will look for Kubernetes credentials",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "timeout",
+						"description": "duration for which Nerd will wait for Kubernetes",
+						"default_value": [
+							"10s"
 						],
 						"choices": null
 					}
 				]
 			}
 		},
-		"secret delete": {
-			"usage": "nerd secret delete \u003cname\u003e",
-			"synopsis": "Remove a secret.",
-			"description": "Remove a secret.",
-			"options": {}
-		},
-		"secret describe": {
-			"usage": "nerd secret describe \u003cname\u003e",
-			"synopsis": "Show more information about a specific secret.",
-			"description": "Show more information about a specific secret.",
-			"options": {}
-		},
-		"secret list": {
-			"usage": "nerd secret list",
-			"synopsis": "Show a list of all secrets in the current project.",
-			"description": "Show a list of all secrets in the current project.",
+		"job logs": {
+			"usage": "nerd job logs [OPTIONS] JOB",
+			"synopsis": "Return logs for a running job",
+			"description": "Return logs for a running job",
 			"options": {
+				"Global Options": [],
 				"Options": [
 					{
-						"long_name": "type",
-						"description": "Type of secret to display, defaults to all.",
+						"long_name": "kube-config",
+						"description": "file at which Nerd will look for Kubernetes credentials",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "timeout",
+						"description": "duration for which Nerd will wait for Kubernetes",
 						"default_value": [
-							"all"
+							"10s"
 						],
+						"choices": null
+					},
+					{
+						"long_name": "tail",
+						"short_name": "t",
+						"description": "only return the oldest N lines of the process logs",
+						"default_value": null,
 						"choices": null
 					}
 				]
 			}
 		},
-		"task": {
-			"usage": "nerd task \u003csubcommand\u003e",
-			"synopsis": "Manage the lifecycle of compute tasks.",
-			"description": "Manage the lifecycle of compute tasks.",
-			"options": {}
-		},
-		"task create": {
-			"usage": "nerd task create \u003cworkload-id\u003e -- [cmd [args...]]",
-			"synopsis": "Create a new task for a workload.",
-			"description": "Create a new task for a workload.",
+		"job run": {
+			"usage": "nerd job run [OPTIONS] IMAGE [ARG...]",
+			"synopsis": "Runs a job on your compute cluster",
+			"description": "Runs a job on your compute cluster",
 			"options": {
+				"Global Options": [],
 				"Options": [
+					{
+						"long_name": "name",
+						"short_name": "n",
+						"description": "assign a name to the job",
+						"default_value": null,
+						"choices": null
+					},
 					{
 						"long_name": "env",
 						"short_name": "e",
 						"description": "environment variables to use",
 						"default_value": null,
 						"choices": null
+					},
+					{
+						"long_name": "memory",
+						"short_name": "m",
+						"description": "memory to use for this job, expressed in gigabytes",
+						"default_value": [
+							"3"
+						],
+						"choices": null
+					},
+					{
+						"long_name": "vcpu",
+						"description": "number of vcpus to use for this job",
+						"default_value": [
+							"2"
+						],
+						"choices": null
+					},
+					{
+						"long_name": "input",
+						"description": "specify one or more inputs that will be used for the job using the following format: \u003cDIR|DATASET_NAME\u003e:\u003cJOB_DIR\u003e",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "output",
+						"description": "specify one or more output folders that will be stored as datasets after the job is finished using the following format: \u003cDATASET_NAME\u003e:\u003cJOB_DIR\u003e",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "kube-config",
+						"description": "file at which Nerd will look for Kubernetes credentials",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "timeout",
+						"description": "duration for which Nerd will wait for Kubernetes",
+						"default_value": [
+							"10s"
+						],
+						"choices": null
+					},
+					{
+						"long_name": "aws-s3-bucket",
+						"description": "AWS S3 Bucket name that will be used for dataset storage",
+						"default_value": [
+							"nlz-datasets-dev"
+						],
+						"choices": null
+					},
+					{
+						"long_name": "aws-region",
+						"description": "AWS region used for dataset storage",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "aws-access-key-id",
+						"description": "AWS access key used for auth with the storage backend",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "aws-secret-access-key",
+						"description": "AWS secret key for auth with the storage backend",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "aws-session-token",
+						"description": "AWS temporary auth token for the storage backend",
+						"default_value": null,
+						"choices": null
 					}
 				]
 			}
 		},
-		"task describe": {
-			"usage": "nerd task describe \u003cworkload-id\u003e \u003ctask-id\u003e",
-			"synopsis": "Return more information about a specific task.",
-			"description": "Return more information about a specific task.",
-			"options": {}
-		},
-		"task list": {
-			"usage": "nerd task list \u003cworkload-id\u003e",
-			"synopsis": "Show a list of all task currently in a queue.",
-			"description": "Show a list of all task currently in a queue.",
-			"options": {}
-		},
-		"task stop": {
-			"usage": "nerd task stop \u003cworkload-id\u003e \u003ctask-id\u003e",
-			"synopsis": "Abort any run(s) of the specified task on a queue.",
-			"description": "Abort any run(s) of the specified task on a queue.",
-			"options": {}
+		"login": {
+			"usage": "nerd login",
+			"synopsis": "Start a new authorized session.",
+			"description": "Start a new authorized session.",
+			"options": {
+				"Options": [
+					{
+						"long_name": "config-src",
+						"description": "type of configuration to use (from env, endpoint, or oidc)",
+						"default_value": [
+							"oidc"
+						],
+						"choices": null
+					},
+					{
+						"long_name": "kube-config",
+						"description": "file at which Nerd will look for Kubernetes credentials",
+						"default_value": null,
+						"choices": null
+					}
+				]
+			}
 		},
 		"version": {
 			"usage": "nerd version",
 			"synopsis": "Check the current version.",
 			"description": "Check the current version.",
 			"options": {}
-		},
-		"worker": {
-			"usage": "nerd worker \u003csubcommand\u003e",
-			"synopsis": "Control individual compute processes.",
-			"description": "Control individual compute processes.",
-			"options": {}
-		},
-		"worker logs": {
-			"usage": "nerd worker logs \u003cworkload-id\u003e \u003cworker-id\u003e",
-			"synopsis": "Return recent logs from a worker.",
-			"description": "Return recent logs from a worker.",
-			"options": {}
-		},
-		"workload": {
-			"usage": "nerd workload \u003csubcommand\u003e",
-			"synopsis": "Control compute capacity for working on tasks.",
-			"description": "Control compute capacity for working on tasks.",
-			"options": {}
-		},
-		"workload describe": {
-			"usage": "nerd workload describe \u003cworkload-id\u003e",
-			"synopsis": "Return more information about a specific workload.",
-			"description": "Return more information about a specific workload.",
-			"options": {}
-		},
-		"workload download": {
-			"usage": "nerd workload download \u003cworkload-id\u003e \u003coutput-dir\u003e",
-			"synopsis": "Download output data of a workload.",
-			"description": "Download output data of a workload.",
-			"options": {}
-		},
-		"workload list": {
-			"usage": "nerd workload list",
-			"synopsis": "Show a list of all workloads in the current project.",
-			"description": "Show a list of all workloads in the current project.",
-			"options": {}
-		},
-		"workload start": {
-			"usage": "nerd workload start \u003cimage\u003e",
-			"synopsis": "Provision a new workload to provide compute.",
-			"description": "Provision a new workload to provide compute.",
-			"options": {
-				"Options": [
-					{
-						"long_name": "env",
-						"short_name": "e",
-						"description": "Environment variables",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "input-dataset",
-						"short_name": "d",
-						"description": "Input dataset ID, will be available in /input in your container",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "instances",
-						"short_name": "i",
-						"description": "Number of working instances",
-						"default_value": [
-							"1"
-						],
-						"choices": null
-					},
-					{
-						"long_name": "pull-secret",
-						"short_name": "p",
-						"description": "The pull secret will be used to fetch the private image",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "size",
-						"short_name": "s",
-						"description": "The amount of resources you want to use for your workload, in compute units.",
-						"default_value": null,
-						"choices": null
-					}
-				]
-			}
-		},
-		"workload stop": {
-			"usage": "nerd workload stop \u003cworkload-id\u003e",
-			"synopsis": "Stop a workload from providing compute capacity.",
-			"description": "Stop a workload from providing compute capacity.",
-			"options": {}
-		},
-		"workload work": {
-			"usage": "nerd workload work \u003cworkload-id\u003e",
-			"synopsis": "Start working tasks of a queue locally.",
-			"description": "Start working tasks of a queue locally.",
-			"options": {
-				"Options": [
-					{
-						"long_name": "entrypoint-json-base64",
-						"description": "Work entrypoint, first json and then base64 encoded.",
-						"default_value": [
-							"W10="
-						],
-						"choices": null
-					},
-					{
-						"long_name": "cmd-json-base64",
-						"description": "Work cmd, first json and then base64 encoded.",
-						"default_value": [
-							"W10="
-						],
-						"choices": null
-					},
-					{
-						"long_name": "output-dir",
-						"description": "When set, data in --output-dir will be uploaded after each task run.",
-						"default_value": [
-							""
-						],
-						"choices": null
-					}
-				]
-			}
 		}
 	}
 }

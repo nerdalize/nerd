@@ -136,7 +136,7 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 	if output != nil {
 		err = dec.Decode(output)
 		if err != nil {
-			return client.NewError(fmt.Sprintf("failed to decode successfull HTTP response (%s)", resp.Status), err)
+			return client.NewError(fmt.Sprintf("failed to decode successful HTTP response (%s)", resp.Status), err)
 		}
 	}
 
@@ -147,6 +147,12 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 func (c *Client) ListProjects() (output *v1payload.ListProjectsOutput, err error) {
 	output = &v1payload.ListProjectsOutput{}
 	return output, c.doRequest(http.MethodGet, projectsEndpoint, nil, &output.Projects)
+}
+
+//GetProject retrieve a precised project so we can validate its existence and find on which cluster it's living.
+func (c *Client) GetProject(id string) (output *v1payload.GetProjectOutput, err error) {
+	output = &v1payload.GetProjectOutput{}
+	return output, c.doRequest(http.MethodGet, fmt.Sprintf("%s/%s", projectsEndpoint, id), nil, output)
 }
 
 //GetJWT gets a JWT for a given scope

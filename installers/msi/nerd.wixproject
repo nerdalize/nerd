@@ -1,0 +1,28 @@
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+      <WixTargetsPath>$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
+      <OutputName>Nerd Setup (x64)</OutputName>
+      <OutputType>Package</OutputType>
+      <DefineSolutionProperties>false</DefineSolutionProperties>
+      <OutputPath>bin\</OutputPath>
+  </PropertyGroup>
+
+  <Import Project="$(WixTargetsPath)" />
+  <PropertyGroup>
+    <Platform>x64</Platform>
+    <ProductVersion>3.5</ProductVersion>
+    <ProjectGuid>{bf3f885c-7954-456b-8282-3171f571024d}</ProjectGuid>
+    <SchemaVersion>2.0</SchemaVersion>
+
+    <IntermediateOutputPath>obj\</IntermediateOutputPath>
+    <SuppressValidation>False</SuppressValidation>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+    <SuppressSpecificWarnings />
+  </PropertyGroup>
+
+  <ItemGroup>
+    <WixExtension Include="WixUtilExtension.dll"/>
+    <WixExtension Include="WixUIExtension.dll"/>
+    <Compile Include="Product.wxs" />
+  </ItemGroup>
+</Project>

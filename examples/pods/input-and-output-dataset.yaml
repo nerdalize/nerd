@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: input-and-output-dataset
+  labels:
+    app: input-and-output-dataset
+spec:
+  containers:
+  - image: busybox
+    command: [/bin/sh, -c, 'cat /dataset/test.txt | rev > /dataset/test_reversed.txt; sleep 3600']
+    imagePullPolicy: IfNotPresent
+    name: busybox
+    volumeMounts:
+    - name: dataset
+      mountPath: /dataset
+  restartPolicy: Always
+  volumes:
+  - name: dataset
+    flexVolume:
+      driver: "nerdalize.com/dataset"
+      options:
+        input/s3Bucket: nlz-datasets-dev
+        input/s3Key: test-helloworld.zip
+        output/s3Bucket: nlz-datasets-dev
+        output/s3Key: test-helloworld-reversed.zip

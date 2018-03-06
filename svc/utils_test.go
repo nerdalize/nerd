@@ -8,13 +8,13 @@ import (
 	"strings"
 	"testing"
 
-	"k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/go-playground/validator"
 	homedir "github.com/mitchellh/go-homedir"
+	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
+	"github.com/nerdalize/nerd/pkg/kubevisor"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/sirupsen/logrus"
 )
@@ -25,8 +25,10 @@ func isNilErr(err error) bool {
 
 type testingDI struct {
 	kube kubernetes.Interface
+	crd  crd.Interface
 	val  svc.Validator
 	logs svc.Logger
+	ns   string
 }
 
 func (di *testingDI) Kube() kubernetes.Interface {
@@ -41,6 +43,14 @@ func (di *testingDI) Logger() svc.Logger {
 	return di.logs
 }
 
+func (di *testingDI) Namespace() string {
+	return di.ns
+}
+
+func (di *testingDI) Crd() crd.Interface {
+	return di.crd
+}
+
 func testNamespaceName(tb testing.TB) string {
 	return fmt.Sprintf("%.63s", strings.ToLower(
 		strings.Replace(
@@ -48,19 +58,20 @@ func testNamespaceName(tb testing.TB) string {
 	))
 }
 
-func testNamespace(tb testing.TB, kube kubernetes.Interface) (ns string, clean func()) {
-	n1, err := kube.CoreV1().Namespaces().Create(&v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{GenerateName: testNamespaceName(tb)},
-	})
-	ok(tb, err)
+func testDI(tb testing.TB) (svc.DI, func()) {
+	tb.Helper()
 
-	return n1.Name, func() {
-		err := kube.CoreV1().Namespaces().Delete(n1.Name, nil)
-		ok(tb, err)
+	di, clean, err := svc.TempDI(testNamespaceName(tb))
+	if err == svc.ErrMinikubeOnly {
+		tb.Skipf("kube config needs to contain 'minikube' for local testing")
+		return nil, nil
 	}
+
+	ok(tb, err)
+	return di, clean
 }
 
-func testDI(tb testing.TB) svc.DI {
+func testDIWithoutNamespace(tb testing.TB) svc.DI {
 	tb.Helper()
 
 	hdir, err := homedir.Dir()
@@ -79,8 +90,24 @@ func testDI(tb testing.TB) svc.DI {
 	ok(tb, err)
 
 	tdi.val = validator.New()
-
+	tdi.ns = "non-existing"
 	return tdi
+}
+
+type testKube struct {
+	visor *kubevisor.Visor
+	val   svc.Validator
+	logs  svc.Logger
+}
+
+func newTestKube(di svc.DI) (k *testKube) {
+	k = &testKube{
+		visor: kubevisor.NewVisor(di.Namespace(), "nlz-nerd", di.Kube(), di.Crd(), di.Logger()),
+		val:   di.Validator(),
+		logs:  di.Logger(),
+	}
+
+	return k
 }
 
 // assert fails the test if the condition is false.

@@ -1,46 +1,56 @@
 package: github.com/nerdalize/nerd
 ignore:
- - github.com/go-ini/ini #only used for AWS shared credentials provider
- - golang.org/x/sys #only used for solaris support
+- github.com/go-ini/ini
 import:
-- package: github.com/mitchellh/cli           #command line library with
+- package: github.com/mitchellh/cli
   version: 65fcae5817c8600da98ada9d7edf26dd1a84837b
-- package: github.com/jessevdk/go-flags       #flexible flag parsing
+- package: github.com/jessevdk/go-flags
   version: 4e64e4a4e2552194cf594243e23aa9baf3b4297e
-- package: github.com/aws/aws-sdk-go          #official AWS Go sdk
+- package: github.com/aws/aws-sdk-go
   version: ^v1.7.0
-- package: github.com/dghubble/sling          #http client
+- package: github.com/dghubble/sling
   version: v1.1.0
-- package: github.com/pkg/errors              #structured error wrapping
+- package: github.com/pkg/errors
   version: v0.8.0
-- package: github.com/mitchellh/go-homedir    #utility to retreive homedir path
+- package: github.com/mitchellh/go-homedir
   version: b8bc1bf767474819792c23f32d8286a45736f1c6
-- package: github.com/dgrijalva/jwt-go        #JWT parsing
+- package: github.com/dgrijalva/jwt-go
   version: 2268707a8f0843315e2004ee4f1d021dc08baedf
-- package: github.com/olekukonko/tablewriter  #ASCII table formatting
+- package: github.com/olekukonko/tablewriter
   version: febf2d34b54a69ce7530036c7503b1c9fbfdf0bb
-- package: github.com/dustin/go-humanize      #humanize time format (x secs ago)
+- package: github.com/dustin/go-humanize
   version: 259d2a102b871d17f30e3cd9881a642961a1e486
-- package: github.com/restic/chunker          #content-defined-chunking
+- package: github.com/restic/chunker
   version: v0.1.0
-- package: gopkg.in/cheggaaa/pb.v1            #progress bar ui
+- package: gopkg.in/cheggaaa/pb.v1
   version: v1.0.11
 - package: github.com/sirupsen/logrus
   version: v1.0.3
-- package: github.com/dchest/safefile         #atomic file writes
+- package: github.com/dchest/safefile
   version: 855e8d98f1852d48dde521e0522408d1fe7e836a
-- package: github.com/google/go-querystring   #convert structs to query strings
+- package: github.com/google/go-querystring
   version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
-- package: github.com/skratchdot/open-golang  #open pages in a web browser
+- package: github.com/skratchdot/open-golang
   version: 75fb7ed4208cf72d323d7d02fd1a5964a7a9073c
-- package: github.com/hashicorp/logutils      #filter logger output
+- package: github.com/hashicorp/logutils
   version: 0dc08b1671f34c4250ce212759ebd880f743d883
 - package: github.com/gorilla/schema
   version: e6c82218a8b3ed3cbeb5407429849c0b0b597d40
 - package: github.com/go-playground/validator
   version: ~v9.9.0
 - package: k8s.io/client-go
-  version: 5.0.0
+  version: kubernetes-1.8.8
+- package: github.com/satori/go.uuid
+  version: 36e9d2ebbde5e3f13ab2e25625fd453271d6522e
   subpackages:
   - kubernetes
   - tools/clientcmd
+- package: golang.org/x/sys
+- package: k8s.io/code-generator
+- package: github.com/google/go-github
+  subpackages:
+  - github
+- package: github.com/joho/godotenv
+  version: 1.2.0
+- package: github.com/cheggaaa/pb
+  version: ~v1.0.22

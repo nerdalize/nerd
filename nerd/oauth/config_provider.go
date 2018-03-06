@@ -13,20 +13,22 @@ import (
 //ConfigProvider provides a oauth access token from the config file. For the default file location please see TokenFilename().
 type ConfigProvider struct {
 	*ProviderBasis
-	Client        v1auth.OpsClientInterface
-	OAuthClientID string
-	Session       conf.SessionInterface
+	Client            v1auth.OpsClientInterface
+	OAuthClientID     string
+	OAuthClientSecret string
+	Session           conf.SessionInterface
 }
 
 //NewConfigProvider creates a new ConfigProvider provider.
-func NewConfigProvider(client v1auth.OpsClientInterface, oauthClientID string, session conf.SessionInterface) *ConfigProvider {
+func NewConfigProvider(client v1auth.OpsClientInterface, oauthClientID, oauthClientSecret string, session conf.SessionInterface) *ConfigProvider {
 	return &ConfigProvider{
 		ProviderBasis: &ProviderBasis{
 			ExpireWindow: DefaultExpireWindow,
 		},
-		Client:        client,
-		OAuthClientID: oauthClientID,
-		Session:       session,
+		Client:            client,
+		OAuthClientID:     oauthClientID,
+		OAuthClientSecret: oauthClientSecret,
+		Session:           session,
 	}
 }
 
@@ -41,7 +43,7 @@ func (e *ConfigProvider) Retrieve() (string, error) {
 	}
 	e.SetExpiration(ss.OAuth.Expiration)
 	if e.IsExpired() {
-		token, err := e.refresh(ss.OAuth.RefreshToken, e.OAuthClientID)
+		token, err := e.refresh(ss.OAuth.RefreshToken, e.OAuthClientID, e.OAuthClientSecret)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to refresh oauth access token")
 		}
@@ -51,8 +53,8 @@ func (e *ConfigProvider) Retrieve() (string, error) {
 }
 
 //refresh refreshes the oath token with the refresh token
-func (e *ConfigProvider) refresh(refreshToken, clientID string) (string, error) {
-	out, err := e.Client.RefreshOAuthCredentials(refreshToken, clientID)
+func (e *ConfigProvider) refresh(refreshToken, clientID, clientSecret string) (string, error) {
+	out, err := e.Client.RefreshOAuthCredentials(refreshToken, clientID, clientSecret)
 	if err != nil {
 		if herr, ok := err.(*v1auth.HTTPError); ok && herr.StatusCode == http.StatusUnauthorized {
 			return "", nerd.ErrTokenRevoked
@@ -61,7 +63,7 @@ func (e *ConfigProvider) refresh(refreshToken, clientID string) (string, error) 
 	}
 	expiration := time.Unix(e.CurrentTime().Unix()+int64(out.ExpiresIn), 0)
 	e.SetExpiration(expiration)
-	err = e.Session.WriteOAuth(out.AccessToken, out.RefreshToken, expiration, out.Scope, out.TokenType)
+	err = e.Session.WriteOAuth(out.AccessToken, out.RefreshToken, "", expiration, out.Scope, out.TokenType)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to write oauth tokens to config")
 	}

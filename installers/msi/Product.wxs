@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Product    Id="*"
+                Name="Nerd"
+                Language="1033"
+                Version="1.0.0"
+                Manufacturer="Nerdalize B.V."
+                UpgradeCode="d88cca11-8cfa-404f-8f3b-731ffce7c78f">
+
+        <Package InstallerVersion="301"
+            Compressed="yes"
+            InstallScope="perUser"
+            InstallPrivileges="limited"
+            Manufacturer="Nerdalize B.V."
+            Platform="x64"
+            Description="Installs Nerd: The Nerdalize Command Line Interface"
+            Keywords="Nerdalize,compute,hpc,nerd,heating"
+            Comments="(c) 2018 Nerdalize B.V." />
+
+        <MediaTemplate EmbedCab="yes" />
+
+        <Directory Id="TARGETDIR" Name="SourceDir">
+     		<Directory Id="LocalAppDataFolder">
+     			<Directory Id="NerdDir" Name="Nerdalize" />
+      	</Directory>
+		</Directory>
+
+		<DirectoryRef Id="TARGETDIR">
+			<Component Id="CMP_PathEnv" Guid="b14d9719-d97a-4fc8-8dd7-dc8a8afbd023">
+			    <Environment
+			    	Id="SET_Path"
+			    	Name="PATH"
+			    	Value="[NerdDir]"
+			    	Permanent="no"
+			    	Part="last"
+			    	Action="set"
+			    	System="no" />
+			</Component>
+		</DirectoryRef>
+
+		<DirectoryRef Id="NerdDir">
+			<Component Id="CMP_NerdExe" Guid="916d654f-21fb-4057-93c0-8d988dd9ea39" Win64="yes">
+			    <File Id="FILE_NerdDir_NerdExe" Source="nerd.exe" />
+          <CreateFolder/>
+          <RemoveFolder Id="RemoveAppRootDirectory" On="uninstall" />
+          <RegistryKey Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Action="createAndRemoveOnUninstall">
+            <RegistryValue Name="Version" Value="[ProductVersion]" Type="string" KeyPath="yes"/>
+          </RegistryKey>
+			</Component>
+		</DirectoryRef>
+
+
+    <Icon Id="icon.ico" SourceFile="icon.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="icon.ico" />
+
+    <WixVariable Id="WixUILicenseRtf" Value="terms_conditions.rtf" />
+
+    <WixVariable Id="WixUIDialogBmp" Value="WixUIDialogBmp-32bit.bmp" />
+    <WixVariable Id="WixUIBannerBmp" Value="WixUIBannerBmp-32bit.bmp" />
+
+		<Feature Id="FEATURE_Core" Title="Core Tooling" Level="1">
+		     <ComponentRef Id="CMP_PathEnv" />
+		     <ComponentRef Id="CMP_NerdExe" />
+		</Feature>
+
+    <!-- Make Sure Environment Variables are effective immediately -->
+    <CustomActionRef Id="WixBroadcastSettingChange" />
+    <CustomActionRef Id="WixBroadcastEnvironmentChange" />
+
+    <!-- Add an UI and a checkbox that allows the user to launch Nerd -->
+    <UI>
+        <UIRef Id="WixUI_Minimal" />
+        <Publish Dialog="ExitDialog"
+          Control="Finish"
+          Event="DoAction"
+          Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
+    </UI>
+
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1"/>
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Nerd" />
+    <CustomAction Id="LaunchApplication"
+         Execute="immediate"
+         Directory="NerdDir"
+         ExeCommand='[SystemFolder]cmd.exe /k "nerd.exe"'
+         Return="asyncNoWait" />
+
+
+		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed."/>
+    </Product>
+</Wix>

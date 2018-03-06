@@ -10,6 +10,7 @@ import (
 	"github.com/mitchellh/cli"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
 	"github.com/nerdalize/nerd/nerd/conf"
+	"github.com/nerdalize/nerd/nerd/oauth"
 	"github.com/pkg/errors"
 	"github.com/skratchdot/open-golang/open"
 )
@@ -18,19 +19,28 @@ const (
 	authorizeEndpoint = "o/authorize"
 )
 
+//LoginOpts defines options for login command
+type LoginOpts struct {
+	Config     string `long:"config-src" default:"oidc" default-mask:"" description:"type of configuration to use (from env, endpoint, or oidc)"`
+	KubeConfig string `long:"kube-config" env:"KUBECONFIG" description:"file at which Nerd will look for Kubernetes credentials" default-mask:"~/.kube/config"`
+}
+
 //Login command
 type Login struct {
 	*command
+	opts *LoginOpts
 }
 
 //LoginFactory returns a factory method for the join command
 func LoginFactory() (cli.Command, error) {
-	comm, err := newCommand("nerd login", "Start a new authorized session.", "", nil)
+	opts := &LoginOpts{}
+	comm, err := newCommand("nerd login", "Start a new authorized session.", "", opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create command")
 	}
 	cmd := &Login{
 		command: comm,
+		opts:    opts,
 	}
 	cmd.runFunc = cmd.DoRun
 
@@ -57,7 +67,7 @@ func (cmd *Login) DoRun(args []string) error {
 
 	err = open.Run(fmt.Sprintf("http://%s/oauth?state=%s", cmd.config.Auth.OAuthLocalServer, randomState))
 	if err != nil {
-		return HandleError(errors.Wrap(err, "Failed to open browser window. Please see github.com/nerdalize/nerd for alternative ways of authenticating."))
+		cmd.ui.Info(fmt.Sprintf("Failed to open browser window, access the login at http://%s/oauth?state=%s", cmd.config.Auth.OAuthLocalServer, randomState))
 	}
 
 	oauthResponse := <-doneCh
@@ -65,17 +75,52 @@ func (cmd *Login) DoRun(args []string) error {
 		return HandleError(errors.Wrap(oauthResponse.err, "failed to do oauth login"))
 	}
 
-	out, err := authOpsClient.GetOAuthCredentials(oauthResponse.code, cmd.config.Auth.ClientID, fmt.Sprintf("http://%s/oauth/callback", cmd.config.Auth.OAuthLocalServer))
+	out, err := authOpsClient.GetOAuthCredentials(oauthResponse.code, cmd.config.Auth.SecureClientID, cmd.config.Auth.SecureClientSecret, fmt.Sprintf("http://%s/oauth/callback", cmd.config.Auth.OAuthLocalServer))
 	if err != nil {
 		return HandleError(errors.Wrap(err, "failed to get oauth credentials"))
 	}
 
 	expiration := time.Unix(time.Now().Unix()+int64(out.ExpiresIn), 0)
-	err = cmd.session.WriteOAuth(out.AccessToken, out.RefreshToken, expiration, out.Scope, out.TokenType)
+	err = cmd.session.WriteOAuth(out.AccessToken, out.RefreshToken, out.IDToken, expiration, out.Scope, out.TokenType)
 	if err != nil {
 		return HandleError(errors.Wrap(err, "failed to write oauth tokens to config"))
 	}
-	cmd.ui.Info("Successful login. You can now select a project using 'nerd project'")
+
+	client := v1auth.NewClient(v1auth.ClientConfig{
+		Base:               authbase,
+		Logger:             cmd.outputter.Logger,
+		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.SecureClientID, cmd.config.Auth.SecureClientSecret, cmd.session),
+	})
+	list, err := client.ListProjects()
+	if err != nil {
+		return HandleError(err)
+	}
+
+	if len(list.Projects) == 0 {
+		cmd.ui.Info("Successful login, but you don't have any cluster. Please contact mayday@nerdalize.com.")
+		return nil
+	}
+	var projectSlug string
+	for _, project := range list.Projects {
+		projectSlug = project.Nk
+		err = setProject(cmd.opts.KubeConfig, cmd.opts.Config, project, cmd.outputter.Logger)
+		if err != nil {
+			projectSlug = ""
+			continue
+		}
+		break
+	}
+	if projectSlug == "" {
+		cmd.ui.Info("Successful login, but it seems that there is a connection problem to your cluster(s). Please try again, and if the problem persists, contact mayday@nerdalize.com.")
+		return nil
+	}
+
+	err = cmd.session.WriteProject(projectSlug, conf.DefaultAWSRegion)
+	if err != nil {
+		return HandleError(err)
+	}
+
+	cmd.ui.Info("Successful login. You can now start a job with the `nerd job run` command.")
 	return nil
 }
 
@@ -126,8 +171,9 @@ func spawnServer(svr *http.Server, cfg conf.AuthConfig, randomState string, done
 		resolved := base.ResolveReference(path)
 		q := resolved.Query()
 		q.Set("state", r.URL.Query().Get("state"))
-		q.Set("client_id", cfg.ClientID)
+		q.Set("client_id", cfg.SecureClientID)
 		q.Set("response_type", "code")
+		q.Set("scope", "openid email group")
 		q.Set("redirect_uri", fmt.Sprintf("http://%s/oauth/callback", cfg.OAuthLocalServer))
 		resolved.RawQuery = q.Encode()
 
