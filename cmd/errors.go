@@ -45,7 +45,7 @@ func renderServiceError(err error, format string, args ...interface{}) error {
 	case kubevisor.IsKubernetesErr(err):
 		return errors.Errorf("%s: cluster failed to perform action: %v", fmt.Errorf(format, args...), err)
 	case kubevisor.IsAlreadyExistsErr(err):
-		return errors.Errorf("%s: it already exists", fmt.Errorf(format, args...))
+		return errors.Errorf("%s: this name is already in use", fmt.Errorf(format, args...))
 	case kubevisor.IsNamespaceNotExistsErr(err):
 		return errors.Errorf("%s: the namespace does not exist or you have no access. If the problem persists, please contact mayday@nerdalize.com.", fmt.Errorf(format, args...))
 	case kubevisor.IsServiceUnavailableErr(err):
