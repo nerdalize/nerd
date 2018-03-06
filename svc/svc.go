@@ -42,7 +42,7 @@ type DI interface {
 //ErrMinikubeOnly is returned when a temp di is created on something thats not minikube
 var ErrMinikubeOnly = errors.New("temp DI can only be created on Minikube")
 
-//Derived from https://github.com/golang/go/blob/1106512db54fc2736c7a9a67dd553fc9e1fca742/src/path/filepath/path_unix.go#L12
+// ValidateAbsPath is derived from https://github.com/golang/go/blob/1106512db54fc2736c7a9a67dd553fc9e1fca742/src/path/filepath/path_unix.go#L12
 func ValidateAbsPath(fl validator.FieldLevel) bool {
 	return strings.HasPrefix(fl.Field().String(), "/")
 }
