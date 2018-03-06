@@ -67,6 +67,13 @@
 							"10s"
 						],
 						"choices": null
+					},
+					{
+						"long_name": "all",
+						"short_name": "a",
+						"description": "delete all your datasets in one command",
+						"default_value": null,
+						"choices": null
 					}
 				]
 			}
@@ -223,6 +230,13 @@
 							"10s"
 						],
 						"choices": null
+					},
+					{
+						"long_name": "all",
+						"short_name": "a",
+						"description": "delete all your jobs in one command",
+						"default_value": null,
+						"choices": null
 					}
 				]
 			}
@@ -290,6 +304,49 @@
 				"Global Options": [],
 				"Options": [
 					{
+						"long_name": "name",
+						"short_name": "n",
+						"description": "assign a name to the job",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "env",
+						"short_name": "e",
+						"description": "environment variables to use",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "memory",
+						"short_name": "m",
+						"description": "memory to use for this job, expressed in gigabytes",
+						"default_value": [
+							"3"
+						],
+						"choices": null
+					},
+					{
+						"long_name": "vcpu",
+						"description": "number of vcpus to use for this job",
+						"default_value": [
+							"2"
+						],
+						"choices": null
+					},
+					{
+						"long_name": "input",
+						"description": "specify one or more inputs that will be used for the job using the following format: \u003cDIR|DATASET_NAME\u003e:\u003cJOB_DIR\u003e",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "output",
+						"description": "specify one or more output folders that will be stored as datasets after the job is finished using the following format: \u003cDATASET_NAME\u003e:\u003cJOB_DIR\u003e",
+						"default_value": null,
+						"choices": null
+					},
+					{
 						"long_name": "kube-config",
 						"description": "file at which Nerd will look for Kubernetes credentials",
 						"default_value": null,
@@ -332,49 +389,6 @@
 					{
 						"long_name": "aws-session-token",
 						"description": "AWS temporary auth token for the storage backend",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "name",
-						"short_name": "n",
-						"description": "assign a name to the job",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "env",
-						"short_name": "e",
-						"description": "environment variables to use",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "memory",
-						"short_name": "m",
-						"description": "memory to use for this job, expressed in gigabytes",
-						"default_value": [
-							"3"
-						],
-						"choices": null
-					},
-					{
-						"long_name": "vcpu",
-						"description": "number of vcpus to use for this job",
-						"default_value": [
-							"2"
-						],
-						"choices": null
-					},
-					{
-						"long_name": "input",
-						"description": "specify one or more inputs that will be used for the job using the following format: \u003cDIR|DATASET_NAME\u003e:\u003cJOB_DIR\u003e",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "output",
-						"description": "specify one or more output folders that will be stored as datasets after the job is finished using the following format: \u003cDIR\u003e:\u003cJOB_DIR\u003e",
 						"default_value": null,
 						"choices": null
 					}
