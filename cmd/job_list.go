@@ -212,5 +212,5 @@ func renderItemPhase(item *svc.ListJobItem) string {
 		return "Active" //little to go on, but better then nothing
 	}
 
-	return "Unkown" //by default the status is unkown
+	return "Unknown" //by default the status is unknown
 }

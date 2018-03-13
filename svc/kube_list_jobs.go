@@ -197,7 +197,7 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 			continue //not part of any job
 		}
 
-		//technically we can have multiple pods per job (one terminating, unkown etc) so we pick the
+		//technically we can have multiple pods per job (one terminating, unknown etc) so we pick the
 		//one that is created most recently to base our details on
 		if pod.CreationTimestamp.Local().After(jobItem.Details.SeenAt) {
 			jobItem.Details.SeenAt = pod.CreationTimestamp.Local() //this pod was created after previous pod
