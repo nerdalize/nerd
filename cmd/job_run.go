@@ -24,8 +24,6 @@ type JobRun struct {
 	VCPU    string   `long:"vcpu" description:"number of vcpus to use for this job" default:"2"`
 	Inputs  []string `long:"input" description:"specify one or more inputs that will be used for the job using the following format: <DIR|DATASET_NAME>:<JOB_DIR>"`
 	Outputs []string `long:"output" description:"specify one or more output folders that will be stored as datasets after the job is finished using the following format: <DATASET_NAME>:<JOB_DIR>"`
-	KubeOpts
-	TransferOpts
 
 	*command
 }
@@ -33,7 +31,7 @@ type JobRun struct {
 //JobRunFactory creates the command
 func JobRunFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &JobRun{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.PassAfterNonOption, "nerd job run")
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, &TransferOpts{}, flags.PassAfterNonOption, "nerd job run")
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -89,7 +87,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		return errShowUsage(fmt.Sprintf(MessageNotEnoughArguments, 1, ""))
 	}
 
-	kopts := cmd.KubeOpts
+	kopts := cmd.globalOpts.KubeOpts
 	deps, err := NewDeps(cmd.Logger(), kopts)
 	if err != nil {
 		return renderConfigError(err, "failed to configure")
@@ -120,7 +118,11 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 
 	//setup the transfer manager
 	kube := svc.NewKube(deps)
-	mgr, sto, sta, err := cmd.TransferOpts.TransferManager(kube)
+	t, ok := cmd.advancedOpts.(*TransferOpts)
+	if !ok {
+		return fmt.Errorf("unable to use transfer options")
+	}
+	mgr, sto, sta, err := t.TransferManager(kube)
 	if err != nil {
 		return errors.Wrap(err, "failed to setup transfer manager")
 	}

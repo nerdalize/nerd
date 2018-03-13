@@ -18,8 +18,6 @@ import (
 
 //DatasetUpload command
 type DatasetUpload struct {
-	KubeOpts
-	TransferOpts
 	Name string `long:"name" short:"n" description:"assign a name to the dataset"`
 
 	*command
@@ -28,7 +26,7 @@ type DatasetUpload struct {
 //DatasetUploadFactory creates the command
 func DatasetUploadFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &DatasetUpload{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.PassAfterNonOption, "nerd dataset upload")
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, &TransferOpts{}, flags.PassAfterNonOption, "nerd dataset upload")
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -59,13 +57,17 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 		return errors.Wrap(err, "failed to upload dataset")
 	}
 
-	deps, err := NewDeps(cmd.Logger(), cmd.KubeOpts)
+	deps, err := NewDeps(cmd.Logger(), cmd.globalOpts.KubeOpts)
 	if err != nil {
 		return renderConfigError(err, "failed to configure")
 	}
 
 	kube := svc.NewKube(deps)
-	mgr, sto, sta, err := cmd.TransferOpts.TransferManager(kube)
+	t, ok := cmd.advancedOpts.(*TransferOpts)
+	if !ok {
+		return renderConfigError(fmt.Errorf("unable to use transfer options"), "failed to configure")
+	}
+	mgr, sto, sta, err := t.TransferManager(kube)
 	if err != nil {
 		return errors.Wrap(err, "failed to setup transfer manager")
 	}

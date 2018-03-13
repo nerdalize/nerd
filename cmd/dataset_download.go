@@ -21,8 +21,6 @@ const (
 
 //DatasetDownload command
 type DatasetDownload struct {
-	KubeOpts
-
 	Input  string `long:"input-of" description:"specify a job name where the datasets were used as its input. Dataset name is no longer mandatory."`
 	Output string `long:"output-of" description:"specify a job name where the datasets were used as its output. Dataset name is no longer mandatory."`
 
@@ -32,7 +30,7 @@ type DatasetDownload struct {
 //DatasetDownloadFactory creates the command
 func DatasetDownloadFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &DatasetDownload{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None, "nerd dataset download")
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, nil, flags.None, "nerd dataset download")
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -70,7 +68,7 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 		return renderServiceError(err, "failed to turn local path into absolute path")
 	}
 
-	deps, err := NewDeps(cmd.Logger(), cmd.KubeOpts)
+	deps, err := NewDeps(cmd.Logger(), cmd.globalOpts.KubeOpts)
 	if err != nil {
 		return renderConfigError(err, "failed to configure")
 	}
