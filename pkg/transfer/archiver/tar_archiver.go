@@ -224,6 +224,12 @@ func (a *TarArchiver) Archive(path string, rep Reporter, fn func(k string, r io.
 //Unarchive will take a file system path and call 'fn' for each object that it needs for unarchiving.
 //It writes to a temporary directory first and then moves this to the final location
 func (a *TarArchiver) Unarchive(path string, rep Reporter, fn func(k string, w io.WriterAt) error) error {
+	// We need to check the target directory first to avoid downloading data if there is a problem
+	err := a.checkTargetDir(path)
+	if err != nil {
+		return err
+	}
+
 	tmpf, clean, err := a.tempFile()
 	if err != nil {
 		return err
@@ -243,11 +249,6 @@ func (a *TarArchiver) Unarchive(path string, rep Reporter, fn func(k string, w i
 	fi, err := tmpf.Stat()
 	if err != nil {
 		return errors.Wrap(err, "failed to stat temporary file")
-	}
-
-	err = a.checkTargetDir(path)
-	if err != nil {
-		return err
 	}
 
 	pr := rep.StartUnarchivingProgress(tmpf.Name(), fi.Size(), tmpf)
