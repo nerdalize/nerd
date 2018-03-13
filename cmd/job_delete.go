@@ -12,7 +12,6 @@ import (
 
 //JobDelete command
 type JobDelete struct {
-	KubeOpts
 	All bool `long:"all" short:"a" description:"delete all your jobs in one command"`
 
 	*command
@@ -21,7 +20,7 @@ type JobDelete struct {
 //JobDeleteFactory creates the command
 func JobDeleteFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &JobDelete{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None, "nerd job delete")
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, nil, flags.None, "nerd job delete")
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -36,14 +35,14 @@ func (cmd *JobDelete) Execute(args []string) (err error) {
 		return errShowUsage(fmt.Sprintf(MessageNotEnoughArguments, 1, ""))
 	}
 
-	kopts := cmd.KubeOpts
+	kopts := cmd.globalOpts.KubeOpts
 	deps, err := NewDeps(cmd.Logger(), kopts)
 	if err != nil {
 		return renderConfigError(err, "failed to configure")
 	}
 
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
+	ctx, cancel := context.WithTimeout(ctx, kopts.Timeout)
 	defer cancel()
 
 	kube := svc.NewKube(deps)
@@ -63,14 +62,14 @@ func (cmd *JobDelete) Execute(args []string) (err error) {
 	return nil
 }
 func (cmd *JobDelete) deleteAll() error {
-	kopts := cmd.KubeOpts
+	kopts := cmd.globalOpts.KubeOpts
 	deps, err := NewDeps(cmd.Logger(), kopts)
 	if err != nil {
 		return renderConfigError(err, "failed to configure")
 	}
 
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
+	ctx, cancel := context.WithTimeout(ctx, kopts.Timeout)
 	defer cancel()
 
 	s, err := cmd.out.Ask("Are you sure you want to delete all your jobs? (y/N)")

@@ -14,15 +14,13 @@ import (
 
 //JobList command
 type JobList struct {
-	KubeOpts
-
 	*command
 }
 
 //JobListFactory creates the command
 func JobListFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &JobList{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None, "nerd job list")
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, nil, flags.None, "nerd job list")
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -33,14 +31,14 @@ func (cmd *JobList) Execute(args []string) (err error) {
 	if len(args) > 0 {
 		return errShowUsage(MessageNoArgumentRequired)
 	}
-	kopts := cmd.KubeOpts
+	kopts := cmd.globalOpts.KubeOpts
 	deps, err := NewDeps(cmd.Logger(), kopts)
 	if err != nil {
 		return renderConfigError(err, "failed to configure")
 	}
 
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
+	ctx, cancel := context.WithTimeout(ctx, kopts.Timeout)
 	defer cancel()
 
 	kube := svc.NewKube(deps)

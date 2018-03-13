@@ -13,7 +13,7 @@ type Job struct {
 //JobFactory creates the command
 func JobFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &Job{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None, "nerd job")
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, nil, flags.None, "nerd job")
 
 	return func() (cli.Command, error) {
 		return cmd, nil

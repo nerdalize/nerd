@@ -13,15 +13,13 @@ import (
 
 //DatasetList command
 type DatasetList struct {
-	KubeOpts
-
 	*command
 }
 
 //DatasetListFactory creates the command
 func DatasetListFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &DatasetList{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None, "nerd dataset list")
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, nil, flags.None, "nerd dataset list")
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -32,14 +30,14 @@ func (cmd *DatasetList) Execute(args []string) (err error) {
 	if len(args) > 0 {
 		return errShowUsage(MessageNoArgumentRequired)
 	}
-	kopts := cmd.KubeOpts
+	kopts := cmd.globalOpts.KubeOpts
 	deps, err := NewDeps(cmd.Logger(), kopts)
 	if err != nil {
 		return renderConfigError(err, "failed to configure")
 	}
 
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
+	ctx, cancel := context.WithTimeout(ctx, kopts.Timeout)
 	defer cancel()
 
 	in := &svc.ListDatasetsInput{}

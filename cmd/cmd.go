@@ -35,7 +35,12 @@ var (
 )
 
 type command struct {
-	globalOpts struct{}
+	globalOpts struct {
+		KubeOpts
+	}
+	//advandedOpts leaves us the possibility to provide different types of options.
+	//For now, we use it for the TransferOpts in `dataset upload` and `job run`
+	advancedOpts interface{}
 
 	name       string
 	flagParser *flags.Parser
@@ -45,7 +50,7 @@ type command struct {
 	out        *Output
 }
 
-func createCommand(ui cli.Ui, runFunc func([]string) error, helpFunc func() string, usageFunc func() string, fgroup interface{}, opts flags.Options, name string) *command {
+func createCommand(ui cli.Ui, runFunc func([]string) error, helpFunc func() string, usageFunc func() string, fgroup, adv interface{}, opts flags.Options, name string) *command {
 	c := &command{
 		flagParser: flags.NewNamedParser(usageFunc(), opts),
 		runFunc:    runFunc,
@@ -58,6 +63,14 @@ func createCommand(ui cli.Ui, runFunc func([]string) error, helpFunc func() stri
 	_, err := c.flagParser.AddGroup("Options", "Options", fgroup)
 	if err != nil {
 		panic("failed to add option group: " + err.Error())
+	}
+
+	if adv != nil {
+		_, err = c.flagParser.AddGroup("Advanced Options", "Advanced Options", adv)
+		if err != nil {
+			panic("failed to add option group: " + err.Error())
+		}
+		c.advancedOpts = adv
 	}
 
 	_, err = c.flagParser.AddGroup("Global Options", "Global Options", &c.globalOpts)

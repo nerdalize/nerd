@@ -14,7 +14,6 @@ import (
 
 //JobLogs command
 type JobLogs struct {
-	KubeOpts
 	Tail int64 `long:"tail" short:"t" description:"only return the oldest N lines of the process logs"`
 
 	*command
@@ -23,7 +22,7 @@ type JobLogs struct {
 //JobLogsFactory creates the command
 func JobLogsFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &JobLogs{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, flags.None, "nerd job logs")
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, nil, flags.None, "nerd job logs")
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -37,14 +36,14 @@ func (cmd *JobLogs) Execute(args []string) (err error) {
 		return errShowUsage(fmt.Sprintf(MessageTooManyArguments, 1, ""))
 	}
 
-	kopts := cmd.KubeOpts
+	kopts := cmd.globalOpts.KubeOpts
 	deps, err := NewDeps(cmd.Logger(), kopts)
 	if err != nil {
 		return renderConfigError(err, "failed to configure")
 	}
 
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, cmd.Timeout)
+	ctx, cancel := context.WithTimeout(ctx, kopts.Timeout)
 	defer cancel()
 
 	in := &svc.FetchJobLogsInput{
