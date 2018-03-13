@@ -20,6 +20,9 @@ var (
 	//TarArchiverPathSeparator standardizes the header path for cross platform (un)archiving
 	TarArchiverPathSeparator = "/"
 
+	//ErrNotADirectory is returned when an archiver was asked to upload a single file without dir
+	ErrNotADirectory = errors.New("it is not a directory")
+
 	//ErrNoSuchDirectory is returned when an archiver expected a directory to exist
 	ErrNoSuchDirectory = errors.New("directory doesn't exist")
 
@@ -126,7 +129,12 @@ func (a *TarArchiver) Archive(path string, rep Reporter, fn func(k string, r io.
 
 		return err
 	}
-
+	if info, err := os.Stat(path); !info.IsDir() {
+		if err != nil {
+			return err
+		}
+		return ErrNotADirectory
+	}
 	names, err := f.Readdirnames(1)
 	if len(names) == 0 {
 		return ErrEmptyDirectory
