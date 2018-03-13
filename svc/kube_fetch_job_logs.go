@@ -3,10 +3,10 @@ package svc
 import (
 	"bytes"
 	"context"
+	"sort"
 
 	"github.com/nerdalize/nerd/pkg/kubevisor"
 	batchv1 "k8s.io/api/batch/v1"
-	corev1 "k8s.io/api/core/v1"
 )
 
 //FetchJobLogsInput is the input to FetchJobLogs
@@ -42,23 +42,19 @@ func (k *Kube) FetchJobLogs(ctx context.Context, in *FetchJobLogsInput) (out *Fe
 		return &FetchJobLogsOutput{}, nil
 	}
 
-	var last corev1.Pod
-	for _, pod := range pods.Items {
-		if pod.CreationTimestamp.Local().After(last.CreationTimestamp.Local()) {
-			last = pod //found a more recent pod
-		} else {
-			continue
-		}
-	}
+	//sort by latest created
+	sort.Slice(pods.Items, func(i int, j int) bool {
+		return pods.Items[i].CreationTimestamp.UnixNano() > pods.Items[j].CreationTimestamp.UnixNano()
+	})
 
+	//loop over the pods, return output from the first pod that returns logs, at most 3 times
 	buf := bytes.NewBuffer(nil)
-	err = k.visor.FetchLogs(ctx, in.Tail, buf, "main", last.GetName())
-	if err != nil {
-		if kubevisor.IsNotExistsErr(err) {
-			return nil, errRaceCondition{err} //pod was deleted since we listed it
+	for i := 0; i < len(pods.Items) && i < 3; i++ {
+		pod := pods.Items[i]
+		_ = k.visor.FetchLogs(ctx, in.Tail, buf, "main", pod.Name)
+		if buf.Len() > 0 {
+			break
 		}
-
-		return nil, err
 	}
 
 	return &FetchJobLogsOutput{Data: buf.Bytes()}, nil
