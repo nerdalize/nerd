@@ -63,7 +63,7 @@ func (cmd *JobList) Execute(args []string) (err error) {
 		return nil
 	}
 
-	cmd.out.Infof("To see the logs of a job, use: `nerd job logs <JOB-NAME>`")
+	cmd.out.Infof("All your jobs are listed below. To see the logs of a specific job, you can use: `nerd job logs <JOB-NAME>`")
 	var q *svc.ListQuotaItem
 	if len(qout.Items) > 0 {
 		q = qout.Items[0]
