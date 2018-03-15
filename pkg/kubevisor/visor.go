@@ -79,6 +79,8 @@ type Visor struct {
 var (
 	//used during deletion but requires an address to create a pointer for
 	deletePropagationForeground = metav1.DeletePropagationForeground
+
+	deletePropagationBackground = metav1.DeletePropagationBackground
 )
 
 //NewVisor will setup a Kubernetes visor
@@ -156,7 +158,7 @@ func (k *Visor) DeleteResource(ctx context.Context, t ResourceType, name string)
 	k.logs.Debugf("deleting %s '%s' in namespace '%s': %s", t, name, k.ns, ctx)
 	err = c.Delete().
 		Namespace(k.ns).
-		Body(&metav1.DeleteOptions{PropagationPolicy: &deletePropagationForeground}).
+		Body(&metav1.DeleteOptions{PropagationPolicy: &deletePropagationBackground}).
 		Resource(string(t)).
 		Name(name).
 		Context(ctx).

@@ -50,6 +50,7 @@ func TestDeleteJob(t *testing.T) {
 			Output:  &svc.DeleteJobOutput{},
 			IsErr:   kubevisor.IsNotExistsErr,
 		},
+		//@TODO check if the job actually is removed from the listing
 	} {
 		t.Run(c.Name, func(t *testing.T) {
 			di, clean := testDI(t)
