@@ -61,7 +61,6 @@ func (a *TarArchiver) tempFile() (f *os.File, clean func(), err error) {
 	}
 
 	return f, func() {
-		_ = f.Close()
 		_ = os.Remove(f.Name())
 	}, nil
 }
@@ -164,9 +163,11 @@ func (a *TarArchiver) Archive(path string, rep Reporter, fn func(k string, r io.
 		return err
 	}
 
+	clean() //remove from FS immediately, the OS will keep it until we're done
+	defer tmpf.Close()
+
 	inc := rep.StartArchivingProgress(tmpf.Name(), totalToTar)
 
-	defer clean()
 	tw := tar.NewWriter(tmpf)
 	defer tw.Close()
 
@@ -243,7 +244,9 @@ func (a *TarArchiver) Unarchive(path string, rep Reporter, fn func(k string, w i
 		return err
 	}
 
-	defer clean()
+	clean() //remove from FS immediately, the OS will keep it until we're done
+	defer tmpf.Close()
+
 	err = fn(slashpath.Join(a.keyPrefix, TarArchiverKey), tmpf)
 	if err != nil {
 		return errors.Wrap(err, "failed to download to temporary file")
