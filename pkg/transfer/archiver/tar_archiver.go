@@ -2,6 +2,7 @@ package transferarchiver
 
 import (
 	"archive/tar"
+	"context"
 	"io"
 	"io/ioutil"
 	"os"
@@ -61,6 +62,7 @@ func (a *TarArchiver) tempFile() (f *os.File, clean func(), err error) {
 	}
 
 	return f, func() {
+		_ = f.Close()
 		_ = os.Remove(f.Name())
 	}, nil
 }
@@ -119,7 +121,7 @@ func (a *TarArchiver) indexFS(path string, fn func(p string, fi os.FileInfo, err
 }
 
 //Archive will archive a directory at 'path' into readable objects 'r' and calls 'fn' for each
-func (a *TarArchiver) Archive(path string, rep Reporter, fn func(k string, r io.ReadSeeker, nbytes int64) error) (err error) {
+func (a *TarArchiver) Archive(ctx context.Context, path string, rep Reporter, fn func(k string, r io.ReadSeeker, nbytes int64) error) (err error) {
 	f, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -163,9 +165,7 @@ func (a *TarArchiver) Archive(path string, rep Reporter, fn func(k string, r io.
 		return err
 	}
 
-	clean() //remove from FS immediately, the OS will keep it until we're done
-	defer tmpf.Close()
-
+	defer clean()
 	inc := rep.StartArchivingProgress(tmpf.Name(), totalToTar)
 
 	tw := tar.NewWriter(tmpf)
@@ -202,9 +202,14 @@ func (a *TarArchiver) Archive(path string, rep Reporter, fn func(k string, r io.
 
 		// copy file data into tar writer
 		var n int64
-		if n, err = io.Copy(tw, f); err != nil {
+		// if n, err = io.Copy(tw, f); err != nil {
+		// 	return errors.Wrap(err, "failed to copy file content to archive")
+		// }
+
+		if n, err = Copy(ctx, tw, f); err != nil {
 			return errors.Wrap(err, "failed to copy file content to archive")
 		}
+
 		inc(n)
 		return nil
 	}); err != nil {
@@ -232,7 +237,7 @@ func (a *TarArchiver) Archive(path string, rep Reporter, fn func(k string, r io.
 
 //Unarchive will take a file system path and call 'fn' for each object that it needs for unarchiving.
 //It writes to a temporary directory first and then moves this to the final location
-func (a *TarArchiver) Unarchive(path string, rep Reporter, fn func(k string, w io.WriterAt) error) error {
+func (a *TarArchiver) Unarchive(ctx context.Context, path string, rep Reporter, fn func(k string, w io.WriterAt) error) error {
 	// We need to check the target directory first to avoid downloading data if there is a problem
 	err := a.checkTargetDir(path)
 	if err != nil {
@@ -244,8 +249,7 @@ func (a *TarArchiver) Unarchive(path string, rep Reporter, fn func(k string, w i
 		return err
 	}
 
-	clean() //remove from FS immediately, the OS will keep it until we're done
-	defer tmpf.Close()
+	defer clean()
 
 	err = fn(slashpath.Join(a.keyPrefix, TarArchiverKey), tmpf)
 	if err != nil {

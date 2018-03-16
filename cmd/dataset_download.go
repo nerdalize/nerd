@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
@@ -38,6 +40,9 @@ func DatasetDownloadFactory(ui cli.Ui) cli.CommandFactory {
 
 //Execute runs the command
 func (cmd *DatasetDownload) Execute(args []string) (err error) {
+	sigCh := make(chan os.Signal, 2)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+
 	var (
 		datasetName, outputDir string
 	)
@@ -80,7 +85,10 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 	); err != nil {
 		return errors.Wrap(err, "failed to setup transfer manager")
 	}
+
 	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	// if there is only one dataset to download
 	if datasetName != "" {
@@ -140,6 +148,10 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 		}
 
 		defer h.Close()
+		go func() {
+			<-sigCh
+			cancel()
+		}()
 
 		err = h.Pull(ctx, dir, &progressBarReporter{})
 		if err != nil {

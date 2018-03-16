@@ -78,7 +78,7 @@ func (pr *progressReader) Read(p []byte) (n int, err error) {
 func (h *StdHandle) Push(ctx context.Context, fromPath string, rep Reporter) (err error) {
 
 	wc := &writeCounter{}
-	if err = h.archiver.Archive(fromPath, rep, func(k string, r io.ReadSeeker, nbytes int64) error {
+	if err = h.archiver.Archive(ctx, fromPath, rep, func(k string, r io.ReadSeeker, nbytes int64) error {
 
 		//push bytes while counting the total number being pushed across all objects
 		defer rep.StopUploadProgress()
@@ -116,7 +116,7 @@ func (pw *progressWriter) WriteAt(p []byte, off int64) (n int, err error) {
 
 //Pull content from the store to the local filesystem
 func (h *StdHandle) Pull(ctx context.Context, toPath string, rep Reporter) (err error) {
-	if err = h.archiver.Unarchive(toPath, rep, func(k string, w io.WriterAt) error {
+	if err = h.archiver.Unarchive(ctx, toPath, rep, func(k string, w io.WriterAt) error {
 
 		var total int64
 		total, err = h.store.Head(ctx, k)

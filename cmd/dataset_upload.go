@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
@@ -34,6 +36,9 @@ func DatasetUploadFactory(ui cli.Ui) cli.CommandFactory {
 
 //Execute runs the command
 func (cmd *DatasetUpload) Execute(args []string) (err error) {
+	sigCh := make(chan os.Signal, 2)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+
 	if len(args) < 1 {
 		return errShowUsage(fmt.Sprintf(MessageNotEnoughArguments, 1, ""))
 	} else if len(args) > 1 {
@@ -73,6 +78,9 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 	}
 
 	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	var h transfer.Handle
 	if h, err = mgr.Create(
 		ctx,
@@ -84,9 +92,14 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 	}
 
 	defer h.Close()
+	go func() {
+		<-sigCh
+		cancel()
+	}()
 
 	err = h.Push(ctx, dir, &progressBarReporter{})
 	if err != nil {
+		ctx := context.Background() //new context for deletion
 		e := mgr.Remove(ctx, h.Name())
 		if e != nil {
 			return errors.Wrapf(err, "failed to remove dataset: %v", e)
