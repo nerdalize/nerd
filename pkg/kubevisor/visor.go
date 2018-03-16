@@ -10,6 +10,7 @@ import (
 	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
 	crdscheme "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned/scheme"
 	"github.com/pkg/errors"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	kuberr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -79,6 +80,10 @@ type Visor struct {
 var (
 	//used during deletion but requires an address to create a pointer for
 	deletePropagationForeground = metav1.DeletePropagationForeground
+
+	deletePropagationBackground = metav1.DeletePropagationBackground
+
+	orphanDependents = false
 )
 
 //NewVisor will setup a Kubernetes visor
@@ -138,10 +143,26 @@ func (k *Visor) GetResource(ctx context.Context, t ResourceType, v ManagedNames,
 	return nil
 }
 
+//pods implements the list transformer interface to allow the kubevisor the manage names for us
+//TODO: fix duplicate code from svc package
+type pods struct{ *corev1.PodList }
+
+func (pods *pods) Transform(fn func(in ManagedNames) (out ManagedNames)) {
+	for i, j1 := range pods.PodList.Items {
+		pods.Items[i] = *(fn(&j1).(*corev1.Pod))
+	}
+}
+
+func (pods *pods) Len() int {
+	return len(pods.PodList.Items)
+}
+
 //DeleteResource will use the kube RESTClient to delete a resource by its name.
 func (k *Visor) DeleteResource(ctx context.Context, t ResourceType, name string) (err error) {
 	var c rest.Interface
 	switch t {
+	case ResourceTypePods:
+		c = k.api.CoreV1().RESTClient()
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
 	case ResourceTypeDatasets:
@@ -151,12 +172,37 @@ func (k *Visor) DeleteResource(ctx context.Context, t ResourceType, name string)
 		return errors.Errorf("unknown Kubernetes resource type provided for deletion: '%s'", t)
 	}
 
+	//For jobs we also need to delete any associated pods
+	if t == ResourceTypeJobs {
+		//Retrieve job UUID to look up associated pods
+		job := &batchv1.Job{}
+		err = k.GetResource(ctx, ResourceTypeJobs, job, name)
+		if err != nil {
+			return k.tagError(err)
+		}
+
+		pods := &pods{}
+		err = k.ListResources(ctx, ResourceTypePods, pods, []string{"controller-uid=" + string(job.GetUID())}, []string{})
+		if err != nil {
+			return k.tagError(err)
+		}
+
+		//Delete the pods
+		for _, pod := range pods.Items {
+			err = k.DeleteResource(ctx, ResourceTypePods, pod.GetName())
+
+			if err != nil {
+				return k.tagError(err)
+			}
+		}
+	}
+
 	name = k.applyPrefix(name)
 
 	k.logs.Debugf("deleting %s '%s' in namespace '%s': %s", t, name, k.ns, ctx)
 	err = c.Delete().
 		Namespace(k.ns).
-		Body(&metav1.DeleteOptions{PropagationPolicy: &deletePropagationForeground}).
+		Body(&metav1.DeleteOptions{OrphanDependents: &orphanDependents}).
 		Resource(string(t)).
 		Name(name).
 		Context(ctx).

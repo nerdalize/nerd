@@ -37,6 +37,7 @@ func TestDeleteDataset(t *testing.T) {
 			Output:  &svc.DeleteDatasetOutput{},
 			IsErr:   kubevisor.IsNotExistsErr,
 		},
+		//@TODO write unit test that actuall deletes
 	} {
 		t.Run(c.Name, func(t *testing.T) {
 			di, clean := testDI(t)
