@@ -202,10 +202,6 @@ func (a *TarArchiver) Archive(ctx context.Context, path string, rep Reporter, fn
 
 		// copy file data into tar writer
 		var n int64
-		// if n, err = io.Copy(tw, f); err != nil {
-		// 	return errors.Wrap(err, "failed to copy file content to archive")
-		// }
-
 		if n, err = Copy(ctx, tw, f); err != nil {
 			return errors.Wrap(err, "failed to copy file content to archive")
 		}
