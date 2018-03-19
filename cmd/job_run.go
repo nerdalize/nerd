@@ -100,6 +100,10 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 	if err != nil {
 		return err
 	}
+	err = compareNames(cmd.Inputs, cmd.Outputs)
+	if err != nil {
+		return err
+	}
 
 	//setup job arguments
 	jargs := []string{}
@@ -327,6 +331,19 @@ func updateDatasets(ctx context.Context, kube *svc.Kube, inputs, outputs []dsHan
 		_, err := kube.UpdateDataset(ctx, &svc.UpdateDatasetInput{Name: output.handle.Name(), OutputFrom: name})
 		if err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+func compareNames(inputs, outputs []string) error {
+	for i := range inputs {
+		input := strings.Split(inputs[i], ":")
+		for o := range outputs {
+			output := strings.Split(outputs[o], ":")
+			if input[0] == output[0] {
+				return ErrOverwriteWarning
+			}
 		}
 	}
 	return nil

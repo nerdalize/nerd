@@ -14,6 +14,8 @@ var (
 	ErrNamespaceNotSet = errors.New("no cluster set, use `nerd login` to update your configuration")
 	// ErrNotLoggedIn is returned when no oauth access token was found in the config file.
 	ErrNotLoggedIn = errors.New("you're not logged in. Please login with `nerd login`")
+	// ErrOverwriteWarning is returned when a user is trying to use the same name for input and output datasets
+	ErrOverwriteWarning = errors.New("it is not possible to use the same name for input and output datasets, as it could overwrite your dataset")
 )
 
 // errShowHelp can be returned by commands to show the commands help message next to the error.
