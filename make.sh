@@ -51,7 +51,7 @@ function run_dev { #setup dev environment
 	kubectl apply -f cmd/flex/dataset.yml
 
 	echo "--> updating dependencies"
-	glide up
+	glide install
 
 	echo "--> checking crd generated code is valid"
 	if ./crd/hack/verify-codegen.sh; then
