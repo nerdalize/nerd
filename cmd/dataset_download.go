@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
@@ -38,6 +40,9 @@ func DatasetDownloadFactory(ui cli.Ui) cli.CommandFactory {
 
 //Execute runs the command
 func (cmd *DatasetDownload) Execute(args []string) (err error) {
+	sigCh := make(chan os.Signal, 2)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+
 	var (
 		datasetName, outputDir string
 	)
@@ -80,7 +85,15 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 	); err != nil {
 		return errors.Wrap(err, "failed to setup transfer manager")
 	}
+
 	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	go func() {
+		<-sigCh
+		cancel()
+	}()
 
 	// if there is only one dataset to download
 	if datasetName != "" {
@@ -146,6 +159,7 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 			return errors.Wrap(err, "failed to download dataset")
 		}
 	}
+
 	if len(datasets) == 0 {
 		cmd.out.Infof("No dataset found, maybe your job is not using any datasets? You can check with `nerd job list` the state of your job.")
 	} else if len(datasets) > 1 {
@@ -153,6 +167,7 @@ func (cmd *DatasetDownload) Execute(args []string) (err error) {
 	} else {
 		cmd.out.Infof("Downloaded %d dataset in %s", len(datasets), outputDir)
 	}
+
 	return nil
 }
 

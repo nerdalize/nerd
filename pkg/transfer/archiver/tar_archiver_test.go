@@ -2,6 +2,7 @@ package transferarchiver_test
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"io/ioutil"
 	"os"
@@ -16,9 +17,10 @@ import (
 func archive(tb testing.TB, a transfer.Archiver, dir string, assertErr error) map[string][]byte {
 	tb.Helper()
 	rep := transfer.NewDiscardReporter()
+	ctx := context.Background()
 
 	objs := map[string][]byte{}
-	err := a.Archive(dir, rep, func(k string, r io.ReadSeeker, nbytes int64) error {
+	err := a.Archive(ctx, dir, rep, func(k string, r io.ReadSeeker, nbytes int64) error {
 		buf := bytes.NewBuffer(nil)
 		_, err := io.Copy(buf, r)
 
@@ -60,6 +62,8 @@ func TestTarArchiver(t *testing.T) {
 	})
 
 	t.Run("archive non-empty directory", func(t *testing.T) {
+		ctx := context.Background()
+
 		dir, err := ioutil.TempDir("", "tar_archiver_tests_")
 		if err != nil {
 			t.Fatal(err)
@@ -83,7 +87,7 @@ func TestTarArchiver(t *testing.T) {
 		}
 
 		t.Run("unarchive to non-empty directory", func(t *testing.T) {
-			if err := a.Unarchive(dir, rep, func(k string, w io.WriterAt) error {
+			if err := a.Unarchive(ctx, dir, rep, func(k string, w io.WriterAt) error {
 				_, err := w.WriteAt(objs[transferarchiver.TarArchiverKey], 0)
 				return err
 			}); err == nil {
@@ -97,7 +101,7 @@ func TestTarArchiver(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if err = a.Unarchive(tdir, rep, func(k string, w io.WriterAt) error {
+			if err = a.Unarchive(ctx, tdir, rep, func(k string, w io.WriterAt) error {
 				_, err = w.WriteAt(objs[transferarchiver.TarArchiverKey], 0)
 				return err
 			}); err != nil {

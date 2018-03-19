@@ -91,8 +91,8 @@ type Manager interface {
 //Archiver allows archiving a directory
 type Archiver interface {
 	Index(fn func(k string) error) error
-	Archive(path string, rep transferarchiver.Reporter, fn func(k string, r io.ReadSeeker, nbytes int64) error) error
-	Unarchive(path string, rep transferarchiver.Reporter, fn func(k string, w io.WriterAt) error) error
+	Archive(ctx context.Context, path string, rep transferarchiver.Reporter, fn func(k string, r io.ReadSeeker, nbytes int64) error) error
+	Unarchive(ctx context.Context, path string, rep transferarchiver.Reporter, fn func(k string, w io.WriterAt) error) error
 }
 
 //CreateArchiver will creates one of the standard storews with the provided options

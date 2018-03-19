@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/nerdalize/nerd/pkg/kubevisor"
@@ -34,6 +35,9 @@ func renderServiceError(err error, format string, args ...interface{}) error {
 	}
 
 	err = errors.Cause(err)
+	if err == context.Canceled {
+		return errors.Errorf("%s: process was canceled", fmt.Errorf(format, args...))
+	}
 
 	switch {
 	case kubevisor.IsInvalidNameErr(err):

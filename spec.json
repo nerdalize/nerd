@@ -43,17 +43,7 @@
 			"synopsis": "Manage job datasets.",
 			"description": "Manage job datasets.",
 			"options": {
-				"Global Options": [],
-				"Options": []
-			}
-		},
-		"dataset delete": {
-			"usage": "nerd dataset delete DATASET_NAME [DATASET_NAME...]",
-			"synopsis": "Remove a dataset from the cluster",
-			"description": "Remove a dataset from the cluster",
-			"options": {
-				"Global Options": [],
-				"Options": [
+				"Global Options": [
 					{
 						"long_name": "kube-config",
 						"description": "file at which Nerd will look for Kubernetes credentials",
@@ -67,7 +57,33 @@
 							"10s"
 						],
 						"choices": null
+					}
+				],
+				"Options": []
+			}
+		},
+		"dataset delete": {
+			"usage": "nerd dataset delete DATASET_NAME [DATASET_NAME...]",
+			"synopsis": "Remove a dataset from the cluster",
+			"description": "Remove a dataset from the cluster",
+			"options": {
+				"Global Options": [
+					{
+						"long_name": "kube-config",
+						"description": "file at which Nerd will look for Kubernetes credentials",
+						"default_value": null,
+						"choices": null
 					},
+					{
+						"long_name": "timeout",
+						"description": "duration for which Nerd will wait for Kubernetes",
+						"default_value": [
+							"10s"
+						],
+						"choices": null
+					}
+				],
+				"Options": [
 					{
 						"long_name": "all",
 						"short_name": "a",
@@ -83,8 +99,7 @@
 			"synopsis": "Download results from a running job",
 			"description": "Download results from a running job",
 			"options": {
-				"Global Options": [],
-				"Options": [
+				"Global Options": [
 					{
 						"long_name": "kube-config",
 						"description": "file at which Nerd will look for Kubernetes credentials",
@@ -98,7 +113,9 @@
 							"10s"
 						],
 						"choices": null
-					},
+					}
+				],
+				"Options": [
 					{
 						"long_name": "input-of",
 						"description": "specify a job name where the datasets were used as its input. Dataset name is no longer mandatory.",
@@ -119,8 +136,7 @@
 			"synopsis": "Return datasets that are managed by the cluster",
 			"description": "Return datasets that are managed by the cluster",
 			"options": {
-				"Global Options": [],
-				"Options": [
+				"Global Options": [
 					{
 						"long_name": "kube-config",
 						"description": "file at which Nerd will look for Kubernetes credentials",
@@ -135,7 +151,8 @@
 						],
 						"choices": null
 					}
-				]
+				],
+				"Options": []
 			}
 		},
 		"dataset upload": {
@@ -143,22 +160,7 @@
 			"synopsis": "Upload a dataset to your compute cluster.",
 			"description": "Upload a dataset to your compute cluster.",
 			"options": {
-				"Global Options": [],
-				"Options": [
-					{
-						"long_name": "kube-config",
-						"description": "file at which Nerd will look for Kubernetes credentials",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "timeout",
-						"description": "duration for which Nerd will wait for Kubernetes",
-						"default_value": [
-							"10s"
-						],
-						"choices": null
-					},
+				"Advanced Options": [
 					{
 						"long_name": "aws-s3-bucket",
 						"description": "AWS S3 Bucket name that will be used for dataset storage",
@@ -190,7 +192,25 @@
 						"description": "AWS temporary auth token for the storage backend",
 						"default_value": null,
 						"choices": null
+					}
+				],
+				"Global Options": [
+					{
+						"long_name": "kube-config",
+						"description": "file at which Nerd will look for Kubernetes credentials",
+						"default_value": null,
+						"choices": null
 					},
+					{
+						"long_name": "timeout",
+						"description": "duration for which Nerd will wait for Kubernetes",
+						"default_value": [
+							"10s"
+						],
+						"choices": null
+					}
+				],
+				"Options": [
 					{
 						"long_name": "name",
 						"short_name": "n",
@@ -206,17 +226,7 @@
 			"synopsis": "Manage the lifecycle of compute jobs.",
 			"description": "Manage the lifecycle of compute jobs.",
 			"options": {
-				"Global Options": [],
-				"Options": []
-			}
-		},
-		"job delete": {
-			"usage": "nerd job delete JOB [JOB...]",
-			"synopsis": "Remove one or more job(s) from the cluster",
-			"description": "Remove one or more job(s) from the cluster",
-			"options": {
-				"Global Options": [],
-				"Options": [
+				"Global Options": [
 					{
 						"long_name": "kube-config",
 						"description": "file at which Nerd will look for Kubernetes credentials",
@@ -230,7 +240,33 @@
 							"10s"
 						],
 						"choices": null
+					}
+				],
+				"Options": []
+			}
+		},
+		"job delete": {
+			"usage": "nerd job delete JOB [JOB...]",
+			"synopsis": "Remove one or more job(s) from the cluster",
+			"description": "Remove one or more job(s) from the cluster",
+			"options": {
+				"Global Options": [
+					{
+						"long_name": "kube-config",
+						"description": "file at which Nerd will look for Kubernetes credentials",
+						"default_value": null,
+						"choices": null
 					},
+					{
+						"long_name": "timeout",
+						"description": "duration for which Nerd will wait for Kubernetes",
+						"default_value": [
+							"10s"
+						],
+						"choices": null
+					}
+				],
+				"Options": [
 					{
 						"long_name": "all",
 						"short_name": "a",
@@ -246,8 +282,7 @@
 			"synopsis": "Return jobs that are managed by the cluster",
 			"description": "Return jobs that are managed by the cluster",
 			"options": {
-				"Global Options": [],
-				"Options": [
+				"Global Options": [
 					{
 						"long_name": "kube-config",
 						"description": "file at which Nerd will look for Kubernetes credentials",
@@ -262,7 +297,8 @@
 						],
 						"choices": null
 					}
-				]
+				],
+				"Options": []
 			}
 		},
 		"job logs": {
@@ -270,8 +306,7 @@
 			"synopsis": "Return logs for a running job",
 			"description": "Return logs for a running job",
 			"options": {
-				"Global Options": [],
-				"Options": [
+				"Global Options": [
 					{
 						"long_name": "kube-config",
 						"description": "file at which Nerd will look for Kubernetes credentials",
@@ -285,7 +320,9 @@
 							"10s"
 						],
 						"choices": null
-					},
+					}
+				],
+				"Options": [
 					{
 						"long_name": "tail",
 						"short_name": "t",
@@ -301,7 +338,56 @@
 			"synopsis": "Runs a job on your compute cluster",
 			"description": "Runs a job on your compute cluster",
 			"options": {
-				"Global Options": [],
+				"Advanced Options": [
+					{
+						"long_name": "aws-s3-bucket",
+						"description": "AWS S3 Bucket name that will be used for dataset storage",
+						"default_value": [
+							"nlz-datasets-dev"
+						],
+						"choices": null
+					},
+					{
+						"long_name": "aws-region",
+						"description": "AWS region used for dataset storage",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "aws-access-key-id",
+						"description": "AWS access key used for auth with the storage backend",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "aws-secret-access-key",
+						"description": "AWS secret key for auth with the storage backend",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "aws-session-token",
+						"description": "AWS temporary auth token for the storage backend",
+						"default_value": null,
+						"choices": null
+					}
+				],
+				"Global Options": [
+					{
+						"long_name": "kube-config",
+						"description": "file at which Nerd will look for Kubernetes credentials",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "timeout",
+						"description": "duration for which Nerd will wait for Kubernetes",
+						"default_value": [
+							"10s"
+						],
+						"choices": null
+					}
+				],
 				"Options": [
 					{
 						"long_name": "name",
@@ -343,52 +429,6 @@
 					{
 						"long_name": "output",
 						"description": "specify one or more output folders that will be stored as datasets after the job is finished using the following format: \u003cDATASET_NAME\u003e:\u003cJOB_DIR\u003e",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "kube-config",
-						"description": "file at which Nerd will look for Kubernetes credentials",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "timeout",
-						"description": "duration for which Nerd will wait for Kubernetes",
-						"default_value": [
-							"10s"
-						],
-						"choices": null
-					},
-					{
-						"long_name": "aws-s3-bucket",
-						"description": "AWS S3 Bucket name that will be used for dataset storage",
-						"default_value": [
-							"nlz-datasets-dev"
-						],
-						"choices": null
-					},
-					{
-						"long_name": "aws-region",
-						"description": "AWS region used for dataset storage",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "aws-access-key-id",
-						"description": "AWS access key used for auth with the storage backend",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "aws-secret-access-key",
-						"description": "AWS secret key for auth with the storage backend",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "aws-session-token",
-						"description": "AWS temporary auth token for the storage backend",
 						"default_value": null,
 						"choices": null
 					}
