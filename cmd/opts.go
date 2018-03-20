@@ -20,11 +20,12 @@ import (
 
 //TransferOpts hold CLI options for configuring data transfer
 type TransferOpts struct {
-	AWSS3Bucket        string `long:"aws-s3-bucket" description:"AWS S3 Bucket name that will be used for dataset storage" default:"nlz-datasets-dev"`
-	AWSRegion          string `long:"aws-region" description:"AWS region used for dataset storage"`
-	AWSAccessKeyID     string `long:"aws-access-key-id" description:"AWS access key used for auth with the storage backend"`
-	AWSSecretAccessKey string `long:"aws-secret-access-key" description:"AWS secret key for auth with the storage backend"`
-	AWSSessionToken    string `long:"aws-session-token" description:"AWS temporary auth token for the storage backend"`
+	S3Bucket       string `long:"s3-bucket" description:"S3 Bucket name that will be used for dataset storage" default:"nlz-datasets-dev"`
+	AWSRegion      string `long:"aws-region" description:"AWS region used for dataset storage"`
+	S3AccessKey    string `long:"s3-access-key" description:"access key used for auth with the storage backend"`
+	S3SecretKey    string `long:"s3-secret-key" description:"secret key for auth with the storage backend"`
+	S3SessionToken string `long:"s3-session-token" description:"temporary auth token for the storage backend"`
+	S3Prefix       string `long:"s3-prefix" description:"store this dataset under a specific prefix"`
 }
 
 //TransferManager creates a transfermanager using the command line options
@@ -36,8 +37,13 @@ func (opts TransferOpts) TransferManager(kube *svc.Kube) (mgr transfer.Manager, 
 	}
 
 	sto = &transferstore.StoreOptions{
-		Type:          transferstore.StoreTypeS3,
-		S3StoreBucket: opts.AWSS3Bucket,
+		Type:             transferstore.StoreTypeS3,
+		S3StoreBucket:    opts.S3Bucket,
+		S3StoreAWSRegion: opts.AWSRegion,
+		S3StoreAccessKey: opts.S3AccessKey,
+		S3StoreSecretKey: opts.S3SecretKey,
+		S3SessionToken:   opts.S3SessionToken,
+		S3StorePrefix:    opts.S3Prefix,
 	}
 	sta = &transferarchiver.ArchiverOptions{
 		Type: transferarchiver.ArchiverTypeTar,
