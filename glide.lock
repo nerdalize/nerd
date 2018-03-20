@@ -4,7 +4,7 @@ imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
-  version: 62465d4996f172ae426fdcec7a6a053062cf8995
+  version: aace5875a5c3b85a3902c6d72b9caed301d64cce
   subpackages:
   - aws
   - aws/awserr
