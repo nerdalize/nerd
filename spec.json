@@ -162,8 +162,8 @@
 			"options": {
 				"Advanced Options": [
 					{
-						"long_name": "aws-s3-bucket",
-						"description": "AWS S3 Bucket name that will be used for dataset storage",
+						"long_name": "s3-bucket",
+						"description": "S3 Bucket name that will be used for dataset storage",
 						"default_value": [
 							"nlz-datasets-dev"
 						],
@@ -176,20 +176,26 @@
 						"choices": null
 					},
 					{
-						"long_name": "aws-access-key-id",
-						"description": "AWS access key used for auth with the storage backend",
+						"long_name": "s3-access-key",
+						"description": "access key used for auth with the storage backend",
 						"default_value": null,
 						"choices": null
 					},
 					{
-						"long_name": "aws-secret-access-key",
-						"description": "AWS secret key for auth with the storage backend",
+						"long_name": "s3-secret-key",
+						"description": "secret key for auth with the storage backend",
 						"default_value": null,
 						"choices": null
 					},
 					{
-						"long_name": "aws-session-token",
-						"description": "AWS temporary auth token for the storage backend",
+						"long_name": "s3-session-token",
+						"description": "temporary auth token for the storage backend",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "s3-prefix",
+						"description": "store this dataset under a specific prefix",
 						"default_value": null,
 						"choices": null
 					}
@@ -340,8 +346,8 @@
 			"options": {
 				"Advanced Options": [
 					{
-						"long_name": "aws-s3-bucket",
-						"description": "AWS S3 Bucket name that will be used for dataset storage",
+						"long_name": "s3-bucket",
+						"description": "S3 Bucket name that will be used for dataset storage",
 						"default_value": [
 							"nlz-datasets-dev"
 						],
@@ -354,20 +360,26 @@
 						"choices": null
 					},
 					{
-						"long_name": "aws-access-key-id",
-						"description": "AWS access key used for auth with the storage backend",
+						"long_name": "s3-access-key",
+						"description": "access key used for auth with the storage backend",
 						"default_value": null,
 						"choices": null
 					},
 					{
-						"long_name": "aws-secret-access-key",
-						"description": "AWS secret key for auth with the storage backend",
+						"long_name": "s3-secret-key",
+						"description": "secret key for auth with the storage backend",
 						"default_value": null,
 						"choices": null
 					},
 					{
-						"long_name": "aws-session-token",
-						"description": "AWS temporary auth token for the storage backend",
+						"long_name": "s3-session-token",
+						"description": "temporary auth token for the storage backend",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "s3-prefix",
+						"description": "store this dataset under a specific prefix",
 						"default_value": null,
 						"choices": null
 					}

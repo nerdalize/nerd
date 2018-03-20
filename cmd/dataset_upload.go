@@ -51,7 +51,7 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 		return renderServiceError(err, "failed to expand home directory in dataset local path")
 	}
 
-	dir, err = filepath.Abs(args[0])
+	dir, err = filepath.Abs(dir)
 	if err != nil {
 		return renderServiceError(err, "failed to turn local path into absolute path")
 	}
@@ -72,6 +72,7 @@ func (cmd *DatasetUpload) Execute(args []string) (err error) {
 	if !ok {
 		return renderConfigError(fmt.Errorf("unable to use transfer options"), "failed to configure")
 	}
+
 	mgr, sto, sta, err := t.TransferManager(kube)
 	if err != nil {
 		return errors.Wrap(err, "failed to setup transfer manager")

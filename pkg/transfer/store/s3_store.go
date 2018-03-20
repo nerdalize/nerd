@@ -36,6 +36,7 @@ type S3Store struct {
 
 	sess *session.Session
 	dwn  s3manageriface.DownloaderAPI
+	upl  s3manageriface.UploaderAPI
 	api  s3iface.S3API
 }
 
@@ -71,12 +72,13 @@ func NewS3Store(cfg StoreOptions) (store *S3Store, err error) {
 		s3api.Handlers.Sign.Clear()
 		s3api.Handlers.Sign.PushBackNamed(corehandlers.BuildContentLengthHandler)
 		//we delibrately don't add actual signing middleware for anonymous access
+	} else {
+		store.upl = s3manager.NewUploaderWithClient(s3api)
 	}
 
-	s3dwn := s3manager.NewDownloaderWithClient(s3api)
-	s3dwn.PartSize = 1024 * 1024 * 1024 * 5 //5Gib
+	store.dwn = s3manager.NewDownloaderWithClient(s3api)
+	// s3dwn.PartSize = 1024 * 1024 * 1024 * 5 //5Gib @TODO, test if this is necessary
 
-	store.dwn = s3dwn
 	store.api = s3api
 
 	return store, nil
@@ -114,7 +116,7 @@ func (store *S3Store) Get(ctx context.Context, k string, w io.WriterAt) (err err
 			}
 		}
 
-		return errors.Wrapf(err, "failed to download object")
+		return errors.Wrapf(err, "failed to multi-part download object")
 	}
 
 	return nil
@@ -122,12 +124,24 @@ func (store *S3Store) Get(ctx context.Context, k string, w io.WriterAt) (err err
 
 //Put an object into the store at key 'k' by reading from 'r'
 func (store *S3Store) Put(ctx context.Context, k string, r io.ReadSeeker) (err error) {
+	if store.upl != nil {
+		if _, err := store.upl.UploadWithContext(ctx, &s3manager.UploadInput{
+			Body:   r,
+			Bucket: aws.String(store.bucket),
+			Key:    aws.String(k),
+		}); err != nil {
+			return errors.Wrap(err, "failed to multi-part upload object")
+		}
+
+		return nil
+	}
+
 	if _, err := store.api.PutObjectWithContext(ctx, &s3.PutObjectInput{
 		Body:   r,
 		Bucket: aws.String(store.bucket),
 		Key:    aws.String(k),
 	}); err != nil {
-		return errors.Wrap(err, "failed to download object")
+		return errors.Wrap(err, "failed to upload object")
 	}
 
 	return nil
