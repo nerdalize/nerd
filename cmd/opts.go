@@ -37,7 +37,7 @@ func (opts TransferOpts) TransferManager(kube *svc.Kube) (mgr transfer.Manager, 
 
 	sto = &transferstore.StoreOptions{
 		Type:          transferstore.StoreTypeS3,
-		S3StoreBucket: "nlz-datasets-dev",
+		S3StoreBucket: opts.AWSS3Bucket,
 	}
 	sta = &transferarchiver.ArchiverOptions{
 		Type: transferarchiver.ArchiverTypeTar,
