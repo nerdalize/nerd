@@ -1,6 +1,8 @@
 package command
 
 import (
+	"sort"
+
 	"github.com/mitchellh/cli"
 	"github.com/nerdalize/nerd/command/format"
 	"github.com/pkg/errors"
@@ -46,6 +48,10 @@ func (cmd *WorkloadList) DoRun(args []string) (err error) {
 	if err != nil {
 		return HandleError(err)
 	}
+
+	sort.Slice(out.Workloads, func (i int, j int) bool {
+		return out.Workloads[i].CreatedAt < out.Workloads[j].CreatedAt
+	})
 
 	header := "WORKLOAD ID\tIMAGE\tINPUT\tCREATED"
 	pretty := "{{range $i, $x := $.Workloads}}{{$x.WorkloadID}}\t{{$x.Image}}\t{{$x.InputDatasetID}}\t{{$x.CreatedAt | fmtUnixAgo }}\n{{end}}"
