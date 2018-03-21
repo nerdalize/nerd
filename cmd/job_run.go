@@ -24,6 +24,7 @@ type JobRun struct {
 	VCPU    string   `long:"vcpu" description:"number of vcpus to use for this job" default:"2"`
 	Inputs  []string `long:"input" description:"specify one or more inputs that will be used for the job using the following format: <DIR|DATASET_NAME>:<JOB_DIR>"`
 	Outputs []string `long:"output" description:"specify one or more output folders that will be stored as datasets after the job is finished using the following format: <DATASET_NAME>:<JOB_DIR>"`
+	Private bool     `long:"private" description:"use this flag with a private image, a prompt will ask for your username and password."` //If REGISTRY_USERNAME and/or REGISTRY_PASSWORD are provided, they will be used as values to populate the registry secret
 
 	*command
 }
@@ -259,6 +260,30 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		Args:   jargs,
 		Memory: fmt.Sprintf("%sGi", cmd.Memory),
 		VCPU:   cmd.VCPU,
+	}
+	if cmd.Private {
+		// extract registry from image name
+		// list secrets,
+		//		if there is a secret for this registry, use it
+		// 		else if REGISTRY_USERNAME and REGISTRY_PASSWORD are provided use them
+		//			else prompt for pwd and username
+		username, err := cmd.out.Ask("Username: ")
+		if err != nil {
+			return err
+		}
+		password, err := cmd.out.AskSecret("Password: ")
+		if err != nil {
+			return err
+		}
+		secret, err := kube.CreateSecret(ctx, &svc.CreateSecretInput{
+			Image:    in.Image,
+			Username: username,
+			Password: password,
+		})
+		if err != nil {
+			return renderServiceError(err, "failed to create secret")
+		}
+		in.Secret = secret.Name
 	}
 
 	for _, vol := range vols {

@@ -28,6 +28,7 @@ type RunJobInput struct {
 	Volumes      []JobVolume
 	Memory       string
 	VCPU         string
+	Secret       string
 }
 
 //JobVolumeType determines if its content will be uploaded or downloaded
@@ -127,6 +128,12 @@ func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, 
 		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts, v1.VolumeMount{
 			Name:      hex.EncodeToString([]byte(vol.MountPath)),
 			MountPath: vol.MountPath,
+		})
+	}
+
+	if in.Secret != "" {
+		job.Spec.Template.Spec.ImagePullSecrets = append(job.Spec.Template.Spec.ImagePullSecrets, v1.LocalObjectReference{
+			Name: kubevisor.DefaultPrefix + in.Secret,
 		})
 	}
 

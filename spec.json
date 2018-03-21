@@ -431,6 +431,12 @@
 						"description": "specify one or more output folders that will be stored as datasets after the job is finished using the following format: \u003cDATASET_NAME\u003e:\u003cJOB_DIR\u003e",
 						"default_value": null,
 						"choices": null
+					},
+					{
+						"long_name": "private",
+						"description": "use this flag with a private image, a prompt will ask for your username and password.",
+						"default_value": null,
+						"choices": null
 					}
 				]
 			}

@@ -49,6 +49,9 @@ var (
 
 	//ResourceTypeQuota can be used to retrieve quota information
 	ResourceTypeQuota = ResourceType("resourcequotas")
+
+	//ResourceTypeSecrets can be used to get secret information
+	ResourceTypeSecrets = ResourceType("secrets")
 )
 
 //ManagedNames allows for Nerd to transparently manage resources based on names and there prefixes
@@ -212,6 +215,9 @@ func (k *Visor) CreateResource(ctx context.Context, t ResourceType, v ManagedNam
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
 		genfix = "j-"
+	case ResourceTypeSecrets:
+		c = k.api.CoreV1().RESTClient()
+		genfix = "s-"
 	case ResourceTypeDatasets:
 		c = k.crd.NerdalizeV1().RESTClient()
 		genfix = "d-"
