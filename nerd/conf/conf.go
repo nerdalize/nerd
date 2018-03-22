@@ -29,12 +29,40 @@ type AuthConfig struct {
 	SecureClientSecret string `json:"secure_client_secret"`
 	OAuthSuccessURL    string `json:"oauth_success_url"`
 	OAuthLocalServer   string `json:"oauth_localserver"`
+	OIDCCLientID       string `json:"oidc_client_id"`
+	OIDCCLientSecret   string `json:"oidc_client_secret"`
+	IDPIssuerURL       string `json:"idp_issuer_url"`
 }
 
 //LoggingConfig contains config details about local logging of command output
 type LoggingConfig struct {
 	Enabled      bool   `json:"enabled"`
 	FileLocation string `json:"file_location"`
+}
+
+//StagingDefaults provides the default for the staging environment when the config file misses certain fields.
+func StagingDefaults() *Config {
+	return &Config{
+		Auth: AuthConfig{
+			APIEndpoint:        "https://auth.staging.nlze.nl/v1/",
+			OAuthLocalServer:   "localhost:9876",
+			OAuthSuccessURL:    "https://auth.staging.nlze.nl/do/login_complete/?client=CLI",
+			SecureClientID:     "T8I0H3qAeWGA",
+			SecureClientSecret: "93177b0e77369537ceac900b26f0a9600484564fdda5d431b05e994b",
+			OIDCCLientID:       "T8I0H3qAeWGA",
+			OIDCCLientSecret:   "93177b0e77369537ceac900b26f0a9600484564fdda5d431b05e994b",
+			IDPIssuerURL:       "https://auth.nerdalize.com",
+			PublicKey: `-----BEGIN PUBLIC KEY-----
+MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEBthEmchVCtA3ZPXqiCXdj+7/ZFuhxRgx
+grTxIHK+b0vEqKqA3O++ggD1GgjqtTfNLGUjLCE3KxyIN78TsK+HU4VVexTjlWXy
+WPtidD68xGD0JVPU1cSfu8iP0XzwgttG
+-----END PUBLIC KEY-----
+`},
+		Logging: LoggingConfig{
+			Enabled:      false,
+			FileLocation: "~/.nerd/log",
+		},
+	}
 }
 
 //Defaults provides the default for when the config file misses certain fields.
@@ -46,6 +74,9 @@ func Defaults() *Config {
 			OAuthSuccessURL:    "https://auth.nerdalize.com/do/login_complete/?client=CLI",
 			SecureClientID:     "T8I0H3qAeWGA",
 			SecureClientSecret: "93177b0e77369537ceac900b26f0a9600484564fdda5d431b05e994b",
+			OIDCCLientID:       "T8I0H3qAeWGA",
+			OIDCCLientSecret:   "93177b0e77369537ceac900b26f0a9600484564fdda5d431b05e994b",
+			IDPIssuerURL:       "https://auth.nerdalize.com",
 			PublicKey: `-----BEGIN PUBLIC KEY-----
 MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEBthEmchVCtA3ZPXqiCXdj+7/ZFuhxRgx
 grTxIHK+b0vEqKqA3O++ggD1GgjqtTfNLGUjLCE3KxyIN78TsK+HU4VVexTjlWXy
@@ -56,7 +87,6 @@ WPtidD68xGD0JVPU1cSfu8iP0XzwgttG
 			Enabled:      false,
 			FileLocation: "~/.nerd/log",
 		},
-		NerdAPIEndpoint: "https://batch.nerdalize.com/v1",
 	}
 }
 
