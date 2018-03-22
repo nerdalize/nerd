@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -24,8 +25,7 @@ type JobRun struct {
 	VCPU    string   `long:"vcpu" description:"number of vcpus to use for this job" default:"2"`
 	Inputs  []string `long:"input" description:"specify one or more inputs that will be used for the job using the following format: <DIR|DATASET_NAME>:<JOB_DIR>"`
 	Outputs []string `long:"output" description:"specify one or more output folders that will be stored as datasets after the job is finished using the following format: <DATASET_NAME>:<JOB_DIR>"`
-	Private bool     `long:"private" description:"use this flag with a private image, a prompt will ask for your username and password."` //If REGISTRY_USERNAME and/or REGISTRY_PASSWORD are provided, they will be used as values to populate the registry secret
-
+	Private bool     `long:"private" description:"use this flag with a private image, a prompt will ask for your username and password. If DOCKER_USERNAME and/or DOCKER_PASSWORD are provided, they will be used as values to populate the registry secret."`
 	*command
 }
 
@@ -267,14 +267,11 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		//		if there is a secret for this registry, use it
 		// 		else if DOCKER_USERNAME and DOCKER_PASSWORD are provided use them
 		//			else prompt for pwd and username
-		username, err := cmd.out.Ask("Username: ")
+		username, password, err := cmd.getCredentials()
 		if err != nil {
 			return err
 		}
-		password, err := cmd.out.AskSecret("Password: ")
-		if err != nil {
-			return err
-		}
+		fmt.Println(username, password)
 		secret, err := kube.CreateSecret(ctx, &svc.CreateSecretInput{
 			Image:    in.Image,
 			Username: username,
@@ -341,6 +338,24 @@ func (cmd *JobRun) rollbackDatasets(ctx context.Context, mgr transfer.Manager, i
 	}
 
 	return err
+}
+
+func (cmd *JobRun) getCredentials() (username, password string, err error) {
+	username = os.Getenv("DOCKER_USERNAME")
+	if username == "" {
+		username, err = cmd.out.Ask("Username: ")
+		if err != nil {
+			return username, password, err
+		}
+	}
+	password = os.Getenv("DOCKER_PASSWORD")
+	if password == "" {
+		password, err = cmd.out.AskSecret("Password: ")
+		if err != nil {
+			return username, password, err
+		}
+	}
+	return username, password, err
 }
 
 func updateDatasets(ctx context.Context, kube *svc.Kube, inputs, outputs []dsHandle, name string) error {

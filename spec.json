@@ -434,7 +434,7 @@
 					},
 					{
 						"long_name": "private",
-						"description": "use this flag with a private image, a prompt will ask for your username and password.",
+						"description": "use this flag with a private image, a prompt will ask for your username and password. If DOCKER_USERNAME and/or DOCKER_PASSWORD are provided, they will be used as values to populate the registry secret.",
 						"default_value": null,
 						"choices": null
 					}
