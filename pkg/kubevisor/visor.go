@@ -115,6 +115,8 @@ func (k *Visor) GetResource(ctx context.Context, t ResourceType, v ManagedNames,
 	switch t {
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
+	case ResourceTypeSecrets:
+		c = k.api.CoreV1().RESTClient()
 	case ResourceTypeDatasets:
 		c = k.crd.NerdalizeV1().RESTClient()
 	default:
@@ -149,7 +151,8 @@ func (k *Visor) DeleteResource(ctx context.Context, t ResourceType, name string)
 		c = k.api.BatchV1().RESTClient()
 	case ResourceTypeDatasets:
 		c = k.crd.NerdalizeV1().RESTClient()
-
+	case ResourceTypeSecrets:
+		c = k.api.CoreV1().RESTClient()
 	default:
 		return errors.Errorf("unknown Kubernetes resource type provided for deletion: '%s'", t)
 	}
@@ -309,11 +312,7 @@ func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranfor
 	switch t {
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
-	case ResourceTypePods:
-		c = k.api.CoreV1().RESTClient()
-	case ResourceTypeEvents:
-		c = k.api.CoreV1().RESTClient()
-	case ResourceTypeQuota:
+	case ResourceTypePods, ResourceTypeEvents, ResourceTypeQuota, ResourceTypeSecrets:
 		c = k.api.CoreV1().RESTClient()
 	case ResourceTypeDatasets:
 		c = k.crd.NerdalizeV1().RESTClient()

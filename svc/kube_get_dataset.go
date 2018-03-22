@@ -27,7 +27,7 @@ type GetDatasetOutput struct {
 	ArchiverOptions transferarchiver.ArchiverOptions
 }
 
-//GetDataset will create a dataset on kubernetes
+//GetDataset will retrieve a dataset from kubernetes
 func (k *Kube) GetDataset(ctx context.Context, in *GetDatasetInput) (out *GetDatasetOutput, err error) {
 	if err = k.checkInput(ctx, in); err != nil {
 		return nil, err
