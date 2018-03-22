@@ -265,7 +265,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		// extract registry from image name
 		// list secrets,
 		//		if there is a secret for this registry, use it
-		// 		else if REGISTRY_USERNAME and REGISTRY_PASSWORD are provided use them
+		// 		else if DOCKER_USERNAME and DOCKER_PASSWORD are provided use them
 		//			else prompt for pwd and username
 		username, err := cmd.out.Ask("Username: ")
 		if err != nil {
