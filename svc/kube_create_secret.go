@@ -41,25 +41,10 @@ func (k *Kube) CreateSecret(ctx context.Context, in *CreateSecretInput) (out *Cr
 		Data: map[string][]byte{},
 	}
 
-	var dockerCfg []byte
-	auths := map[string]interface{}{}
-	cfg := map[string]interface{}{
-		"auths": auths,
-		"HttpHeaders": map[string]interface{}{
-			"User-Agent": "Docker-Client/1.11.2 (linux)",
-		},
+	secret.Data[v1.DockerConfigJsonKey], err = transformCredentials(in.Username, in.Password, registry)
+	if err != nil {
+		return nil, err
 	}
-	authStr := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", in.Username, in.Password)))
-	auths[fmt.Sprintf("https://%s/v1/", registry)] = map[string]string{
-		"auth": authStr,
-	}
-	auths[fmt.Sprintf("%s", registry)] = map[string]string{
-		"auth": authStr,
-	}
-	if dockerCfg, err = json.Marshal(cfg); err != nil {
-		return nil, errors.Wrap(err, "failed to serialize docker secret cfg")
-	}
-	secret.Data[v1.DockerConfigJsonKey] = dockerCfg
 
 	err = k.visor.CreateResource(ctx, kubevisor.ResourceTypeSecrets, secret, "")
 	if err != nil {
@@ -69,6 +54,28 @@ func (k *Kube) CreateSecret(ctx context.Context, in *CreateSecretInput) (out *Cr
 	return &CreateSecretOutput{
 		Name: secret.Name,
 	}, nil
+}
+
+func transformCredentials(username, password, registry string) (dockereCfg []byte, err error) {
+	var dockerCfg []byte
+	auths := map[string]interface{}{}
+	cfg := map[string]interface{}{
+		"auths": auths,
+		"HttpHeaders": map[string]interface{}{
+			"User-Agent": "Docker-Client/1.11.2 (linux)",
+		},
+	}
+	authStr := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password)))
+	auths[fmt.Sprintf("https://%s/v1/", registry)] = map[string]string{
+		"auth": authStr,
+	}
+	auths[fmt.Sprintf("%s", registry)] = map[string]string{
+		"auth": authStr,
+	}
+	if dockerCfg, err = json.Marshal(cfg); err != nil {
+		return dockerCfg, errors.Wrap(err, "failed to serialize docker secret cfg")
+	}
+	return dockerCfg, nil
 }
 
 func extractRegistry(image string) (string, string, string) {

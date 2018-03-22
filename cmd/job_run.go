@@ -262,22 +262,36 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		VCPU:   cmd.VCPU,
 	}
 	if cmd.Private {
-		// extract registry from image name
-		// list secrets,
-		//		if there is a secret for this registry, use it
 		username, password, err := cmd.getCredentials()
 		if err != nil {
 			return err
 		}
-		secret, err := kube.CreateSecret(ctx, &svc.CreateSecretInput{
-			Image:    in.Image,
-			Username: username,
-			Password: password,
-		})
+
+		secrets, err := kube.ListSecrets(ctx, &svc.ListSecretsInput{})
 		if err != nil {
-			return renderServiceError(err, "failed to create secret")
+			return renderServiceError(err, "failed to list secrets")
 		}
-		in.Secret = secret.Name
+		for _, secret := range secrets.Items {
+			if secret.Details.Image == in.Image {
+				_, err = kube.UpdateSecret(ctx, &svc.UpdateSecretInput{Name: secret.Name, Username: username, Password: password})
+				if err != nil {
+					return renderServiceError(err, "failed to update secret")
+				}
+				in.Secret = secret.Name
+				break
+			}
+		}
+		if in.Secret == "" {
+			secret, err := kube.CreateSecret(ctx, &svc.CreateSecretInput{
+				Image:    in.Image,
+				Username: username,
+				Password: password,
+			})
+			if err != nil {
+				return renderServiceError(err, "failed to create secret")
+			}
+			in.Secret = secret.Name
+		}
 	}
 
 	for _, vol := range vols {

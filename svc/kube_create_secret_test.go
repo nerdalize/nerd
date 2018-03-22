@@ -35,6 +35,7 @@ func TestCreateSecret(t *testing.T) {
 			Input:   &svc.CreateSecretInput{Image: "quay.io/nerdalize/smoketest", Username: "test", Password: "test"},
 			IsErr:   nil,
 			IsOutput: func(t testing.TB, out *svc.CreateSecretOutput) {
+				assert(t, out != nil, "output should not be nil")
 				assert(t, strings.Contains(out.Name, "s-"), "secret name should be generated and prefixed")
 			},
 		},

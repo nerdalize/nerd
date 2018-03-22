@@ -2,7 +2,6 @@ package svc
 
 import (
 	"context"
-	"log"
 
 	"github.com/nerdalize/nerd/pkg/kubevisor"
 
@@ -47,7 +46,6 @@ func (k *Kube) UpdateDataset(ctx context.Context, in *UpdateDatasetInput) (out *
 
 	err = k.visor.UpdateResource(ctx, kubevisor.ResourceTypeDatasets, dataset, in.Name)
 	if err != nil {
-		log.Println(err)
 		return nil, err
 	}
 	return &UpdateDatasetOutput{

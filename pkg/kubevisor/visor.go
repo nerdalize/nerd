@@ -271,7 +271,7 @@ func (k *Visor) UpdateResource(ctx context.Context, t ResourceType, v ManagedNam
 	switch t {
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
-	case ResourceTypePods:
+	case ResourceTypePods, ResourceTypeSecrets:
 		c = k.api.CoreV1().RESTClient()
 	case ResourceTypeDatasets:
 		c = k.crd.NerdalizeV1().RESTClient()
