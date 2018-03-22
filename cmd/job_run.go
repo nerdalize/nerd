@@ -265,13 +265,10 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		// extract registry from image name
 		// list secrets,
 		//		if there is a secret for this registry, use it
-		// 		else if DOCKER_USERNAME and DOCKER_PASSWORD are provided use them
-		//			else prompt for pwd and username
 		username, password, err := cmd.getCredentials()
 		if err != nil {
 			return err
 		}
-		fmt.Println(username, password)
 		secret, err := kube.CreateSecret(ctx, &svc.CreateSecretInput{
 			Image:    in.Image,
 			Username: username,
