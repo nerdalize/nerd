@@ -19,13 +19,14 @@ import (
 
 //JobRun command
 type JobRun struct {
-	Name    string   `long:"name" short:"n" description:"assign a name to the job"`
-	Env     []string `long:"env" short:"e" description:"environment variables to use"`
-	Memory  string   `long:"memory" short:"m" description:"memory to use for this job, expressed in gigabytes" default:"3"`
-	VCPU    string   `long:"vcpu" description:"number of vcpus to use for this job" default:"2"`
-	Inputs  []string `long:"input" description:"specify one or more inputs that will be used for the job using the following format: <DIR|DATASET_NAME>:<JOB_DIR>"`
-	Outputs []string `long:"output" description:"specify one or more output folders that will be stored as datasets after the job is finished using the following format: <DATASET_NAME>:<JOB_DIR>"`
-	Private bool     `long:"private" description:"use this flag with a private image, a prompt will ask for your username and password. If DOCKER_USERNAME and/or DOCKER_PASSWORD are provided, they will be used as values to populate the registry secret."`
+	Name       string   `long:"name" short:"n" description:"assign a name to the job"`
+	Env        []string `long:"env" short:"e" description:"environment variables to use"`
+	Memory     string   `long:"memory" short:"m" description:"memory to use for this job, expressed in gigabytes" default:"3"`
+	VCPU       string   `long:"vcpu" description:"number of vcpus to use for this job" default:"2"`
+	Inputs     []string `long:"input" description:"specify one or more inputs that will be used for the job using the following format: <DIR|DATASET_NAME>:<JOB_DIR>"`
+	Outputs    []string `long:"output" description:"specify one or more output folders that will be stored as datasets after the job is finished using the following format: <DATASET_NAME>:<JOB_DIR>"`
+	Private    bool     `long:"private" description:"use this flag with a private image, a prompt will ask for your username and password. If DOCKER_USERNAME and/or DOCKER_PASSWORD are provided, they will be used as values to populate the registry secret."`
+	CleanCreds bool     `long:"clean-creds" description:"to be used with the '--private' flag, a prompt will ask again for your username and password. If DOCKER_USERNAME and/or DOCKER_PASSWORD are provided, they will be used as values to update the secret."`
 	*command
 }
 
@@ -262,26 +263,31 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		VCPU:   cmd.VCPU,
 	}
 	if cmd.Private {
-		username, password, err := cmd.getCredentials()
-		if err != nil {
-			return err
-		}
-
 		secrets, err := kube.ListSecrets(ctx, &svc.ListSecretsInput{})
 		if err != nil {
 			return renderServiceError(err, "failed to list secrets")
 		}
 		for _, secret := range secrets.Items {
 			if secret.Details.Image == in.Image {
-				_, err = kube.UpdateSecret(ctx, &svc.UpdateSecretInput{Name: secret.Name, Username: username, Password: password})
-				if err != nil {
-					return renderServiceError(err, "failed to update secret")
+				if cmd.CleanCreds {
+					username, password, err := cmd.getCredentials()
+					if err != nil {
+						return err
+					}
+					_, err = kube.UpdateSecret(ctx, &svc.UpdateSecretInput{Name: secret.Name, Username: username, Password: password})
+					if err != nil {
+						return renderServiceError(err, "failed to update secret")
+					}
 				}
 				in.Secret = secret.Name
 				break
 			}
 		}
 		if in.Secret == "" {
+			username, password, err := cmd.getCredentials()
+			if err != nil {
+				return err
+			}
 			secret, err := kube.CreateSecret(ctx, &svc.CreateSecretInput{
 				Image:    in.Image,
 				Username: username,

@@ -437,6 +437,12 @@
 						"description": "use this flag with a private image, a prompt will ask for your username and password. If DOCKER_USERNAME and/or DOCKER_PASSWORD are provided, they will be used as values to populate the registry secret.",
 						"default_value": null,
 						"choices": null
+					},
+					{
+						"long_name": "clean-creds",
+						"description": "to be used with the '--private' flag, a prompt will ask again for your username and password. If DOCKER_USERNAME and/or DOCKER_PASSWORD are provided, they will be used as values to update the secret.",
+						"default_value": null,
+						"choices": null
 					}
 				]
 			}
