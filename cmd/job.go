@@ -28,7 +28,7 @@ func (cmd *Job) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
 func (cmd *Job) Synopsis() string {
-	return "Manage the lifecycle of compute jobs. A job is a computation that takes some input data, runs an application to do operations on this data and stores the results."
+	return "Group of commands used to manage the lifecycle of jobs. A job is a computation that takes some input data, runs an application to do operations on this data and stores the results."
 }
 
 // Usage shows usage

@@ -28,7 +28,7 @@ func (cmd *Dataset) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
 func (cmd *Dataset) Synopsis() string {
-	return "Manage datasets. A dataset is a collection of files, like a folder on a computer. They can be used as input for a job and, when an application creates output files, these can be automatically stored in a new dataset."
+	return "Group of commands used to manage datasets. A dataset is a collection of files, like a folder on a computer. They can be used as input for a job and, when an application creates output files, these can be automatically stored in a new dataset."
 }
 
 // Usage shows usage
