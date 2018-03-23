@@ -443,6 +443,18 @@
 						"description": "specify one or more output folders that will be stored as datasets after the job is finished using the following format: \u003cDATASET_NAME\u003e:\u003cJOB_DIR\u003e",
 						"default_value": null,
 						"choices": null
+					},
+					{
+						"long_name": "private",
+						"description": "use this flag with a private image, a prompt will ask for your username and password of the repository that stores the image. If NERD_IMAGE_USERNAME and/or NERD_IMAGE_PASSWORD environment variables are set, those values are used instead.",
+						"default_value": null,
+						"choices": null
+					},
+					{
+						"long_name": "clean-creds",
+						"description": "to be used with the '--private' flag, a prompt will ask again for your image repository username and password. If NERD_IMAGE_USERNAME and/or NERD_IMAGE_PASSWORD environment variables are provided, they will be used as values to update the secret.",
+						"default_value": null,
+						"choices": null
 					}
 				]
 			}

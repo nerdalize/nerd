@@ -8,7 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nerdalize/nerd/pkg/transfer/archiver"
+
 	"github.com/nerdalize/nerd/pkg/kubevisor"
+	"github.com/nerdalize/nerd/pkg/transfer/store"
 	"github.com/nerdalize/nerd/svc"
 )
 
@@ -36,6 +39,14 @@ func TestDeleteDataset(t *testing.T) {
 			Input:   &svc.DeleteDatasetInput{Name: "foo"},
 			Output:  &svc.DeleteDatasetOutput{},
 			IsErr:   kubevisor.IsNotExistsErr,
+		},
+		{
+			Name:     "when a valid dataset is deleted it should return no error",
+			Timeout:  time.Second * 5,
+			Datasets: []*svc.CreateDatasetInput{{Name: "test", StoreOptions: transferstore.StoreOptions{}, ArchiverOptions: transferarchiver.ArchiverOptions{}}},
+			Input:    &svc.DeleteDatasetInput{Name: "test"},
+			Output:   &svc.DeleteDatasetOutput{},
+			IsErr:    nil,
 		},
 	} {
 		t.Run(c.Name, func(t *testing.T) {

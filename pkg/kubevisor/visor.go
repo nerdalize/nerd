@@ -49,6 +49,9 @@ var (
 
 	//ResourceTypeQuota can be used to retrieve quota information
 	ResourceTypeQuota = ResourceType("resourcequotas")
+
+	//ResourceTypeSecrets can be used to get secret information
+	ResourceTypeSecrets = ResourceType("secrets")
 )
 
 //ManagedNames allows for Nerd to transparently manage resources based on names and there prefixes
@@ -112,6 +115,8 @@ func (k *Visor) GetResource(ctx context.Context, t ResourceType, v ManagedNames,
 	switch t {
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
+	case ResourceTypeSecrets:
+		c = k.api.CoreV1().RESTClient()
 	case ResourceTypeDatasets:
 		c = k.crd.NerdalizeV1().RESTClient()
 	default:
@@ -146,7 +151,8 @@ func (k *Visor) DeleteResource(ctx context.Context, t ResourceType, name string)
 		c = k.api.BatchV1().RESTClient()
 	case ResourceTypeDatasets:
 		c = k.crd.NerdalizeV1().RESTClient()
-
+	case ResourceTypeSecrets:
+		c = k.api.CoreV1().RESTClient()
 	default:
 		return errors.Errorf("unknown Kubernetes resource type provided for deletion: '%s'", t)
 	}
@@ -212,6 +218,9 @@ func (k *Visor) CreateResource(ctx context.Context, t ResourceType, v ManagedNam
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
 		genfix = "j-"
+	case ResourceTypeSecrets:
+		c = k.api.CoreV1().RESTClient()
+		genfix = "s-"
 	case ResourceTypeDatasets:
 		c = k.crd.NerdalizeV1().RESTClient()
 		genfix = "d-"
@@ -262,7 +271,7 @@ func (k *Visor) UpdateResource(ctx context.Context, t ResourceType, v ManagedNam
 	switch t {
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
-	case ResourceTypePods:
+	case ResourceTypePods, ResourceTypeSecrets:
 		c = k.api.CoreV1().RESTClient()
 	case ResourceTypeDatasets:
 		c = k.crd.NerdalizeV1().RESTClient()
@@ -303,11 +312,7 @@ func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranfor
 	switch t {
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
-	case ResourceTypePods:
-		c = k.api.CoreV1().RESTClient()
-	case ResourceTypeEvents:
-		c = k.api.CoreV1().RESTClient()
-	case ResourceTypeQuota:
+	case ResourceTypePods, ResourceTypeEvents, ResourceTypeQuota, ResourceTypeSecrets:
 		c = k.api.CoreV1().RESTClient()
 	case ResourceTypeDatasets:
 		c = k.crd.NerdalizeV1().RESTClient()

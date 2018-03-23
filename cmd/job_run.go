@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -18,13 +19,14 @@ import (
 
 //JobRun command
 type JobRun struct {
-	Name    string   `long:"name" short:"n" description:"assign a name to the job"`
-	Env     []string `long:"env" short:"e" description:"environment variables to use"`
-	Memory  string   `long:"memory" short:"m" description:"memory to use for this job, expressed in gigabytes" default:"3"`
-	VCPU    string   `long:"vcpu" description:"number of vcpus to use for this job" default:"2"`
-	Inputs  []string `long:"input" description:"specify one or more inputs that will be used for the job using the following format: <DIR|DATASET_NAME>:<JOB_DIR>"`
-	Outputs []string `long:"output" description:"specify one or more output folders that will be stored as datasets after the job is finished using the following format: <DATASET_NAME>:<JOB_DIR>"`
-
+	Name       string   `long:"name" short:"n" description:"assign a name to the job"`
+	Env        []string `long:"env" short:"e" description:"environment variables to use"`
+	Memory     string   `long:"memory" short:"m" description:"memory to use for this job, expressed in gigabytes" default:"3"`
+	VCPU       string   `long:"vcpu" description:"number of vcpus to use for this job" default:"2"`
+	Inputs     []string `long:"input" description:"specify one or more inputs that will be used for the job using the following format: <DIR|DATASET_NAME>:<JOB_DIR>"`
+	Outputs    []string `long:"output" description:"specify one or more output folders that will be stored as datasets after the job is finished using the following format: <DATASET_NAME>:<JOB_DIR>"`
+	Private    bool     `long:"private" description:"use this flag with a private image, a prompt will ask for your username and password of the repository that stores the image. If NERD_IMAGE_USERNAME and/or NERD_IMAGE_PASSWORD environment variables are set, those values are used instead."`
+	CleanCreds bool     `long:"clean-creds" description:"to be used with the '--private' flag, a prompt will ask again for your image repository username and password. If NERD_IMAGE_USERNAME and/or NERD_IMAGE_PASSWORD environment variables are provided, they will be used as values to update the secret."`
 	*command
 }
 
@@ -260,6 +262,44 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		Memory: fmt.Sprintf("%sGi", cmd.Memory),
 		VCPU:   cmd.VCPU,
 	}
+	if cmd.Private {
+		secrets, err := kube.ListSecrets(ctx, &svc.ListSecretsInput{})
+		if err != nil {
+			return renderServiceError(err, "failed to list secrets")
+		}
+		_, _, registry := svc.ExtractRegistry(in.Image)
+		for _, secret := range secrets.Items {
+			if secret.Details.Image == in.Image {
+				if cmd.CleanCreds {
+					username, password, err := cmd.getCredentials(registry)
+					if err != nil {
+						return err
+					}
+					_, err = kube.UpdateSecret(ctx, &svc.UpdateSecretInput{Name: secret.Name, Username: username, Password: password})
+					if err != nil {
+						return renderServiceError(err, "failed to update secret")
+					}
+				}
+				in.Secret = secret.Name
+				break
+			}
+		}
+		if in.Secret == "" {
+			username, password, err := cmd.getCredentials(registry)
+			if err != nil {
+				return err
+			}
+			secret, err := kube.CreateSecret(ctx, &svc.CreateSecretInput{
+				Image:    in.Image,
+				Username: username,
+				Password: password,
+			})
+			if err != nil {
+				return renderServiceError(err, "failed to create secret")
+			}
+			in.Secret = secret.Name
+		}
+	}
 
 	for _, vol := range vols {
 		in.Volumes = append(in.Volumes, *vol)
@@ -316,6 +356,28 @@ func (cmd *JobRun) rollbackDatasets(ctx context.Context, mgr transfer.Manager, i
 	}
 
 	return err
+}
+
+func (cmd *JobRun) getCredentials(registry string) (username, password string, err error) {
+	if registry == "index.docker.io" {
+		registry = "Docker Hub"
+	}
+	cmd.out.Infof("Please provide credentials for the %s repository that stores the private image:", registry)
+	username = os.Getenv("NERD_IMAGE_USERNAME")
+	if username == "" {
+		username, err = cmd.out.Ask("Username: ")
+		if err != nil {
+			return username, password, err
+		}
+	}
+	password = os.Getenv("NERD_IMAGE_PASSWORD")
+	if password == "" {
+		password, err = cmd.out.AskSecret("Password: ")
+		if err != nil {
+			return username, password, err
+		}
+	}
+	return username, password, err
 }
 
 func updateDatasets(ctx context.Context, kube *svc.Kube, inputs, outputs []dsHandle, name string) error {
