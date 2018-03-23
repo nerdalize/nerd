@@ -2,18 +2,15 @@ package command
 
 import (
 	"log"
-	"net/url"
 	"os"
 	"path/filepath"
 
 	"github.com/mitchellh/cli"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/nerdalize/nerd/cmd"
-	"github.com/nerdalize/nerd/nerd/client/auth/v1"
 	v1payload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
 
 	"github.com/nerdalize/nerd/nerd/conf"
-	"github.com/nerdalize/nerd/nerd/oauth"
 	"github.com/nerdalize/nerd/pkg/populator"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -56,30 +53,6 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 	}
 	projectSlug := args[0]
 
-	authbase, err := url.Parse(cmd.config.Auth.APIEndpoint)
-	if err != nil {
-		return errors.Wrapf(err, "auth endpoint '%v' is not a valid URL", cmd.config.Auth.APIEndpoint)
-	}
-	authOpsClient := v1auth.NewOpsClient(v1auth.OpsClientConfig{
-		Base:   authbase,
-		Logger: cmd.outputter.Logger,
-	})
-	client := v1auth.NewClient(v1auth.ClientConfig{
-		Base:               authbase,
-		Logger:             cmd.outputter.Logger,
-		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.SecureClientID, cmd.config.Auth.SecureClientSecret, cmd.session),
-	})
-
-	project, err := client.GetProject(projectSlug)
-	if err != nil {
-		return HandleError(errors.Wrap(err, "Project not found, please check the project name. You can get a list of your projects by running `nerd project list`."))
-	}
-
-	err = setProject(cmd.opts.KubeConfig, cmd.opts.Config, project, cmd.outputter.Logger)
-	if err != nil {
-		return HandleError(err)
-	}
-
 	err = cmd.session.WriteProject(projectSlug, conf.DefaultAWSRegion)
 	if err != nil {
 		return HandleError(err)
@@ -89,7 +62,7 @@ func (cmd *ProjectSet) DoRun(args []string) (err error) {
 	return nil
 }
 
-func setProject(kubeConfig, conf string, project *v1payload.GetProjectOutput, logger *log.Logger) error {
+func setProject(c *populator.Client, kubeConfig, conf string, project *v1payload.GetProjectOutput, logger *log.Logger) error {
 	var (
 		hdir string
 		err  error
@@ -101,7 +74,7 @@ func setProject(kubeConfig, conf string, project *v1payload.GetProjectOutput, lo
 	if kubeConfig == "" {
 		kubeConfig = filepath.Join(hdir, ".kube", "config")
 	}
-	p, err := populator.New(conf, kubeConfig, hdir, project)
+	p, err := populator.New(c, conf, kubeConfig, hdir, project)
 	if err != nil {
 		return err
 	}

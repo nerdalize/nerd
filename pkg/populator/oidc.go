@@ -18,20 +18,19 @@ import (
 )
 
 const (
-	// ClientSecret necessary for OpenID connect
-	ClientSecret = "93177b0e77369537ceac900b26f0a9600484564fdda5d431b05e994b"
-	// ClientID is a client id that all tokens must be issued for.
-	ClientID = "T8I0H3qAeWGA"
-	// IDPIssuerURL is the URL of the provider which allows the API server to discover public signing keys.
-	IDPIssuerURL = "https://auth.nerdalize.com"
 	// DirPermissions are the output directory's permissions.
 	DirPermissions = 0755
 )
 
-var (
-	authEndpoint  = fmt.Sprintf("%s/v1/o/authorize", IDPIssuerURL)
-	tokenEndpoint = fmt.Sprintf("%s/v1/o/token", IDPIssuerURL)
-)
+// Client provides necessary information to successfully use OIDC
+type Client struct {
+	// Secret necessary for OpenID connect
+	Secret string
+	// ID is a client id that all tokens must be issued for.
+	ID string
+	// IDPIssuerURL is the URL of the provider which allows the API server to discover public signing keys.
+	IDPIssuerURL string
+}
 
 //OIDCPopulator is an implementation of the P interface using on Open ID Connect credentials.
 type OIDCPopulator struct {
@@ -41,12 +40,14 @@ type OIDCPopulator struct {
 
 	project *v1payload.GetProjectOutput
 	homedir string
+	client  *Client
 }
 
-func newOIDC(kubeConfigFile, homedir string, project *v1payload.GetProjectOutput) *OIDCPopulator {
+func newOIDC(c *Client, kubeConfigFile, homedir string, project *v1payload.GetProjectOutput) *OIDCPopulator {
 	o := &OIDCPopulator{
 		project: project,
 		homedir: homedir,
+		client:  c,
 	}
 	o.kubeConfigFile.Store(kubeConfigFile)
 	return o
@@ -107,10 +108,10 @@ func (o *OIDCPopulator) PopulateKubeConfig(project string) error {
 	auth.AuthProvider = &api.AuthProviderConfig{
 		Name: "oidc",
 		Config: map[string]string{
-			"client-id":      ClientID,
-			"client-secret":  ClientSecret,
+			"client-id":      o.client.ID,
+			"client-secret":  o.client.Secret,
 			"id-token":       config.OAuth.IDToken,
-			"idp-issuer-url": IDPIssuerURL,
+			"idp-issuer-url": o.client.IDPIssuerURL,
 			"refresh-token":  config.OAuth.RefreshToken,
 		},
 	}

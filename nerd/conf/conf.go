@@ -29,8 +29,6 @@ type AuthConfig struct {
 	SecureClientSecret string `json:"secure_client_secret"`
 	OAuthSuccessURL    string `json:"oauth_success_url"`
 	OAuthLocalServer   string `json:"oauth_localserver"`
-	OIDCCLientID       string `json:"oidc_client_id"`
-	OIDCCLientSecret   string `json:"oidc_client_secret"`
 	IDPIssuerURL       string `json:"idp_issuer_url"`
 }
 
@@ -47,11 +45,9 @@ func StagingDefaults() *Config {
 			APIEndpoint:        "https://auth.staging.nlze.nl/v1/",
 			OAuthLocalServer:   "localhost:9876",
 			OAuthSuccessURL:    "https://auth.staging.nlze.nl/do/login_complete/?client=CLI",
-			SecureClientID:     "T8I0H3qAeWGA",
-			SecureClientSecret: "93177b0e77369537ceac900b26f0a9600484564fdda5d431b05e994b",
-			OIDCCLientID:       "T8I0H3qAeWGA",
-			OIDCCLientSecret:   "93177b0e77369537ceac900b26f0a9600484564fdda5d431b05e994b",
-			IDPIssuerURL:       "https://auth.nerdalize.com",
+			SecureClientID:     "ckvyq40yyGSH",
+			SecureClientSecret: "0c4feb1e9d11790451a4364e803284a60905cef1a5f9bf7bad5f0eeb",
+			IDPIssuerURL:       "https://auth.staging.nlze.nl",
 			PublicKey: `-----BEGIN PUBLIC KEY-----
 MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEBthEmchVCtA3ZPXqiCXdj+7/ZFuhxRgx
 grTxIHK+b0vEqKqA3O++ggD1GgjqtTfNLGUjLCE3KxyIN78TsK+HU4VVexTjlWXy
@@ -74,8 +70,6 @@ func Defaults() *Config {
 			OAuthSuccessURL:    "https://auth.nerdalize.com/do/login_complete/?client=CLI",
 			SecureClientID:     "T8I0H3qAeWGA",
 			SecureClientSecret: "93177b0e77369537ceac900b26f0a9600484564fdda5d431b05e994b",
-			OIDCCLientID:       "T8I0H3qAeWGA",
-			OIDCCLientSecret:   "93177b0e77369537ceac900b26f0a9600484564fdda5d431b05e994b",
 			IDPIssuerURL:       "https://auth.nerdalize.com",
 			PublicKey: `-----BEGIN PUBLIC KEY-----
 MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEBthEmchVCtA3ZPXqiCXdj+7/ZFuhxRgx
