@@ -25,8 +25,8 @@ type JobRun struct {
 	VCPU       string   `long:"vcpu" description:"number of vcpus to use for this job" default:"2"`
 	Inputs     []string `long:"input" description:"specify one or more inputs that will be used for the job using the following format: <DIR|DATASET_NAME>:<JOB_DIR>"`
 	Outputs    []string `long:"output" description:"specify one or more output folders that will be stored as datasets after the job is finished using the following format: <DATASET_NAME>:<JOB_DIR>"`
-	Private    bool     `long:"private" description:"use this flag with a private image, a prompt will ask for your username and password. If DOCKER_USERNAME and/or DOCKER_PASSWORD are provided, they will be used as values to populate the registry secret."`
-	CleanCreds bool     `long:"clean-creds" description:"to be used with the '--private' flag, a prompt will ask again for your username and password. If DOCKER_USERNAME and/or DOCKER_PASSWORD are provided, they will be used as values to update the secret."`
+	Private    bool     `long:"private" description:"use this flag with a private image, a prompt will ask for your username and password of the repository that stores the image. If NERD_IMAGE_USERNAME and/or NERD_IMAGE_PASSWORD environment variables are set, those values are used instead."`
+	CleanCreds bool     `long:"clean-creds" description:"to be used with the '--private' flag, a prompt will ask again for your image repository username and password. If NERD_IMAGE_USERNAME and/or NERD_IMAGE_PASSWORD environment variables are provided, they will be used as values to update the secret."`
 	*command
 }
 
@@ -358,14 +358,15 @@ func (cmd *JobRun) rollbackDatasets(ctx context.Context, mgr transfer.Manager, i
 }
 
 func (cmd *JobRun) getCredentials() (username, password string, err error) {
-	username = os.Getenv("DOCKER_USERNAME")
+	cmd.out.Infof("Please provide credentials for the Docker repository that stores the private image:")
+	username = os.Getenv("NERD_IMAGE_USERNAME")
 	if username == "" {
 		username, err = cmd.out.Ask("Username: ")
 		if err != nil {
 			return username, password, err
 		}
 	}
-	password = os.Getenv("DOCKER_PASSWORD")
+	password = os.Getenv("NERD_IMAGE_PASSWORD")
 	if password == "" {
 		password, err = cmd.out.AskSecret("Password: ")
 		if err != nil {
