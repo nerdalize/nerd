@@ -2,8 +2,8 @@
 	"commands": {
 		"dataset": {
 			"usage": "nerd dataset \u003csubcommand\u003e",
-			"synopsis": "Manage datasets. A dataset is a collection of files, like a folder on a computer. They can be used as input for a job and, when an application creates output files, these can be automatically stored in a new dataset.",
-			"description": "Manage datasets. A dataset is a collection of files, like a folder on a computer. They can be used as input for a job and, when an application creates output files, these can be automatically stored in a new dataset.",
+			"synopsis": "Group of commands used to manage datasets. A dataset is a collection of files, like a folder on a computer. They can be used as input for a job and, when an application creates output files, these can be automatically stored in a new dataset.",
+			"description": "Group of commands used to manage datasets. A dataset is a collection of files, like a folder on a computer. They can be used as input for a job and, when an application creates output files, these can be automatically stored in a new dataset.",
 			"options": {
 				"Global Options": [
 					{
@@ -191,8 +191,8 @@
 		},
 		"job": {
 			"usage": "nerd job \u003csubcommand\u003e",
-			"synopsis": "Manage the lifecycle of compute jobs. A job is a computation that takes some input data, runs an application to do operations on this data and stores the results.",
-			"description": "Manage the lifecycle of compute jobs. A job is a computation that takes some input data, runs an application to do operations on this data and stores the results.",
+			"synopsis": "Group of commands used to manage the lifecycle of jobs. A job is a computation that takes some input data, runs an application to do operations on this data and stores the results.",
+			"description": "Group of commands used to manage the lifecycle of jobs. A job is a computation that takes some input data, runs an application to do operations on this data and stores the results.",
 			"options": {
 				"Global Options": [
 					{
