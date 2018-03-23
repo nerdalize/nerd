@@ -32,7 +32,7 @@ func TestCreateSecret(t *testing.T) {
 		{
 			Name:    "when a valid input is provided it should return a secret with a unique name",
 			Timeout: time.Second * 5,
-			Input:   &svc.CreateSecretInput{Image: "quay.io/nerdalize/smoketest", Username: "test", Password: "test"},
+			Input:   &svc.CreateSecretInput{Image: "smoketest", Project: "nerdalize", Registry: "quay.io", Username: "test", Password: "test"},
 			IsErr:   nil,
 			IsOutput: func(t testing.TB, out *svc.CreateSecretOutput) {
 				assert(t, out != nil, "output should not be nil")

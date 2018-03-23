@@ -17,8 +17,10 @@ import (
 //CreateSecretInput is the input to CreateSecret
 type CreateSecretInput struct {
 	Image    string `validate:"printascii"`
-	Username string
-	Password string
+	Registry string `validate:"required"`
+	Project  string
+	Username string `validate:"required"`
+	Password string `validate:"required"`
 }
 
 //CreateSecretOutput is the output to CreateSecret
@@ -32,16 +34,15 @@ func (k *Kube) CreateSecret(ctx context.Context, in *CreateSecretInput) (out *Cr
 		return nil, err
 	}
 
-	image, project, registry := extractRegistry(in.Image)
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{"image": image, "project": project, "registry": registry},
+			Labels: map[string]string{"image": in.Image, "project": in.Project, "registry": in.Registry},
 		},
 		Type: v1.SecretTypeDockerConfigJson,
 		Data: map[string][]byte{},
 	}
 
-	secret.Data[v1.DockerConfigJsonKey], err = transformCredentials(in.Username, in.Password, registry)
+	secret.Data[v1.DockerConfigJsonKey], err = transformCredentials(in.Username, in.Password, in.Registry)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +79,8 @@ func transformCredentials(username, password, registry string) (dockereCfg []byt
 	return dockerCfg, nil
 }
 
-func extractRegistry(image string) (string, string, string) {
+// ExtractRegistry takes a string as input and divides it in image, project, registry
+func ExtractRegistry(image string) (string, string, string) {
 	// Supported registries:
 	// - project/image -> index.docker.io
 	// - ACCOUNT.dkr.ecr.REGION.amazonaws.com/image -> aws

@@ -87,7 +87,7 @@ func TestGetSpecificSecret(t *testing.T) {
 	defer cancel()
 
 	kube := svc.NewKube(di)
-	secret, err := kube.CreateSecret(ctx, &svc.CreateSecretInput{Image: image, Username: "test", Password: "test"})
+	secret, err := kube.CreateSecret(ctx, &svc.CreateSecretInput{Image: "smoketest", Project: "nerdalize", Registry: "quay.io", Username: "test", Password: "test"})
 	ok(t, err)
 
 	out, err := kube.GetSecret(ctx, &svc.GetSecretInput{Name: secret.Name})

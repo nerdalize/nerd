@@ -18,7 +18,9 @@ func TestUpdateSecret(t *testing.T) {
 
 	kube := svc.NewKube(di)
 	out, err := kube.CreateSecret(ctx, &svc.CreateSecretInput{
-		Image:    "quay.io/nerdalize/smoketest",
+		Image:    "smoketest",
+		Project:  "nerdalize",
+		Registry: "quay.io",
 		Username: "test",
 		Password: "test",
 	})

@@ -267,10 +267,11 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		if err != nil {
 			return renderServiceError(err, "failed to list secrets")
 		}
+		_, _, registry := svc.ExtractRegistry(in.Image)
 		for _, secret := range secrets.Items {
 			if secret.Details.Image == in.Image {
 				if cmd.CleanCreds {
-					username, password, err := cmd.getCredentials()
+					username, password, err := cmd.getCredentials(registry)
 					if err != nil {
 						return err
 					}
@@ -284,7 +285,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 			}
 		}
 		if in.Secret == "" {
-			username, password, err := cmd.getCredentials()
+			username, password, err := cmd.getCredentials(registry)
 			if err != nil {
 				return err
 			}
@@ -357,8 +358,11 @@ func (cmd *JobRun) rollbackDatasets(ctx context.Context, mgr transfer.Manager, i
 	return err
 }
 
-func (cmd *JobRun) getCredentials() (username, password string, err error) {
-	cmd.out.Infof("Please provide credentials for the Docker repository that stores the private image:")
+func (cmd *JobRun) getCredentials(registry string) (username, password string, err error) {
+	if registry == "index.docker.io" {
+		registry = "Docker Hub"
+	}
+	cmd.out.Infof("Please provide credentials for the %s repository that stores the private image:", registry)
 	username = os.Getenv("NERD_IMAGE_USERNAME")
 	if username == "" {
 		username, err = cmd.out.Ask("Username: ")

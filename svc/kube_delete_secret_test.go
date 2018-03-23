@@ -68,7 +68,6 @@ func TestDeleteSecret(t *testing.T) {
 }
 
 func TestDeleteSpecificSecret(t *testing.T) {
-	image := "quay.io/nerdalize/smoketest"
 	timeout := time.Minute
 
 	if testing.Short() {
@@ -83,7 +82,7 @@ func TestDeleteSpecificSecret(t *testing.T) {
 	defer cancel()
 
 	kube := svc.NewKube(di)
-	secret, err := kube.CreateSecret(ctx, &svc.CreateSecretInput{Image: image, Username: "test", Password: "test"})
+	secret, err := kube.CreateSecret(ctx, &svc.CreateSecretInput{Image: "smoketest", Project: "nerdalize", Registry: "quay.io", Username: "test", Password: "test"})
 	ok(t, err)
 
 	out, err := kube.DeleteSecret(ctx, &svc.DeleteSecretInput{Name: secret.Name})

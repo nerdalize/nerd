@@ -44,13 +44,13 @@ func TestListSecrets(t *testing.T) {
 		{
 			Name:    "when one correct secret was created it should be listed",
 			Timeout: time.Minute,
-			Secrets: []*svc.CreateSecretInput{{Image: "quay.io/nerdalize/smoketest", Username: "test", Password: "test"}},
+			Secrets: []*svc.CreateSecretInput{{Image: "smoketest", Project: "nerdalize", Registry: "quay.io", Username: "test", Password: "test"}},
 			Input:   &svc.ListSecretsInput{},
 			IsErr:   isNilErr,
 			IsOutput: func(t testing.TB, out *svc.ListSecretsOutput) bool {
 				assert(t, len(out.Items) == 1, "expected one secret to be listed")
 				assert(t, !out.Items[0].Details.CreatedAt.IsZero(), "created at time should not be zero")
-
+				assert(t, out.Items[0].Details.Image == "quay.io/nerdalize/smoketest", "expected to find complete image name")
 				assert(t, strings.HasPrefix(out.Items[0].Name, "s-"), "expected secret name to be prefixed has expected")
 				return true
 			},
