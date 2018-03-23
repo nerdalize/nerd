@@ -103,6 +103,7 @@ func TestDocGeneration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to write docs: %v", err)
 	}
+	defer f.Close()
 
 	enc := json.NewEncoder(f)
 	enc.SetIndent("", "\t")
@@ -110,7 +111,6 @@ func TestDocGeneration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to encode: %+v", err)
 	}
-
 }
 
 func isNotSysCmd(cli *cli.CLI, name string) bool {

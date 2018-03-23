@@ -49,9 +49,9 @@ func create() *cli.CLI {
 			"dataset delete":   cmd.DatasetDeleteFactory(ui),
 			"job":              cmd.JobFactory(ui),
 			"job run":          cmd.JobRunFactory(ui),
-			"job delete":       cmd.JobDeleteFactory(ui),
 			"job list":         cmd.JobListFactory(ui),
 			"job logs":         cmd.JobLogsFactory(ui),
+			"job delete":       cmd.JobDeleteFactory(ui),
 		},
 	}
 

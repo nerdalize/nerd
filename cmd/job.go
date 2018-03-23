@@ -27,7 +27,9 @@ func (cmd *Job) Execute(args []string) (err error) { return errShowHelp("") }
 func (cmd *Job) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
-func (cmd *Job) Synopsis() string { return "Manage the lifecycle of compute jobs." }
+func (cmd *Job) Synopsis() string {
+	return "Manage the lifecycle of compute jobs. A job is a computation that takes some input data, runs an application to do operations on this data and stores the results."
+}
 
 // Usage shows usage
 func (cmd *Job) Usage() string { return "nerd job <subcommand>" }

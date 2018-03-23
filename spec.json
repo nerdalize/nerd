@@ -40,8 +40,8 @@
 	"commands": {
 		"dataset": {
 			"usage": "nerd dataset \u003csubcommand\u003e",
-			"synopsis": "Manage job datasets.",
-			"description": "Manage job datasets.",
+			"synopsis": "Manage datasets. Datasets are Nerd’s way to manage files. A dataset is a collection of files, like a folder on a computer, that’s stored on the Nerdalize cloud. Datasets can be used as input for a job and, when an application creates output files, these can be automatically stored in a new dataset.",
+			"description": "Manage datasets. Datasets are Nerd’s way to manage files. A dataset is a collection of files, like a folder on a computer, that’s stored on the Nerdalize cloud. Datasets can be used as input for a job and, when an application creates output files, these can be automatically stored in a new dataset.",
 			"options": {
 				"Global Options": [
 					{
@@ -229,8 +229,8 @@
 		},
 		"job": {
 			"usage": "nerd job \u003csubcommand\u003e",
-			"synopsis": "Manage the lifecycle of compute jobs.",
-			"description": "Manage the lifecycle of compute jobs.",
+			"synopsis": "Manage the lifecycle of compute jobs. A job is a computation that takes some input data, runs an application to do operations on this data and stores the results. Because applications are packaged as Images, no setup or configuration is necessary. A simulation is a great example: it takes some input dataset, runs the simulation and outputs the results.",
+			"description": "Manage the lifecycle of compute jobs. A job is a computation that takes some input data, runs an application to do operations on this data and stores the results. Because applications are packaged as Images, no setup or configuration is necessary. A simulation is a great example: it takes some input dataset, runs the simulation and outputs the results.",
 			"options": {
 				"Global Options": [
 					{
