@@ -7,7 +7,6 @@ import (
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	"github.com/nerdalize/nerd/command"
 )
 
 //Documented can be implemented by command we want to have documented
@@ -37,8 +36,7 @@ func TestDocGeneration(t *testing.T) {
 	}
 
 	type docs struct {
-		GlobalOptions []opt             `json:"global_options"`
-		Commands      map[string]*entry `json:"commands"`
+		Commands map[string]*entry `json:"commands"`
 	}
 
 	d := docs{
@@ -90,11 +88,7 @@ func TestDocGeneration(t *testing.T) {
 				gopts = append(gopts, op)
 			}
 
-			if g.LongDescription != command.SharedOptionsGroup {
-				opts[g.LongDescription] = gopts
-			} else {
-				d.GlobalOptions = gopts
-			}
+			opts[g.LongDescription] = gopts
 		}
 
 	}
@@ -103,6 +97,7 @@ func TestDocGeneration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to write docs: %v", err)
 	}
+	defer f.Close()
 
 	enc := json.NewEncoder(f)
 	enc.SetIndent("", "\t")
@@ -110,7 +105,6 @@ func TestDocGeneration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to encode: %+v", err)
 	}
-
 }
 
 func isNotSysCmd(cli *cli.CLI, name string) bool {

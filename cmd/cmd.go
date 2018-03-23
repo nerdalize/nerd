@@ -134,7 +134,6 @@ func (cmd *command) Run(args []string) int {
 		case errShowUsage:
 			return cmd.usage(cause)
 		case errShowHelp:
-			cmd.out.Output(cause.Error())
 			return cli.RunResultHelp
 		default:
 			return cmd.fail(err, "Error", false)
