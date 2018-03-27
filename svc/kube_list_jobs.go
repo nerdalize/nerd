@@ -92,13 +92,6 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 		return nil, err
 	}
 
-	//List Datasets
-	datasets := &datasets{}
-	err = k.visor.ListResources(ctx, kubevisor.ResourceTypeDatasets, datasets, nil, nil)
-	if err != nil {
-		return nil, err
-	}
-
 	//Get Events
 	events := &events{}
 	err = k.visor.ListResources(ctx, kubevisor.ResourceTypeEvents, events, nil, []string{"involvedObject.kind=Job,reason=FailedCreate"})
@@ -112,9 +105,6 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 	if err != nil {
 		return nil, err
 	}
-
-	//map datasets
-	inputs, outputs := mapDatasets(datasets)
 
 	//get jobs and investigate
 	out = &ListJobsOutput{}
@@ -145,14 +135,15 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 			item.ActiveAt = job.Status.StartTime.Local()
 		}
 
-		d, ok := inputs[job.Name]
-		if ok {
-			item.Input = d
-		}
-
-		d, ok = outputs[job.Name]
-		if ok {
-			item.Output = d
+		for _, dataset := range job.Spec.Template.Spec.Volumes {
+			if dataset.FlexVolume != nil {
+				if dataset.FlexVolume.Options["input/dataset"] != "" {
+					item.Input = append(item.Input, dataset.FlexVolume.Options["input/dataset"])
+				}
+				if dataset.FlexVolume.Options["output/dataset"] != "" {
+					item.Output = append(item.Output, dataset.FlexVolume.Options["output/dataset"])
+				}
+			}
 		}
 
 		for _, cond := range job.Status.Conditions {
@@ -262,21 +253,6 @@ func (k *Kube) ListJobs(ctx context.Context, in *ListJobsInput) (out *ListJobsOu
 	}
 
 	return out, nil
-}
-
-func mapDatasets(datasets *datasets) (map[string][]string, map[string][]string) {
-	inputs := map[string][]string{}
-	outputs := map[string][]string{}
-
-	for _, d := range datasets.Items {
-		for _, inputForJob := range d.Spec.InputFor {
-			inputs[inputForJob] = append(inputs[inputForJob], d.Name)
-		}
-		for _, outputOfJob := range d.Spec.OutputFrom {
-			outputs[outputOfJob] = append(outputs[outputOfJob], d.Name)
-		}
-	}
-	return inputs, outputs
 }
 
 //jobs implements the list transformer interface to allow the kubevisor the manage names for us
