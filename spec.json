@@ -1,47 +1,9 @@
 {
-	"global_options": [
-		{
-			"long_name": "config-file",
-			"description": "Location of config file",
-			"default_value": [
-				""
-			],
-			"choices": null
-		},
-		{
-			"long_name": "session-file",
-			"description": "Location of session file",
-			"default_value": [
-				""
-			],
-			"choices": null
-		},
-		{
-			"long_name": "debug",
-			"description": "Show debug output",
-			"default_value": [
-				"false"
-			],
-			"choices": null
-		},
-		{
-			"long_name": "output",
-			"description": "Format of the output",
-			"default_value": [
-				"pretty"
-			],
-			"choices": [
-				"pretty",
-				"raw",
-				"json"
-			]
-		}
-	],
 	"commands": {
 		"dataset": {
 			"usage": "nerd dataset \u003csubcommand\u003e",
-			"synopsis": "Manage job datasets.",
-			"description": "Manage job datasets.",
+			"synopsis": "Group of commands used to manage datasets. A dataset is a collection of files, like a folder on a computer. They can be used as input for a job and, when an application creates output files, these can be automatically stored in a new dataset.",
+			"description": "Group of commands used to manage datasets. A dataset is a collection of files, like a folder on a computer. They can be used as input for a job and, when an application creates output files, these can be automatically stored in a new dataset.",
 			"options": {
 				"Global Options": [
 					{
@@ -229,8 +191,8 @@
 		},
 		"job": {
 			"usage": "nerd job \u003csubcommand\u003e",
-			"synopsis": "Manage the lifecycle of compute jobs.",
-			"description": "Manage the lifecycle of compute jobs.",
+			"synopsis": "Group of commands used to manage the lifecycle of jobs. A job is a computation that takes some input data, runs an application to do operations on this data and stores the results.",
+			"description": "Group of commands used to manage the lifecycle of jobs. A job is a computation that takes some input data, runs an application to do operations on this data and stores the results.",
 			"options": {
 				"Global Options": [
 					{
@@ -479,6 +441,44 @@
 						"default_value": null,
 						"choices": null
 					}
+				],
+				"Other Options": [
+					{
+						"long_name": "config-file",
+						"description": "Location of config file",
+						"default_value": [
+							""
+						],
+						"choices": null
+					},
+					{
+						"long_name": "session-file",
+						"description": "Location of session file",
+						"default_value": [
+							""
+						],
+						"choices": null
+					},
+					{
+						"long_name": "debug",
+						"description": "Show debug output",
+						"default_value": [
+							"false"
+						],
+						"choices": null
+					},
+					{
+						"long_name": "output",
+						"description": "Format of the output",
+						"default_value": [
+							"pretty"
+						],
+						"choices": [
+							"pretty",
+							"raw",
+							"json"
+						]
+					}
 				]
 			}
 		},
@@ -486,7 +486,46 @@
 			"usage": "nerd version",
 			"synopsis": "Check the current version.",
 			"description": "Check the current version.",
-			"options": {}
+			"options": {
+				"Other Options": [
+					{
+						"long_name": "config-file",
+						"description": "Location of config file",
+						"default_value": [
+							""
+						],
+						"choices": null
+					},
+					{
+						"long_name": "session-file",
+						"description": "Location of session file",
+						"default_value": [
+							""
+						],
+						"choices": null
+					},
+					{
+						"long_name": "debug",
+						"description": "Show debug output",
+						"default_value": [
+							"false"
+						],
+						"choices": null
+					},
+					{
+						"long_name": "output",
+						"description": "Format of the output",
+						"default_value": [
+							"pretty"
+						],
+						"choices": [
+							"pretty",
+							"raw",
+							"json"
+						]
+					}
+				]
+			}
 		}
 	}
 }
