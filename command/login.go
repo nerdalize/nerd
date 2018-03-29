@@ -5,12 +5,14 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/mitchellh/cli"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/oauth"
+	"github.com/nerdalize/nerd/pkg/populator"
 	"github.com/pkg/errors"
 	"github.com/skratchdot/open-golang/open"
 )
@@ -49,6 +51,9 @@ func LoginFactory() (cli.Command, error) {
 
 //DoRun is called by run and allows an error to be returned
 func (cmd *Login) DoRun(args []string) error {
+	if os.Getenv("NERD_ENV") == "staging" {
+		cmd.config = conf.StagingDefaults()
+	}
 	authbase, err := url.Parse(cmd.config.Auth.APIEndpoint)
 	if err != nil {
 		return HandleError(errors.Wrapf(err, "auth endpoint '%v' is not a valid URL", cmd.config.Auth.APIEndpoint))
@@ -101,9 +106,14 @@ func (cmd *Login) DoRun(args []string) error {
 		return nil
 	}
 	var projectSlug string
+	c := populator.Client{
+		Secret:       cmd.config.Auth.SecureClientSecret,
+		ID:           cmd.config.Auth.SecureClientID,
+		IDPIssuerURL: cmd.config.Auth.IDPIssuerURL,
+	}
 	for _, project := range list.Projects {
 		projectSlug = project.Nk
-		err = setProject(cmd.opts.KubeConfig, cmd.opts.Config, project, cmd.outputter.Logger)
+		err = setProject(&c, cmd.opts.KubeConfig, cmd.opts.Config, project, cmd.outputter.Logger)
 		if err != nil {
 			projectSlug = ""
 			continue
