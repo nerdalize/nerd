@@ -267,7 +267,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		if err != nil {
 			return renderServiceError(err, "failed to list secrets")
 		}
-		_, _, registry := svc.ExtractRegistry(in.Image)
+		image, project, registry := svc.ExtractRegistry(in.Image)
 		for _, secret := range secrets.Items {
 			if secret.Details.Image == in.Image {
 				if cmd.CleanCreds {
@@ -290,9 +290,11 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 				return err
 			}
 			secret, err := kube.CreateSecret(ctx, &svc.CreateSecretInput{
-				Image:    in.Image,
+				Image:    image,
+				Project:  project,
 				Username: username,
 				Password: password,
+				Registry: registry,
 			})
 			if err != nil {
 				return renderServiceError(err, "failed to create secret")
