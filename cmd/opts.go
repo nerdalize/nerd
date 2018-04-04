@@ -54,7 +54,7 @@ func (opts TransferOpts) TransferManager(kube *svc.Kube) (mgr transfer.Manager, 
 
 //KubeOpts can be used to create a Kubernetes service
 type KubeOpts struct {
-	KubeConfig string        `long:"kube-config" description:"file at which Nerd will look for Kubernetes credentials" env:"KUBECONFIG" default-mask:"~/.kube/conf"`
+	KubeConfig string        `long:"kubeconfig" description:"file at which Nerd will look for Kubernetes credentials" env:"KUBECONFIG" default-mask:"~/.kube/conf"`
 	Timeout    time.Duration `long:"timeout" description:"duration for which Nerd will wait for Kubernetes" default-mask:"10s" default:"10s" required:"true"`
 }
 

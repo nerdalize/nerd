@@ -7,7 +7,7 @@
 			"options": {
 				"Global Options": [
 					{
-						"long_name": "kube-config",
+						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
 						"default_value": null,
 						"choices": null
@@ -31,7 +31,7 @@
 			"options": {
 				"Global Options": [
 					{
-						"long_name": "kube-config",
+						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
 						"default_value": null,
 						"choices": null
@@ -63,7 +63,7 @@
 			"options": {
 				"Global Options": [
 					{
-						"long_name": "kube-config",
+						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
 						"default_value": null,
 						"choices": null
@@ -100,7 +100,7 @@
 			"options": {
 				"Global Options": [
 					{
-						"long_name": "kube-config",
+						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
 						"default_value": null,
 						"choices": null
@@ -164,7 +164,7 @@
 				],
 				"Global Options": [
 					{
-						"long_name": "kube-config",
+						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
 						"default_value": null,
 						"choices": null
@@ -196,7 +196,7 @@
 			"options": {
 				"Global Options": [
 					{
-						"long_name": "kube-config",
+						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
 						"default_value": null,
 						"choices": null
@@ -220,7 +220,7 @@
 			"options": {
 				"Global Options": [
 					{
-						"long_name": "kube-config",
+						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
 						"default_value": null,
 						"choices": null
@@ -252,7 +252,7 @@
 			"options": {
 				"Global Options": [
 					{
-						"long_name": "kube-config",
+						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
 						"default_value": null,
 						"choices": null
@@ -276,7 +276,7 @@
 			"options": {
 				"Global Options": [
 					{
-						"long_name": "kube-config",
+						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
 						"default_value": null,
 						"choices": null
@@ -348,7 +348,7 @@
 				],
 				"Global Options": [
 					{
-						"long_name": "kube-config",
+						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
 						"default_value": null,
 						"choices": null
@@ -436,7 +436,7 @@
 						"choices": null
 					},
 					{
-						"long_name": "kube-config",
+						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
 						"default_value": null,
 						"choices": null
