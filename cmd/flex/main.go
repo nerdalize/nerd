@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
@@ -387,6 +388,27 @@ func (volp *DatasetVolumes) handleOutput(path, namespace, dataset string) error 
 	return nil
 }
 
+// fetchAllowedSpace is a temporary solution so we can give more space to specific users on the public cluster
+func (volp *DatasetVolumes) fetchAllowedSpace(path, namespace string) (space int64, err error) {
+	// TODO WriteSpace should be used only if there is no label "flex-volume-size" in the namespace quota labels.
+	space = WriteSpace
+
+	di, err := NewDeps(namespace)
+	if err != nil {
+		return space, errors.Wrap(err, "failed to setup dependencies")
+	}
+
+	kube := svc.NewKube(di)
+	quotas, err := kube.ListQuotas(context.Background(), &svc.ListQuotasInput{})
+	if len(quotas.Items) == 0 {
+		return space, err
+	}
+	if quotas.Items[0].Labels["flex-volume-size"] != "" {
+		space, err = strconv.ParseInt(quotas.Items[0].Labels["flex-volume-size"], 10, 64)
+	}
+	return space, err
+}
+
 //getPath returns a path above the mountPath and unique to the dataset name.
 func (volp *DatasetVolumes) getPath(mountPath string, name string) string {
 	return filepath.Join(mountPath, "..", filepath.Base(mountPath)+"."+name)
@@ -448,8 +470,12 @@ func (volp *DatasetVolumes) Mount(kubeMountPath string, opts MountOptions) (err 
 		return errors.Wrap(err, "failed to provision input")
 	}
 
+	writeSpace, err := volp.fetchAllowedSpace(kubeMountPath, dsopts.Namespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch allowed space")
+	}
 	//Create volume to contain pod writes
-	err = volp.createFSInFile(volp.getPath(kubeMountPath, RelPathFSInFile), FileSystemExt4, WriteSpace)
+	err = volp.createFSInFile(volp.getPath(kubeMountPath, RelPathFSInFile), FileSystemExt4, writeSpace)
 
 	defer func() {
 		if err != nil {

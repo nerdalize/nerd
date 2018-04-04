@@ -19,6 +19,8 @@ type ListQuotaItem struct {
 	UseLimitCPU      int64
 	UseLimitMemory   int64
 	UseRequestMemory int64
+
+	Labels map[string]string
 }
 
 //NodeLimitedQuota is used when no quota is configured
@@ -65,6 +67,8 @@ func (k *Kube) ListQuotas(ctx context.Context, in *ListQuotasInput) (out *ListQu
 			UseRequestCPU:    useReqCPU.MilliValue(),
 			UseLimitMemory:   useLimMem.MilliValue(),
 			UseRequestMemory: useReqMem.MilliValue(),
+
+			Labels: q.Labels,
 		})
 	}
 
