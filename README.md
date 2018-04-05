@@ -25,9 +25,23 @@ To start running your compute on the Nerdalize cloud you'll need to set up an ac
 
 ---
 ## Building from Source
-If you would like to contribute to the project it is possible to build the CLI from source:
+If you would like to contribute to the project it is possible to build the Nerd from source:
 
-   1. Checkout the repository in your `GOPATH`:
+   1. The CLI is written in Go. Make sure you've installed the language SDK as documented [here](https://golang.org/dl/)
+   2. Checkout the repository in your `GOPATH`:
       ```
-      git clone git@github.com:nerdalize/nerd.git $GOPATH/src/github.com/nerdalize.com/nerd
+      git clone git@github.com:nerdalize/nerd.git $GOPATH/src/github.com/nerdalize/nerd
       ```
+   3. Go to the checked out repository and build the binary using the included bash script:
+      ```
+      cd $GOPATH/src/github.com/nerdalize/nerd
+      ./make.sh build
+      ```
+   4. The Nerd CLI is now ready to be used in the `$GOPATH/bin` directory:
+       ```
+       $GOPATH/bin/nerd
+       Usage: nerd [--version] [--help] <command> [<args>]
+
+       Available commands are:
+       ...
+       ```
