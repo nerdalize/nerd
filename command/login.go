@@ -24,7 +24,7 @@ const (
 //LoginOpts defines options for login command
 type LoginOpts struct {
 	Config     string `long:"config-src" default:"oidc" default-mask:"" description:"type of configuration to use (from env, endpoint, or oidc)"`
-	KubeConfig string `long:"kube-config" env:"KUBECONFIG" description:"file at which Nerd will look for Kubernetes credentials" default-mask:"~/.kube/config"`
+	KubeConfig string `long:"kubeconfig" env:"KUBECONFIG" description:"file at which Nerd will look for Kubernetes credentials" default-mask:"~/.kube/config"`
 }
 
 //Login command
