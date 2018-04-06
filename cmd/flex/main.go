@@ -405,6 +405,9 @@ func (volp *DatasetVolumes) fetchAllowedSpace(path, namespace string) (space int
 	}
 	if quotas.Items[0].Labels["flex-volume-size"] != "" {
 		space, err = strconv.ParseInt(quotas.Items[0].Labels["flex-volume-size"], 10, 64)
+		if err != nil {
+			space = WriteSpace
+		}
 	}
 	return space, err
 }
