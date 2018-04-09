@@ -399,7 +399,7 @@ func (volp *DatasetVolumes) fetchAllowedSpace(path, namespace string) (space int
 	}
 
 	kube := svc.NewKube(di)
-	quotas, err := kube.ListQuotas(context.Background(), &svc.ListQuotasInput{})
+	quotas, err := kube.ListQuotas(context.TODO(), &svc.ListQuotasInput{})
 	if len(quotas.Items) == 0 {
 		return space, err
 	}
@@ -460,6 +460,8 @@ func (volp *DatasetVolumes) Mount(kubeMountPath string, opts MountOptions) (err 
 		return errors.Wrap(err, "failed to write volume database")
 	}
 
+	//+TODO create kube here and inject it in provisionInput and fetchAllowedSpace
+	//TODO create a context with a deadline
 	//Set up input
 	err = volp.provisionInput(volp.getPath(kubeMountPath, RelPathInput), dsopts.Namespace, dsopts.InputDataset)
 
