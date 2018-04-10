@@ -400,7 +400,10 @@ func (volp *DatasetVolumes) fetchAllowedSpace(path, namespace string) (space int
 
 	kube := svc.NewKube(di)
 	quotas, err := kube.ListQuotas(context.TODO(), &svc.ListQuotasInput{})
-	if len(quotas.Items) == 0 {
+	if err != nil {
+		return space, err
+	}
+	if quotas != nil && len(quotas.Items) == 0 {
 		return space, err
 	}
 	if quotas.Items[0].Labels["flex-volume-size"] != "" {
