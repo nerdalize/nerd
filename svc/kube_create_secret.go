@@ -19,6 +19,7 @@ type CreateSecretInput struct {
 	Image    string `validate:"printascii"`
 	Registry string `validate:"required"`
 	Project  string
+	Tag      string
 	Username string `validate:"required"`
 	Password string `validate:"required"`
 }
@@ -36,7 +37,7 @@ func (k *Kube) CreateSecret(ctx context.Context, in *CreateSecretInput) (out *Cr
 
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{"image": in.Image, "project": in.Project, "registry": in.Registry},
+			Labels: map[string]string{"image": in.Image, "project": in.Project, "registry": in.Registry, "tag": in.Tag},
 		},
 		Type: v1.SecretTypeDockerConfigJson,
 		Data: map[string][]byte{},
@@ -79,8 +80,8 @@ func transformCredentials(username, password, registry string) (dockereCfg []byt
 	return dockerCfg, nil
 }
 
-// ExtractRegistry takes a string as input and divides it in image, project, registry
-func ExtractRegistry(image string) (string, string, string) {
+// ExtractRegistry takes a string as input and divides it in image, project, registry, tag
+func ExtractRegistry(image string) (string, string, string, string) {
 	// Supported registries:
 	// - project/image -> index.docker.io
 	// - ACCOUNT.dkr.ecr.REGION.amazonaws.com/image -> aws
@@ -89,15 +90,20 @@ func ExtractRegistry(image string) (string, string, string) {
 	// - gcr.io/project/image -> gcr
 	// gitlab?? other providers?
 
-	parts := strings.Split(image, "/")
+	var tag string
+	parts := strings.Split(image, ":")
+	if len(parts) > 1 {
+		tag = parts[1]
+	}
+	parts = strings.Split(parts[0], "/")
 	switch len(parts) {
 	case 2:
 		if !strings.Contains(parts[0], ".") {
-			return parts[1], parts[0], "index.docker.io"
+			return parts[1], parts[0], "index.docker.io", tag
 		}
-		return parts[1], "", parts[0]
+		return parts[1], "", parts[0], tag
 	case 3:
-		return parts[2], parts[1], parts[0]
+		return parts[2], parts[1], parts[0], tag
 	}
-	return "", "", ""
+	return "", "", "", tag
 }
