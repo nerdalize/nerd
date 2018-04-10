@@ -16,15 +16,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api/latest"
 )
 
-//Prefix is used to know if a context comes from the cli.
-var Prefix = "nerd-cli"
-
-// P is an interface that we can use to read from and to write to the kube config file.
-type P interface {
-	PopulateKubeConfig(project string) error
-	RemoveConfig(project string) error
-}
-
 //New instantiates a new P interface using the conf parameter. It can return a env, endpoint or oidc populator.
 func New(c *Client, conf, kubeConfigFile, homedir string, project *v1payload.GetProjectOutput) (P, error) {
 	switch conf {
@@ -34,6 +25,8 @@ func New(c *Client, conf, kubeConfigFile, homedir string, project *v1payload.Get
 		return newEndpoint(kubeConfigFile), nil
 	case "env":
 		return newEnv(kubeConfigFile), nil
+	case "generic":
+		return newGeneric(kubeConfigFile, homedir), nil
 	default:
 		return nil, ErrNoSuchPopulator("populators implemented: oidc, endpoint, env")
 	}
@@ -97,6 +90,37 @@ func ReadConfig(filename string) (*api.Config, error) {
 	return config, nil
 }
 
+// UseConfig ...
+func UseConfig(context string, filename string) error {
+	if context == "" {
+		glog.Errorf("could not write to '%s': context can't be empty", filename)
+		return errors.New("context cannot be empty")
+	}
+	data, err := ioutil.ReadFile(filename)
+
+	if os.IsNotExist(err) {
+		return err
+	} else if err != nil {
+		return errors.Wrapf(err, "Error reading file %q", filename)
+	}
+
+	// decode config, empty if no bytes
+	config, err := decode(data)
+	if err != nil {
+		return errors.Errorf("could not read config: %v", err)
+	}
+
+	if config.Contexts[context] == nil {
+		return errors.Errorf("cannot set %s as a context, it doesn't exist", context)
+	}
+
+	config.CurrentContext = context
+	config.Contexts[context].Cluster = context
+
+	err = WriteConfig(config, filename)
+	return err
+}
+
 // WriteConfig encodes the configuration and writes it to the given file.
 // If the file exists, it's contents will be overwritten.
 func WriteConfig(config *api.Config, filename string) error {
@@ -149,8 +173,8 @@ func Namespace(filename string) (string, error) {
 	return config.Contexts[config.CurrentContext].Namespace, nil
 }
 
-//Context defines if the current context from the kube config file comes from the cli
-func Context(filename string) bool {
+//NerdContext defines if the current context from the kube config file comes from the cli
+func NerdContext(filename string) bool {
 	data, err := ioutil.ReadFile(filename)
 
 	if os.IsNotExist(err) {

@@ -10,41 +10,34 @@ import (
 
 	"github.com/nerdalize/nerd/nerd/conf"
 
-	v1payload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd/api"
-	// this blank import is necessary to load the oidc plugin for client-go
-	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 )
 
-//OIDCPopulator is an implementation of the P interface using on Open ID Connect credentials.
-type OIDCPopulator struct {
+//GenericPopulator is an implementation of the P interface using on Open ID Connect credentials.
+type GenericPopulator struct {
 	// kubeConfigFile is the path where the kube config is stored
 	// Only access this with atomic ops
 	kubeConfigFile atomic.Value
 
-	project *v1payload.GetProjectOutput
 	homedir string
-	client  *Client
 }
 
-func newOIDC(c *Client, kubeConfigFile, homedir string, project *v1payload.GetProjectOutput) *OIDCPopulator {
-	o := &OIDCPopulator{
-		project: project,
+func newGeneric(kubeConfigFile, homedir string) *GenericPopulator {
+	o := &GenericPopulator{
 		homedir: homedir,
-		client:  c,
 	}
 	o.kubeConfigFile.Store(kubeConfigFile)
 	return o
 }
 
 //GetKubeConfigFile returns the path where the kube config is stored.
-func (o *OIDCPopulator) GetKubeConfigFile() string {
+func (o *GenericPopulator) GetKubeConfigFile() string {
 	return o.kubeConfigFile.Load().(string)
 }
 
 //RemoveConfig deletes the precised project context and cluster info.
-func (o *OIDCPopulator) RemoveConfig(project string) error {
+func (o *GenericPopulator) RemoveConfig(project string) error {
 	// read existing config or create new if does not exist
 	kubecfg, err := ReadConfigOrNew(o.GetKubeConfigFile())
 	if err != nil {
@@ -63,18 +56,9 @@ func (o *OIDCPopulator) RemoveConfig(project string) error {
 }
 
 // PopulateKubeConfig populates an api.Config object and set the current context to the provided project.
-func (o *OIDCPopulator) PopulateKubeConfig(project string) error {
+func (o *GenericPopulator) PopulateKubeConfig(project string) error {
 	cluster := api.NewCluster()
-	if o.project.Services.Cluster.B64CaData == "" {
-		cluster.InsecureSkipTLSVerify = true
-	} else {
-		cert, err := o.createCertificate(o.project.Services.Cluster.B64CaData, project, o.homedir)
-		if err != nil {
-			return err
-		}
-		cluster.CertificateAuthority = cert
-	}
-	cluster.Server = o.project.Services.Cluster.Address
+	cluster.Server = ""
 
 	filename, err := conf.GetDefaultSessionLocation()
 	if err != nil {
@@ -89,17 +73,10 @@ func (o *OIDCPopulator) PopulateKubeConfig(project string) error {
 		return err
 	}
 
+	_ = config
+
 	auth := api.NewAuthInfo()
-	auth.AuthProvider = &api.AuthProviderConfig{
-		Name: "oidc",
-		Config: map[string]string{
-			"client-id":      o.client.ID,
-			"client-secret":  o.client.Secret,
-			"id-token":       config.OAuth.IDToken,
-			"idp-issuer-url": o.client.IDPIssuerURL,
-			"refresh-token":  config.OAuth.RefreshToken,
-		},
-	}
+	auth.AuthProvider = &api.AuthProviderConfig{}
 
 	// context
 	context := api.NewContext()
@@ -126,7 +103,7 @@ func (o *OIDCPopulator) PopulateKubeConfig(project string) error {
 	return nil
 }
 
-func (o *OIDCPopulator) createCertificate(data, project, homedir string) (string, error) {
+func (o *GenericPopulator) createCertificate(data, project, homedir string) (string, error) {
 	if data == "" {
 		return "", nil
 	}
