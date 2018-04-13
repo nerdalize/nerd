@@ -11,6 +11,8 @@ import (
 
 	slashpath "path"
 
+	humanize "github.com/dustin/go-humanize"
+
 	"github.com/pkg/errors"
 )
 
@@ -30,8 +32,8 @@ var (
 	//ErrEmptyDirectory is returned when the archiver expected the directory to not be empty
 	ErrEmptyDirectory = errors.New("directory is empty")
 
-	//ErrDatasetTooLarge is returned when the dataset size is above 1Gb
-	ErrDatasetTooLarge = errors.New("dataset is too big, limit is 1Gb")
+	//ErrDatasetTooLarge is returned when the dataset size is above the sizelimit set in the dataset.
+	ErrDatasetTooLarge = "dataset is too big, limit is %s"
 
 	//SizeLimit is the maximum size allowed
 	//@TODO: Should be based on customer details?
@@ -162,7 +164,7 @@ func (a *TarArchiver) Archive(ctx context.Context, path string, rep Reporter, fn
 	}
 
 	if totalToTar > a.sizeLimit {
-		return ErrDatasetTooLarge
+		return errors.Errorf(ErrDatasetTooLarge, humanize.Bytes(uint64(a.sizeLimit)))
 	}
 
 	tmpf, clean, err := a.tempFile()
