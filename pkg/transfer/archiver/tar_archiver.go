@@ -41,14 +41,19 @@ var (
 //TarArchiver will archive a directory into a single tar file
 type TarArchiver struct {
 	keyPrefix string
+	sizeLimit int64
 }
 
 //NewTarArchiver will setup the tar archiver
 func NewTarArchiver(opts ArchiverOptions) (a *TarArchiver, err error) {
-	a = &TarArchiver{keyPrefix: opts.TarArchiverKeyPrefix}
+	a = &TarArchiver{keyPrefix: opts.TarArchiverKeyPrefix, sizeLimit: opts.SizeLimit}
 
 	if a.keyPrefix != "" && !strings.HasSuffix(a.keyPrefix, "/") {
 		return nil, errors.Errorf("archiver key prefix must end with a forward slash")
+	}
+
+	if a.sizeLimit <= 0 {
+		a.sizeLimit = SizeLimit
 	}
 
 	return a, nil
@@ -156,7 +161,7 @@ func (a *TarArchiver) Archive(ctx context.Context, path string, rep Reporter, fn
 		return errors.Wrap(err, "failed to index filesystem")
 	}
 
-	if totalToTar > SizeLimit {
+	if totalToTar > a.sizeLimit {
 		return ErrDatasetTooLarge
 	}
 

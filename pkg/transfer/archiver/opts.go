@@ -13,4 +13,6 @@ type ArchiverOptions struct {
 	Type ArchiverType `json:"type"`
 
 	TarArchiverKeyPrefix string `json:"keyPrefix"`
+
+	SizeLimit int64 `json:"sizeLimit"`
 }
