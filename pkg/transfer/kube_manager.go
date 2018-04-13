@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"strconv"
 
 	"github.com/nerdalize/nerd/pkg/transfer/archiver"
 	"github.com/nerdalize/nerd/pkg/transfer/store"
@@ -72,6 +73,18 @@ func (mgr *KubeManager) Create(ctx context.Context, name string, sto transfersto
 	store, err := CreateStore(sto)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to setup store '%s' with options: %#v", sto.Type, sto)
+	}
+
+	// TODO remove this step
+	quotas, err := mgr.kube.ListQuotas(ctx, &svc.ListQuotasInput{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to setup SizeLimit option")
+	}
+	if quotas != nil && len(quotas.Items) >= 1 && quotas.Items[0].Labels["flex-volume-size"] != "" {
+		ato.SizeLimit, err = strconv.ParseInt(quotas.Items[0].Labels["flex-volume-size"], 10, 64)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse SizeLimit option")
+		}
 	}
 
 	archiver, err := CreateArchiver(ato)
