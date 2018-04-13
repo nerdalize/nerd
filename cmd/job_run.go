@@ -267,9 +267,9 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 		if err != nil {
 			return renderServiceError(err, "failed to list secrets")
 		}
-		image, project, registry := svc.ExtractRegistry(in.Image)
+		image, project, registry, tag := svc.ExtractRegistry(in.Image)
 		for _, secret := range secrets.Items {
-			if secret.Details.Image == in.Image {
+			if strings.HasPrefix(in.Image, secret.Details.Image) {
 				if cmd.CleanCreds {
 					username, password, err := cmd.getCredentials(registry)
 					if err != nil {
@@ -295,6 +295,7 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 				Username: username,
 				Password: password,
 				Registry: registry,
+				Tag:      tag,
 			})
 			if err != nil {
 				return renderServiceError(err, "failed to create secret")
