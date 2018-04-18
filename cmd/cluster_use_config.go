@@ -63,4 +63,4 @@ func (cmd *ClusterUse) Description() string { return cmd.Synopsis() }
 func (cmd *ClusterUse) Synopsis() string { return "Set a specific cluster as the current one to use." }
 
 // Usage shows usage
-func (cmd *ClusterUse) Usage() string { return "nerd cluster list [OPTIONS]" }
+func (cmd *ClusterUse) Usage() string { return "nerd cluster use-config NAME [OPTIONS]" }

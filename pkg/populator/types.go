@@ -36,8 +36,8 @@ type Context struct {
 type Cluster struct {
 	Name   string `long:"cluster" description:"name of the cluster configuration entry"`
 	Server string `long:"server" short:"s" description:"url of the cluster to reach"`
-	CA     string `long:"certificate-authority" short:"ca" description:""`
-	CAPath string `long:"certificate-authority-path" short:"ca-path" description:""`
+	CA     string `long:"certificate-authority" description:""`
+	CAPath string `long:"certificate-authority-path" description:""`
 }
 
 // Auth information

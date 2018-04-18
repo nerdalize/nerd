@@ -55,6 +55,7 @@ func create() *cli.CLI {
 			"cluster":             cmd.ClusterFactory(ui),
 			"cluster list":        cmd.ClusterListFactory(ui),
 			"cluster list-config": cmd.ClusterListConfigFactory(ui),
+			"cluster set-config":  cmd.ClusterSetConfigFactory(ui),
 			"cluster use-config":  cmd.ClusterUseFactory(ui),
 		},
 	}
