@@ -140,6 +140,10 @@ func renderItemDetails(item *svc.ListJobItem, quota *svc.ListQuotaItem) (details
 			wreason = "Failure while pulling image"
 		}
 
+		if wreason == "ContainerCreating" {
+			wreason = "Creating Container"
+		}
+
 		details = append(details, wreason)
 	}
 
