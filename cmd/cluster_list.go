@@ -1,13 +1,10 @@
 package cmd
 
 import (
-	"path/filepath"
-	"sort"
+	"net/url"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	homedir "github.com/mitchellh/go-homedir"
-	"github.com/nerdalize/nerd/pkg/populator"
 	"github.com/pkg/errors"
 )
 
@@ -31,33 +28,34 @@ func (cmd *ClusterList) Execute(args []string) (err error) {
 		return errShowUsage(MessageNoArgumentRequired)
 	}
 
-	var path string
-	//Expand tilde for homedir
-	path, err = homedir.Expand(cmd.globalOpts.KubeConfig)
+	// TODO
+	authbase, err := url.Parse(cmd.config.Auth.APIEndpoint)
 	if err != nil {
-		return errors.Wrap(err, "failed to expand home directory in kubeconfig local path")
+		return errors.Wrapf(err, "auth endpoint '%v' is not a valid URL", cmd.config.Auth.APIEndpoint)
 	}
+	authOpsClient := v1auth.NewOpsClient(v1auth.OpsClientConfig{
+		Base:   authbase,
+		Logger: cmd.outputter.Logger,
+	})
+	client := v1auth.NewClient(v1auth.ClientConfig{
+		Base:               authbase,
+		Logger:             cmd.outputter.Logger,
+		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.SecureClientID, cmd.config.Auth.SecureClientSecret, cmd.session),
+	})
 
-	path, err = filepath.Abs(path)
+	clusters, err := client.ListClusters()
 	if err != nil {
-		return renderServiceError(err, "failed to turn local path into absolute path")
+		return err
 	}
 
-	config, err := populator.ReadConfig(path)
-	if err != nil {
-		return renderConfigError(err, "failed to read kubeconfig")
-	}
-
-	var clusters []string
-	for key := range config.Clusters {
-		clusters = append(clusters, key)
-	}
-	sort.Strings(clusters)
-
-	hdr := []string{"CLUSTER"}
+	// Add role (admin, team member ...)
+	hdr := []string{"CLUSTER", "CPU", "MEMORY", "PODS"}
 	rows := [][]string{}
-	for _, name := range clusters {
+	for _, name := range clusters.Clusters {
 		rows = append(rows, []string{
+			name,
+			name,
+			name,
 			name,
 		})
 	}

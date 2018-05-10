@@ -11,22 +11,24 @@ import (
 	"github.com/pkg/errors"
 )
 
-//ClusterUse command
-type ClusterUse struct {
+//ClusterSet command
+type ClusterSet struct {
+	Namespace string `long:"namespace" short:"n" description:"set a specific namespace as the default one"`
+
 	*command
 }
 
-//ClusterUseFactory creates the command
-func ClusterUseFactory(ui cli.Ui) cli.CommandFactory {
-	cmd := &ClusterUse{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, nil, flags.None, "nerd cluster use")
+//ClusterSetFactory creates the command
+func ClusterSetFactory(ui cli.Ui) cli.CommandFactory {
+	cmd := &ClusterSet{}
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, nil, flags.None, "nerd cluster set")
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
 }
 
 //Execute runs the command
-func (cmd *ClusterUse) Execute(args []string) (err error) {
+func (cmd *ClusterSet) Execute(args []string) (err error) {
 	if len(args) > 1 {
 		return errShowUsage(fmt.Sprintf(MessageTooManyArguments, 1, ""))
 	} else if len(args) < 1 {
@@ -35,6 +37,7 @@ func (cmd *ClusterUse) Execute(args []string) (err error) {
 
 	name := args[0]
 
+	// TODO
 	var path string
 	//Expand tilde for homedir
 	path, err = homedir.Expand(cmd.globalOpts.KubeConfig)
@@ -57,10 +60,10 @@ func (cmd *ClusterUse) Execute(args []string) (err error) {
 }
 
 // Description returns long-form help text
-func (cmd *ClusterUse) Description() string { return cmd.Synopsis() }
+func (cmd *ClusterSet) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
-func (cmd *ClusterUse) Synopsis() string { return "Set a specific cluster as the current one to use." }
+func (cmd *ClusterSet) Synopsis() string { return "Set a specific cluster as the current one to use." }
 
 // Usage shows usage
-func (cmd *ClusterUse) Usage() string { return "nerd cluster use-config NAME [OPTIONS]" }
+func (cmd *ClusterSet) Usage() string { return "nerd cluster set NAME [OPTIONS]" }

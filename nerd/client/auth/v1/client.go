@@ -18,6 +18,7 @@ const (
 	//TokenEndpoint is the endpoint from where to fetch the JWT.
 	tokenEndpoint    = "token"
 	projectsEndpoint = "projects"
+	clustersEndpoint = "clusters"
 	//NCEScope is the JWT scope for the NCE service
 	NCEScope = "nce.nerdalize.com"
 )
@@ -141,6 +142,12 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 	}
 
 	return nil
+}
+
+//ListClusters lists clusters
+func (c *Client) ListClusters() (output *v1payload.ListClustersOutput, err error) {
+	output = &v1payload.ListClustersOutput{}
+	return output, c.doRequest(http.MethodGet, clustersEndpoint, nil, &output.Clusters)
 }
 
 //ListProjects lists projects
