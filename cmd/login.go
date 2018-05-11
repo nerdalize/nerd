@@ -1,4 +1,4 @@
-package command
+package cmd
 
 import (
 	"fmt"
@@ -8,11 +8,11 @@ import (
 	"os"
 	"time"
 
+	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/oauth"
-	"github.com/nerdalize/nerd/pkg/populator"
 	"github.com/pkg/errors"
 	"github.com/skratchdot/open-golang/open"
 )
@@ -21,46 +21,40 @@ const (
 	authorizeEndpoint = "o/authorize"
 )
 
-//LoginOpts defines options for login command
-type LoginOpts struct {
-	Config     string `long:"config-src" default:"oidc" default-mask:"" description:"type of configuration to use (from env, endpoint, or oidc)"`
-	KubeConfig string `long:"kubeconfig" env:"KUBECONFIG" description:"file at which Nerd will look for Kubernetes credentials" default-mask:"~/.kube/config"`
-}
-
 //Login command
 type Login struct {
+	Config string `long:"config-src" default:"oidc" default-mask:"" description:"type of configuration to use (from env, endpoint, or oidc)"`
 	*command
-	opts *LoginOpts
 }
 
 //LoginFactory returns a factory method for the join command
-func LoginFactory() (cli.Command, error) {
-	opts := &LoginOpts{}
-	comm, err := newCommand("nerd login", "Start a new authorized session.", "", opts)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create command")
-	}
-	cmd := &Login{
-		command: comm,
-		opts:    opts,
-	}
-	cmd.runFunc = cmd.DoRun
+func LoginFactory(ui cli.Ui) cli.CommandFactory {
+	cmd := &Login{}
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, &ConfOpts{}, flags.PassAfterNonOption, "nerd login")
 
-	return cmd, nil
+	t, ok := cmd.advancedOpts.(*ConfOpts)
+	if !ok {
+		return nil
+	}
+	t.ConfigFile = cmd.setConfig
+	t.SessionFile = cmd.setSession
+	return func() (cli.Command, error) {
+		return cmd, nil
+	}
 }
 
-//DoRun is called by run and allows an error to be returned
-func (cmd *Login) DoRun(args []string) error {
+//Execute runs the command
+func (cmd *Login) Execute(args []string) (err error) {
 	if os.Getenv("NERD_ENV") == "staging" {
 		cmd.config = conf.StagingDefaults()
 	}
 	authbase, err := url.Parse(cmd.config.Auth.APIEndpoint)
 	if err != nil {
-		return HandleError(errors.Wrapf(err, "auth endpoint '%v' is not a valid URL", cmd.config.Auth.APIEndpoint))
+		return renderConfigError(err, "auth endpoint '%v' is not a valid URL", cmd.config.Auth.APIEndpoint)
 	}
 	authOpsClient := v1auth.NewOpsClient(v1auth.OpsClientConfig{
 		Base:   authbase,
-		Logger: cmd.outputter.Logger,
+		Logger: cmd.Logger(),
 	})
 	randomState := randomString(32)
 	doneCh := make(chan response)
@@ -72,65 +66,66 @@ func (cmd *Login) DoRun(args []string) error {
 
 	err = open.Run(fmt.Sprintf("http://%s/oauth?state=%s", cmd.config.Auth.OAuthLocalServer, randomState))
 	if err != nil {
-		cmd.ui.Info(fmt.Sprintf("Failed to open browser window, access the login at http://%s/oauth?state=%s", cmd.config.Auth.OAuthLocalServer, randomState))
+		cmd.out.Info(fmt.Sprintf("Failed to open browser window, access the login at http://%s/oauth?state=%s", cmd.config.Auth.OAuthLocalServer, randomState))
 	}
 
 	oauthResponse := <-doneCh
 	if oauthResponse.err != nil {
-		return HandleError(errors.Wrap(oauthResponse.err, "failed to do oauth login"))
+		return renderConfigError(oauthResponse.err, "failed to do oauth login")
 	}
 
 	out, err := authOpsClient.GetOAuthCredentials(oauthResponse.code, cmd.config.Auth.SecureClientID, cmd.config.Auth.SecureClientSecret, fmt.Sprintf("http://%s/oauth/callback", cmd.config.Auth.OAuthLocalServer))
 	if err != nil {
-		return HandleError(errors.Wrap(err, "failed to get oauth credentials"))
+		return renderConfigError(err, "failed to get oauth credentials")
 	}
 
 	expiration := time.Unix(time.Now().Unix()+int64(out.ExpiresIn), 0)
 	err = cmd.session.WriteOAuth(out.AccessToken, out.RefreshToken, out.IDToken, expiration, out.Scope, out.TokenType)
 	if err != nil {
-		return HandleError(errors.Wrap(err, "failed to write oauth tokens to config"))
+		return renderConfigError(err, "failed to write oauth tokens to config")
 	}
 
 	client := v1auth.NewClient(v1auth.ClientConfig{
 		Base:               authbase,
-		Logger:             cmd.outputter.Logger,
+		Logger:             cmd.Logger(),
 		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.SecureClientID, cmd.config.Auth.SecureClientSecret, cmd.session),
 	})
 	list, err := client.ListProjects()
 	if err != nil {
-		return HandleError(err)
+		return renderServiceError(err, "cannot list projects")
 	}
 
 	if len(list.Projects) == 0 {
-		cmd.ui.Info("Successful login, but you don't have any cluster. Please contact mayday@nerdalize.com.")
+		cmd.out.Info("Successful login, but you don't have any cluster. Please contact mayday@nerdalize.com.")
 		return nil
 	}
 	var projectSlug string
-	c := populator.Client{
-		Secret:       cmd.config.Auth.SecureClientSecret,
-		ID:           cmd.config.Auth.SecureClientID,
-		IDPIssuerURL: cmd.config.Auth.IDPIssuerURL,
-	}
+	// c := populator.Client{
+	// 	Secret:       cmd.config.Auth.SecureClientSecret,
+	// 	ID:           cmd.config.Auth.SecureClientID,
+	// 	IDPIssuerURL: cmd.config.Auth.IDPIssuerURL,
+	// }
 	for _, project := range list.Projects {
 		projectSlug = project.Nk
-		err = setProject(&c, cmd.opts.KubeConfig, cmd.opts.Config, project, cmd.outputter.Logger)
-		if err != nil {
-			projectSlug = ""
-			continue
-		}
+		// @TO UPDATE
+		// err = setProject(&c, cmd.opts.KubeConfig, cmd.opts.Config, project, cmd.outputter.Logger)
+		// if err != nil {
+		// 	projectSlug = ""
+		// 	continue
+		// }
 		break
 	}
 	if projectSlug == "" {
-		cmd.ui.Info("Successful login, but it seems that there is a connection problem to your cluster(s). Please try again, and if the problem persists, contact mayday@nerdalize.com.")
+		cmd.out.Info("Successful login, but it seems that there is a connection problem to your cluster(s). Please try again, and if the problem persists, contact mayday@nerdalize.com.")
 		return nil
 	}
 
 	err = cmd.session.WriteProject(projectSlug, conf.DefaultAWSRegion)
 	if err != nil {
-		return HandleError(err)
+		return renderConfigError(err, "cannot write session file")
 	}
 
-	cmd.ui.Info("Successful login. You can now start a job with the `nerd job run` command.")
+	cmd.out.Info("Successful login. You can now start a job with the `nerd job run` command.")
 	return nil
 }
 
@@ -183,7 +178,7 @@ func spawnServer(svr *http.Server, cfg conf.AuthConfig, randomState string, done
 		q.Set("state", r.URL.Query().Get("state"))
 		q.Set("client_id", cfg.SecureClientID)
 		q.Set("response_type", "code")
-		q.Set("scope", "openid email group")
+		q.Set("scope", "openid email group api")
 		q.Set("redirect_uri", fmt.Sprintf("http://%s/oauth/callback", cfg.OAuthLocalServer))
 		resolved.RawQuery = q.Encode()
 
@@ -227,3 +222,12 @@ func randomString(n int) string {
 
 	return string(b)
 }
+
+// Description returns long-form help text
+func (cmd *Login) Description() string { return cmd.Synopsis() }
+
+// Synopsis returns a one-line
+func (cmd *Login) Synopsis() string { return "Start a new authorized session." }
+
+// Usage shows usage
+func (cmd *Login) Usage() string { return "nerd login [OPTIONS]" }

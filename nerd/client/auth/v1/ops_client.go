@@ -3,10 +3,11 @@ package v1auth
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/google/go-querystring/query"
 	"github.com/nerdalize/nerd/nerd/client"

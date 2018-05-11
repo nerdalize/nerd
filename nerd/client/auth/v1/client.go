@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"sync"
 
 	"github.com/nerdalize/nerd/nerd/client"
 	v1payload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
+	log "github.com/sirupsen/logrus"
 )
 
 const (

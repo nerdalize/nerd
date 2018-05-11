@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 
 	"github.com/nerdalize/nerd/nerd/client"
 	v1payload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
+	log "github.com/sirupsen/logrus"
 )
 
 //TokenClient is used for a bunch of operations on the auth API that don't require oauth authentication.

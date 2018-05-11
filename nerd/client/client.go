@@ -3,9 +3,10 @@ package client
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httputil"
+
+	log "github.com/sirupsen/logrus"
 )
 
 //Error is the default error returned by clients in the client package.

@@ -25,3 +25,5 @@ type GetClusterOutput struct {
 		Pods   int    `json:"pods"`
 	} `json:"usage"`
 }
+
+// todo add struct for clusters/<ID> endpoint

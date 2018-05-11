@@ -18,6 +18,12 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+//ConfOpts are the options related to config file and the way output is handled.
+type ConfOpts struct {
+	ConfigFile  func(string) `long:"config-file" default:"" default-mask:"" env:"NERD_CONFIG_FILE" description:"Location of config file"`
+	SessionFile func(string) `long:"session-file" default:"" default-mask:"" env:"NERD_SESSION_FILE" description:"Location of session file"`
+}
+
 //TransferOpts hold CLI options for configuring data transfer
 type TransferOpts struct {
 	S3Bucket       string `long:"s3-bucket" description:"S3 Bucket name that will be used for dataset storage" default:"nlz-datasets-dev"`

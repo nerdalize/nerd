@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/nerdalize/nerd/cmd"
-	"github.com/nerdalize/nerd/command"
 	"github.com/nerdalize/nerd/nerd"
 
 	"github.com/mitchellh/cli"
@@ -40,8 +39,8 @@ func create() *cli.CLI {
 		Args:           args,
 		HiddenCommands: []string{},
 		Commands: map[string]cli.CommandFactory{
-			"version":          command.CreateVersionFactory(version, commit),
-			"login":            command.LoginFactory,
+			"version":          cmd.VersionFactory(version, commit, ui),
+			"login":            cmd.LoginFactory(ui),
 			"dataset":          cmd.DatasetFactory(ui),
 			"dataset upload":   cmd.DatasetUploadFactory(ui),
 			"dataset download": cmd.DatasetDownloadFactory(ui),

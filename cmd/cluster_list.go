@@ -1,10 +1,13 @@
 package cmd
 
 import (
+	"fmt"
 	"net/url"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
+	"github.com/nerdalize/nerd/nerd/oauth"
 	"github.com/pkg/errors"
 )
 
@@ -34,12 +37,10 @@ func (cmd *ClusterList) Execute(args []string) (err error) {
 		return errors.Wrapf(err, "auth endpoint '%v' is not a valid URL", cmd.config.Auth.APIEndpoint)
 	}
 	authOpsClient := v1auth.NewOpsClient(v1auth.OpsClientConfig{
-		Base:   authbase,
-		Logger: cmd.outputter.Logger,
+		Base: authbase,
 	})
 	client := v1auth.NewClient(v1auth.ClientConfig{
 		Base:               authbase,
-		Logger:             cmd.outputter.Logger,
 		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.SecureClientID, cmd.config.Auth.SecureClientSecret, cmd.session),
 	})
 
@@ -51,12 +52,12 @@ func (cmd *ClusterList) Execute(args []string) (err error) {
 	// Add role (admin, team member ...)
 	hdr := []string{"CLUSTER", "CPU", "MEMORY", "PODS"}
 	rows := [][]string{}
-	for _, name := range clusters.Clusters {
+	for _, cluster := range clusters.Clusters {
 		rows = append(rows, []string{
-			name,
-			name,
-			name,
-			name,
+			cluster.Name,
+			fmt.Sprintf("%s/%s", cluster.Usage.CPU, cluster.Capacity.CPU),
+			fmt.Sprintf("%s/%s", cluster.Usage.Memory, cluster.Capacity.Memory),
+			fmt.Sprintf("%d/%d", cluster.Usage.Pods, cluster.Capacity.Pods),
 		})
 	}
 
