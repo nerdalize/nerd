@@ -24,6 +24,14 @@ type GetClusterOutput struct {
 		Memory string `json:"memory"`
 		Pods   int    `json:"pods"`
 	} `json:"usage"`
+	KubeConfigUser struct {
+		BearerToken       string `json:"bearer_token"`
+		AccessToken       string `json:"access_token"`
+		RefreshToken      string `json:"refresh_token"`
+		TokenType         string `json:"token_type"`
+		ExpiresIn         int    `json:"expires_in"`
+		IDToken           string `json:"id_token"`
+		OauthClientID     string `json:"oauth_client_id"`
+		OauthClientSecret string `json:"oauth_client_secret"`
+	} `json:"kubeconfig_user"`
 }
-
-// todo add struct for clusters/<ID> endpoint

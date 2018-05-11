@@ -150,6 +150,12 @@ func (c *Client) ListClusters() (output *v1payload.ListClustersOutput, err error
 	return output, c.doRequest(http.MethodGet, clustersEndpoint, nil, &output.Clusters)
 }
 
+//GetCluster retrieve a precised cluster so we can get its authentication details.
+func (c *Client) GetCluster(url string) (output *v1payload.GetClusterOutput, err error) {
+	output = &v1payload.GetClusterOutput{}
+	return output, c.doRequest(http.MethodGet, url, nil, output)
+}
+
 //ListProjects lists projects
 func (c *Client) ListProjects() (output *v1payload.ListProjectsOutput, err error) {
 	output = &v1payload.ListProjectsOutput{}
