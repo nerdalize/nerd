@@ -11,7 +11,7 @@ spec:
         app: nlz-nerd-datasets
     spec:
       containers:
-        - image: nerdalize/nerd-flex-volume:0.7.3
+        - image: nerdalize/nerd-flex-volume:1.0.0-rc8
           name: nlz-nerd-datasets
           imagePullPolicy: Always
           securityContext:
