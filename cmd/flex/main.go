@@ -375,14 +375,24 @@ func (volp *DatasetVolumes) handleOutput(path, namespace, dataset string) error 
 	ctx := context.TODO() //@TODO decide on a deadline for this
 
 	h, err := mgr.Open(ctx, dataset)
+
+	// If the user has deleted the dataset, then there is nothing to do
 	if err != nil {
-		return errors.Wrap(err, "failed to open dataset")
+		fmt.Println("warning, output dataset no longer exists: %v", err)
+		return nil
 	}
 
 	defer h.Close()
 	err = h.Push(ctx, path, transfer.NewDiscardReporter())
+
+	// The output dataset being empty is a non-fatal unmount error
+	if err == transferarchiver.ErrEmptyDirectory {
+		fmt.Println("warning, output dataset is empty: %v", err)
+		return nil
+	}
+
 	if err != nil {
-		return errors.Wrap(err, "failed to download dataset")
+		return errors.Wrap(err, "failed to transfer dataset")
 	}
 
 	return nil
