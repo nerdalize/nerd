@@ -3,10 +3,12 @@ package cmd
 import (
 	"fmt"
 	"net/url"
+	"os"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
+	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/oauth"
 	"github.com/pkg/errors"
 )
@@ -33,6 +35,14 @@ func ClusterListFactory(ui cli.Ui) cli.CommandFactory {
 
 //Execute runs the command
 func (cmd *ClusterList) Execute(args []string) (err error) {
+	// TODO move this part to another func
+	env := os.Getenv("NERD_ENV")
+	if env == "staging" {
+		cmd.config = conf.StagingDefaults()
+	} else if env == "dev" {
+		cmd.config = conf.DevDefaults(os.Getenv("NERD_API_ENDPOINT"))
+	}
+
 	if len(args) > 0 {
 		return errShowUsage(MessageNoArgumentRequired)
 	}
