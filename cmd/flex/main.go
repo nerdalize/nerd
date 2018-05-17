@@ -379,7 +379,7 @@ func (volp *DatasetVolumes) handleOutput(path, namespace, dataset string) error 
 
 	// If the user has deleted the dataset, then there is nothing to do
 	if err != nil {
-		fmt.Println("warning, output dataset no longer exists: %v", err)
+		// fmt.Fprintln(os.Stderr, "warning, output dataset no longer exists: %v", err)
 		return nil
 	}
 
@@ -387,8 +387,8 @@ func (volp *DatasetVolumes) handleOutput(path, namespace, dataset string) error 
 	err = h.Push(ctx, path, transfer.NewDiscardReporter())
 
 	// The output dataset being empty is a non-fatal unmount error
-	if err == transferarchiver.ErrEmptyDirectory {
-		fmt.Println("warning, output dataset is empty: %v", err)
+	if err != nil && strings.Contains(err.Error(), transferarchiver.ErrEmptyDirectory.Error()) {
+		// fmt.Fprintln(os.Stderr, "warning, output dataset is empty: %v", err)
 		return nil
 	}
 
@@ -553,7 +553,8 @@ func (volp *DatasetVolumes) Unmount(kubeMountPath string) (err error) {
 	var dsopts *datasetOpts
 	dsopts, err = volp.readDatasetOpts(volp.getPath(kubeMountPath, RelPathOptions))
 	if err != nil {
-		return errors.Wrap(err, "failed to read volume database")
+		// fmt.Fprintln(os.Stderr, "warning: failed to read volume database, assuming that volume has already been deleted", err)
+		return nil
 	}
 
 	err = volp.handleOutput(kubeMountPath, dsopts.Namespace, dsopts.OutputDataset)
