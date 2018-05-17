@@ -75,7 +75,6 @@ func (cmd *ClusterSetDefault) Execute(args []string) (err error) {
 	}
 
 	var cluster *v1authpayload.GetClusterOutput
-
 	for _, c := range list.Clusters {
 		if c.Name == name {
 			cluster, err = client.GetCluster(c.URL)
@@ -96,6 +95,7 @@ func (cmd *ClusterSetDefault) Execute(args []string) (err error) {
 		IDPIssuerURL: cmd.config.Auth.IDPIssuerURL,
 	}
 
+	// TODO cleaning, duplicate code from login.go
 	hdir, err := homedir.Dir()
 	if err != nil {
 		return err

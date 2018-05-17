@@ -68,19 +68,17 @@ func (o *GenericPopulator) PopulateKubeConfig(namespace string) error {
 	if o.cluster.CaCertificate == "" {
 		c.InsecureSkipTLSVerify = true
 	} else {
-		// TO BE UPDATED
 		cert, err := o.createCertificate(o.cluster.CaCertificate, o.cluster.ShortName, o.homedir)
 		if err != nil {
 			return err
 		}
 		c.CertificateAuthority = cert
 	}
-	// TO BE UPDATED
 	c.Server = o.cluster.ServiceURL
 
 	auth := api.NewAuthInfo()
-	if o.cluster.KubeConfigUser.BearerToken != "" {
-		auth.Token = o.cluster.KubeConfigUser.BearerToken
+	if o.cluster.KubeConfigUser.Token != "" {
+		auth.Token = o.cluster.KubeConfigUser.Token
 	} else {
 		auth.AuthProvider = &api.AuthProviderConfig{
 			Name: "oidc",

@@ -27,7 +27,7 @@ type GetClusterOutput struct {
 		Pods   int    `json:"pods"`
 	} `json:"usage"`
 	KubeConfigUser struct {
-		BearerToken  string `json:"bearer_token"`
+		Token        string `json:"token"`
 		AuthProvider struct {
 			Config struct {
 				IdpIssuerURL string `json:"idp-issuer-url"`

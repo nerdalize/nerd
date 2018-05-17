@@ -65,6 +65,7 @@ func (cmd *ClusterList) Execute(args []string) (err error) {
 		return err
 	}
 	// Add role (admin, team member ...)
+	// Add star for current cluster
 	hdr := []string{"CLUSTER", "CPU", "MEMORY", "PODS"}
 	rows := [][]string{}
 	for _, cluster := range clusters.Clusters {
