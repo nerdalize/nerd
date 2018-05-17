@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"net/url"
+	"os"
 	"path/filepath"
 
 	flags "github.com/jessevdk/go-flags"
@@ -10,22 +11,23 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
 	v1authpayload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
+	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/oauth"
 	"github.com/nerdalize/nerd/pkg/populator"
 	"github.com/pkg/errors"
 )
 
-//ClusterSet command
-type ClusterSet struct {
+//ClusterSetDefault command
+type ClusterSetDefault struct {
 	Namespace string `long:"namespace" short:"n" description:"set a specific namespace as the default one"`
 
 	*command
 }
 
-//ClusterSetFactory creates the command
-func ClusterSetFactory(ui cli.Ui) cli.CommandFactory {
-	cmd := &ClusterSet{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, &ConfOpts{}, flags.None, "nerd cluster set")
+//ClusterSetDefaultFactory creates the command
+func ClusterSetDefaultFactory(ui cli.Ui) cli.CommandFactory {
+	cmd := &ClusterSetDefault{}
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, &ConfOpts{}, flags.None, "nerd cluster set-default")
 	t, ok := cmd.advancedOpts.(*ConfOpts)
 	if !ok {
 		return nil
@@ -38,7 +40,15 @@ func ClusterSetFactory(ui cli.Ui) cli.CommandFactory {
 }
 
 //Execute runs the command
-func (cmd *ClusterSet) Execute(args []string) (err error) {
+func (cmd *ClusterSetDefault) Execute(args []string) (err error) {
+	// TODO move this part to another func
+	env := os.Getenv("NERD_ENV")
+	if env == "staging" {
+		cmd.config = conf.StagingDefaults()
+	} else if env == "dev" {
+		cmd.config = conf.DevDefaults(os.Getenv("NERD_API_ENDPOINT"))
+	}
+
 	if len(args) > 1 {
 		return errShowUsage(fmt.Sprintf(MessageTooManyArguments, 1, ""))
 	} else if len(args) < 1 {
@@ -108,10 +118,12 @@ func (cmd *ClusterSet) Execute(args []string) (err error) {
 }
 
 // Description returns long-form help text
-func (cmd *ClusterSet) Description() string { return cmd.Synopsis() }
+func (cmd *ClusterSetDefault) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
-func (cmd *ClusterSet) Synopsis() string { return "Set a specific cluster as the current one to use." }
+func (cmd *ClusterSetDefault) Synopsis() string {
+	return "Set a specific cluster as the current one to use."
+}
 
 // Usage shows usage
-func (cmd *ClusterSet) Usage() string { return "nerd cluster set NAME [OPTIONS]" }
+func (cmd *ClusterSetDefault) Usage() string { return "nerd cluster set-default NAME [OPTIONS]" }
