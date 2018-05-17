@@ -17,18 +17,17 @@ import (
 )
 
 //New instantiates a new P interface using the conf parameter. It can return a env, endpoint or oidc populator.
-func New(c *Client, conf, kubeConfigFile, homedir string, project *v1payload.GetProjectOutput) (P, error) {
+func New(c *Client, conf, kubeConfigFile, homedir string, cluster *v1payload.GetClusterOutput) (P, error) {
 	switch conf {
-	case "oidc":
-		return newOIDC(c, kubeConfigFile, homedir, project), nil
+	case "generic":
+		// TO BE UPDATED
+		return newGeneric(c, kubeConfigFile, homedir, cluster), nil
 	case "endpoint":
 		return newEndpoint(kubeConfigFile), nil
 	case "env":
 		return newEnv(kubeConfigFile), nil
-	case "generic":
-		return newGeneric(kubeConfigFile, homedir), nil
 	default:
-		return nil, ErrNoSuchPopulator("populators implemented: oidc, endpoint, env")
+		return nil, ErrNoSuchPopulator("populators implemented: generic(oidc+token), endpoint, env")
 	}
 }
 

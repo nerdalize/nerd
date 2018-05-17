@@ -2,10 +2,12 @@ package v1auth
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 
 	"github.com/nerdalize/nerd/nerd/client"
 	v1payload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
@@ -36,6 +38,11 @@ type TokenClientConfig struct {
 func NewTokenClient(c TokenClientConfig) *TokenClient {
 	if c.Doer == nil {
 		c.Doer = http.DefaultClient
+		if os.Getenv("NERD_ENV") == "dev" {
+			c.Doer = &http.Client{Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			}}
+		}
 	}
 	if c.Base.Path != "" && c.Base.Path[len(c.Base.Path)-1] != '/' {
 		c.Base.Path = c.Base.Path + "/"

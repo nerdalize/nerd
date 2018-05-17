@@ -160,9 +160,6 @@ func (cmd *command) setSession(loc string) {
 		}
 	}
 	cmd.session = conf.NewSession(loc)
-	if proj := os.Getenv(EnvNerdProject); proj != "" {
-		cmd.session.WriteProject(proj, conf.DefaultAWSRegion)
-	}
 }
 
 // AutocompleteFlags returns a mapping of supported flags

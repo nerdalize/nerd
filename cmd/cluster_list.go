@@ -19,7 +19,13 @@ type ClusterList struct {
 //ClusterListFactory creates the command
 func ClusterListFactory(ui cli.Ui) cli.CommandFactory {
 	cmd := &ClusterList{}
-	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, nil, flags.None, "nerd cluster list")
+	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, &ConfOpts{}, flags.None, "nerd cluster list")
+	t, ok := cmd.advancedOpts.(*ConfOpts)
+	if !ok {
+		return nil
+	}
+	t.ConfigFile = cmd.setConfig
+	t.SessionFile = cmd.setSession
 	return func() (cli.Command, error) {
 		return cmd, nil
 	}
@@ -30,7 +36,6 @@ func (cmd *ClusterList) Execute(args []string) (err error) {
 	if len(args) > 0 {
 		return errShowUsage(MessageNoArgumentRequired)
 	}
-
 	// TODO
 	authbase, err := url.Parse(cmd.config.Auth.APIEndpoint)
 	if err != nil {
@@ -48,6 +53,7 @@ func (cmd *ClusterList) Execute(args []string) (err error) {
 	if err != nil {
 		return err
 	}
+	fmt.Println("Step 5")
 
 	// Add role (admin, team member ...)
 	hdr := []string{"CLUSTER", "CPU", "MEMORY", "PODS"}

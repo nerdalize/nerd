@@ -10,8 +10,8 @@ const (
 
 // P is an interface that we can use to read from and to write to the kube config file.
 type P interface {
-	PopulateKubeConfig(project string) error
-	RemoveConfig(project string) error
+	PopulateKubeConfig(string) error
+	RemoveConfig(string) error
 }
 
 // Client provides necessary information to successfully use OIDC

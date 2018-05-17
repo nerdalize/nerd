@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 	"sync/atomic"
 
-	"github.com/nerdalize/nerd/nerd/conf"
-
 	v1payload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd/api"
@@ -17,20 +15,19 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 )
 
-//OIDCPopulator is an implementation of the P interface using on Open ID Connect credentials.
-type OIDCPopulator struct {
+//GenericPopulator is an implementation of the P interface using on Open ID Connect credentials.
+type GenericPopulator struct {
 	// kubeConfigFile is the path where the kube config is stored
 	// Only access this with atomic ops
 	kubeConfigFile atomic.Value
-
-	project *v1payload.GetProjectOutput
-	homedir string
-	client  *Client
+	homedir        string
+	cluster        *v1payload.GetClusterOutput
+	client         *Client
 }
 
-func newOIDC(c *Client, kubeConfigFile, homedir string, project *v1payload.GetProjectOutput) *OIDCPopulator {
-	o := &OIDCPopulator{
-		project: project,
+func newGeneric(c *Client, kubeConfigFile, homedir string, cluster *v1payload.GetClusterOutput) *GenericPopulator {
+	o := &GenericPopulator{
+		cluster: cluster,
 		homedir: homedir,
 		client:  c,
 	}
@@ -39,20 +36,20 @@ func newOIDC(c *Client, kubeConfigFile, homedir string, project *v1payload.GetPr
 }
 
 //GetKubeConfigFile returns the path where the kube config is stored.
-func (o *OIDCPopulator) GetKubeConfigFile() string {
+func (o *GenericPopulator) GetKubeConfigFile() string {
 	return o.kubeConfigFile.Load().(string)
 }
 
-//RemoveConfig deletes the precised project context and cluster info.
-func (o *OIDCPopulator) RemoveConfig(project string) error {
+//RemoveConfig deletes the precised cluster context and cluster info.
+func (o *GenericPopulator) RemoveConfig(cluster string) error {
 	// read existing config or create new if does not exist
 	kubecfg, err := ReadConfigOrNew(o.GetKubeConfigFile())
 	if err != nil {
 		return err
 	}
-	delete(kubecfg.Clusters, project)
-	delete(kubecfg.AuthInfos, project)
-	delete(kubecfg.Contexts, fmt.Sprintf("%s-%s", Prefix, project))
+	delete(kubecfg.Clusters, cluster)
+	delete(kubecfg.AuthInfos, cluster)
+	delete(kubecfg.Contexts, fmt.Sprintf("%s-%s", Prefix, cluster))
 	kubecfg.CurrentContext = ""
 
 	// write back to disk
@@ -62,60 +59,63 @@ func (o *OIDCPopulator) RemoveConfig(project string) error {
 	return nil
 }
 
-// PopulateKubeConfig populates an api.Config object and set the current context to the provided project.
-func (o *OIDCPopulator) PopulateKubeConfig(project string) error {
-	cluster := api.NewCluster()
-	if o.project.Services.Cluster.B64CaData == "" {
-		cluster.InsecureSkipTLSVerify = true
+// PopulateKubeConfig populates an api.Config object and set the current context to the provided cluster.
+func (o *GenericPopulator) PopulateKubeConfig(namespace string) error {
+	c := api.NewCluster()
+	if o.cluster == nil {
+		return errors.New("Cannot use an empty cluster")
+	}
+	if o.cluster.CaCertificate == "" {
+		c.InsecureSkipTLSVerify = true
 	} else {
-		cert, err := o.createCertificate(o.project.Services.Cluster.B64CaData, project, o.homedir)
+		// TO BE UPDATED
+		cert, err := o.createCertificate(o.cluster.CaCertificate, o.cluster.ShortName, o.homedir)
 		if err != nil {
 			return err
 		}
-		cluster.CertificateAuthority = cert
+		c.CertificateAuthority = cert
 	}
-	cluster.Server = o.project.Services.Cluster.Address
-
-	filename, err := conf.GetDefaultSessionLocation()
-	if err != nil {
-		return err
-	}
-	ss := conf.NewSession(filename)
-	if err != nil {
-		return err
-	}
-	config, err := ss.Read()
-	if err != nil {
-		return err
-	}
+	// TO BE UPDATED
+	c.Server = o.cluster.ServiceURL
 
 	auth := api.NewAuthInfo()
-	auth.AuthProvider = &api.AuthProviderConfig{
-		Name: "oidc",
-		Config: map[string]string{
-			"client-id":      o.client.ID,
-			"client-secret":  o.client.Secret,
-			"id-token":       config.OAuth.IDToken,
-			"idp-issuer-url": o.client.IDPIssuerURL,
-			"refresh-token":  config.OAuth.RefreshToken,
-		},
+	if o.cluster.KubeConfigUser.BearerToken != "" {
+		auth.Token = o.cluster.KubeConfigUser.BearerToken
+	} else {
+		auth.AuthProvider = &api.AuthProviderConfig{
+			Name: "oidc",
+			Config: map[string]string{
+				"client-id":      o.cluster.KubeConfigUser.AuthProvider.Config.ClientID,
+				"id-token":       o.cluster.KubeConfigUser.AuthProvider.Config.IDToken,
+				"idp-issuer-url": o.cluster.KubeConfigUser.AuthProvider.Config.IdpIssuerURL,
+				"refresh-token":  o.cluster.KubeConfigUser.AuthProvider.Config.RefreshToken,
+			},
+		}
+	}
+
+	if namespace == "" {
+		if len(o.cluster.Namespaces) != 0 {
+			namespace = o.cluster.Namespaces[0].Name
+		} else {
+			namespace = "default"
+		}
 	}
 
 	// context
 	context := api.NewContext()
-	context.Cluster = project
-	context.AuthInfo = project
-	context.Namespace = project
-	clusterName := fmt.Sprintf("%s-%s", Prefix, project)
+	context.Cluster = o.cluster.ShortName
+	context.AuthInfo = o.cluster.ShortName
+	context.Namespace = namespace
+	clusterName := fmt.Sprintf("%s-%s", Prefix, o.cluster.ShortName)
 
 	// read existing config or create new if does not exist
 	kubecfg, err := ReadConfigOrNew(o.GetKubeConfigFile())
 	if err != nil {
 		return err
 	}
-	kubecfg.Clusters[project] = cluster
+	kubecfg.Clusters[o.cluster.ShortName] = c
 	kubecfg.CurrentContext = clusterName
-	kubecfg.AuthInfos[project] = auth
+	kubecfg.AuthInfos[o.cluster.ShortName] = auth
 	kubecfg.Contexts[clusterName] = context
 
 	// write back to disk
@@ -126,12 +126,12 @@ func (o *OIDCPopulator) PopulateKubeConfig(project string) error {
 	return nil
 }
 
-func (o *OIDCPopulator) createCertificate(data, project, homedir string) (string, error) {
+func (o *GenericPopulator) createCertificate(data, cluster, homedir string) (string, error) {
 	if data == "" {
 		return "", nil
 	}
 	dir := filepath.Join(homedir, ".nerd", "certs")
-	filename := filepath.Join(dir, project+".cert")
+	filename := filepath.Join(dir, cluster+".cert")
 	_, err := os.Stat(dir)
 	if err != nil {
 		if !os.IsNotExist(err) {

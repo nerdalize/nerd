@@ -91,7 +91,6 @@ type SessionInterface interface {
 	Read() (*SessionSnapshot, error)
 	WriteJWT(jwt, refreshToken string) error
 	WriteOAuth(accessToken, refreshToken, idToken string, expiration time.Time, scope, tokenType string) error
-	WriteProject(project, awsRegion string) error
 }
 
 //readFile reads the session file
@@ -165,23 +164,6 @@ func (s *Session) WriteOAuth(accessToken, refreshToken, idToken string, expirati
 	ss.OAuth.Expiration = expiration
 	ss.OAuth.Scope = scope
 	ss.OAuth.TokenType = tokenType
-	err = s.write(ss)
-	if err != nil {
-		return errors.Wrap(err, "failed to write config")
-	}
-	return nil
-}
-
-//WriteProject writes the project object to the session file
-func (s *Session) WriteProject(name, awsRegion string) error {
-	s.m.Lock()
-	defer s.m.Unlock()
-	ss, err := s.readFile()
-	if err != nil {
-		return errors.Wrap(err, "failed to read config")
-	}
-	ss.Project.Name = name
-	ss.Project.AWSRegion = awsRegion
 	err = s.write(ss)
 	if err != nil {
 		return errors.Wrap(err, "failed to write config")

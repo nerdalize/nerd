@@ -7,6 +7,7 @@ package conf
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 
@@ -37,6 +38,29 @@ type AuthConfig struct {
 type LoggingConfig struct {
 	Enabled      bool   `json:"enabled"`
 	FileLocation string `json:"file_location"`
+}
+
+//DevDefaults provides the default for the dev environment when the config file misses certain fields.
+func DevDefaults(endpoint string) *Config {
+	return &Config{
+		Auth: AuthConfig{
+			APIEndpoint:      fmt.Sprintf("%s/v1/", endpoint),
+			OAuthLocalServer: "localhost:9876",
+			OAuthSuccessURL:  fmt.Sprintf("%s/do/login_complete/?client=CLI", endpoint),
+			SecureClientID:   "aK9Yo1QngPbZ",
+			// to remove
+			IDPIssuerURL: endpoint,
+			PublicKey: `-----BEGIN PUBLIC KEY-----
+MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEBthEmchVCtA3ZPXqiCXdj+7/ZFuhxRgx
+grTxIHK+b0vEqKqA3O++ggD1GgjqtTfNLGUjLCE3KxyIN78TsK+HU4VVexTjlWXy
+WPtidD68xGD0JVPU1cSfu8iP0XzwgttG
+-----END PUBLIC KEY-----
+`},
+		Logging: LoggingConfig{
+			Enabled:      true,
+			FileLocation: "~/.nerd/log",
+		},
+	}
 }
 
 //StagingDefaults provides the default for the staging environment when the config file misses certain fields.
@@ -70,10 +94,8 @@ func Defaults() *Config {
 			APIEndpoint:      "https://auth.nerdalize.com/v1/",
 			OAuthLocalServer: "localhost:9876",
 			OAuthSuccessURL:  "https://auth.nerdalize.com/do/login_complete/?client=CLI",
-			SecureClientID:   "T8I0H3qAeWGA",
-			// to remove
-			SecureClientSecret: "93177b0e77369537ceac900b26f0a9600484564fdda5d431b05e994b",
-			IDPIssuerURL:       "https://auth.nerdalize.com",
+			SecureClientID:   "EoVpxfLjK0lG",
+			IDPIssuerURL:     "https://auth.nerdalize.com",
 			PublicKey: `-----BEGIN PUBLIC KEY-----
 MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEBthEmchVCtA3ZPXqiCXdj+7/ZFuhxRgx
 grTxIHK+b0vEqKqA3O++ggD1GgjqtTfNLGUjLCE3KxyIN78TsK+HU4VVexTjlWXy

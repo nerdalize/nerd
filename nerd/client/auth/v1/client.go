@@ -2,10 +2,12 @@ package v1auth
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"sync"
 
 	"github.com/nerdalize/nerd/nerd/client"
@@ -47,6 +49,11 @@ type Doer interface {
 func NewClient(c ClientConfig) *Client {
 	if c.Doer == nil {
 		c.Doer = http.DefaultClient
+		if os.Getenv("NERD_ENV") == "dev" {
+			c.Doer = &http.Client{Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			}}
+		}
 	}
 	if c.Base.Path != "" && c.Base.Path[len(c.Base.Path)-1] != '/' {
 		c.Base.Path = c.Base.Path + "/"
@@ -84,7 +91,6 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 	if err != nil {
 		return err
 	}
-
 	path, err := url.Parse(urlPath)
 	if err != nil {
 		return client.NewError("invalid url path provided", err)

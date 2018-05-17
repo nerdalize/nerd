@@ -6,15 +6,22 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"time"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	homedir "github.com/mitchellh/go-homedir"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
+	v1authpayload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/oauth"
+	"github.com/nerdalize/nerd/pkg/populator"
 	"github.com/pkg/errors"
 	"github.com/skratchdot/open-golang/open"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 const (
@@ -45,8 +52,11 @@ func LoginFactory(ui cli.Ui) cli.CommandFactory {
 
 //Execute runs the command
 func (cmd *Login) Execute(args []string) (err error) {
-	if os.Getenv("NERD_ENV") == "staging" {
+	env := os.Getenv("NERD_ENV")
+	if env == "staging" {
 		cmd.config = conf.StagingDefaults()
+	} else if env == "dev" {
+		cmd.config = conf.DevDefaults(os.Getenv("NERD_API_ENDPOINT"))
 	}
 	authbase, err := url.Parse(cmd.config.Auth.APIEndpoint)
 	if err != nil {
@@ -90,39 +100,38 @@ func (cmd *Login) Execute(args []string) (err error) {
 		Logger:             cmd.Logger(),
 		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.SecureClientID, cmd.config.Auth.SecureClientSecret, cmd.session),
 	})
-	list, err := client.ListProjects()
+	list, err := client.ListClusters()
 	if err != nil {
-		return renderServiceError(err, "cannot list projects")
+		return renderServiceError(err, "cannot list clusters")
 	}
 
-	if len(list.Projects) == 0 {
+	if len(list.Clusters) == 0 {
 		cmd.out.Info("Successful login, but you don't have any cluster. Please contact mayday@nerdalize.com.")
 		return nil
 	}
-	var projectSlug string
-	// c := populator.Client{
-	// 	Secret:       cmd.config.Auth.SecureClientSecret,
-	// 	ID:           cmd.config.Auth.SecureClientID,
-	// 	IDPIssuerURL: cmd.config.Auth.IDPIssuerURL,
-	// }
-	for _, project := range list.Projects {
-		projectSlug = project.Nk
-		// @TO UPDATE
-		// err = setProject(&c, cmd.opts.KubeConfig, cmd.opts.Config, project, cmd.outputter.Logger)
-		// if err != nil {
-		// 	projectSlug = ""
-		// 	continue
-		// }
+	c := populator.Client{
+		Secret:       cmd.config.Auth.SecureClientSecret,
+		ID:           cmd.config.Auth.SecureClientID,
+		IDPIssuerURL: cmd.config.Auth.IDPIssuerURL,
+	}
+	var ok bool
+	for _, cluster := range list.Clusters {
+		cluster, err = client.GetCluster(cluster.URL)
+		if err != nil {
+			return err
+		}
+
+		err = setCluster(&c, cmd.globalOpts.KubeOpts.KubeConfig, cluster)
+		if err != nil {
+			ok = false
+			continue
+		}
+		ok = true
 		break
 	}
-	if projectSlug == "" {
+	if !ok {
 		cmd.out.Info("Successful login, but it seems that there is a connection problem to your cluster(s). Please try again, and if the problem persists, contact mayday@nerdalize.com.")
 		return nil
-	}
-
-	err = cmd.session.WriteProject(projectSlug, conf.DefaultAWSRegion)
-	if err != nil {
-		return renderConfigError(err, "cannot write session file")
 	}
 
 	cmd.out.Info("Successful login. You can now start a job with the `nerd job run` command.")
@@ -221,6 +230,59 @@ func randomString(n int) string {
 	}
 
 	return string(b)
+}
+
+func setCluster(c *populator.Client, kubeConfig string, cluster *v1authpayload.GetClusterOutput) (err error) {
+	var (
+		hdir string
+		p    populator.P
+	)
+	hdir, err = homedir.Dir()
+	if err != nil {
+		return err
+	}
+	if kubeConfig == "" {
+		kubeConfig = filepath.Join(hdir, ".kube", "config")
+	}
+	p, err = populator.New(c, "generic", kubeConfig, hdir, cluster)
+	if err != nil {
+		return err
+	}
+	err = p.PopulateKubeConfig("")
+	if err != nil {
+		p.RemoveConfig(cluster.ShortName)
+		return err
+	}
+	// TODO ADD CHECK -> IF THERE IS NO NAMESPACE IT WILL PANIC
+	if err := checkNamespace(kubeConfig, cluster.Namespaces[0].Name); err != nil {
+		p.RemoveConfig(cluster.ShortName)
+		return err
+	}
+	return nil
+}
+
+func checkNamespace(kubeConfig, ns string) error {
+	if ns == "" {
+		ns = "default"
+	}
+
+	kcfg, err := clientcmd.BuildConfigFromFlags("", kubeConfig)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return renderConfigError(ErrNotLoggedIn, "")
+		}
+		return errors.Wrap(err, "failed to build Kubernetes config from provided kube config path")
+	}
+	kube, err := kubernetes.NewForConfig(kcfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to create Kubernetes configuration")
+	}
+
+	_, err = kube.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Description returns long-form help text

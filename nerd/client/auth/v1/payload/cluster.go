@@ -7,10 +7,12 @@ type ListClustersOutput struct {
 
 //GetClusterOutput get some details of a specific cluster. Useful to setup kube config.
 type GetClusterOutput struct {
-	URL           string `json:"url"`
-	ShortName     string `json:"short_name"`
-	Name          string `json:"name"`
-	Namespace     string `json:"namespace"`
+	URL        string `json:"url"`
+	ShortName  string `json:"short_name"`
+	Name       string `json:"name"`
+	Namespaces []struct {
+		Name string `json:"name"`
+	} `json:"namespaces"`
 	ServiceType   string `json:"service_type"`
 	ServiceURL    string `json:"service_url"`
 	CaCertificate string `json:"ca_certificate"`
@@ -25,13 +27,15 @@ type GetClusterOutput struct {
 		Pods   int    `json:"pods"`
 	} `json:"usage"`
 	KubeConfigUser struct {
-		BearerToken       string `json:"bearer_token"`
-		AccessToken       string `json:"access_token"`
-		RefreshToken      string `json:"refresh_token"`
-		TokenType         string `json:"token_type"`
-		ExpiresIn         int    `json:"expires_in"`
-		IDToken           string `json:"id_token"`
-		OauthClientID     string `json:"oauth_client_id"`
-		OauthClientSecret string `json:"oauth_client_secret"`
+		BearerToken  string `json:"bearer_token"`
+		AuthProvider struct {
+			Config struct {
+				IdpIssuerURL string `json:"idp-issuer-url"`
+				ClientID     string `json:"client-id"`
+				RefreshToken string `json:"refresh-token"`
+				IDToken      string `json:"id-token"`
+			} `json:"config"`
+			Name string `json:"name"`
+		} `json:"auth-provider"`
 	} `json:"kubeconfig_user"`
 }
