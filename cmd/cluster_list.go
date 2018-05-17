@@ -36,25 +36,24 @@ func (cmd *ClusterList) Execute(args []string) (err error) {
 	if len(args) > 0 {
 		return errShowUsage(MessageNoArgumentRequired)
 	}
-	// TODO
 	authbase, err := url.Parse(cmd.config.Auth.APIEndpoint)
 	if err != nil {
 		return errors.Wrapf(err, "auth endpoint '%v' is not a valid URL", cmd.config.Auth.APIEndpoint)
 	}
 	authOpsClient := v1auth.NewOpsClient(v1auth.OpsClientConfig{
-		Base: authbase,
+		Base:   authbase,
+		Logger: cmd.Logger(),
 	})
 	client := v1auth.NewClient(v1auth.ClientConfig{
 		Base:               authbase,
 		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.SecureClientID, cmd.config.Auth.SecureClientSecret, cmd.session),
+		Logger:             cmd.Logger(),
 	})
 
 	clusters, err := client.ListClusters()
 	if err != nil {
 		return err
 	}
-	fmt.Println("Step 5")
-
 	// Add role (admin, team member ...)
 	hdr := []string{"CLUSTER", "CPU", "MEMORY", "PODS"}
 	rows := [][]string{}
