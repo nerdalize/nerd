@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"reflect"
 
 	"github.com/cheggaaa/pb"
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
+	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/pkg/errors"
 	"github.com/posener/complete"
 	"github.com/sirupsen/logrus"
@@ -34,6 +37,14 @@ var (
 	PlaceholderUsage = "<usage>"
 )
 
+const (
+	//EnvConfigJSON can be used to pass the config file as a json encoded string
+	EnvConfigJSON = "NERD_CONFIG_JSON"
+
+	//EnvNerdProject can be used to set the nerd project
+	EnvNerdProject = "NERD_PROJECT"
+)
+
 type command struct {
 	globalOpts struct {
 		KubeOpts
@@ -44,10 +55,12 @@ type command struct {
 
 	name       string
 	flagParser *flags.Parser
+	config     *conf.Config
+	session    *conf.Session
+	out        *Output
 	runFunc    func(args []string) error
 	helpFunc   func() string
 	usageFunc  func() string
-	out        *Output
 }
 
 func createCommand(ui cli.Ui, runFunc func([]string) error, helpFunc func() string, usageFunc func() string, fgroup, adv interface{}, opts flags.Options, name string) *command {
@@ -94,6 +107,59 @@ func addFlagPredicts(fl complete.Flags, f *flags.Option) {
 			fl[fmt.Sprintf("-%s", string(f.ShortName))] = complete.PredictAnything
 		}
 	}
+}
+
+func createFile(path, content string) error {
+	os.MkdirAll(filepath.Dir(path), 0755)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
+	if err != nil && !os.IsExist(err) {
+		return err
+	}
+	if err == nil {
+		f.Write([]byte(content))
+	}
+	f.Close()
+	return nil
+}
+
+func (cmd *command) setConfig(loc string) {
+	if loc == "" {
+		var err error
+		loc, err = conf.GetDefaultConfigLocation()
+		if err != nil {
+			cmd.out.Errorf(errors.Wrap(err, "failed to find config location").Error())
+			os.Exit(-1)
+		}
+		err = createFile(loc, "{}")
+		if err != nil {
+			cmd.out.Errorf(errors.Wrapf(err, "failed to create config file %v", loc).Error())
+			os.Exit(-1)
+		}
+	}
+	conf, err := conf.Read(loc)
+	if err != nil {
+		cmd.out.Errorf(errors.Wrap(err, "failed to read config file").Error())
+		os.Exit(-1)
+	}
+	cmd.config = conf
+}
+
+//setSession sets the cmd.session field according to the session file location
+func (cmd *command) setSession(loc string) {
+	if loc == "" {
+		var err error
+		loc, err = conf.GetDefaultSessionLocation()
+		if err != nil {
+			cmd.out.Error(errors.Wrap(err, "failed to find session location").Error())
+			os.Exit(-1)
+		}
+		err = createFile(loc, "{}")
+		if err != nil {
+			cmd.out.Error(errors.Wrapf(err, "failed to create session file %v", loc).Error())
+			os.Exit(-1)
+		}
+	}
+	cmd.session = conf.NewSession(loc)
 }
 
 // AutocompleteFlags returns a mapping of supported flags

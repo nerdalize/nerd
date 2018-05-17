@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/nerdalize/nerd/cmd"
-	"github.com/nerdalize/nerd/command"
 	"github.com/nerdalize/nerd/nerd"
 
 	"github.com/mitchellh/cli"
@@ -40,18 +39,21 @@ func create() *cli.CLI {
 		Args:           args,
 		HiddenCommands: []string{},
 		Commands: map[string]cli.CommandFactory{
-			"version":          command.CreateVersionFactory(version, commit),
-			"login":            command.LoginFactory,
-			"dataset":          cmd.DatasetFactory(ui),
-			"dataset upload":   cmd.DatasetUploadFactory(ui),
-			"dataset download": cmd.DatasetDownloadFactory(ui),
-			"dataset list":     cmd.DatasetListFactory(ui),
-			"dataset delete":   cmd.DatasetDeleteFactory(ui),
-			"job":              cmd.JobFactory(ui),
-			"job run":          cmd.JobRunFactory(ui),
-			"job list":         cmd.JobListFactory(ui),
-			"job logs":         cmd.JobLogsFactory(ui),
-			"job delete":       cmd.JobDeleteFactory(ui),
+			"version":             cmd.VersionFactory(version, commit, ui),
+			"login":               cmd.LoginFactory(ui),
+			"dataset":             cmd.DatasetFactory(ui),
+			"dataset upload":      cmd.DatasetUploadFactory(ui),
+			"dataset download":    cmd.DatasetDownloadFactory(ui),
+			"dataset list":        cmd.DatasetListFactory(ui),
+			"dataset delete":      cmd.DatasetDeleteFactory(ui),
+			"job":                 cmd.JobFactory(ui),
+			"job run":             cmd.JobRunFactory(ui),
+			"job list":            cmd.JobListFactory(ui),
+			"job logs":            cmd.JobLogsFactory(ui),
+			"job delete":          cmd.JobDeleteFactory(ui),
+			"cluster":             cmd.ClusterFactory(ui),
+			"cluster list":        cmd.ClusterListFactory(ui),
+			"cluster set-default": cmd.ClusterSetDefaultFactory(ui),
 		},
 	}
 

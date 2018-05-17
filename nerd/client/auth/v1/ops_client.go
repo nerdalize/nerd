@@ -1,12 +1,15 @@
 package v1auth
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/google/go-querystring/query"
 	"github.com/nerdalize/nerd/nerd/client"
@@ -37,6 +40,11 @@ type OpsClientConfig struct {
 func NewOpsClient(c OpsClientConfig) *OpsClient {
 	if c.Doer == nil {
 		c.Doer = http.DefaultClient
+		if os.Getenv("NERD_ENV") == "dev" {
+			c.Doer = &http.Client{Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			}}
+		}
 	}
 	if c.Base.Path != "" && c.Base.Path[len(c.Base.Path)-1] != '/' {
 		c.Base.Path = c.Base.Path + "/"
@@ -79,7 +87,7 @@ func (c *OpsClient) doRequest(method, urlPath string, input, output interface{})
 	client.LogRequest(req, c.Logger)
 	resp, err := c.Doer.Do(req)
 	if err != nil {
-		return client.NewError("failed to create HTTP request", err)
+		return client.NewError("failed to create HTTP request 3", err)
 	}
 	client.LogResponse(resp, c.Logger)
 

@@ -2,15 +2,17 @@ package v1auth
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"sync"
 
 	"github.com/nerdalize/nerd/nerd/client"
 	v1payload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -18,6 +20,7 @@ const (
 	//TokenEndpoint is the endpoint from where to fetch the JWT.
 	tokenEndpoint    = "token"
 	projectsEndpoint = "projects"
+	clustersEndpoint = "clusters"
 	//NCEScope is the JWT scope for the NCE service
 	NCEScope = "nce.nerdalize.com"
 )
@@ -46,6 +49,11 @@ type Doer interface {
 func NewClient(c ClientConfig) *Client {
 	if c.Doer == nil {
 		c.Doer = http.DefaultClient
+		if os.Getenv("NERD_ENV") == "dev" {
+			c.Doer = &http.Client{Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			}}
+		}
 	}
 	if c.Base.Path != "" && c.Base.Path[len(c.Base.Path)-1] != '/' {
 		c.Base.Path = c.Base.Path + "/"
@@ -83,7 +91,6 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 	if err != nil {
 		return err
 	}
-
 	path, err := url.Parse(urlPath)
 	if err != nil {
 		return client.NewError("invalid url path provided", err)
@@ -141,6 +148,18 @@ func (c *Client) doRequest(method, urlPath string, input, output interface{}) (e
 	}
 
 	return nil
+}
+
+//ListClusters lists clusters
+func (c *Client) ListClusters() (output *v1payload.ListClustersOutput, err error) {
+	output = &v1payload.ListClustersOutput{}
+	return output, c.doRequest(http.MethodGet, clustersEndpoint, nil, &output.Clusters)
+}
+
+//GetCluster retrieve a precised cluster so we can get its authentication details.
+func (c *Client) GetCluster(url string) (output *v1payload.GetClusterOutput, err error) {
+	output = &v1payload.GetClusterOutput{}
+	return output, c.doRequest(http.MethodGet, url, nil, output)
 }
 
 //ListProjects lists projects
