@@ -69,20 +69,25 @@ func (cmd *ClusterSetDefault) Execute(args []string) (err error) {
 		Logger:             cmd.Logger(),
 		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.SecureClientID, cmd.config.Auth.SecureClientSecret, cmd.session),
 	})
-
 	list, err := client.ListClusters()
 	if err != nil {
 		return err
 	}
 
 	var cluster *v1authpayload.GetClusterOutput
+
 	for _, c := range list.Clusters {
-		if c.ShortName == name {
+		if c.Name == name {
 			cluster, err = client.GetCluster(c.URL)
 			if err != nil {
 				return err
 			}
 		}
+	}
+
+	if cluster == nil {
+		cmd.out.Infof("Cluster not found. You can use `nerd cluster list` to see your clusters.")
+		return nil
 	}
 
 	c := populator.Client{
@@ -102,6 +107,9 @@ func (cmd *ClusterSetDefault) Execute(args []string) (err error) {
 	p, err := populator.New(&c, "generic", kubeConfig, hdir, cluster)
 	if err != nil {
 		return err
+	}
+	if cmd.Namespace == "" && len(cluster.Namespaces) >= 1 {
+		cmd.Namespace = cluster.Namespaces[0].Name
 	}
 	err = p.PopulateKubeConfig(cmd.Namespace)
 	if err != nil {

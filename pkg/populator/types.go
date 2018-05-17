@@ -16,6 +16,7 @@ type P interface {
 
 // Client provides necessary information to successfully use OIDC
 type Client struct {
+	// TODO CLEANING
 	// Secret necessary for OpenID connect
 	Secret string
 	// ID is a client id that all tokens must be issued for.
