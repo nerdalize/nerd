@@ -84,6 +84,13 @@ func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
 		kopts.KubeConfig = filepath.Join(hdir, ".kube", "config")
 	}
 
+	var err error
+	kopts.KubeConfig, err = homedir.Expand(kopts.KubeConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to expand home directory in kube config file path")
+	}
+	//Normalize all slashes to native platform slashes (e.g. / to \ on Windows)
+	kopts.KubeConfig = filepath.FromSlash(kopts.KubeConfig)
 	kcfg, err := clientcmd.BuildConfigFromFlags("", kopts.KubeConfig)
 	if err != nil {
 		if os.IsNotExist(err) {

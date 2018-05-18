@@ -69,7 +69,11 @@ func (o *GenericPopulator) PopulateKubeConfig(namespace string) error {
 	if o.cluster.CaCertificate == "" {
 		c.InsecureSkipTLSVerify = true
 	} else {
-		c.CertificateAuthorityData = []byte(o.cluster.CaCertificate)
+		data, err := base64.StdEncoding.DecodeString(o.cluster.CaCertificate)
+		if err != nil {
+			return err
+		}
+		c.CertificateAuthorityData = data
 	}
 	c.Server = o.cluster.ServiceURL
 
