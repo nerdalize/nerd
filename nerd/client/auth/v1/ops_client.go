@@ -87,7 +87,7 @@ func (c *OpsClient) doRequest(method, urlPath string, input, output interface{})
 	client.LogRequest(req, c.Logger)
 	resp, err := c.Doer.Do(req)
 	if err != nil {
-		return client.NewError("failed to create HTTP request 3", err)
+		return client.NewError("failed to create HTTP request", err)
 	}
 	client.LogResponse(resp, c.Logger)
 
@@ -120,11 +120,10 @@ func (c *OpsClient) doRequest(method, urlPath string, input, output interface{})
 func (c *OpsClient) GetOAuthCredentials(code, clientID, clientSecret, localServerURL string) (output *v1payload.GetOAuthCredentialsOutput, err error) {
 	output = &v1payload.GetOAuthCredentialsOutput{}
 	input := &v1payload.GetOAuthCredentialsInput{
-		Code:         code,
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		GrantType:    "authorization_code",
-		RedirectURI:  localServerURL,
+		Code:        code,
+		ClientID:    clientID,
+		GrantType:   "authorization_code",
+		RedirectURI: localServerURL,
 	}
 	return output, c.doRequest(http.MethodPost, "o/token/", input, output)
 }
@@ -135,7 +134,6 @@ func (c *OpsClient) RefreshOAuthCredentials(refreshToken, clientID, clientSecret
 	input := &v1payload.RefreshOAuthCredentialsInput{
 		RefreshToken: refreshToken,
 		ClientID:     clientID,
-		ClientSecret: clientSecret,
 		GrantType:    "refresh_token",
 	}
 	return output, c.doRequest(http.MethodPost, "o/token/", input, output)

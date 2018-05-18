@@ -188,7 +188,7 @@ func NerdContext(filename string) bool {
 		return false
 	}
 
-	if strings.Contains(config.CurrentContext, Prefix) {
+	if strings.HasPrefix(config.CurrentContext, Prefix) {
 		return true
 	}
 

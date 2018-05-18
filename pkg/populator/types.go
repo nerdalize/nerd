@@ -5,7 +5,7 @@ const (
 	DirPermissions = 0755
 
 	//Prefix is used to know if a context comes from the cli.
-	Prefix = "nerd-cli"
+	Prefix = "nerdalize"
 )
 
 // P is an interface that we can use to read from and to write to the kube config file.

@@ -120,7 +120,6 @@ func (cmd *Login) Execute(args []string) (err error) {
 		if err != nil {
 			return err
 		}
-
 		err = setCluster(&c, cmd.globalOpts.KubeOpts.KubeConfig, cluster)
 		if err != nil {
 			ok = false
@@ -244,6 +243,13 @@ func setCluster(c *populator.Client, kubeConfig string, cluster *v1authpayload.G
 	if kubeConfig == "" {
 		kubeConfig = filepath.Join(hdir, ".kube", "config")
 	}
+	kubeConfig, err = homedir.Expand(kubeConfig)
+	if err != nil {
+		return errors.Wrap(err, "failed to expand home directory in kube config file path")
+	}
+	//Normalize all slashes to native platform slashes (e.g. / to \ on Windows)
+	kubeConfig = filepath.FromSlash(kubeConfig)
+
 	p, err = populator.New(c, "generic", kubeConfig, hdir, cluster)
 	if err != nil {
 		return err
@@ -253,7 +259,9 @@ func setCluster(c *populator.Client, kubeConfig string, cluster *v1authpayload.G
 		p.RemoveConfig(cluster.ShortName)
 		return err
 	}
-	// TODO ADD CHECK -> IF THERE IS NO NAMESPACE IT WILL PANIC
+	if len(cluster.Namespaces) == 0 {
+		return nil
+	}
 	if err := checkNamespace(kubeConfig, cluster.Namespaces[0].Name); err != nil {
 		p.RemoveConfig(cluster.ShortName)
 		return err

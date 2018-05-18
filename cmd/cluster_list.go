@@ -66,13 +66,13 @@ func (cmd *ClusterList) Execute(args []string) (err error) {
 	}
 	// Add role (admin, team member ...)
 	// Add star for current cluster
-	hdr := []string{"CLUSTER", "CPU", "MEMORY", "PODS"}
+	hdr := []string{"CLUSTER", "VCPUS", "MEMORY", "PODS"}
 	rows := [][]string{}
 	for _, cluster := range clusters.Clusters {
 		rows = append(rows, []string{
 			cluster.Name,
 			fmt.Sprintf("%s/%s", cluster.Usage.CPU, cluster.Capacity.CPU),
-			fmt.Sprintf("%s/%s", cluster.Usage.Memory, cluster.Capacity.Memory),
+			fmt.Sprintf("%s/%s", (cluster.Usage.Memory), cluster.Capacity.Memory),
 			fmt.Sprintf("%d/%d", cluster.Usage.Pods, cluster.Capacity.Pods),
 		})
 	}

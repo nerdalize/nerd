@@ -2,11 +2,10 @@ package v1payload
 
 //GetOAuthCredentialsInput is input for getting oauth credentials
 type GetOAuthCredentialsInput struct {
-	Code         string `url:"code"`
-	ClientID     string `url:"client_id"`
-	ClientSecret string `url:"client_secret"`
-	RedirectURI  string `url:"redirect_uri"`
-	GrantType    string `url:"grant_type"`
+	Code        string `url:"code"`
+	ClientID    string `url:"client_id"`
+	RedirectURI string `url:"redirect_uri"`
+	GrantType   string `url:"grant_type"`
 }
 
 //GetOAuthCredentialsOutput is output when getting oauth credentials
@@ -18,7 +17,6 @@ type GetOAuthCredentialsOutput struct {
 type RefreshOAuthCredentialsInput struct {
 	RefreshToken string `url:"refresh_token"`
 	ClientID     string `url:"client_id"`
-	ClientSecret string `url:"client_secret"`
 	GrantType    string `url:"grant_type"`
 }
 
