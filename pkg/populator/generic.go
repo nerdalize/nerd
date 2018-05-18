@@ -42,6 +42,7 @@ func (o *GenericPopulator) GetKubeConfigFile() string {
 
 //RemoveConfig deletes the precised cluster context and cluster info.
 func (o *GenericPopulator) RemoveConfig(cluster string) error {
+	cluster = fmt.Sprintf("%s-%s", Prefix, cluster)
 	// read existing config or create new if does not exist
 	kubecfg, err := ReadConfigOrNew(o.GetKubeConfigFile())
 	if err != nil {
@@ -49,7 +50,7 @@ func (o *GenericPopulator) RemoveConfig(cluster string) error {
 	}
 	delete(kubecfg.Clusters, cluster)
 	delete(kubecfg.AuthInfos, cluster)
-	delete(kubecfg.Contexts, fmt.Sprintf("%s-%s", Prefix, cluster))
+	delete(kubecfg.Contexts, cluster)
 	kubecfg.CurrentContext = ""
 
 	// write back to disk
@@ -68,11 +69,7 @@ func (o *GenericPopulator) PopulateKubeConfig(namespace string) error {
 	if o.cluster.CaCertificate == "" {
 		c.InsecureSkipTLSVerify = true
 	} else {
-		cert, err := o.createCertificate(o.cluster.CaCertificate, o.cluster.ShortName, o.homedir)
-		if err != nil {
-			return err
-		}
-		c.CertificateAuthority = cert
+		c.CertificateAuthorityData = []byte(o.cluster.CaCertificate)
 	}
 	c.Server = o.cluster.ServiceURL
 
@@ -101,19 +98,19 @@ func (o *GenericPopulator) PopulateKubeConfig(namespace string) error {
 
 	// context
 	context := api.NewContext()
-	context.Cluster = o.cluster.ShortName
-	context.AuthInfo = o.cluster.ShortName
-	context.Namespace = namespace
 	clusterName := fmt.Sprintf("%s-%s", Prefix, o.cluster.ShortName)
+	context.Cluster = clusterName
+	context.AuthInfo = clusterName
+	context.Namespace = namespace
 
 	// read existing config or create new if does not exist
 	kubecfg, err := ReadConfigOrNew(o.GetKubeConfigFile())
 	if err != nil {
 		return err
 	}
-	kubecfg.Clusters[o.cluster.ShortName] = c
+	kubecfg.Clusters[clusterName] = c
 	kubecfg.CurrentContext = clusterName
-	kubecfg.AuthInfos[o.cluster.ShortName] = auth
+	kubecfg.AuthInfos[clusterName] = auth
 	kubecfg.Contexts[clusterName] = context
 
 	// write back to disk

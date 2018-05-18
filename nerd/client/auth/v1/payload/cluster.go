@@ -17,14 +17,14 @@ type GetClusterOutput struct {
 	ServiceURL    string `json:"service_url"`
 	CaCertificate string `json:"ca_certificate"`
 	Capacity      struct {
-		CPU    string `json:"cpu"`
-		Memory string `json:"memory"`
-		Pods   int    `json:"pods"`
+		CPU    float64 `json:"cpu"`
+		Memory float64 `json:"memory"`
+		Pods   int     `json:"pods"`
 	} `json:"capacity"`
 	Usage struct {
-		CPU    string `json:"cpu"`
-		Memory string `json:"memory"`
-		Pods   int    `json:"pods"`
+		CPU    float64 `json:"cpu"`
+		Memory float64 `json:"memory"`
+		Pods   int     `json:"pods"`
 	} `json:"usage"`
 	KubeConfigUser struct {
 		Token        string `json:"token"`
