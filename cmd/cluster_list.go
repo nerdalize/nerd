@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/dustin/go-humanize"
+
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
@@ -71,8 +73,8 @@ func (cmd *ClusterList) Execute(args []string) (err error) {
 	for _, cluster := range clusters.Clusters {
 		rows = append(rows, []string{
 			cluster.Name,
-			fmt.Sprintf("%s/%s", cluster.Usage.CPU, cluster.Capacity.CPU),
-			fmt.Sprintf("%s/%s", (cluster.Usage.Memory), cluster.Capacity.Memory),
+			fmt.Sprintf("%.1f/%.1f", cluster.Usage.CPU, cluster.Capacity.CPU),
+			fmt.Sprintf("%s/%s", humanize.Bytes(uint64(cluster.Usage.Memory)), humanize.Bytes(uint64(cluster.Capacity.Memory))),
 			fmt.Sprintf("%d/%d", cluster.Usage.Pods, cluster.Capacity.Pods),
 		})
 	}
