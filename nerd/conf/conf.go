@@ -70,7 +70,7 @@ func StagingDefaults() *Config {
 			APIEndpoint:      "https://auth.staging.nlze.nl/v1/",
 			OAuthLocalServer: "localhost:9876",
 			OAuthSuccessURL:  "https://auth.staging.nlze.nl/do/login_complete/?client=CLI",
-			SecureClientID:   "ckvyq40yyGSH",
+			SecureClientID:   "9O7olxjoiRoz",
 			// to remove
 			SecureClientSecret: "0c4feb1e9d11790451a4364e803284a60905cef1a5f9bf7bad5f0eeb",
 			IDPIssuerURL:       "https://auth.staging.nlze.nl",
