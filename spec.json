@@ -31,6 +31,24 @@
 			"synopsis": "Returns an overview of your clusters.",
 			"description": "Returns an overview of your clusters.",
 			"options": {
+				"Advanced Options": [
+					{
+						"long_name": "config-file",
+						"description": "Location of config file",
+						"default_value": [
+							""
+						],
+						"choices": null
+					},
+					{
+						"long_name": "session-file",
+						"description": "Location of session file",
+						"default_value": [
+							""
+						],
+						"choices": null
+					}
+				],
 				"Global Options": [
 					{
 						"long_name": "kubeconfig",
@@ -52,37 +70,29 @@
 				"Options": []
 			}
 		},
-		"cluster list-config": {
-			"usage": "nerd cluster list-config [OPTIONS]",
-			"synopsis": "Returns an overview of your cluster configs.",
-			"description": "Returns an overview of your cluster configs.",
+		"cluster set-default": {
+			"usage": "nerd cluster set-default NAME [OPTIONS]",
+			"synopsis": "Set a specific cluster as the current one to use.",
+			"description": "Set a specific cluster as the current one to use.",
 			"options": {
-				"Global Options": [
+				"Advanced Options": [
 					{
-						"long_name": "kubeconfig",
-						"description": "file at which Nerd will look for Kubernetes credentials",
+						"long_name": "config-file",
+						"description": "Location of config file",
 						"default_value": [
-							"~/.kube/config"
+							""
 						],
 						"choices": null
 					},
 					{
-						"long_name": "timeout",
-						"description": "duration for which Nerd will wait for Kubernetes",
+						"long_name": "session-file",
+						"description": "Location of session file",
 						"default_value": [
-							"10s"
+							""
 						],
 						"choices": null
 					}
 				],
-				"Options": []
-			}
-		},
-		"cluster set-config": {
-			"usage": "nerd cluster set-config [OPTIONS] CONFIG-NAME",
-			"synopsis": "Set a config to use your compute cluster.",
-			"description": "Set a config to use your compute cluster.",
-			"options": {
 				"Global Options": [
 					{
 						"long_name": "kubeconfig",
@@ -103,173 +113,13 @@
 				],
 				"Options": [
 					{
-						"long_name": "context",
-						"description": "context to use for this configuration",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "context-ns",
-						"description": "",
-						"default_value": [
-							"default"
-						],
-						"choices": null
-					},
-					{
-						"long_name": "context-server",
-						"description": "if not provided, will use the cluster name",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "context-user",
-						"description": " If not provided, will use the info from the next options",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "cluster",
-						"description": "name of the cluster configuration entry",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "server",
-						"short_name": "s",
-						"description": "url of the cluster to reach",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "certificate-authority",
-						"description": "",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "certificate-authority-path",
-						"description": "",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "user",
-						"description": "user to use for this configuration",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "password",
-						"description": "password for the user entry in kubeconfig",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "token",
-						"description": "token for the user entry in kubeconfig",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "username",
-						"description": "username for the user entry in kubeconfig",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "auth-provider",
-						"description": "",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "auth-provider-arg",
-						"description": "key=value",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "client-certificate",
-						"description": "Path to client-certificate file for the user entry in kubeconfig",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "client-key",
-						"description": "Path to client-key file for the user entry in kubeconfig",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "embed-certs",
-						"description": "Embed client cert/key for the user entry in kubeconfig",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "secure-client-secret",
-						"description": "mandatory to setup OIDC",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "secure-client-id",
-						"description": "mandatory to setup OIDC",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "idp-issuer-url",
-						"description": "mandatory to setup OIDC",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "idp-ca-path",
-						"description": "path to your ca certificate",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "refresh-token",
-						"description": "mandatory to setup OIDC",
-						"default_value": null,
-						"choices": null
-					},
-					{
-						"long_name": "id-token",
-						"description": "mandatory to setup OIDC",
+						"long_name": "namespace",
+						"short_name": "n",
+						"description": "set a specific namespace as the default one",
 						"default_value": null,
 						"choices": null
 					}
 				]
-			}
-		},
-		"cluster use": {
-			"usage": "nerd cluster use NAME [OPTIONS]",
-			"synopsis": "Set a specific cluster as the current one to use.",
-			"description": "Set a specific cluster as the current one to use.",
-			"options": {
-				"Global Options": [
-					{
-						"long_name": "kubeconfig",
-						"description": "file at which Nerd will look for Kubernetes credentials",
-						"default_value": [
-							"~/.kube/config"
-						],
-						"choices": null
-					},
-					{
-						"long_name": "timeout",
-						"description": "duration for which Nerd will wait for Kubernetes",
-						"default_value": [
-							"10s"
-						],
-						"choices": null
-					}
-				],
-				"Options": []
 			}
 		},
 		"dataset": {
@@ -714,10 +564,46 @@
 			}
 		},
 		"login": {
-			"usage": "nerd login",
+			"usage": "nerd login [OPTIONS]",
 			"synopsis": "Start a new authorized session.",
 			"description": "Start a new authorized session.",
 			"options": {
+				"Advanced Options": [
+					{
+						"long_name": "config-file",
+						"description": "Location of config file",
+						"default_value": [
+							""
+						],
+						"choices": null
+					},
+					{
+						"long_name": "session-file",
+						"description": "Location of session file",
+						"default_value": [
+							""
+						],
+						"choices": null
+					}
+				],
+				"Global Options": [
+					{
+						"long_name": "kubeconfig",
+						"description": "file at which Nerd will look for Kubernetes credentials",
+						"default_value": [
+							"~/.kube/config"
+						],
+						"choices": null
+					},
+					{
+						"long_name": "timeout",
+						"description": "duration for which Nerd will wait for Kubernetes",
+						"default_value": [
+							"10s"
+						],
+						"choices": null
+					}
+				],
 				"Options": [
 					{
 						"long_name": "config-src",
@@ -726,97 +612,34 @@
 							"oidc"
 						],
 						"choices": null
-					},
-					{
-						"long_name": "kubeconfig",
-						"description": "file at which Nerd will look for Kubernetes credentials",
-						"default_value": null,
-						"choices": null
-					}
-				],
-				"Other Options": [
-					{
-						"long_name": "config-file",
-						"description": "Location of config file",
-						"default_value": [
-							""
-						],
-						"choices": null
-					},
-					{
-						"long_name": "session-file",
-						"description": "Location of session file",
-						"default_value": [
-							""
-						],
-						"choices": null
-					},
-					{
-						"long_name": "debug",
-						"description": "Show debug output",
-						"default_value": [
-							"false"
-						],
-						"choices": null
-					},
-					{
-						"long_name": "output",
-						"description": "Format of the output",
-						"default_value": [
-							"pretty"
-						],
-						"choices": [
-							"pretty",
-							"raw",
-							"json"
-						]
 					}
 				]
 			}
 		},
 		"version": {
 			"usage": "nerd version",
-			"synopsis": "Check the current version.",
-			"description": "Check the current version.",
+			"synopsis": "Check the current version of the CLI",
+			"description": "Check the current version of the CLI",
 			"options": {
-				"Other Options": [
+				"Global Options": [
 					{
-						"long_name": "config-file",
-						"description": "Location of config file",
+						"long_name": "kubeconfig",
+						"description": "file at which Nerd will look for Kubernetes credentials",
 						"default_value": [
-							""
+							"~/.kube/config"
 						],
 						"choices": null
 					},
 					{
-						"long_name": "session-file",
-						"description": "Location of session file",
+						"long_name": "timeout",
+						"description": "duration for which Nerd will wait for Kubernetes",
 						"default_value": [
-							""
+							"10s"
 						],
 						"choices": null
-					},
-					{
-						"long_name": "debug",
-						"description": "Show debug output",
-						"default_value": [
-							"false"
-						],
-						"choices": null
-					},
-					{
-						"long_name": "output",
-						"description": "Format of the output",
-						"default_value": [
-							"pretty"
-						],
-						"choices": [
-							"pretty",
-							"raw",
-							"json"
-						]
 					}
-				]
+				],
+				"Options": []
 			}
 		}
 	}
