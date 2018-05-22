@@ -2,12 +2,11 @@ package cmd
 
 import (
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/go-playground/validator"
-	homedir "github.com/mitchellh/go-homedir"
 	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
+	"github.com/nerdalize/nerd/pkg/kubeconfig"
 	"github.com/nerdalize/nerd/pkg/populator"
 	transfer "github.com/nerdalize/nerd/pkg/transfer"
 	"github.com/nerdalize/nerd/pkg/transfer/archiver"
@@ -75,23 +74,11 @@ type Deps struct {
 
 //NewDeps uses options to setup dependencies
 func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
-	if kopts.KubeConfig == "" {
-		hdir, err := homedir.Dir()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get home directory")
-		}
-
-		kopts.KubeConfig = filepath.Join(hdir, ".kube", "config")
-	}
-
-	var err error
-	kopts.KubeConfig, err = homedir.Expand(kopts.KubeConfig)
+	kubeConfig, err := kubeconfig.GetPath(kopts.KubeConfig)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to expand home directory in kube config file path")
+		return nil, errors.Wrap(err, "failed to get kube config file path")
 	}
-	//Normalize all slashes to native platform slashes (e.g. / to \ on Windows)
-	kopts.KubeConfig = filepath.FromSlash(kopts.KubeConfig)
-	kcfg, err := clientcmd.BuildConfigFromFlags("", kopts.KubeConfig)
+	kcfg, err := clientcmd.BuildConfigFromFlags("", kubeConfig)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, ErrNotLoggedIn
@@ -113,11 +100,11 @@ func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
 		return nil, errors.Wrap(err, "failed to create Kubernetes configuration")
 	}
 
-	if !populator.NerdContext(kopts.KubeConfig) {
+	if !populator.NerdContext(kubeConfig) {
 		return nil, ErrNamespaceNotSet
 	}
 
-	d.ns, err = populator.Namespace(kopts.KubeConfig)
+	d.ns, err = populator.Namespace(kubeConfig)
 	if err != nil || d.ns == "" {
 		return nil, ErrNamespaceNotSet
 	}

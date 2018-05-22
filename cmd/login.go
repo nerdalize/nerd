@@ -6,16 +6,15 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"time"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	homedir "github.com/mitchellh/go-homedir"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
 	v1authpayload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/oauth"
+	"github.com/nerdalize/nerd/pkg/kubeconfig"
 	"github.com/nerdalize/nerd/pkg/populator"
 	"github.com/pkg/errors"
 	"github.com/skratchdot/open-golang/open"
@@ -109,18 +108,13 @@ func (cmd *Login) Execute(args []string) (err error) {
 		cmd.out.Info("Successful login, but you don't have any cluster. Please contact mayday@nerdalize.com.")
 		return nil
 	}
-	c := populator.Client{
-		Secret:       cmd.config.Auth.SecureClientSecret,
-		ID:           cmd.config.Auth.SecureClientID,
-		IDPIssuerURL: cmd.config.Auth.IDPIssuerURL,
-	}
 	var ok bool
 	for _, cluster := range list.Clusters {
 		cluster, err = client.GetCluster(cluster.URL)
 		if err != nil {
 			return err
 		}
-		err = setCluster(&c, cmd.globalOpts.KubeOpts.KubeConfig, cluster)
+		err = setCluster(cmd.globalOpts.KubeOpts.KubeConfig, cluster)
 		if err != nil {
 			ok = false
 			continue
@@ -231,26 +225,16 @@ func randomString(n int) string {
 	return string(b)
 }
 
-func setCluster(c *populator.Client, kubeConfig string, cluster *v1authpayload.GetClusterOutput) (err error) {
+func setCluster(kubeConfig string, cluster *v1authpayload.GetClusterOutput) (err error) {
 	var (
-		hdir string
-		p    populator.P
+		p populator.P
 	)
-	hdir, err = homedir.Dir()
+	kubeConfig, err = kubeconfig.GetPath(kubeConfig)
 	if err != nil {
 		return err
 	}
-	if kubeConfig == "" {
-		kubeConfig = filepath.Join(hdir, ".kube", "config")
-	}
-	kubeConfig, err = homedir.Expand(kubeConfig)
-	if err != nil {
-		return errors.Wrap(err, "failed to expand home directory in kube config file path")
-	}
-	//Normalize all slashes to native platform slashes (e.g. / to \ on Windows)
-	kubeConfig = filepath.FromSlash(kubeConfig)
 
-	p, err = populator.New(c, "generic", kubeConfig, hdir, cluster)
+	p, err = populator.New("generic", kubeConfig, cluster)
 	if err != nil {
 		return err
 	}

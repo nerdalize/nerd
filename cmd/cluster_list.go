@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strconv"
 
 	"github.com/dustin/go-humanize"
 
@@ -68,10 +69,12 @@ func (cmd *ClusterList) Execute(args []string) (err error) {
 	}
 	// Add role (admin, team member ...)
 	// Add star for current cluster
-	hdr := []string{"CLUSTER", "VCPUS", "MEMORY", "PODS"}
+	hdr := []string{"ID", "CLUSTER NAME", "VCPUS", "MEMORY", "PODS"}
 	rows := [][]string{}
-	for _, cluster := range clusters.Clusters {
+	for x, cluster := range clusters.Clusters {
+		id := strconv.Itoa(x + 1)
 		rows = append(rows, []string{
+			id,
 			cluster.Name,
 			fmt.Sprintf("%.1f/%.1f", cluster.Usage.CPU, cluster.Capacity.CPU),
 			fmt.Sprintf("%s/%s", humanize.Bytes(uint64(cluster.Usage.Memory)), humanize.Bytes(uint64(cluster.Capacity.Memory))),

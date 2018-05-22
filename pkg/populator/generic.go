@@ -20,16 +20,12 @@ type GenericPopulator struct {
 	// kubeConfigFile is the path where the kube config is stored
 	// Only access this with atomic ops
 	kubeConfigFile atomic.Value
-	homedir        string
 	cluster        *v1payload.GetClusterOutput
-	client         *Client
 }
 
-func newGeneric(c *Client, kubeConfigFile, homedir string, cluster *v1payload.GetClusterOutput) *GenericPopulator {
+func newGeneric(kubeConfigFile string, cluster *v1payload.GetClusterOutput) *GenericPopulator {
 	o := &GenericPopulator{
 		cluster: cluster,
-		homedir: homedir,
-		client:  c,
 	}
 	o.kubeConfigFile.Store(kubeConfigFile)
 	return o
