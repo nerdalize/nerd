@@ -84,6 +84,7 @@ const (
 	RelPathFSInFile      = "volume"
 	RelPathFSInFileMount = "mount"
 	RelPathOptions       = "json"
+	LogFile              = "/var/lib/kubelet/flex.logs"
 )
 
 //Output is returned by the flex volume implementation.
@@ -379,7 +380,7 @@ func (volp *DatasetVolumes) handleOutput(path, namespace, dataset string) error 
 
 	// If the user has deleted the dataset, then there is nothing to do
 	if err != nil {
-		// fmt.Fprintln(os.Stderr, "warning, output dataset no longer exists: %v", err)
+		log.Printf("warning, output dataset no longer exists: %v\n", err)
 		return nil
 	}
 
@@ -388,7 +389,7 @@ func (volp *DatasetVolumes) handleOutput(path, namespace, dataset string) error 
 
 	// The output dataset being empty is a non-fatal unmount error
 	if err != nil && strings.Contains(err.Error(), transferarchiver.ErrEmptyDirectory.Error()) {
-		// fmt.Fprintln(os.Stderr, "warning, output dataset is empty: %v", err)
+		log.Printf("warning, output dataset is empty: %v\n", err)
 		return nil
 	}
 
@@ -553,7 +554,7 @@ func (volp *DatasetVolumes) Unmount(kubeMountPath string) (err error) {
 	var dsopts *datasetOpts
 	dsopts, err = volp.readDatasetOpts(volp.getPath(kubeMountPath, RelPathOptions))
 	if err != nil {
-		// fmt.Fprintln(os.Stderr, "warning: failed to read volume database, assuming that volume has already been deleted", err)
+		log.Printf("warning: failed to read volume database at %s, assuming that volume has already been deleted: %v", kubeMountPath, err)
 		return nil
 	}
 
@@ -613,8 +614,19 @@ func (volp *DatasetVolumes) Unmount(kubeMountPath string) (err error) {
 }
 
 func main() {
+	var err error
+	f, err := os.OpenFile(LogFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	defer f.Close()
+
+	log.SetOutput(f)
+	log.Println("flexvolume logs beginning")
+
 	if len(os.Args) < 2 {
-		log.Fatalf("usage: nerd-flex-volume [init|mount|unmount]")
+		fmt.Println("usage: nerd-flex-volume [init|mount|unmount]")
+		os.Exit(1)
 	}
 
 	//create the volume provider
@@ -622,7 +634,6 @@ func main() {
 	volp = &DatasetVolumes{}
 
 	//setup default output data
-	var err error
 	output := Output{
 		Status:  StatusNotSupported,
 		Message: fmt.Sprintf("operation '%s' is unsupported", os.Args[1]),
@@ -663,6 +674,7 @@ func main() {
 
 	//if any operations returned an error, mark as failure
 	if err != nil {
+		log.Printf("failed to %+v: %v", os.Args, err)
 		output.Status = StatusFailure
 		output.Message = err.Error()
 	}
