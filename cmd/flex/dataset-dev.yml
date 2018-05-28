@@ -2,17 +2,17 @@ apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
   namespace: kube-system
-  name: nlz-nerd-datasets-dev4
+  name: nlz-nerd-datasets-dev
 spec:
   template:
     metadata:
-      name: nlz-nerd-datasets-dev4
+      name: nlz-nerd-datasets-dev
       labels:
-        app: nlz-nerd-datasets-dev4
+        app: nlz-nerd-datasets-dev
     spec:
       containers:
         - image: nerdalize/nerd-flex-volume:dev
-          name: nlz-nerd-datasets-dev4
+          name: nlz-nerd-datasets-dev
           imagePullPolicy: Always
           securityContext:
             privileged: true
