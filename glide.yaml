@@ -47,6 +47,14 @@ import:
   - tools/clientcmd
 - package: golang.org/x/sys
 - package: k8s.io/code-generator
+- package: k8s.io/api
+  version: 184e700b32b7f1b532b9fce8dd8c1f412d297c4b
+  subpackages:
+  - apps/v1
+- package: k8s.io/apimachinery
+  version: e226be1f5ed46b19fedc971f410f84de5b3dab8a
+  subpackages:
+  - pkg/runtime
 - package: github.com/google/go-github
   subpackages:
   - github
@@ -54,3 +62,6 @@ import:
   version: 1.2.0
 - package: github.com/cheggaaa/pb
   version: ~v1.0.22
+- package: k8s.io/apiextensions-apiserver
+  subpackages:
+  - pkg/apis/apiextensions/v1beta1

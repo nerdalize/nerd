@@ -1,10 +1,10 @@
-hash: 61ecfcdeb4f758340f0aff2ca96866d1ecfb7369aa74a662469bea1982ece938
-updated: 2018-05-17T12:12:53.660630092+02:00
+hash: 429176bcdd54795eb3d9189070af627350f1d80f3dc813fb82e887a7bbdadc00
+updated: 2018-05-28T11:35:46.770841902+02:00
 imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
-  version: ee7b4b1162937cba700de23bd90acb742982e626
+  version: 854f9d07a932452f1552955e127e50ba5ebb25cc
   subpackages:
   - aws
   - aws/awserr
@@ -41,7 +41,7 @@ imports:
 - name: github.com/bgentry/speakeasy
   version: 4aabc24848ce5fd31929f7d1e4ea74d3709c14cd
 - name: github.com/cheggaaa/pb
-  version: 1f7f140e48255d0e448ec06de47d4545b8ec1f85
+  version: 2af8bbdea9e99e83b3ac400d8f6b6d1b8cbbf338
 - name: github.com/davecgh/go-spew
   version: 782f4967f2dc4564575ca782fe2d04090b5faca8
   subpackages:
@@ -194,11 +194,13 @@ imports:
   version: 1c05540f6879653db88113bc4a2b70aec4bd491f
   subpackages:
   - context
-  - context/ctxhttp
+  - html
+  - html/atom
   - http2
   - http2/hpack
   - idna
   - lex/httplex
+  - websocket
 - name: golang.org/x/oauth2
   version: a6bd8cefa1811bd24b86f8902872e4e8225f74c4
   subpackages:
@@ -242,9 +244,10 @@ imports:
 - name: gopkg.in/yaml.v2
   version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/api
-  version: 389dfa299845bcf399c16af89987e8775718ea48
+  version: 184e700b32b7f1b532b9fce8dd8c1f412d297c4b
   subpackages:
   - admissionregistration/v1alpha1
+  - apps/v1
   - apps/v1beta1
   - apps/v1beta2
   - authentication/v1
@@ -259,7 +262,6 @@ imports:
   - certificates/v1beta1
   - core/v1
   - extensions/v1beta1
-  - imagepolicy/v1alpha1
   - networking/v1
   - policy/v1beta1
   - rbac/v1
@@ -269,20 +271,22 @@ imports:
   - settings/v1alpha1
   - storage/v1
   - storage/v1beta1
-- name: k8s.io/apimachinery
-  version: bc110fd540ab678abbf2bc71d9ce908eb9325ef6
+- name: k8s.io/apiextensions-apiserver
+  version: bd76ce7dd8e65e8c2197803a1e64869ca5905309
   subpackages:
-  - pkg/api/equality
+  - pkg/apis/apiextensions
+  - pkg/apis/apiextensions/v1beta1
+- name: k8s.io/apimachinery
+  version: e226be1f5ed46b19fedc971f410f84de5b3dab8a
+  subpackages:
   - pkg/api/errors
   - pkg/api/meta
   - pkg/api/resource
   - pkg/apis/meta/internalversion
   - pkg/apis/meta/v1
-  - pkg/apis/meta/v1/unstructured
-  - pkg/apis/meta/v1alpha1
+  - pkg/apis/meta/v1beta1
   - pkg/conversion
   - pkg/conversion/queryparams
-  - pkg/conversion/unstructured
   - pkg/fields
   - pkg/labels
   - pkg/runtime
@@ -300,24 +304,17 @@ imports:
   - pkg/util/diff
   - pkg/util/errors
   - pkg/util/framer
-  - pkg/util/httpstream
-  - pkg/util/httpstream/spdy
   - pkg/util/intstr
   - pkg/util/json
-  - pkg/util/mergepatch
   - pkg/util/net
-  - pkg/util/remotecommand
   - pkg/util/runtime
   - pkg/util/sets
-  - pkg/util/strategicpatch
   - pkg/util/validation
   - pkg/util/validation/field
   - pkg/util/wait
   - pkg/util/yaml
   - pkg/version
   - pkg/watch
-  - third_party/forked/golang/json
-  - third_party/forked/golang/netutil
   - third_party/forked/golang/reflect
 - name: k8s.io/client-go
   version: 3a46b5de730a74e064197a157c96c2d29724a677
