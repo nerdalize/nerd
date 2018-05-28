@@ -1,10 +1,10 @@
 hash: 61ecfcdeb4f758340f0aff2ca96866d1ecfb7369aa74a662469bea1982ece938
-updated: 2018-03-16T10:01:06.354509+01:00
+updated: 2018-05-17T12:12:53.660630092+02:00
 imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
-  version: aace5875a5c3b85a3902c6d72b9caed301d64cce
+  version: ee7b4b1162937cba700de23bd90acb742982e626
   subpackages:
   - aws
   - aws/awserr
@@ -41,7 +41,7 @@ imports:
 - name: github.com/bgentry/speakeasy
   version: 4aabc24848ce5fd31929f7d1e4ea74d3709c14cd
 - name: github.com/cheggaaa/pb
-  version: 72b964305fba1230d3d818711138195f22b9ceea
+  version: 1f7f140e48255d0e448ec06de47d4545b8ec1f85
 - name: github.com/davecgh/go-spew
   version: 782f4967f2dc4564575ca782fe2d04090b5faca8
   subpackages:
@@ -96,7 +96,7 @@ imports:
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-github
-  version: e7bb4b8ce29fb7beaf0765acda602bc516a56dd5
+  version: 08e68b58d6369e25c2375020353d0d642aa4b2b1
   subpackages:
   - github
 - name: github.com/google/go-querystring
