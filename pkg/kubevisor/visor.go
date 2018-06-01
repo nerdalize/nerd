@@ -11,6 +11,7 @@ import (
 	crdscheme "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned/scheme"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	apiext "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kuberr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -37,11 +38,11 @@ var (
 )
 
 //NewVisor will setup a Kubernetes visor
-func NewVisor(ns, prefix string, api kubernetes.Interface, crd crd.Interface, logs Logger) *Visor {
+func NewVisor(ns, prefix string, api kubernetes.Interface, crd crd.Interface, apiext apiext.Interface, logs Logger) *Visor {
 	if prefix == "" {
 		prefix = DefaultPrefix
 	}
-	return &Visor{prefix, ns, api, crd, logs}
+	return &Visor{prefix, ns, api, crd, apiext, logs}
 }
 
 func (k *Visor) hasPrefix(n string) bool {
@@ -71,6 +72,8 @@ func (k *Visor) GetResource(ctx context.Context, t ResourceType, v ManagedNames,
 		c = k.api.CoreV1().RESTClient()
 	case ResourceTypeDatasets:
 		c = k.crd.NerdalizeV1().RESTClient()
+	case ResourceTypeDaemonsets, ResourceTypeDeployments:
+		c = k.api.AppsV1().RESTClient()
 	default:
 		return errors.Errorf("unknown Kubernetes resource type provided: '%s'", t)
 	}
@@ -81,6 +84,40 @@ func (k *Visor) GetResource(ctx context.Context, t ResourceType, v ManagedNames,
 	err = c.Get().
 		Name(name).
 		Namespace(k.ns).
+		Resource(string(t)).
+		Body(vv).
+		Context(ctx).
+		Do().
+		Into(vv)
+
+	if err != nil {
+		return k.tagError(err)
+	}
+
+	v.SetName(k.removePrefix(v.GetName())) //normalize back to unprefixed resource name
+	return nil
+}
+
+//GetClusterResource will use the kube RESTClient to describe a resource by its name.
+func (k *Visor) GetClusterResource(ctx context.Context, t ResourceType, v ManagedNames, name string) (err error) {
+	vv, ok := v.(runtime.Object)
+	if !ok {
+		return errors.Errorf("provided value was not castable to runtime.Object")
+	}
+
+	var c rest.Interface
+	switch t {
+	case ResourceTypeCustomResourceDefinition:
+		c = k.apiext.ApiextensionsV1beta1().RESTClient()
+	case ResourceTypeRoles, ResourceTypeRoleBindings, ResourceTypeClusterRoles, ResourceTypeClusterRoleBindings:
+		c = k.api.RbacV1().RESTClient()
+	default:
+		return errors.Errorf("unknown Kubernetes resource type provided: '%s'", t)
+	}
+
+	k.logs.Debugf("getting %s '%s' in namespace '%s': %s", t, name, k.ns, ctx)
+	err = c.Get().
+		Name(name).
 		Resource(string(t)).
 		Body(vv).
 		Context(ctx).
@@ -170,6 +207,12 @@ func (k *Visor) CreateResource(ctx context.Context, t ResourceType, v ManagedNam
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
 		genfix = "j-"
+	case ResourceTypePods:
+		c = k.api.CoreV1().RESTClient()
+		genfix = "p-"
+	case ResourceTypeDeployments, ResourceTypeDaemonsets:
+		c = k.api.AppsV1().RESTClient()
+		genfix = "d-"
 	case ResourceTypeSecrets:
 		c = k.api.CoreV1().RESTClient()
 		genfix = "s-"
@@ -180,7 +223,7 @@ func (k *Visor) CreateResource(ctx context.Context, t ResourceType, v ManagedNam
 		return errors.Errorf("unknown Kubernetes resource type provided for creation: '%s'", t)
 	}
 
-	if name != "" {
+	if name != "" && genfix != "" {
 		v.SetName(k.applyPrefix(name))
 	} else {
 		v.SetGenerateName(k.prefix + genfix)
@@ -191,12 +234,57 @@ func (k *Visor) CreateResource(ctx context.Context, t ResourceType, v ManagedNam
 		labels = map[string]string{}
 	}
 
-	labels["nerd-app"] = "cli"
-	v.SetLabels(labels)
+	// labels["nerd-app"] = "cli"
+	// v.SetLabels(labels)
 
 	k.logs.Debugf("creating %s '%s' in namespace '%s' and labels '%v': %s", t, v.GetName(), k.ns, labels, ctx)
 	err = c.Post().
 		Namespace(k.ns).
+		Resource(string(t)).
+		Body(vv).
+		Context(ctx).
+		Do().
+		Into(vv)
+
+	if err != nil {
+		return k.tagError(err)
+	}
+
+	v.SetName(k.removePrefix(v.GetName())) //normalize back to unprefixed resource name
+	return nil
+}
+
+//CreateClusterResource will use the kube RESTClient to create a cluster resource while using the context, adding the
+//Nerd prefix and handling errors specific to our domain.
+func (k *Visor) CreateClusterResource(ctx context.Context, t ResourceType, v ManagedNames, name string) (err error) {
+	vv, ok := v.(runtime.Object)
+	if !ok {
+		return errors.Errorf("provided value was not castable to runtime.Object")
+	}
+
+	var c rest.Interface
+	switch t {
+	case ResourceTypeCustomResourceDefinition:
+		c = k.apiext.ApiextensionsV1beta1().RESTClient()
+	case ResourceTypeRoles, ResourceTypeRoleBindings, ResourceTypeClusterRoles, ResourceTypeClusterRoleBindings:
+		c = k.api.RbacV1().RESTClient()
+	default:
+		return errors.Errorf("unknown Kubernetes resource type provided for creation: '%s'", t)
+	}
+
+	if name == "" {
+		v.SetGenerateName(k.prefix)
+	}
+
+	labels := v.GetLabels()
+	if labels == nil {
+		labels = map[string]string{}
+	}
+	labels["nerd-app"] = "cli"
+	v.SetLabels(labels)
+
+	k.logs.Debugf("creating %s '%s' with labels '%v': %s", t, v.GetName(), labels, ctx)
+	err = c.Post().
 		Resource(string(t)).
 		Body(vv).
 		Context(ctx).

@@ -52,6 +52,7 @@ function run_dev { #setup dev environment
 
 	echo "--> updating dependencies"
 	glide install
+	rm -r vendor/k8s.io/apiextensions-apiserver/vendor
 
 	echo "--> checking crd generated code is valid"
 	if ./crd/hack/verify-codegen.sh; then

@@ -2,6 +2,7 @@ package kubevisor
 
 import (
 	crd "github.com/nerdalize/nerd/crd/pkg/client/clientset/versioned"
+	apiext "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -27,7 +28,7 @@ var (
 	//ResourceTypeSecrets can be used to get secret information
 	ResourceTypeSecrets = ResourceType("secrets")
 
-	//ResourceTypeDeployment is used for deployment management
+	//ResourceTypeDeployments is used for deployment management
 	ResourceTypeDeployments = ResourceType("deployments")
 
 	//ResourceTypeRoles is used for role management
@@ -46,7 +47,7 @@ var (
 	ResourceTypeDaemonsets = ResourceType("daemonsets")
 
 	//ResourceTypeCustomResourceDefinition is used for crd management
-	ResourceTypeCustomResourceDefinitions = ResourceType("customresourcedefintions")
+	ResourceTypeCustomResourceDefinition = ResourceType("customresourcedefinitions")
 )
 
 //ManagedNames allows for Nerd to transparently manage resources based on names and there prefixes
@@ -71,5 +72,6 @@ type Visor struct {
 	ns     string
 	api    kubernetes.Interface
 	crd    crd.Interface
+	apiext apiext.Interface
 	logs   Logger
 }

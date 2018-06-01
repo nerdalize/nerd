@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
+	apiext "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -34,6 +35,7 @@ type Logger interface {
 type DI interface {
 	Kube() kubernetes.Interface
 	Crd() crd.Interface
+	APIExt() apiext.Interface
 	Validator() Validator
 	Logger() Logger
 	Namespace() string
@@ -112,11 +114,12 @@ func TempDI(name string) (di DI, clean func(), err error) {
 }
 
 type tmpDI struct {
-	kube kubernetes.Interface
-	crd  crd.Interface
-	val  Validator
-	logs Logger
-	ns   string
+	kube   kubernetes.Interface
+	crd    crd.Interface
+	apiExt apiext.Interface
+	val    Validator
+	logs   Logger
+	ns     string
 }
 
 func (di *tmpDI) Kube() kubernetes.Interface { return di.kube }
@@ -128,3 +131,5 @@ func (di *tmpDI) Logger() Logger { return di.logs }
 func (di *tmpDI) Namespace() string { return di.ns }
 
 func (di *tmpDI) Crd() crd.Interface { return di.crd }
+
+func (di *tmpDI) APIExt() apiext.Interface { return di.apiExt }
