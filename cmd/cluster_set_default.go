@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"path/filepath"
+	"strconv"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
-	homedir "github.com/mitchellh/go-homedir"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
 	v1authpayload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/oauth"
+	"github.com/nerdalize/nerd/pkg/kubeconfig"
 	"github.com/nerdalize/nerd/pkg/populator"
 	"github.com/pkg/errors"
 )
@@ -54,7 +54,6 @@ func (cmd *ClusterSetDefault) Execute(args []string) (err error) {
 	} else if len(args) < 1 {
 		return errShowUsage(fmt.Sprintf(MessageNotEnoughArguments, 1, ""))
 	}
-	name := args[0]
 
 	authbase, err := url.Parse(cmd.config.Auth.APIEndpoint)
 	if err != nil {
@@ -75,36 +74,27 @@ func (cmd *ClusterSetDefault) Execute(args []string) (err error) {
 	}
 
 	var cluster *v1authpayload.GetClusterOutput
-	for _, c := range list.Clusters {
-		if c.Name == name {
-			cluster, err = client.GetCluster(c.URL)
-			if err != nil {
-				return err
-			}
+	cluster, err = lookByID(args[0], list.Clusters)
+	if err != nil {
+		cluster, err = lookByName(args[0], list.Clusters)
+		if err != nil {
+			return err
 		}
 	}
-
+	cluster, err = client.GetCluster(cluster.URL)
+	if err != nil {
+		return err
+	}
 	if cluster == nil {
 		cmd.out.Infof("Cluster not found. You can use `nerd cluster list` to see your clusters.")
 		return nil
 	}
 
-	c := populator.Client{
-		Secret:       cmd.config.Auth.SecureClientSecret,
-		ID:           cmd.config.Auth.SecureClientID,
-		IDPIssuerURL: cmd.config.Auth.IDPIssuerURL,
-	}
-
-	// TODO cleaning, duplicate code from login.go
-	hdir, err := homedir.Dir()
+	kubeConfig, err := kubeconfig.GetPath(cmd.globalOpts.KubeConfig)
 	if err != nil {
 		return err
 	}
-	kubeConfig := cmd.globalOpts.KubeOpts.KubeConfig
-	if kubeConfig == "" {
-		kubeConfig = filepath.Join(hdir, ".kube", "config")
-	}
-	p, err := populator.New(&c, "generic", kubeConfig, hdir, cluster)
+	p, err := populator.New("generic", kubeConfig, cluster)
 	if err != nil {
 		return err
 	}
@@ -121,8 +111,39 @@ func (cmd *ClusterSetDefault) Execute(args []string) (err error) {
 		return err
 	}
 
-	cmd.out.Infof("You are now using '%s' config.", name)
+	// check if it's nerd ready (is app nlz-utils up ?)
+	// else apply helm chart
+	// - get catalogs (is it necessary ?)
+	// - get projects (can we have it from auth)
+	// - launch app
+	// how to get the right chart version ?
+	name := cluster.Name
+	if name == "" {
+		name = cluster.ShortName
+	}
+	cmd.out.Infof("You are now using %s's config.", name)
 	return nil
+}
+
+func lookByID(name string, clusters []*v1authpayload.GetClusterOutput) (*v1authpayload.GetClusterOutput, error) {
+	id, err := strconv.Atoi(name)
+	if err != nil {
+		return nil, err
+	}
+	id--
+	if len(clusters) >= id {
+		return clusters[id], nil
+	}
+	return nil, errors.New("cluster not found")
+}
+
+func lookByName(name string, clusters []*v1authpayload.GetClusterOutput) (*v1authpayload.GetClusterOutput, error) {
+	for _, cluster := range clusters {
+		if cluster.ShortName == name || cluster.Name == name {
+			return cluster, nil
+		}
+	}
+	return nil, errors.New("cluster not found")
 }
 
 // Description returns long-form help text

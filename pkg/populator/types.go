@@ -14,17 +14,6 @@ type P interface {
 	RemoveConfig(string) error
 }
 
-// Client provides necessary information to successfully use OIDC
-type Client struct {
-	// TODO CLEANING
-	// Secret necessary for OpenID connect
-	Secret string
-	// ID is a client id that all tokens must be issued for.
-	ID string
-	// IDPIssuerURL is the URL of the provider which allows the API server to discover public signing keys.
-	IDPIssuerURL string
-}
-
 // Context information
 type Context struct {
 	Name      string `long:"context" description:"context to use for this configuration"`

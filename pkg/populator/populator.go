@@ -17,11 +17,11 @@ import (
 )
 
 //New instantiates a new P interface using the conf parameter. It can return a env, endpoint or oidc populator.
-func New(c *Client, conf, kubeConfigFile, homedir string, cluster *v1payload.GetClusterOutput) (P, error) {
+func New(conf, kubeConfigFile string, cluster *v1payload.GetClusterOutput) (P, error) {
 	switch conf {
 	case "generic":
 		// TO BE UPDATED
-		return newGeneric(c, kubeConfigFile, homedir, cluster), nil
+		return newGeneric(kubeConfigFile, cluster), nil
 	case "endpoint":
 		return newEndpoint(kubeConfigFile), nil
 	case "env":
