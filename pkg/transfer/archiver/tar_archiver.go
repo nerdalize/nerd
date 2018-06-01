@@ -127,8 +127,7 @@ func (a *TarArchiver) indexFS(path string, fn func(p string, fi os.FileInfo, err
 	return nil
 }
 
-//Archive will archive a directory at 'path' into readable objects 'r' and calls 'fn' for each
-func (a *TarArchiver) Archive(ctx context.Context, path string, rep Reporter, fn func(k string, r io.ReadSeeker, nbytes int64) error) (err error) {
+func checkValidDir(path string) (err error) {
 	f, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -137,6 +136,7 @@ func (a *TarArchiver) Archive(ctx context.Context, path string, rep Reporter, fn
 
 		return err
 	}
+	defer f.Close()
 	if info, err := os.Stat(path); !info.IsDir() {
 		if err != nil {
 			return err
@@ -147,6 +147,15 @@ func (a *TarArchiver) Archive(ctx context.Context, path string, rep Reporter, fn
 	if len(names) == 0 {
 		return ErrEmptyDirectory
 	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+//Archive will archive a directory at 'path' into readable objects 'r' and calls 'fn' for each
+func (a *TarArchiver) Archive(ctx context.Context, path string, rep Reporter, fn func(k string, r io.ReadSeeker, nbytes int64) error) (err error) {
+	err = checkValidDir(path)
 	if err != nil {
 		return err
 	}
