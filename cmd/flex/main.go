@@ -21,7 +21,6 @@ import (
 	"github.com/nerdalize/nerd/svc"
 
 	"github.com/go-playground/validator"
-	"github.com/hashicorp/go-multierror"
 	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
@@ -127,6 +126,7 @@ type datasetOpts struct {
 
 //writeDatasetOpts writes dataset options to a JSON file.
 func (volp *DatasetVolumes) writeDatasetOpts(path string, opts MountOptions) (*datasetOpts, error) {
+	log.Printf("writing dataset opts to [%s]", path)
 	dsopts := &datasetOpts{Namespace: opts.Namespace}
 	if dsopts.Namespace == "" {
 		return nil, errors.New("pod namespace was not configured for flex volume")
@@ -153,6 +153,7 @@ func (volp *DatasetVolumes) writeDatasetOpts(path string, opts MountOptions) (*d
 
 //readDatasetOpts reads dataset options from a JSON file.
 func (volp *DatasetVolumes) readDatasetOpts(path string) (*datasetOpts, error) {
+	log.Printf("reading dataset opts")
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open metadata file")
@@ -172,12 +173,14 @@ func (volp *DatasetVolumes) readDatasetOpts(path string) (*datasetOpts, error) {
 
 //deleteDatasetOpts deletes a JSON file containing dataset options.
 func (volp *DatasetVolumes) deleteDatasetOpts(path string) error {
+	log.Printf("deleting dataset opts at %s", path)
 	err := os.Remove(path)
 	return errors.Wrap(err, "failed to delete metadata file")
 }
 
 //createFSInFile creates a file with a file system inside of it that can be mounted.
 func (volp *DatasetVolumes) createFSInFile(path string, filesystem FileSystem, size int64) error {
+	log.Printf("creating fsinfile at %s", path)
 	//Create file with room to contain writable file system
 	f, err := os.Create(path)
 	if err != nil {
@@ -203,6 +206,7 @@ func (volp *DatasetVolumes) createFSInFile(path string, filesystem FileSystem, s
 
 //destroyFSInFile cleans up a file system in file.
 func (volp *DatasetVolumes) destroyFSInFile(path string) error {
+	log.Printf("destroying FSInFile at %s", path)
 	err := os.RemoveAll(path)
 	if err != nil {
 		err = errors.Wrap(err, "failed to delete fs-in-file file")
@@ -221,6 +225,7 @@ func (volp *DatasetVolumes) transferManager(kube *svc.Kube) (mgr transfer.Manage
 
 //provisionInput makes the specified input available at given path (input may be nil).
 func (volp *DatasetVolumes) provisionInput(path, namespace, dataset string) error {
+	log.Printf("provisioning input at [%s] for [%s], namespace = [%s]", path, dataset, namespace)
 	//Create directory at path in case it doesn't exist yet
 	err := os.MkdirAll(path, DirectoryPermissions)
 	if err != nil {
@@ -260,11 +265,13 @@ func (volp *DatasetVolumes) provisionInput(path, namespace, dataset string) erro
 
 //destroyInput cleans up a folder with input data.
 func (volp *DatasetVolumes) destroyInput(path string) error {
+	log.Printf("destroying input at %s", path)
 	return errors.Wrap(os.RemoveAll(path), "failed to destroy input directory")
 }
 
 //mountFSInFile mounts an FS-in-file at the specified path.
 func (volp *DatasetVolumes) mountFSInFile(volumePath string, mountPath string) error {
+	log.Printf("mounting fsinfile, volumePath = [%s] and mountPath = [%s]", volumePath, mountPath)
 	//Create mount point
 	err := os.Mkdir(mountPath, DirectoryPermissions)
 	if err != nil {
@@ -285,6 +292,8 @@ func (volp *DatasetVolumes) mountFSInFile(volumePath string, mountPath string) e
 
 //unmountFSInFile unmounts an FS-in-file and deletes the mount path.
 func (volp *DatasetVolumes) unmountFSInFile(mountPath string) error {
+	log.Printf("unmounting FSInFile at %s", mountPath)
+
 	//Unmount
 	cmd := exec.Command("umount", mountPath)
 	buf := bytes.NewBuffer(nil)
@@ -305,6 +314,7 @@ func (volp *DatasetVolumes) unmountFSInFile(mountPath string) error {
 
 //mountOverlayFS mounts an OverlayFS with the given directories (upperDir and workDir may be auto-created).
 func (volp *DatasetVolumes) mountOverlayFS(upperDir string, workDir string, lowerDir string, mountPath string) error {
+	log.Printf("mounting overlayFS, upperDir = [%s], workDir = [%s], lowerDir = [%s] and mountPath = [%s]", upperDir, workDir, lowerDir, mountPath)
 	//Create directories in case they don't exist yet
 	errs := []error{
 		os.MkdirAll(upperDir, DirectoryPermissions),
@@ -333,6 +343,7 @@ func (volp *DatasetVolumes) mountOverlayFS(upperDir string, workDir string, lowe
 
 //unmountOverlayFS unmounts an OverlayFS with the given directories (upperDir and workDir will be deleted).
 func (volp *DatasetVolumes) unmountOverlayFS(upperDir string, workDir string, mountPath string) error {
+	log.Printf("unmounting overlayFS: upperDir = [%s], workDir = [%s] and mountPath = [%s]", upperDir, workDir, mountPath)
 	//Unmount OverlayFS
 	cmd := exec.Command("umount", mountPath)
 	buf := bytes.NewBuffer(nil)
@@ -359,6 +370,8 @@ func (volp *DatasetVolumes) unmountOverlayFS(upperDir string, workDir string, mo
 
 //handleOutput uploads any output in the specified directory.
 func (volp *DatasetVolumes) handleOutput(path, namespace, dataset string) error {
+	log.Printf("handling output")
+
 	// Nothing to do
 	if dataset == "" {
 		return nil
@@ -402,6 +415,7 @@ func (volp *DatasetVolumes) handleOutput(path, namespace, dataset string) error 
 
 // fetchAllowedSpace is a temporary solution so we can give more space to specific users on the public cluster
 func (volp *DatasetVolumes) fetchAllowedSpace(path, namespace string) (space int64, err error) {
+	log.Printf("fetching allowed space, path= [%s], namespace = [%s]", path, namespace)
 	// TODO WriteSpace should be used only if there is no label "flex-volume-size" in the namespace quota labels.
 	space = WriteSpace
 
@@ -434,6 +448,7 @@ func (volp *DatasetVolumes) getPath(mountPath string, name string) string {
 
 //cleanDirectory deletes the contents of a directory, but not the directory itself.
 func (volp *DatasetVolumes) cleanDirectory(path string) error {
+	log.Printf("cleaning directory: %s", path)
 	dir, err := os.Open(path)
 	if err != nil {
 		return err
@@ -560,7 +575,9 @@ func (volp *DatasetVolumes) Unmount(kubeMountPath string) (err error) {
 
 	err = volp.handleOutput(kubeMountPath, dsopts.Namespace, dsopts.OutputDataset)
 	if err != nil {
-		return errors.Wrap(err, "failed to upload output")
+		if !strings.Contains(err.Error(), "dataset is too big") {
+			return errors.Wrap(err, "failed to upload output")
+		}
 	}
 
 	//Clean up (as much as possible)
@@ -575,7 +592,9 @@ func (volp *DatasetVolumes) Unmount(kubeMountPath string) (err error) {
 		"failed to unmount overlayfs",
 	)
 	if err != nil {
-		result = multierror.Append(result, err)
+		log.Printf("%v", err)
+		return err
+		// result = multierror.Append(result, err)
 	}
 
 	err = errors.Wrap(
@@ -583,7 +602,9 @@ func (volp *DatasetVolumes) Unmount(kubeMountPath string) (err error) {
 		"failed to unmount file system in a file",
 	)
 	if err != nil {
-		result = multierror.Append(result, err)
+		log.Printf("%v", err)
+		return err
+		// result = multierror.Append(result, err)
 	}
 
 	err = errors.Wrap(
@@ -591,7 +612,9 @@ func (volp *DatasetVolumes) Unmount(kubeMountPath string) (err error) {
 		"failed to delete file system in a file",
 	)
 	if err != nil {
-		result = multierror.Append(result, err)
+		log.Printf("%v", err)
+		return err
+		// result = multierror.Append(result, err)
 	}
 
 	err = errors.Wrap(
@@ -599,7 +622,9 @@ func (volp *DatasetVolumes) Unmount(kubeMountPath string) (err error) {
 		"failed to delete input data",
 	)
 	if err != nil {
-		result = multierror.Append(result, err)
+		log.Printf("%v", err)
+		return err
+		// result = multierror.Append(result, err)
 	}
 
 	err = errors.Wrap(
@@ -607,7 +632,9 @@ func (volp *DatasetVolumes) Unmount(kubeMountPath string) (err error) {
 		"failed to delete dataset",
 	)
 	if err != nil {
-		result = multierror.Append(result, err)
+		log.Printf("%v", err)
+		return err
+		// result = multierror.Append(result, err)
 	}
 
 	return result
