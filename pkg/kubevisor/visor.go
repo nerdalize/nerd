@@ -234,8 +234,8 @@ func (k *Visor) CreateResource(ctx context.Context, t ResourceType, v ManagedNam
 		labels = map[string]string{}
 	}
 
-	// labels["nerd-app"] = "cli"
-	// v.SetLabels(labels)
+	labels["nerd-app"] = "cli"
+	v.SetLabels(labels)
 
 	k.logs.Debugf("creating %s '%s' in namespace '%s' and labels '%v': %s", t, v.GetName(), k.ns, labels, ctx)
 	err = c.Post().

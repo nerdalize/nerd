@@ -135,7 +135,6 @@ func (cmd *ClusterUse) Execute(args []string) (err error) {
 		}
 		if !ok {
 			cmd.out.Info("Cluster is not nerd compliant, installing dependencies...")
-			// TODO log issue -> cluster not nerd compliant
 			// TODO move this to a new command
 			err = kube.AddNerdDependencies(ctx, &svc.AddNerdDependenciesInput{Dependencies: nerdDependencies})
 			if err != nil {
