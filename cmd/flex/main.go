@@ -24,6 +24,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
+	apiext "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	certutil "k8s.io/client-go/util/cert"
@@ -821,4 +822,9 @@ func (deps *Deps) Namespace() string {
 //Crd returns the custom resource depenition interface
 func (deps *Deps) Crd() crd.Interface {
 	return deps.crd
+}
+
+//APIExt implements the DI interface
+func (deps *Deps) APIExt() apiext.Interface {
+	return nil
 }

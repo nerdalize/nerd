@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"os"
@@ -14,19 +15,25 @@ import (
 	"github.com/nerdalize/nerd/nerd/oauth"
 	"github.com/nerdalize/nerd/pkg/kubeconfig"
 	"github.com/nerdalize/nerd/pkg/populator"
+	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
 )
 
-//ClusterSetDefault command
-type ClusterSetDefault struct {
+const (
+	//PublicCluster is a service type we get from authentication
+	PublicCluster = "public-kubernetes"
+)
+
+//ClusterUse command
+type ClusterUse struct {
 	Namespace string `long:"namespace" short:"n" description:"set a specific namespace as the default one"`
 
 	*command
 }
 
-//ClusterSetDefaultFactory creates the command
-func ClusterSetDefaultFactory(ui cli.Ui) cli.CommandFactory {
-	cmd := &ClusterSetDefault{}
+//ClusterUseFactory creates the command
+func ClusterUseFactory(ui cli.Ui) cli.CommandFactory {
+	cmd := &ClusterUse{}
 	cmd.command = createCommand(ui, cmd.Execute, cmd.Description, cmd.Usage, cmd, &ConfOpts{}, flags.None, "nerd cluster set-default")
 	t, ok := cmd.advancedOpts.(*ConfOpts)
 	if !ok {
@@ -40,7 +47,7 @@ func ClusterSetDefaultFactory(ui cli.Ui) cli.CommandFactory {
 }
 
 //Execute runs the command
-func (cmd *ClusterSetDefault) Execute(args []string) (err error) {
+func (cmd *ClusterUse) Execute(args []string) (err error) {
 	// TODO move this part to another func
 	env := os.Getenv("NERD_ENV")
 	if env == "staging" {
@@ -54,6 +61,10 @@ func (cmd *ClusterSetDefault) Execute(args []string) (err error) {
 	} else if len(args) < 1 {
 		return errShowUsage(fmt.Sprintf(MessageNotEnoughArguments, 1, ""))
 	}
+
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, cmd.globalOpts.KubeOpts.Timeout)
+	defer cancel()
 
 	authbase, err := url.Parse(cmd.config.Auth.APIEndpoint)
 	if err != nil {
@@ -111,17 +122,31 @@ func (cmd *ClusterSetDefault) Execute(args []string) (err error) {
 		return err
 	}
 
-	// check if it's nerd ready (is app nlz-utils up ?)
-	// else apply helm chart
-	// - get catalogs (is it necessary ?)
-	// - get projects (can we have it from auth)
-	// - launch app
-	// how to get the right chart version ?
+	if cluster.ServiceType != PublicCluster {
+		deps, err := NewDeps(cmd.Logger(), cmd.globalOpts.KubeOpts)
+		if err != nil {
+			return renderConfigError(err, "failed to configure")
+		}
+		kube := svc.NewKube(deps)
+
+		ok, nerdDependencies, err := kube.IsNerdCompliant(ctx)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			cmd.out.Info("Cluster is not nerd compliant, installing dependencies...")
+			// TODO move this to a new command
+			err = kube.AddNerdDependencies(ctx, &svc.AddNerdDependenciesInput{Dependencies: nerdDependencies})
+			if err != nil {
+				return err
+			}
+		}
+	}
 	name := cluster.Name
 	if name == "" {
 		name = cluster.ShortName
 	}
-	cmd.out.Infof("You are now using %s's config.", name)
+	cmd.out.Infof("You are now using '%s' config.", name)
 	return nil
 }
 
@@ -147,12 +172,12 @@ func lookByName(name string, clusters []*v1authpayload.GetClusterOutput) (*v1aut
 }
 
 // Description returns long-form help text
-func (cmd *ClusterSetDefault) Description() string { return cmd.Synopsis() }
+func (cmd *ClusterUse) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
-func (cmd *ClusterSetDefault) Synopsis() string {
+func (cmd *ClusterUse) Synopsis() string {
 	return "Set a specific cluster as the current one to use."
 }
 
 // Usage shows usage
-func (cmd *ClusterSetDefault) Usage() string { return "nerd cluster set-default NAME [OPTIONS]" }
+func (cmd *ClusterUse) Usage() string { return "nerd cluster set-default NAME [OPTIONS]" }

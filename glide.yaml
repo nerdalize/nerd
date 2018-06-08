@@ -39,7 +39,6 @@ import:
 - package: github.com/go-playground/validator
   version: ~v9.9.0
 - package: k8s.io/client-go
-  version: kubernetes-1.8.8
 - package: github.com/satori/go.uuid
   version: 36e9d2ebbde5e3f13ab2e25625fd453271d6522e
   subpackages:
@@ -47,6 +46,14 @@ import:
   - tools/clientcmd
 - package: golang.org/x/sys
 - package: k8s.io/code-generator
+- package: k8s.io/api
+  version: 184e700b32b7f1b532b9fce8dd8c1f412d297c4b
+  subpackages:
+  - apps/v1
+- package: k8s.io/apimachinery
+  version: 084add7e300b3c88d77dded09a20d5063d632b5b
+  subpackages:
+  - pkg/runtime
 - package: github.com/google/go-github
   subpackages:
   - github
@@ -54,3 +61,6 @@ import:
   version: 1.2.0
 - package: github.com/cheggaaa/pb
   version: ~v1.0.22
+- package: k8s.io/apiextensions-apiserver
+  subpackages:
+  - pkg/apis/apiextensions/v1beta1

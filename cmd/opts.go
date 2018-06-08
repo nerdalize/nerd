@@ -13,6 +13,7 @@ import (
 	"github.com/nerdalize/nerd/pkg/transfer/store"
 	"github.com/nerdalize/nerd/svc"
 	"github.com/pkg/errors"
+	apiext "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -59,17 +60,18 @@ func (opts TransferOpts) TransferManager(kube *svc.Kube) (mgr transfer.Manager, 
 
 //KubeOpts can be used to create a Kubernetes service
 type KubeOpts struct {
-	KubeConfig string        `long:"kubeconfig" description:"file at which Nerd will look for Kubernetes credentials" env:"KUBECONFIG" default-mask:"~/.kube/config" default:"~/.kube/config"`
+	KubeConfig string        `long:"kubeconfig" description:"file at which Nerd will look for Kubernetes credentials" env:"KUBECONFIG" default-mask:"~/.kube/config"`
 	Timeout    time.Duration `long:"timeout" description:"duration for which Nerd will wait for Kubernetes" default-mask:"10s" default:"10s" required:"true"`
 }
 
 //Deps exposes dependencies
 type Deps struct {
-	val  svc.Validator
-	kube kubernetes.Interface
-	crd  crd.Interface
-	logs svc.Logger
-	ns   string
+	val    svc.Validator
+	kube   kubernetes.Interface
+	crd    crd.Interface
+	apiext apiext.Interface
+	logs   svc.Logger
+	ns     string
 }
 
 //NewDeps uses options to setup dependencies
@@ -88,6 +90,11 @@ func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
 
 	d := &Deps{
 		logs: logs,
+	}
+
+	d.apiext, err = apiext.NewForConfig(kcfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create Kuberntes configuration")
 	}
 
 	d.crd, err = crd.NewForConfig(kcfg)
@@ -116,27 +123,32 @@ func NewDeps(logs svc.Logger, kopts KubeOpts) (*Deps, error) {
 	return d, nil
 }
 
-//Kube provides the kubernetes dependency
+//Kube provides the kubernetes dependency.
 func (deps *Deps) Kube() kubernetes.Interface {
 	return deps.kube
 }
 
-//Validator provides the Validator dependency
+//Validator provides the Validator dependency.
 func (deps *Deps) Validator() svc.Validator {
 	return deps.val
 }
 
-//Logger provides the Logger dependency
+//Logger provides the Logger dependency.
 func (deps *Deps) Logger() svc.Logger {
 	return deps.logs
 }
 
-//Namespace provides the namespace dependency
+//Namespace provides the namespace dependency.
 func (deps *Deps) Namespace() string {
 	return deps.ns
 }
 
-//Crd provides the custom resource definition API
+//Crd provides the custom resource definition API.
 func (deps *Deps) Crd() crd.Interface {
 	return deps.crd
+}
+
+//APIExt provides the extensions api to create a custom resource definition.
+func (deps *Deps) APIExt() apiext.Interface {
+	return deps.apiext
 }

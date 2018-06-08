@@ -62,14 +62,16 @@ func (o *GenericPopulator) PopulateKubeConfig(namespace string) error {
 	if o.cluster == nil {
 		return errors.New("Cannot use an empty cluster")
 	}
-	if o.cluster.CaCertificate == "" {
-		c.InsecureSkipTLSVerify = true
-	} else {
-		data, err := base64.StdEncoding.DecodeString(o.cluster.CaCertificate)
-		if err != nil {
-			return err
+	if o.cluster.ServiceType == "public-kubernetes" {
+		if o.cluster.CaCertificate == "" {
+			c.InsecureSkipTLSVerify = true
+		} else {
+			data, err := base64.StdEncoding.DecodeString(o.cluster.CaCertificate)
+			if err != nil {
+				return err
+			}
+			c.CertificateAuthorityData = data
 		}
-		c.CertificateAuthorityData = data
 	}
 	c.Server = o.cluster.ServiceURL
 
