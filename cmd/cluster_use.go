@@ -134,12 +134,13 @@ func (cmd *ClusterUse) Execute(args []string) (err error) {
 			return err
 		}
 		if !ok {
-			cmd.out.Info("Cluster is not nerd compliant, installing dependencies...")
+			cmd.out.Info("Cluster is not nerd compliant, nerdalizing cluster...")
 			// TODO move this to a new command
 			err = kube.AddNerdDependencies(ctx, &svc.AddNerdDependenciesInput{Dependencies: nerdDependencies})
 			if err != nil {
 				return err
 			}
+			cmd.out.Info("Cluster is now nerdalized. It can take a few minutes before you can use it.")
 		}
 	}
 	name := cluster.Name
