@@ -9,9 +9,7 @@
 					{
 						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
-						"default_value": [
-							"~/.kube/config"
-						],
+						"default_value": null,
 						"choices": null
 					},
 					{
@@ -53,9 +51,7 @@
 					{
 						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
-						"default_value": [
-							"~/.kube/config"
-						],
+						"default_value": null,
 						"choices": null
 					},
 					{
@@ -70,7 +66,7 @@
 				"Options": []
 			}
 		},
-		"cluster set-default": {
+		"cluster use": {
 			"usage": "nerd cluster set-default NAME [OPTIONS]",
 			"synopsis": "Set a specific cluster as the current one to use.",
 			"description": "Set a specific cluster as the current one to use.",
@@ -97,9 +93,7 @@
 					{
 						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
-						"default_value": [
-							"~/.kube/config"
-						],
+						"default_value": null,
 						"choices": null
 					},
 					{
@@ -131,9 +125,7 @@
 					{
 						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
-						"default_value": [
-							"~/.kube/config"
-						],
+						"default_value": null,
 						"choices": null
 					},
 					{
@@ -157,9 +149,7 @@
 					{
 						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
-						"default_value": [
-							"~/.kube/config"
-						],
+						"default_value": null,
 						"choices": null
 					},
 					{
@@ -191,9 +181,7 @@
 					{
 						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
-						"default_value": [
-							"~/.kube/config"
-						],
+						"default_value": null,
 						"choices": null
 					},
 					{
@@ -230,9 +218,7 @@
 					{
 						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
-						"default_value": [
-							"~/.kube/config"
-						],
+						"default_value": null,
 						"choices": null
 					},
 					{
@@ -296,9 +282,7 @@
 					{
 						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
-						"default_value": [
-							"~/.kube/config"
-						],
+						"default_value": null,
 						"choices": null
 					},
 					{
@@ -330,9 +314,7 @@
 					{
 						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
-						"default_value": [
-							"~/.kube/config"
-						],
+						"default_value": null,
 						"choices": null
 					},
 					{
@@ -356,9 +338,7 @@
 					{
 						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
-						"default_value": [
-							"~/.kube/config"
-						],
+						"default_value": null,
 						"choices": null
 					},
 					{
@@ -390,9 +370,7 @@
 					{
 						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
-						"default_value": [
-							"~/.kube/config"
-						],
+						"default_value": null,
 						"choices": null
 					},
 					{
@@ -416,9 +394,7 @@
 					{
 						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
-						"default_value": [
-							"~/.kube/config"
-						],
+						"default_value": null,
 						"choices": null
 					},
 					{
@@ -490,9 +466,7 @@
 					{
 						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
-						"default_value": [
-							"~/.kube/config"
-						],
+						"default_value": null,
 						"choices": null
 					},
 					{
@@ -590,9 +564,7 @@
 					{
 						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
-						"default_value": [
-							"~/.kube/config"
-						],
+						"default_value": null,
 						"choices": null
 					},
 					{
@@ -625,9 +597,7 @@
 					{
 						"long_name": "kubeconfig",
 						"description": "file at which Nerd will look for Kubernetes credentials",
-						"default_value": [
-							"~/.kube/config"
-						],
+						"default_value": null,
 						"choices": null
 					},
 					{

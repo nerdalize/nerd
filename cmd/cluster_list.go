@@ -72,6 +72,9 @@ func (cmd *ClusterList) Execute(args []string) (err error) {
 	hdr := []string{"ID", "CLUSTER NAME", "VCPUS", "MEMORY", "PODS"}
 	rows := [][]string{}
 	for x, cluster := range clusters.Clusters {
+		if cluster.Name == "" {
+			cluster.Name = cluster.ShortName
+		}
 		id := strconv.Itoa(x + 1)
 		rows = append(rows, []string{
 			id,
