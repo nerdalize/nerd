@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/nerdalize/nerd/pkg/kubevisor"
 	transferstore "github.com/nerdalize/nerd/pkg/transfer/store"
@@ -30,6 +31,7 @@ type errShowUsage string
 func (e errShowUsage) Error() string { return string(e) }
 
 func renderServiceError(err error, format string, args ...interface{}) error {
+
 	if err == nil {
 		return nil
 	}
@@ -40,6 +42,8 @@ func renderServiceError(err error, format string, args ...interface{}) error {
 	}
 
 	switch {
+	case strings.Contains(err.Error(), "failed to refresh token"):
+		return errors.Errorf("Please check your permissions or try to login again.")
 	case kubevisor.IsInvalidNameErr(err):
 		return errors.Errorf("%s: invalid name, must consist of alphanumeric characters, '-' or '.'", fmt.Errorf(format, args...))
 	case kubevisor.IsDeadlineErr(err):
