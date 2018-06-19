@@ -6,8 +6,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/dustin/go-humanize"
-
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
@@ -80,12 +78,16 @@ func (cmd *ClusterList) Execute(args []string) (err error) {
 			id,
 			cluster.Name,
 			fmt.Sprintf("%.1f/%.1f", cluster.Usage.CPU, cluster.Capacity.CPU),
-			fmt.Sprintf("%s/%s", humanize.Bytes(uint64(cluster.Usage.Memory)), humanize.Bytes(uint64(cluster.Capacity.Memory))),
+			fmt.Sprintf("%s/%s", renderFloatToMem(cluster.Usage.Memory), renderFloatToMem(cluster.Capacity.Memory)),
 			fmt.Sprintf("%d/%d", cluster.Usage.Pods, cluster.Capacity.Pods),
 		})
 	}
 
 	return cmd.out.Table(hdr, rows)
+}
+
+func renderFloatToMem(n float64) string {
+	return fmt.Sprintf("%.1f", n/1000/1000/1000)
 }
 
 // Description returns long-form help text

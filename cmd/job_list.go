@@ -122,7 +122,7 @@ func (cmd *JobList) Synopsis() string { return "Return jobs that are managed by 
 func (cmd *JobList) Usage() string { return "nerd job list [OPTIONS]" }
 
 func renderMemory(n int64) string {
-	return fmt.Sprintf("%.1f", float64(n/1024/1024/1024)/1000)
+	return fmt.Sprintf("%.1f", float64(n/1000/1000/1000)/1000)
 }
 
 func renderVCPU(n int64) string {
