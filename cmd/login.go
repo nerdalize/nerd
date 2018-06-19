@@ -98,7 +98,11 @@ func (cmd *Login) Execute(args []string) (err error) {
 		Base:               authbase,
 		Logger:             cmd.Logger(),
 		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.SecureClientID, cmd.config.Auth.SecureClientSecret, cmd.session),
+		Doer: &http.Client{
+			Timeout: time.Second * 30,
+		},
 	})
+	cmd.out.Info("Setting up your local configuration...")
 	list, err := client.ListClusters()
 	if err != nil {
 		return renderServiceError(err, "cannot list clusters")
