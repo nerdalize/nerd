@@ -118,7 +118,7 @@
 		},
 		"dataset": {
 			"usage": "nerd dataset \u003csubcommand\u003e",
-			"synopsis": "Group of commands used to manage datasets. A dataset is a collection of files, like a folder on a computer. They can be used as input for a job and, when an application creates output files, these can be automatically stored in a new dataset.",
+			"synopsis": "Group of commands used to manage datasets (collection of files).",
 			"description": "Group of commands used to manage datasets. A dataset is a collection of files, like a folder on a computer. They can be used as input for a job and, when an application creates output files, these can be automatically stored in a new dataset.",
 			"options": {
 				"Global Options": [
@@ -142,8 +142,8 @@
 		},
 		"dataset delete": {
 			"usage": "nerd dataset delete DATASET_NAME [DATASET_NAME...]",
-			"synopsis": "Remove a dataset from the cluster",
-			"description": "Remove a dataset from the cluster",
+			"synopsis": "Remove a dataset from the cluster.",
+			"description": "Remove a dataset from the cluster.",
 			"options": {
 				"Global Options": [
 					{
@@ -174,8 +174,8 @@
 		},
 		"dataset download": {
 			"usage": "nerd dataset [OPTIONS] download DATASET_NAME DOWNLOAD_PATH",
-			"synopsis": "Download results from a running job",
-			"description": "Download results from a running job",
+			"synopsis": "Download results from a running job.",
+			"description": "Download results from a running job.",
 			"options": {
 				"Global Options": [
 					{
@@ -211,8 +211,8 @@
 		},
 		"dataset list": {
 			"usage": "nerd dataset list [OPTIONS]",
-			"synopsis": "Return datasets that are managed by the cluster",
-			"description": "Return datasets that are managed by the cluster",
+			"synopsis": "Return datasets that are managed by the cluster.",
+			"description": "Return datasets that are managed by the cluster.",
 			"options": {
 				"Global Options": [
 					{
@@ -307,7 +307,7 @@
 		},
 		"job": {
 			"usage": "nerd job \u003csubcommand\u003e",
-			"synopsis": "Group of commands used to manage the lifecycle of jobs. A job is a computation that takes some input data, runs an application to do operations on this data and stores the results.",
+			"synopsis": "Group of commands used to manage the lifecycle of jobs.",
 			"description": "Group of commands used to manage the lifecycle of jobs. A job is a computation that takes some input data, runs an application to do operations on this data and stores the results.",
 			"options": {
 				"Global Options": [
@@ -331,8 +331,8 @@
 		},
 		"job delete": {
 			"usage": "nerd job delete JOB [JOB...]",
-			"synopsis": "Remove one or more job(s) from the cluster",
-			"description": "Remove one or more job(s) from the cluster",
+			"synopsis": "Remove one or more job(s) from the cluster.",
+			"description": "Remove one or more job(s) from the cluster.",
 			"options": {
 				"Global Options": [
 					{
@@ -363,8 +363,8 @@
 		},
 		"job list": {
 			"usage": "nerd job list [OPTIONS]",
-			"synopsis": "Return jobs that are managed by the cluster",
-			"description": "Return jobs that are managed by the cluster",
+			"synopsis": "Return jobs that are managed by the cluster.",
+			"description": "Return jobs that are managed by the cluster.",
 			"options": {
 				"Global Options": [
 					{
@@ -387,8 +387,8 @@
 		},
 		"job logs": {
 			"usage": "nerd job logs [OPTIONS] JOB",
-			"synopsis": "Return logs for a running job",
-			"description": "Return logs for a running job",
+			"synopsis": "Return logs for a running job.",
+			"description": "Return logs for a running job.",
 			"options": {
 				"Global Options": [
 					{
@@ -419,8 +419,8 @@
 		},
 		"job run": {
 			"usage": "nerd job run [OPTIONS] IMAGE [ARG...]",
-			"synopsis": "Runs a job on your compute cluster",
-			"description": "Runs a job on your compute cluster",
+			"synopsis": "Run a job on your compute cluster.",
+			"description": "Run a job on your compute cluster.",
 			"options": {
 				"Advanced Options": [
 					{

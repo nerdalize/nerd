@@ -75,7 +75,7 @@ func (cmd *DatasetList) Execute(args []string) (err error) {
 func (cmd *DatasetList) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
-func (cmd *DatasetList) Synopsis() string { return "Return datasets that are managed by the cluster" }
+func (cmd *DatasetList) Synopsis() string { return "Return datasets that are managed by the cluster." }
 
 // Usage shows usage
 func (cmd *DatasetList) Usage() string { return "nerd dataset list [OPTIONS]" }

@@ -107,7 +107,7 @@ func (cmd *JobDelete) deleteAll() error {
 func (cmd *JobDelete) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
-func (cmd *JobDelete) Synopsis() string { return "Remove one or more job(s) from the cluster" }
+func (cmd *JobDelete) Synopsis() string { return "Remove one or more job(s) from the cluster." }
 
 // Usage shows usage
 func (cmd *JobDelete) Usage() string { return "nerd job delete JOB [JOB...]" }

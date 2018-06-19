@@ -107,7 +107,7 @@ func (cmd *DatasetDelete) deleteAll() error {
 func (cmd *DatasetDelete) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
-func (cmd *DatasetDelete) Synopsis() string { return "Remove a dataset from the cluster" }
+func (cmd *DatasetDelete) Synopsis() string { return "Remove a dataset from the cluster." }
 
 // Usage shows usage
 func (cmd *DatasetDelete) Usage() string { return "nerd dataset delete DATASET_NAME [DATASET_NAME...]" }

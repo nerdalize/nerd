@@ -116,7 +116,7 @@ func (cmd *JobList) Execute(args []string) (err error) {
 func (cmd *JobList) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
-func (cmd *JobList) Synopsis() string { return "Return jobs that are managed by the cluster" }
+func (cmd *JobList) Synopsis() string { return "Return jobs that are managed by the cluster." }
 
 // Usage shows usage
 func (cmd *JobList) Usage() string { return "nerd job list [OPTIONS]" }
