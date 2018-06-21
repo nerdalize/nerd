@@ -176,7 +176,7 @@ func (cmd *DatasetDownload) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
 func (cmd *DatasetDownload) Synopsis() string {
-	return "Download results from a running job"
+	return "Download results from a running job."
 }
 
 // Usage shows usage

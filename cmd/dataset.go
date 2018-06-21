@@ -24,11 +24,13 @@ func DatasetFactory(ui cli.Ui) cli.CommandFactory {
 func (cmd *Dataset) Execute(args []string) (err error) { return errShowHelp("") }
 
 // Description returns long-form help text
-func (cmd *Dataset) Description() string { return cmd.Synopsis() }
+func (cmd *Dataset) Description() string {
+	return "Group of commands used to manage datasets. A dataset is a collection of files, like a folder on a computer. They can be used as input for a job and, when an application creates output files, these can be automatically stored in a new dataset."
+}
 
 // Synopsis returns a one-line
 func (cmd *Dataset) Synopsis() string {
-	return "Group of commands used to manage datasets. A dataset is a collection of files, like a folder on a computer. They can be used as input for a job and, when an application creates output files, these can be automatically stored in a new dataset."
+	return "Group of commands used to manage datasets (collection of files)."
 }
 
 // Usage shows usage

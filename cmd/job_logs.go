@@ -75,7 +75,7 @@ func (cmd *JobLogs) Execute(args []string) (err error) {
 func (cmd *JobLogs) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
-func (cmd *JobLogs) Synopsis() string { return "Return logs for a running job" }
+func (cmd *JobLogs) Synopsis() string { return "Return logs for a running job." }
 
 // Usage shows usage
 func (cmd *JobLogs) Usage() string { return "nerd job logs [OPTIONS] JOB" }

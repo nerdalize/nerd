@@ -418,7 +418,7 @@ func compareNames(inputs, outputs []string) error {
 func (cmd *JobRun) Description() string { return cmd.Synopsis() }
 
 // Synopsis returns a one-line
-func (cmd *JobRun) Synopsis() string { return "Runs a job on your compute cluster" }
+func (cmd *JobRun) Synopsis() string { return "Run a job on your compute cluster." }
 
 // Usage shows usage
 func (cmd *JobRun) Usage() string { return "nerd job run [OPTIONS] IMAGE [ARG...]" }
