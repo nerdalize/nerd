@@ -65,7 +65,7 @@ func (cmd *ClusterList) Execute(args []string) (err error) {
 
 	clusters, err := client.ListClusters()
 	if err != nil {
-		return err
+		return renderClientError(err, "failed to get your cluster list")
 	}
 	// Add role (admin, team member ...)
 	// Add star for current cluster
