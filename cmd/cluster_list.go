@@ -6,13 +6,14 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/dustin/go-humanize"
-
 	flags "github.com/jessevdk/go-flags"
 	"github.com/mitchellh/cli"
 	v1auth "github.com/nerdalize/nerd/nerd/client/auth/v1"
+	v1payload "github.com/nerdalize/nerd/nerd/client/auth/v1/payload"
 	"github.com/nerdalize/nerd/nerd/conf"
 	"github.com/nerdalize/nerd/nerd/oauth"
+	"github.com/nerdalize/nerd/pkg/kubeconfig"
+	"github.com/nerdalize/nerd/pkg/populator"
 	"github.com/pkg/errors"
 )
 
@@ -63,29 +64,56 @@ func (cmd *ClusterList) Execute(args []string) (err error) {
 		Logger:             cmd.Logger(),
 	})
 
+	kubeConfig, err := kubeconfig.GetPath(cmd.globalOpts.KubeConfig)
+	if err != nil {
+		return err
+	}
+	conf, err := populator.ReadConfigOrNew(kubeConfig)
+	if err != nil {
+		return err
+	}
+
 	clusters, err := client.ListClusters()
 	if err != nil {
 		return err
 	}
-	// Add role (admin, team member ...)
-	// Add star for current cluster
+
+	// TODO Add role (admin, team member ...)
 	hdr := []string{"ID", "CLUSTER NAME", "VCPUS", "MEMORY", "PODS"}
 	rows := [][]string{}
 	for x, cluster := range clusters.Clusters {
 		if cluster.Name == "" {
 			cluster.Name = cluster.ShortName
 		}
+		if clusterMatchContext(cluster, conf.CurrentContext) {
+			cluster.Name = fmt.Sprintf("%s *", cluster.Name)
+		}
 		id := strconv.Itoa(x + 1)
 		rows = append(rows, []string{
 			id,
 			cluster.Name,
 			fmt.Sprintf("%.1f/%.1f", cluster.Usage.CPU, cluster.Capacity.CPU),
-			fmt.Sprintf("%s/%s", humanize.Bytes(uint64(cluster.Usage.Memory)), humanize.Bytes(uint64(cluster.Capacity.Memory))),
+			fmt.Sprintf("%s/%s", renderFloatToMem(cluster.Usage.Memory), renderFloatToMem(cluster.Capacity.Memory)),
 			fmt.Sprintf("%d/%d", cluster.Usage.Pods, cluster.Capacity.Pods),
 		})
 	}
 
 	return cmd.out.Table(hdr, rows)
+}
+
+func renderFloatToMem(n float64) string {
+	return fmt.Sprintf("%.1f", n/1000/1000/1000)
+}
+
+func clusterMatchContext(cluster *v1payload.GetClusterOutput, context string) bool {
+	if len(cluster.Namespaces) > 0 {
+		for x := range cluster.Namespaces {
+			if fmt.Sprintf("%s-%s-%s", populator.Prefix, cluster.ShortName, cluster.Namespaces[x].Name) == context {
+				return true
+			}
+		}
+	}
+	return fmt.Sprintf("%s-%s", populator.Prefix, cluster.ShortName) == context
 }
 
 // Description returns long-form help text
