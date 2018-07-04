@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/url"
 	"strings"
 
 	"github.com/nerdalize/nerd/pkg/kubevisor"
@@ -34,6 +36,15 @@ func renderServiceError(err error, format string, args ...interface{}) error {
 
 	if err == nil {
 		return nil
+	}
+
+	switch err := err.(type) {
+	case net.Error:
+		return errors.Errorf("%s: please check your internet connection, and try again.", fmt.Errorf(format, args...))
+	case *url.Error:
+		if err, ok := err.Err.(net.Error); ok && err.Timeout() {
+			return errors.Errorf("%s:please check your internet connection, and try again.", fmt.Errorf(format, args...))
+		}
 	}
 
 	err = errors.Cause(err)
@@ -88,4 +99,24 @@ func renderConfigError(err error, format string, args ...interface{}) error {
 	default:
 		return err
 	}
+}
+
+func renderClientError(err error, format string, args ...interface{}) error {
+	if err == nil {
+		return nil
+	}
+
+	err = errors.Cause(err)
+	switch err := err.(type) {
+	case net.Error:
+		return errors.Errorf("%s: please check your internet connection, and try again.", fmt.Errorf(format, args...))
+	case *url.Error:
+		if err, ok := err.Err.(net.Error); ok && err.Timeout() {
+			return errors.Errorf("%s:please check your internet connection, and try again.", fmt.Errorf(format, args...))
+		}
+	default:
+		return err
+	}
+
+	return err
 }

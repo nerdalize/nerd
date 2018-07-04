@@ -81,7 +81,8 @@ func (cmd *ClusterUse) Execute(args []string) (err error) {
 	})
 	list, err := client.ListClusters()
 	if err != nil {
-		return err
+		return renderClientError(err, "failed to list your clusters")
+
 	}
 
 	var cluster *v1authpayload.GetClusterOutput
@@ -89,12 +90,12 @@ func (cmd *ClusterUse) Execute(args []string) (err error) {
 	if err != nil {
 		cluster, err = lookByName(args[0], list.Clusters)
 		if err != nil {
-			return err
+			return renderServiceError(err, "failed to find the specified cluster")
 		}
 	}
 	cluster, err = client.GetCluster(cluster.URL)
 	if err != nil {
-		return err
+		return renderClientError(err, "failed to get the specified cluster configuration")
 	}
 	if cluster == nil {
 		cmd.out.Infof("Cluster not found. You can use `nerd cluster list` to see your clusters.")
@@ -107,7 +108,7 @@ func (cmd *ClusterUse) Execute(args []string) (err error) {
 	}
 	p, err := populator.New("generic", kubeConfig, cluster)
 	if err != nil {
-		return err
+		return renderConfigError(err, "failed to add configuration")
 	}
 	if cmd.Namespace == "" && len(cluster.Namespaces) >= 1 {
 		cmd.Namespace = cluster.Namespaces[0].Name
@@ -115,11 +116,11 @@ func (cmd *ClusterUse) Execute(args []string) (err error) {
 	err = p.PopulateKubeConfig(cmd.Namespace)
 	if err != nil {
 		p.RemoveConfig(cluster.ShortName)
-		return err
+		return renderConfigError(err, "failed to remove configuration")
 	}
 	if err := checkNamespace(kubeConfig, cmd.Namespace); err != nil {
 		p.RemoveConfig(cluster.ShortName)
-		return err
+		return renderConfigError(err, "failed to remove configuration")
 	}
 
 	if cluster.ServiceType != PublicCluster {
@@ -131,14 +132,14 @@ func (cmd *ClusterUse) Execute(args []string) (err error) {
 
 		ok, nerdDependencies, err := kube.IsNerdCompliant(ctx)
 		if err != nil {
-			return err
+			return renderServiceError(err, "failed to check if cluster is nerd compliant")
 		}
 		if !ok {
 			cmd.out.Info("Cluster is not nerd compliant, nerdalizing cluster...")
 			// TODO move this to a new command
 			err = kube.AddNerdDependencies(ctx, &svc.AddNerdDependenciesInput{Dependencies: nerdDependencies})
 			if err != nil {
-				return err
+				return renderServiceError(err, "failed to nerdalize cluster")
 			}
 			cmd.out.Info("Cluster is now nerdalized. It can take a few minutes before you can use it.")
 		}

@@ -98,10 +98,14 @@ func (cmd *Login) Execute(args []string) (err error) {
 		Base:               authbase,
 		Logger:             cmd.Logger(),
 		OAuthTokenProvider: oauth.NewConfigProvider(authOpsClient, cmd.config.Auth.SecureClientID, cmd.config.Auth.SecureClientSecret, cmd.session),
+		Doer: &http.Client{
+			Timeout: time.Second * 30,
+		},
 	})
+	cmd.out.Info("Setting up your local configuration...")
 	list, err := client.ListClusters()
 	if err != nil {
-		return renderServiceError(err, "cannot list clusters")
+		return renderClientError(err, "failed to list your clusters")
 	}
 
 	if len(list.Clusters) == 0 {
@@ -112,7 +116,7 @@ func (cmd *Login) Execute(args []string) (err error) {
 	for _, cluster := range list.Clusters {
 		cluster, err = client.GetCluster(cluster.URL)
 		if err != nil {
-			return err
+			return renderClientError(err, "failed to get the specified cluster configuration")
 		}
 		err = setCluster(cmd.globalOpts.KubeOpts.KubeConfig, cluster)
 		if err != nil {

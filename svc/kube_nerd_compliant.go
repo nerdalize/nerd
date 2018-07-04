@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/nerdalize/nerd/pkg/kubevisor"
 	appsv1 "k8s.io/api/apps/v1"
@@ -36,8 +37,11 @@ type AddNerdDependenciesInput struct {
 
 // IsNerdCompliant checks if the nlz-utils are running on the current cluster
 func (k *Kube) IsNerdCompliant(ctx context.Context) (ok bool, dependencies []string, err error) {
+	var netClient = &http.Client{
+		Timeout: time.Second * 10,
+	}
 	for resource, url := range files {
-		resp, err := http.Get(url)
+		resp, err := netClient.Get(url)
 		if err != nil {
 			return false, nil, err
 		}
@@ -92,9 +96,12 @@ func (k *Kube) IsNerdCompliant(ctx context.Context) (ok bool, dependencies []str
 
 // AddNerdDependencies will deploy necessary daemonsets, controllers and roles so that a private cluster can be used by the cli
 func (k *Kube) AddNerdDependencies(ctx context.Context, in *AddNerdDependenciesInput) (err error) {
+	var netClient = &http.Client{
+		Timeout: time.Second * 10,
+	}
 	for _, dependency := range in.Dependencies {
 		// Get the data
-		resp, err := http.Get(files[dependency])
+		resp, err := netClient.Get(files[dependency])
 		if err != nil {
 			return err
 		}
