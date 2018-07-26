@@ -68,7 +68,7 @@ func (k *Visor) GetResource(ctx context.Context, t ResourceType, v ManagedNames,
 	switch t {
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
-	case ResourceTypeSecrets:
+	case ResourceTypeSecrets, ResourceTypePersistentVolumeClaims:
 		c = k.api.CoreV1().RESTClient()
 	case ResourceTypeDatasets:
 		c = k.crd.NerdalizeV1().RESTClient()
@@ -140,7 +140,7 @@ func (k *Visor) DeleteResource(ctx context.Context, t ResourceType, name string)
 		c = k.api.BatchV1().RESTClient()
 	case ResourceTypeDatasets:
 		c = k.crd.NerdalizeV1().RESTClient()
-	case ResourceTypeSecrets:
+	case ResourceTypeSecrets, ResourceTypePersistentVolumeClaims:
 		c = k.api.CoreV1().RESTClient()
 	default:
 		return errors.Errorf("unknown Kubernetes resource type provided for deletion: '%s'", t)
@@ -219,6 +219,9 @@ func (k *Visor) CreateResource(ctx context.Context, t ResourceType, v ManagedNam
 	case ResourceTypeDatasets:
 		c = k.crd.NerdalizeV1().RESTClient()
 		genfix = "d-"
+        case ResourceTypePersistentVolumeClaims:
+		c = k.api.CoreV1().RESTClient()
+		genfix = "f-"
 	default:
 		return errors.Errorf("unknown Kubernetes resource type provided for creation: '%s'", t)
 	}
@@ -311,7 +314,7 @@ func (k *Visor) UpdateResource(ctx context.Context, t ResourceType, v ManagedNam
 	switch t {
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
-	case ResourceTypePods, ResourceTypeSecrets:
+	case ResourceTypePods, ResourceTypeSecrets, ResourceTypePersistentVolumeClaims:
 		c = k.api.CoreV1().RESTClient()
 	case ResourceTypeDatasets:
 		c = k.crd.NerdalizeV1().RESTClient()
@@ -352,7 +355,7 @@ func (k *Visor) ListResources(ctx context.Context, t ResourceType, v ListTranfor
 	switch t {
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
-	case ResourceTypePods, ResourceTypeEvents, ResourceTypeQuota, ResourceTypeSecrets:
+	case ResourceTypePods, ResourceTypeEvents, ResourceTypeQuota, ResourceTypeSecrets, ResourceTypePersistentVolumeClaims:
 		c = k.api.CoreV1().RESTClient()
 	case ResourceTypeDatasets:
 		c = k.crd.NerdalizeV1().RESTClient()

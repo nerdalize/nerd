@@ -48,6 +48,9 @@ var (
 
 	//ResourceTypeCustomResourceDefinition is used for crd management
 	ResourceTypeCustomResourceDefinition = ResourceType("customresourcedefinitions")
+
+	//ResourceTypePersistentVolumeClaims is used for pvc management
+	ResourceTypePersistentVolumeClaims = ResourceType("persistentvolumeclaims")
 )
 
 //ManagedNames allows for Nerd to transparently manage resources based on names and there prefixes

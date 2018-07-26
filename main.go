@@ -54,6 +54,10 @@ func create() *cli.CLI {
 			"cluster":          cmd.ClusterFactory(ui),
 			"cluster list":     cmd.ClusterListFactory(ui),
 			"cluster use":      cmd.ClusterUseFactory(ui),
+			"fs":               cmd.FileSystemFactory(ui),
+			"fs list":          cmd.FileSystemListFactory(ui),
+			"fs create":        cmd.FileSystemCreateFactory(ui),
+			"fs delete":        cmd.FileSystemDeleteFactory(ui),
 		},
 	}
 
