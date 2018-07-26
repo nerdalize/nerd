@@ -313,9 +313,23 @@ func (cmd *JobRun) Execute(args []string) (err error) {
 			return cmd.rollbackDatasets(ctx, mgr, inputs, outputs, fmt.Errorf("invalid file system specified, expected '<FILE_SYSTEM_NAME>:[JOB_DIR]' format, got: %s", fs))
 		}
 
+		mountParts := strings.Split(parts[0], "/")
+
+		var fsName string
+		var subPath string
+
+		if len(mountParts) == 1 {
+			fsName = mountParts[0]
+			subPath = ""
+		} else {
+			fsName = mountParts[0]
+			subPath = strings.Join(mountParts[1:], "/")
+		}
+
 		in.FileSystemMounts = append(in.FileSystemMounts, svc.FileSystemMount{
-			FileSystemName: fmt.Sprintf("%s%s", kubevisor.DefaultPrefix, parts[0]),
+			FileSystemName: fmt.Sprintf("%s%s", kubevisor.DefaultPrefix, fsName),
 			MountPath:		parts[1],
+			SubPath:		subPath,
 		})
 	}
 

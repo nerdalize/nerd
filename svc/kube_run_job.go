@@ -53,6 +53,7 @@ type JobVolume struct {
 type FileSystemMount struct {
 	FileSystemName string `validate:"printascii`
 	MountPath      string `validate:"is-abs-path"`
+	SubPath		   string `validate:"is-abs-path"`
 }
 
 //RunJobOutput is the output to RunJob
@@ -140,7 +141,8 @@ func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, 
 	for _, mount := range in.FileSystemMounts {
 		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts, v1.VolumeMount{
 			Name: 	   hex.EncodeToString([]byte(mount.MountPath)),
-			MountPath: mount.MountPath,	
+			MountPath: mount.MountPath,
+			SubPath:   mount.SubPath,
 		})
 
 		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, v1.Volume{
