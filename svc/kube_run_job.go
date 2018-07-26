@@ -20,15 +20,16 @@ var (
 
 //RunJobInput is the input to RunJob
 type RunJobInput struct {
-	Image        string `validate:"min=1"`
-	Name         string `validate:"printascii"`
-	Env          map[string]string
-	BackoffLimit *int32
-	Args         []string
-	Volumes      []JobVolume
-	Memory       string
-	VCPU         string
-	Secret       string
+	Image                string `validate:"min=1"`
+	Name                 string `validate:"printascii"`
+	Env                  map[string]string
+	BackoffLimit         *int32
+	Args                 []string
+	Volumes              []JobVolume
+	FileSystemMounts	 []FileSystemMount
+	Memory               string
+	VCPU                 string
+	Secret               string
 }
 
 //JobVolumeType determines if its content will be uploaded or downloaded
@@ -47,6 +48,11 @@ type JobVolume struct {
 	MountPath     string `validate:"is-abs-path"`
 	InputDataset  string
 	OutputDataset string
+}
+
+type FileSystemMount struct {
+	FileSystemName string `validate:"printascii`
+	MountPath      string `validate:"is-abs-path"`
 }
 
 //RunJobOutput is the output to RunJob
@@ -128,6 +134,22 @@ func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, 
 		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts, v1.VolumeMount{
 			Name:      hex.EncodeToString([]byte(vol.MountPath)),
 			MountPath: vol.MountPath,
+		})
+	}
+
+	for _, mount := range in.FileSystemMounts {
+		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts, v1.VolumeMount{
+			Name: 	   hex.EncodeToString([]byte(mount.MountPath)),
+			MountPath: mount.MountPath,	
+		})
+
+		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, v1.Volume{
+			Name: 		  hex.EncodeToString([]byte(mount.MountPath)),
+			VolumeSource: v1.VolumeSource{
+				PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+					ClaimName: mount.FileSystemName,
+				},
+			},
 		})
 	}
 
