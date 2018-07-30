@@ -138,21 +138,30 @@ func (k *Kube) RunJob(ctx context.Context, in *RunJobInput) (out *RunJobOutput, 
 		})
 	}
 
+	persistentVolumeRefs := make(map[string]bool)
+
 	for _, mount := range in.FileSystemMounts {
+		pvcRef := hex.EncodeToString([]byte(mount.FileSystemName))
+
 		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts, v1.VolumeMount{
-			Name: 	   hex.EncodeToString([]byte(mount.MountPath)),
+			Name: 	   pvcRef,
 			MountPath: mount.MountPath,
 			SubPath:   mount.SubPath,
 		})
 
-		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, v1.Volume{
-			Name: 		  hex.EncodeToString([]byte(mount.MountPath)),
-			VolumeSource: v1.VolumeSource{
-				PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-					ClaimName: mount.FileSystemName,
+		// Check if persistent volume has already been added for another mount
+		if _, exists := persistentVolumeRefs[pvcRef]; !exists {
+		    job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, v1.Volume{
+				Name: 		  pvcRef,
+				VolumeSource: v1.VolumeSource{
+					PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+						ClaimName: mount.FileSystemName,
+					},
 				},
-			},
-		})
+			})
+
+			persistentVolumeRefs[pvcRef] = true
+		}
 	}
 
 	if in.Secret != "" {
