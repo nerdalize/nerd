@@ -68,7 +68,7 @@ func (k *Visor) GetResource(ctx context.Context, t ResourceType, v ManagedNames,
 	switch t {
 	case ResourceTypeJobs:
 		c = k.api.BatchV1().RESTClient()
-	case ResourceTypeSecrets, ResourceTypePersistentVolumeClaims:
+	case ResourceTypeSecrets, ResourceTypePersistentVolumeClaims, ResourceTypePersistentVolumes:
 		c = k.api.CoreV1().RESTClient()
 	case ResourceTypeDatasets:
 		c = k.crd.NerdalizeV1().RESTClient()
@@ -111,6 +111,8 @@ func (k *Visor) GetClusterResource(ctx context.Context, t ResourceType, v Manage
 		c = k.apiext.ApiextensionsV1beta1().RESTClient()
 	case ResourceTypeRoles, ResourceTypeRoleBindings, ResourceTypeClusterRoles, ResourceTypeClusterRoleBindings:
 		c = k.api.RbacV1().RESTClient()
+	case ResourceTypePersistentVolumes:
+		c = k.api.CoreV1().RESTClient()
 	default:
 		return errors.Errorf("unknown Kubernetes resource type provided: '%s'", t)
 	}

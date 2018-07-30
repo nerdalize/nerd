@@ -58,6 +58,7 @@ func create() *cli.CLI {
 			"fs list":          cmd.FileSystemListFactory(ui),
 			"fs create":        cmd.FileSystemCreateFactory(ui),
 			"fs delete":        cmd.FileSystemDeleteFactory(ui),
+			"fs mount":         cmd.FileSystemMountFactory(ui),
 		},
 	}
 

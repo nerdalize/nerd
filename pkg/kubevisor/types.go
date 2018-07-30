@@ -51,6 +51,9 @@ var (
 
 	//ResourceTypePersistentVolumeClaims is used for pvc management
 	ResourceTypePersistentVolumeClaims = ResourceType("persistentvolumeclaims")
+
+	//ResourceTypePersistentVolumes is used for persistent volume management
+	ResourceTypePersistentVolumes = ResourceType("persistentvolumes")
 )
 
 //ManagedNames allows for Nerd to transparently manage resources based on names and there prefixes
