@@ -498,7 +498,7 @@
 						"short_name": "m",
 						"description": "memory to use for this job, expressed in gigabytes",
 						"default_value": [
-							"3"
+							"1"
 						],
 						"choices": null
 					},
@@ -506,7 +506,7 @@
 						"long_name": "vcpu",
 						"description": "number of vcpus to use for this job",
 						"default_value": [
-							"2"
+							"1"
 						],
 						"choices": null
 					},
