@@ -73,7 +73,7 @@ func (cmd *Login) Execute(args []string) (err error) {
 	defer svr.Close()
 	go spawnServer(svr, cmd.config.Auth, randomState, doneCh)
 
-	cmd.out.Info(fmt.Sprintf("Access the login at http://%s/oauth?state=%s", cmd.config.Auth.OAuthLocalServer, randomState))
+	cmd.out.Info(fmt.Sprintf("Opening login screen, if this doesn't work copy the following link in your browser: http://%s/oauth?state=%s", cmd.config.Auth.OAuthLocalServer, randomState))
 
 	// May fail, but we always display the login URL on stdout as well
 	open.Run(fmt.Sprintf("http://%s/oauth?state=%s", cmd.config.Auth.OAuthLocalServer, randomState))
