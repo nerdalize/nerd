@@ -7,3 +7,5 @@ VERSION=$(cat ../../VERSION | cut -f1 -d"-")
 sed -i "s/\sVersion=".*"/ Version=\"$VERSION\"/" Product.wxs
 
 $WINDIR/Microsoft.NET/Framework/v4.0.30319/MSBuild.exe nerd.wixproject
+
+mv "bin/Nerd Setup (x64).msi" "bin/Nerd.Windows.Installer.x64.msi"
