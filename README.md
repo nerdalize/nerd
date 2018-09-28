@@ -45,3 +45,20 @@ If you would like to contribute to the project it is possible to build the Nerd 
        Available commands are:
        ...
        ```
+
+## Quickstart from Docker
+
+Pull the docker image `nerdalize/nerd` then:
+
+```
+$ docker run -it --rm nerdalize/nerd -h
+usage: nerd [--version] [--help] <command> [<args>]
+
+Available commands are:
+    dataset     upload and download datasets for tasks to use
+    login       start a new authorized session
+    project     set and list projects
+    task        manage the lifecycle of compute tasks
+    worker      control individual compute processes
+    workload    control compute capacity for working on tasks
+```
